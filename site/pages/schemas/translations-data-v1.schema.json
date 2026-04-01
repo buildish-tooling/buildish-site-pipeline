@@ -1,0 +1,156 @@
+{
+  "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
+  "$defs": {
+    "TranslationLinkSummary": {
+      "additionalProperties": false,
+      "description": "Compact link to one translated sibling page.",
+      "properties": {
+        "locale": {
+          "description": "Locale key for the translated sibling page.",
+          "examples": [
+            "de"
+          ],
+          "minLength": 1,
+          "title": "Locale",
+          "type": "string"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Public path for the translated sibling page, if available.",
+          "examples": [
+            "/de/spark/overview/"
+          ],
+          "title": "Path"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Localized page title for the translated sibling page.",
+          "examples": [
+            "\u00dcbersicht"
+          ],
+          "title": "Title"
+        },
+        "url": {
+          "description": "Absolute URL for the translated sibling page.",
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "locale",
+        "url"
+      ],
+      "title": "TranslationLinkSummary",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    },
+    "TranslationSetAggregateEntry": {
+      "additionalProperties": false,
+      "description": "Entry in ``data/translations.json``.",
+      "properties": {
+        "artifactKey": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Owning artifact key when the translation set belongs to a specific artifact.",
+          "examples": [
+            "runtime"
+          ],
+          "title": "Artifactkey"
+        },
+        "componentSlug": {
+          "description": "Owning component slug for the translation set.",
+          "examples": [
+            "spark"
+          ],
+          "minLength": 1,
+          "title": "Componentslug",
+          "type": "string"
+        },
+        "entries": {
+          "description": "Translated sibling pages that belong to the same translation set.",
+          "items": {
+            "$ref": "#/$defs/TranslationLinkSummary"
+          },
+          "minItems": 1,
+          "title": "Entries",
+          "type": "array"
+        },
+        "translationKey": {
+          "description": "Shared key that ties all translated sibling pages in this set together.",
+          "examples": [
+            "spark-overview"
+          ],
+          "minLength": 1,
+          "title": "Translationkey",
+          "type": "string"
+        }
+      },
+      "required": [
+        "translationKey",
+        "componentSlug",
+        "entries"
+      ],
+      "title": "TranslationSetAggregateEntry",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    }
+  },
+  "$id": "https://buildish.org/components/site-pipeline/schemas/translations-data-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Public staged aggregate file at ``data/translations.json``.",
+  "properties": {
+    "items": {
+      "description": "Translation-set aggregate entries emitted into `data/translations.json`.",
+      "items": {
+        "$ref": "#/$defs/TranslationSetAggregateEntry"
+      },
+      "title": "Items",
+      "type": "array"
+    }
+  },
+  "required": [
+    "items"
+  ],
+  "title": "Site Pipeline data/translations.json v1",
+  "type": "object",
+  "x-buildish-contract": {
+    "category": "emitted",
+    "filePath": "data/translations.json",
+    "ownership": "pipeline-derived",
+    "summary": "Translation sibling groups keyed by one shared translation identifier."
+  }
+}

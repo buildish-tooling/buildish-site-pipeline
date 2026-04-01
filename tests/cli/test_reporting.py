@@ -1,0 +1,394 @@
+# Copyright 2026 The Buildish Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Tests for CLI reporting helpers."""
+
+from __future__ import annotations
+
+import io
+import os
+import tempfile
+import unittest
+from datetime import UTC, datetime
+from pathlib import Path
+from unittest import mock
+
+from buildish_site_pipeline.cli.contract import ReportFormat
+from buildish_site_pipeline.cli.errors import (
+    InvocationError,
+    ReportWriteError,
+    UnsupportedReportSchemaVersionError,
+)
+from buildish_site_pipeline.cli.reporting import (
+    _write_report_file,
+    build_report_request,
+    build_watch_event_request,
+    emit_report,
+    render_text_report,
+    render_text_report_summary,
+    revalidate_report_request,
+    revalidate_watch_event_request,
+)
+from buildish_site_pipeline.models.enums import (
+    CheckFailureThreshold,
+    DiagnosticSeverity,
+    PlanningTarget,
+    RunStatus,
+    StageCommand,
+)
+from buildish_site_pipeline.models.emitted.planning_stage_contract import (
+    CheckReportV1,
+    CheckSummary,
+    PipelineDiagnosticEntry,
+    ResolvedMaterializationReportV1,
+    StageRunReportV1,
+    StageRunSummary,
+)
+
+
+class CliReportingTests(unittest.TestCase):
+    """Verify CLI reporting request parsing and output behavior."""
+
+    def test_report_output_uses_host_native_path_semantics(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            cwd = Path(tempdir)
+            (cwd / "reports").mkdir()
+
+            request = build_report_request(
+                cwd=cwd,
+                report_format="text",
+                schema_version=None,
+                report_output=r"reports\build-report.txt",
+            )
+
+        self.assertEqual(request.report_format, ReportFormat.TEXT)
+        if os.name == "nt":
+            self.assertEqual(request.output_path, cwd / "reports" / "build-report.txt")
+        else:
+            self.assertEqual(request.output_path, cwd / r"reports\build-report.txt")
+
+    def test_text_format_rejects_schema_version(self) -> None:
+        with self.assertRaises(InvocationError) as raised:
+            build_report_request(
+                cwd=Path.cwd(),
+                report_format="text",
+                schema_version=1,
+                report_output="-",
+            )
+
+        self.assertIn(
+            "--report-schema-version is only valid together with --report-format json",
+            str(raised.exception),
+        )
+
+    def test_json_report_requires_schema_version(self) -> None:
+        with self.assertRaises(InvocationError) as raised:
+            build_report_request(
+                cwd=Path.cwd(),
+                report_format="json",
+                schema_version=None,
+                report_output="-",
+            )
+
+        self.assertIn(
+            "JSON report output requires --report-schema-version 1",
+            str(raised.exception),
+        )
+
+    def test_json_report_rejects_unsupported_schema_version(self) -> None:
+        with self.assertRaises(UnsupportedReportSchemaVersionError):
+            build_report_request(
+                cwd=Path.cwd(),
+                report_format="json",
+                schema_version=2,
+                report_output="-",
+            )
+
+    def test_report_output_stdout_for_json_requires_explicit_permission(self) -> None:
+        with self.assertRaises(InvocationError) as raised:
+            build_report_request(
+                cwd=Path.cwd(),
+                report_format="json",
+                schema_version=1,
+                report_output="-",
+                forbid_stdout_json=True,
+            )
+
+        self.assertIn(
+            "watch JSON reports must be written to a file, not stdout",
+            str(raised.exception),
+        )
+
+    def test_watch_event_output_requires_explicit_event_format(self) -> None:
+        with self.assertRaises(InvocationError) as raised:
+            build_watch_event_request(
+                cwd=Path.cwd(),
+                event_format=None,
+                event_output="events.json",
+            )
+
+        self.assertIn(
+            "--unstable-events-output is only valid together with --unstable-events",
+            str(raised.exception),
+        )
+
+    def test_watch_event_request_is_optional_and_supports_stdout(self) -> None:
+        self.assertIsNone(
+            build_watch_event_request(
+                cwd=Path.cwd(),
+                event_format=None,
+                event_output=None,
+            )
+        )
+        stdout_request = build_watch_event_request(
+            cwd=Path.cwd(),
+            event_format="jsonl",
+            event_output="-",
+        )
+        self.assertIsNone(stdout_request.output_path)
+
+    def test_revalidate_report_request_rejects_output_symlink_created_after_parse(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            cwd = Path(tempdir)
+            target = cwd / "report.txt"
+            request = build_report_request(
+                cwd=cwd,
+                report_format="text",
+                schema_version=None,
+                report_output=target.name,
+            )
+            (cwd / "actual.txt").write_text("kept", encoding="utf-8")
+            target.symlink_to(cwd / "actual.txt")
+
+            with self.assertRaises(InvocationError) as raised:
+                revalidate_report_request(cwd=cwd, request=request)
+
+        self.assertIn("must not be a symlink", str(raised.exception))
+
+    def test_revalidate_report_request_keeps_stdout_output_unchanged(self) -> None:
+        request = build_report_request(
+            cwd=Path.cwd(),
+            report_format="text",
+            schema_version=None,
+            report_output="-",
+        )
+
+        self.assertIs(revalidate_report_request(cwd=Path.cwd(), request=request), request)
+
+    def test_report_output_rejects_missing_parent_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir, self.assertRaises(InvocationError):
+            build_report_request(
+                cwd=Path(tempdir),
+                report_format="text",
+                schema_version=None,
+                report_output="missing/report.txt",
+            )
+
+    def test_revalidate_watch_event_request_rejects_forbidden_output_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            cwd = Path(tempdir)
+            request = build_watch_event_request(
+                cwd=cwd,
+                event_format="jsonl",
+                event_output="events.json",
+            )
+
+            with self.assertRaises(InvocationError) as raised:
+                revalidate_watch_event_request(
+                    cwd=cwd,
+                    request=request,
+                    forbidden_roots=(cwd,),
+                )
+
+        self.assertIn("must live outside", str(raised.exception))
+
+    def test_revalidate_watch_event_request_keeps_none_and_stdout_requests(self) -> None:
+        self.assertIsNone(
+            revalidate_watch_event_request(cwd=Path.cwd(), request=None)
+        )
+        request = build_watch_event_request(
+            cwd=Path.cwd(),
+            event_format="jsonl",
+            event_output="-",
+        )
+        self.assertIs(revalidate_watch_event_request(cwd=Path.cwd(), request=request), request)
+
+    def test_emit_report_appends_newline_to_stdout_but_not_to_files(self) -> None:
+        payload = self._plan_report()
+        text_output = render_text_report(payload)
+        stdout = io.StringIO()
+        request = build_report_request(
+            cwd=Path.cwd(),
+            report_format="text",
+            schema_version=None,
+            report_output="-",
+        )
+
+        emit_report(report=payload, request=request, text_output=text_output, stdout=stdout)
+
+        self.assertTrue(stdout.getvalue().endswith("\n"))
+        with tempfile.TemporaryDirectory() as tempdir:
+            cwd = Path(tempdir)
+            request = build_report_request(
+                cwd=cwd,
+                report_format="text",
+                schema_version=None,
+                report_output="report.txt",
+            )
+
+            emit_report(
+                report=payload,
+                request=request,
+                text_output=text_output,
+                stdout=io.StringIO(),
+            )
+
+            self.assertFalse(
+                (cwd / "report.txt").read_text(encoding="utf-8").endswith("\n")
+            )
+
+    def test_emit_report_serializes_json_payload(self) -> None:
+        payload = self._plan_report()
+        stdout = io.StringIO()
+        request = build_report_request(
+            cwd=Path.cwd(),
+            report_format="json",
+            schema_version=1,
+            report_output="-",
+        )
+
+        emit_report(report=payload, request=request, text_output="ignored", stdout=stdout)
+
+        self.assertIn('"schemaVersion": 1', stdout.getvalue())
+
+    def test_report_output_rejects_symlinked_parent_directory_during_parse(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            actual_parent = root / "actual"
+            actual_parent.mkdir()
+            linked_parent = root / "linked"
+            linked_parent.symlink_to(actual_parent, target_is_directory=True)
+
+            with self.assertRaises(InvocationError):
+                build_report_request(
+                    cwd=root,
+                    report_format="text",
+                    schema_version=None,
+                    report_output="linked/report.txt",
+                )
+
+    def test_write_report_file_rejects_symlinked_parent_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            actual_parent = root / "actual"
+            actual_parent.mkdir()
+            linked_parent = root / "linked"
+            linked_parent.symlink_to(actual_parent, target_is_directory=True)
+
+            with self.assertRaises(ReportWriteError):
+                _write_report_file(path=linked_parent / "report.txt", content="payload")
+
+    def test_write_report_file_rejects_symlinked_output_path(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            actual_file = root / "actual.txt"
+            actual_file.write_text("kept", encoding="utf-8")
+            linked_output = root / "report.txt"
+            linked_output.symlink_to(actual_file)
+
+            with self.assertRaises(ReportWriteError):
+                _write_report_file(path=linked_output, content="payload")
+
+    def test_write_report_file_cleans_up_temp_file_after_write_error(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            report_path = root / "report.txt"
+
+            with mock.patch(
+                "buildish_site_pipeline.cli.reporting.Path.replace",
+                side_effect=OSError("boom"),
+            ):
+                with self.assertRaises(ReportWriteError):
+                    _write_report_file(path=report_path, content="payload")
+
+            self.assertEqual(list(root.glob(".report.txt.*.tmp")), [])
+
+    def test_render_text_report_summary_formats_plan_check_and_stage_reports(self) -> None:
+        self.assertIn("plan build", render_text_report_summary(self._plan_report()))
+        self.assertIn("check warnings", render_text_report_summary(self._check_report()))
+        self.assertIn("build errors", render_text_report_summary(self._stage_report()))
+
+    def test_render_text_report_appends_diagnostic_entries(self) -> None:
+        rendered = render_text_report(self._check_report())
+
+        self.assertIn("check warnings", rendered)
+        self.assertIn("diagnostics:", rendered)
+        self.assertIn(
+            "- warning demo.warning [component=spark artifact=runtime target=/spark/releases/4.0.0/index]: demo warning",
+            rendered,
+        )
+
+    @staticmethod
+    def _plan_report() -> ResolvedMaterializationReportV1:
+        return ResolvedMaterializationReportV1(
+            schema_version=1,
+            generated_at=datetime(2026, 4, 5, tzinfo=UTC),
+            target=PlanningTarget.BUILD,
+            entries=[],
+            diagnostics=[],
+        )
+
+    @staticmethod
+    def _check_report() -> CheckReportV1:
+        return CheckReportV1(
+            schema_version=1,
+            generated_at=datetime(2026, 4, 5, tzinfo=UTC),
+            command="check",
+            summary=CheckSummary(
+                status=RunStatus.WARNINGS,
+                passed=False,
+                fail_on_severity=CheckFailureThreshold.WARNING,
+                error_count=0,
+                warning_count=1,
+                info_count=0,
+            ),
+            diagnostics=[
+                PipelineDiagnosticEntry(
+                    severity=DiagnosticSeverity.WARNING,
+                    code="demo.warning",
+                    message="demo warning",
+                    component_slug="spark",
+                    artifact_key="runtime",
+                    target_id="/spark/releases/4.0.0/index",
+                )
+            ],
+        )
+
+    @staticmethod
+    def _stage_report() -> StageRunReportV1:
+        return StageRunReportV1(
+            schema_version=1,
+            generated_at=datetime(2026, 4, 5, tzinfo=UTC),
+            command=StageCommand.BUILD,
+            summary=StageRunSummary(
+                status=RunStatus.ERRORS,
+                succeeded=False,
+                wrote_stage=False,
+                stage_usable=False,
+                error_count=1,
+                warning_count=0,
+                info_count=0,
+            ),
+            diagnostics=[],
+        )

@@ -1,0 +1,1456 @@
+{
+  "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
+  "$defs": {
+    "ArtifactFrontMatterSummary": {
+      "additionalProperties": false,
+      "description": "Small artifact summary embedded in component front matter.",
+      "properties": {
+        "displayName": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-readable artifact label shown in page chrome or listings.",
+          "examples": [
+            "Runtime"
+          ],
+          "title": "Displayname"
+        },
+        "key": {
+          "description": "Artifact key used to identify the artifact in page links and typed references.",
+          "examples": [
+            "runtime"
+          ],
+          "minLength": 1,
+          "title": "Key",
+          "type": "string"
+        },
+        "latestStable": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Most recent stable version that readers should treat as the default recommendation.",
+          "examples": [
+            "4.0.1"
+          ],
+          "title": "Lateststable"
+        },
+        "releaseLines": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ReleaseLineSummary"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Compact release-line summaries that the page can use for navigation or version selection.",
+          "title": "Releaselines"
+        }
+      },
+      "required": [
+        "key"
+      ],
+      "title": "ArtifactFrontMatterSummary",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    },
+    "PageSourceProvenance": {
+      "additionalProperties": false,
+      "description": "Repository-neutral pointer to the authored source file for one staged page.",
+      "properties": {
+        "editRef": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Source-control ref that renderers may use for an edit-source link.",
+          "examples": [
+            "main"
+          ],
+          "title": "Editref"
+        },
+        "key": {
+          "description": "Resolved source-binding key that owns the authored page.",
+          "examples": [
+            "runtime"
+          ],
+          "minLength": 1,
+          "title": "Key",
+          "type": "string"
+        },
+        "path": {
+          "description": "Source file path relative to the resolved source binding root.",
+          "examples": [
+            "docs/getting-started.md"
+          ],
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "repository": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Remote repository URL whose repository root corresponds to the resolved source binding root, when declared.",
+          "examples": [
+            "https://github.com/buildish-tooling/buildish-site-pipeline"
+          ],
+          "title": "Repository"
+        },
+        "viewRef": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Source-control ref that renderers may use for a view-source link.",
+          "examples": [
+            "main"
+          ],
+          "title": "Viewref"
+        }
+      },
+      "required": [
+        "key",
+        "path"
+      ],
+      "title": "PageSourceProvenance",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    },
+    "PipelineComponentFrontMatter": {
+      "additionalProperties": false,
+      "description": "Component-level pipeline metadata injected into staged page front matter.",
+      "properties": {
+        "artifacts": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ArtifactFrontMatterSummary"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Compact artifact summaries that pages can use for version navigation or page chrome.",
+          "title": "Artifacts"
+        },
+        "displayName": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-readable component name shown in page chrome or navigation.",
+          "examples": [
+            "Apache Spark"
+          ],
+          "title": "Displayname"
+        },
+        "latestStable": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Most recent stable version recommended for the component as a whole when one shared release line is enough.",
+          "examples": [
+            "4.0.1"
+          ],
+          "title": "Lateststable"
+        },
+        "publication": {
+          "$ref": "#/$defs/ResolvedPublication",
+          "description": "Resolved publication roots and URLs for the owning component."
+        },
+        "slug": {
+          "description": "Stable component slug for the owning component.",
+          "examples": [
+            "spark"
+          ],
+          "minLength": 1,
+          "title": "Slug",
+          "type": "string"
+        }
+      },
+      "required": [
+        "slug",
+        "publication"
+      ],
+      "title": "PipelineComponentFrontMatter",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    },
+    "PipelinePageFrontMatter": {
+      "additionalProperties": false,
+      "description": "Page-local pipeline metadata injected into staged page front matter.",
+      "properties": {
+        "alternateUrls": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Additional absolute URLs that should be considered alternate entry points for the same page.",
+          "title": "Alternateurls"
+        },
+        "artifactKey": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Artifact key when the page belongs to one independently versioned artifact.",
+          "examples": [
+            "runtime"
+          ],
+          "title": "Artifactkey"
+        },
+        "canonicalUrl": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Explicit canonical URL when it should differ from `url`, for example to consolidate duplicate routes.",
+          "title": "Canonicalurl"
+        },
+        "componentPath": {
+          "description": "Public root path for the owning component.",
+          "examples": [
+            "/spark/"
+          ],
+          "minLength": 1,
+          "title": "Componentpath",
+          "type": "string"
+        },
+        "componentUrl": {
+          "description": "Absolute URL for the owning component root.",
+          "minLength": 1,
+          "title": "Componenturl",
+          "type": "string"
+        },
+        "defaultLocale": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Whether this page represents the default locale within its translation group.",
+          "title": "Defaultlocale"
+        },
+        "derivedDescription": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Body-derived page description inferred from authored content when the pipeline can detect one.",
+          "examples": [
+            "Install the package and run the quickstart."
+          ],
+          "title": "Deriveddescription"
+        },
+        "derivedTitle": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Body-derived page title inferred from authored content when the pipeline can detect one.",
+          "examples": [
+            "Getting Started"
+          ],
+          "title": "Derivedtitle"
+        },
+        "kind": {
+          "description": "Short page kind label used by renderers to distinguish landing pages, docs pages, release notes, and similar page families.",
+          "examples": [
+            "docsPage"
+          ],
+          "minLength": 1,
+          "title": "Kind",
+          "type": "string"
+        },
+        "locale": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Locale key for this page when it participates in localization.",
+          "examples": [
+            "en"
+          ],
+          "title": "Locale"
+        },
+        "path": {
+          "description": "Published public path for this page.",
+          "examples": [
+            "/spark/4.0.0/docs/getting-started/"
+          ],
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "provider": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ProviderProvenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Pointer back to the upstream provider record that informed the page's version metadata."
+        },
+        "section": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional higher-level section label that groups the page with related navigation or templates.",
+          "examples": [
+            "documentation"
+          ],
+          "title": "Section"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PageSourceProvenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Repository-neutral provenance for the authored source file that produced this staged page."
+        },
+        "translationKey": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Shared key that ties translated sibling pages together across locales.",
+          "examples": [
+            "spark-overview"
+          ],
+          "title": "Translationkey"
+        },
+        "translations": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/TranslationLinkSummary"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Compact links to translated sibling pages in other locales.",
+          "title": "Translations"
+        },
+        "url": {
+          "description": "Canonical absolute URL for this page.",
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VersionContext"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Version or ref context attached when this page belongs to a versioned route set."
+        }
+      },
+      "required": [
+        "kind",
+        "path",
+        "url",
+        "componentPath",
+        "componentUrl"
+      ],
+      "title": "PipelinePageFrontMatter",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    },
+    "ProviderProvenance": {
+      "additionalProperties": false,
+      "description": "Small pointer back to the provider record that informed this page's version.",
+      "properties": {
+        "externalId": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Provider-specific stable identifier for the upstream record that informed this page.",
+          "examples": [
+            "github:release:runtime-4.0.0"
+          ],
+          "title": "Externalid"
+        },
+        "externalUrl": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-browsable URL for the upstream record that informed this page.",
+          "title": "Externalurl"
+        },
+        "key": {
+          "description": "Provider key for the upstream system that supplied the current version metadata.",
+          "examples": [
+            "github-releases"
+          ],
+          "minLength": 1,
+          "title": "Key",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key"
+      ],
+      "title": "ProviderProvenance",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    },
+    "PublicationState": {
+      "description": "Observed provider-side publication state.",
+      "enum": [
+        "published",
+        "hidden",
+        "withdrawn",
+        "tombstoned"
+      ],
+      "title": "PublicationState",
+      "type": "string"
+    },
+    "RecordKind": {
+      "description": "Normalized provider record lifecycle kind.",
+      "enum": [
+        "development",
+        "released",
+        "candidate",
+        "namedRef",
+        "lineHead"
+      ],
+      "title": "RecordKind",
+      "type": "string"
+    },
+    "ReleaseLineContext": {
+      "additionalProperties": false,
+      "description": "Release-line context attached to one staged page's current version.",
+      "properties": {
+        "ancestors": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Ancestor release-line keys ordered from nearest to farthest.",
+          "examples": [
+            [
+              "4.x",
+              "stable"
+            ]
+          ],
+          "title": "Ancestors"
+        },
+        "key": {
+          "description": "Release-line key for this page's version context.",
+          "examples": [
+            "4.0"
+          ],
+          "minLength": 1,
+          "title": "Key",
+          "type": "string"
+        },
+        "supportStatus": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Support-status key or label associated with the current release line.",
+          "examples": [
+            "supported"
+          ],
+          "title": "Supportstatus"
+        },
+        "supportWindow": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SupportWindow"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Lifecycle dates and support notes attached to the current release line."
+        }
+      },
+      "required": [
+        "key"
+      ],
+      "title": "ReleaseLineContext",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    },
+    "ReleaseLineSummary": {
+      "additionalProperties": false,
+      "description": "Small release-line summary embedded into page or component front matter.",
+      "properties": {
+        "aliases": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Alternate labels that should also refer to this release line.",
+          "examples": [
+            [
+              "stable"
+            ]
+          ],
+          "title": "Aliases"
+        },
+        "headRef": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Maintenance or line-head ref associated with this release line, if known.",
+          "examples": [
+            "refs/heads/release-4.0"
+          ],
+          "title": "Headref"
+        },
+        "key": {
+          "description": "Release-line key, such as `4.0`, for the summarized line.",
+          "examples": [
+            "4.0"
+          ],
+          "minLength": 1,
+          "title": "Key",
+          "type": "string"
+        },
+        "latest": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Latest released version currently associated with this line.",
+          "examples": [
+            "4.0.1"
+          ],
+          "title": "Latest"
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional parent release-line key when lineage should be preserved in front matter.",
+          "examples": [
+            "4.x"
+          ],
+          "title": "Parent"
+        },
+        "supportStatus": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Support-status key or label for the release line.",
+          "examples": [
+            "supported"
+          ],
+          "title": "Supportstatus"
+        },
+        "supportWindow": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SupportWindow"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Lifecycle dates and support notes for the release line."
+        }
+      },
+      "required": [
+        "key"
+      ],
+      "title": "ReleaseLineSummary",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    },
+    "ResolvedOrigin": {
+      "additionalProperties": false,
+      "description": "Resolved origin details for the current publication target.",
+      "properties": {
+        "baseUrl": {
+          "description": "Fully qualified base URL for the selected origin.",
+          "examples": [
+            "https://archive.apache.org/dist/spark"
+          ],
+          "minLength": 1,
+          "title": "Baseurl",
+          "type": "string"
+        },
+        "hostname": {
+          "description": "Hostname extracted from `baseUrl` for callers that need it without reparsing the URL.",
+          "examples": [
+            "archive.apache.org"
+          ],
+          "minLength": 1,
+          "title": "Hostname",
+          "type": "string"
+        },
+        "key": {
+          "description": "Origin key selected for this published route or page.",
+          "examples": [
+            "archive"
+          ],
+          "minLength": 1,
+          "title": "Key",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "baseUrl",
+        "hostname"
+      ],
+      "title": "ResolvedOrigin",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    },
+    "ResolvedPathSet": {
+      "additionalProperties": false,
+      "description": "Resolved public path roots for a component.",
+      "properties": {
+        "assets": {
+          "description": "Public root path for shared component assets.",
+          "examples": [
+            "/spark/assets/"
+          ],
+          "minLength": 1,
+          "title": "Assets",
+          "type": "string"
+        },
+        "component": {
+          "description": "Public root path for the component as a whole.",
+          "examples": [
+            "/spark/"
+          ],
+          "minLength": 1,
+          "title": "Component",
+          "type": "string"
+        },
+        "development": {
+          "description": "Public root path for development-version content.",
+          "examples": [
+            "/spark/main/"
+          ],
+          "minLength": 1,
+          "title": "Development",
+          "type": "string"
+        },
+        "docs": {
+          "description": "Public root path for versioned documentation content.",
+          "examples": [
+            "/spark/docs/"
+          ],
+          "minLength": 1,
+          "title": "Docs",
+          "type": "string"
+        }
+      },
+      "required": [
+        "component",
+        "development",
+        "docs",
+        "assets"
+      ],
+      "title": "ResolvedPathSet",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    },
+    "ResolvedPublication": {
+      "additionalProperties": false,
+      "description": "Resolved origin, path roots, and absolute URLs for a component.",
+      "properties": {
+        "origin": {
+          "$ref": "#/$defs/ResolvedOrigin",
+          "description": "Origin details used to resolve paths into absolute URLs."
+        },
+        "paths": {
+          "$ref": "#/$defs/ResolvedPathSet",
+          "description": "Resolved public path roots for the component."
+        },
+        "urls": {
+          "$ref": "#/$defs/ResolvedUrlSet",
+          "description": "Resolved absolute URLs for the same publication roots."
+        }
+      },
+      "required": [
+        "origin",
+        "paths",
+        "urls"
+      ],
+      "title": "ResolvedPublication",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    },
+    "ResolvedUrlSet": {
+      "additionalProperties": false,
+      "description": "Resolved absolute URLs for a component.",
+      "properties": {
+        "assets": {
+          "description": "Absolute URL for the shared component asset root.",
+          "examples": [
+            "https://archive.apache.org/dist/spark/assets/"
+          ],
+          "minLength": 1,
+          "title": "Assets",
+          "type": "string"
+        },
+        "component": {
+          "description": "Absolute URL for the component root.",
+          "examples": [
+            "https://archive.apache.org/dist/spark/"
+          ],
+          "minLength": 1,
+          "title": "Component",
+          "type": "string"
+        },
+        "development": {
+          "description": "Absolute URL for the development-version root.",
+          "examples": [
+            "https://archive.apache.org/dist/spark/main/"
+          ],
+          "minLength": 1,
+          "title": "Development",
+          "type": "string"
+        },
+        "docs": {
+          "description": "Absolute URL for the versioned docs root.",
+          "examples": [
+            "https://archive.apache.org/dist/spark/docs/"
+          ],
+          "minLength": 1,
+          "title": "Docs",
+          "type": "string"
+        }
+      },
+      "required": [
+        "component",
+        "development",
+        "docs",
+        "assets"
+      ],
+      "title": "ResolvedUrlSet",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    },
+    "SupportWindow": {
+      "additionalProperties": false,
+      "description": "Lifecycle dates and support notes for one release line or exact release.",
+      "properties": {
+        "endOfActiveSupportDate": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Date after which the release no longer receives full active support.",
+          "title": "Endofactivesupportdate"
+        },
+        "endOfLifeDate": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Final retirement date after which the release should be treated as fully end-of-life.",
+          "title": "Endoflifedate"
+        },
+        "endOfSupportDate": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Date after which the release is no longer supported in normal maintenance channels.",
+          "title": "Endofsupportdate"
+        },
+        "maintenancePhase": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Short label for the current maintenance phase, such as general availability, maintenance, or security-only support.",
+          "examples": [
+            "security-fixes"
+          ],
+          "title": "Maintenancephase"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Additional notes that clarify exceptions, migration advice, or support caveats.",
+          "title": "Notes"
+        },
+        "releaseDate": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Release date for the line or version that this support window describes.",
+          "examples": [
+            "2026-04-01T00:00:00Z"
+          ],
+          "title": "Releasedate"
+        },
+        "supportPolicyUrl": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Canonical URL that explains the support policy referenced by this support window.",
+          "title": "Supportpolicyurl"
+        }
+      },
+      "title": "SupportWindow",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
+    },
+    "TranslationLinkSummary": {
+      "additionalProperties": false,
+      "description": "Compact link to one translated sibling page.",
+      "properties": {
+        "locale": {
+          "description": "Locale key for the translated sibling page.",
+          "examples": [
+            "de"
+          ],
+          "minLength": 1,
+          "title": "Locale",
+          "type": "string"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Public path for the translated sibling page, if available.",
+          "examples": [
+            "/de/spark/overview/"
+          ],
+          "title": "Path"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Localized page title for the translated sibling page.",
+          "examples": [
+            "\u00dcbersicht"
+          ],
+          "title": "Title"
+        },
+        "url": {
+          "description": "Absolute URL for the translated sibling page.",
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "locale",
+        "url"
+      ],
+      "title": "TranslationLinkSummary",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    },
+    "VersionContext": {
+      "additionalProperties": false,
+      "description": "Version, release-candidate, or ref context attached to one staged page.",
+      "properties": {
+        "candidateSequence": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Release-candidate sequence number when this version context represents a candidate release.",
+          "examples": [
+            1
+          ],
+          "title": "Candidatesequence"
+        },
+        "docsPath": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Public docs root for this version context when versioned docs are available.",
+          "examples": [
+            "/spark/4.0.0/docs/"
+          ],
+          "title": "Docspath"
+        },
+        "docsUrl": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Absolute URL for the version-context docs root when it has one.",
+          "title": "Docsurl"
+        },
+        "kind": {
+          "$ref": "#/$defs/RecordKind",
+          "description": "Kind of version context attached to the page, such as release, candidate, development ref, or named ref."
+        },
+        "label": {
+          "description": "Primary label shown to readers for this version context.",
+          "examples": [
+            "4.0.0"
+          ],
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "maturity": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Maturity label such as preview, beta, or stable.",
+          "examples": [
+            "stable"
+          ],
+          "title": "Maturity"
+        },
+        "namedRefKey": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Catalog-authored named-ref key when this context represents a named ref.",
+          "examples": [
+            "preview"
+          ],
+          "title": "Namedrefkey"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Public route root for this version context when it has a routable landing path.",
+          "examples": [
+            "/spark/4.0.0/"
+          ],
+          "title": "Path"
+        },
+        "publicationState": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PublicationState"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Publication-state label for this version context, such as published or withdrawn."
+        },
+        "ref": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Exact source-control ref associated with this version context, if present.",
+          "examples": [
+            "refs/heads/main"
+          ],
+          "title": "Ref"
+        },
+        "releaseLine": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReleaseLineContext"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Release-line context attached to the current version when the version belongs to a known release line."
+        },
+        "supportWindow": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SupportWindow"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Lifecycle dates and support notes attached directly to this version context."
+        },
+        "tag": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Exact tag name associated with this version context, if present.",
+          "examples": [
+            "v4.0.0"
+          ],
+          "title": "Tag"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Absolute URL for the version-context route root when it has one.",
+          "title": "Url"
+        },
+        "voteStatus": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Vote status label for release-candidate contexts when it is known.",
+          "examples": [
+            "passed"
+          ],
+          "title": "Votestatus"
+        }
+      },
+      "required": [
+        "kind",
+        "label"
+      ],
+      "title": "VersionContext",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    }
+  },
+  "$id": "https://buildish.org/components/site-pipeline/schemas/front-matter-namespace-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Reserved top-level front matter namespace that the pipeline injects into staged pages.",
+  "examples": [
+    {
+      "component": {
+        "displayName": "Apache Spark",
+        "latestStable": "4.0.0",
+        "publication": {
+          "origin": {
+            "baseUrl": "https://archive.apache.org/dist/spark",
+            "hostname": "archive.apache.org",
+            "key": "archive"
+          },
+          "paths": {
+            "assets": "/spark/assets/",
+            "component": "/spark/",
+            "development": "/spark/main/",
+            "docs": "/spark/docs/"
+          },
+          "urls": {
+            "assets": "https://archive.apache.org/dist/spark/assets/",
+            "component": "https://archive.apache.org/dist/spark/",
+            "development": "https://archive.apache.org/dist/spark/main/",
+            "docs": "https://archive.apache.org/dist/spark/docs/"
+          }
+        },
+        "slug": "spark"
+      },
+      "page": {
+        "artifactKey": "runtime",
+        "componentPath": "/spark/",
+        "componentUrl": "https://archive.apache.org/dist/spark/",
+        "kind": "docsPage",
+        "path": "/spark/4.0.0/docs/getting-started/",
+        "section": "documentation",
+        "source": {
+          "editRef": "main",
+          "key": "runtime",
+          "path": "docs/getting-started.md",
+          "repository": "https://github.com/apache/spark",
+          "viewRef": "main"
+        },
+        "url": "https://archive.apache.org/dist/spark/4.0.0/docs/getting-started/",
+        "version": {
+          "kind": "released",
+          "label": "4.0.0",
+          "tag": "v4.0.0"
+        }
+      }
+    }
+  ],
+  "properties": {
+    "component": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PipelineComponentFrontMatter"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Component-level pipeline metadata injected into the staged page."
+    },
+    "page": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PipelinePageFrontMatter"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Page-local pipeline metadata injected into the staged page."
+    }
+  },
+  "title": "Site Pipeline Front Matter Namespace v1",
+  "type": "object",
+  "x-buildish-contract": {
+    "category": "emitted",
+    "ownership": "pipeline-derived",
+    "summary": "Reserved front matter namespace containing pipeline-derived component and page metadata."
+  }
+}

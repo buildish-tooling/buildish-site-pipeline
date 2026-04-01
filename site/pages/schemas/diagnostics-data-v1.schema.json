@@ -1,0 +1,212 @@
+{
+  "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
+  "$defs": {
+    "DiagnosticSeverity": {
+      "description": "Severity level for pipeline diagnostics.",
+      "enum": [
+        "info",
+        "warning",
+        "error"
+      ],
+      "title": "DiagnosticSeverity",
+      "type": "string"
+    },
+    "PipelineDiagnosticEntry": {
+      "additionalProperties": false,
+      "description": "Structured diagnostic emitted during planning, checking, or staging.",
+      "properties": {
+        "artifactKey": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Artifact key associated with the diagnostic when a specific artifact is directly affected.",
+          "examples": [
+            "runtime"
+          ],
+          "title": "Artifactkey"
+        },
+        "code": {
+          "description": "Stable machine-readable diagnostic code.",
+          "examples": [
+            "catalog.invalidRedirectTarget"
+          ],
+          "minLength": 1,
+          "title": "Code",
+          "type": "string"
+        },
+        "componentSlug": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Component slug associated with the diagnostic when a specific component is directly affected.",
+          "examples": [
+            "spark"
+          ],
+          "title": "Componentslug"
+        },
+        "details": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReducedDiagnosticDetailsSummary"
+            },
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Structured detail payload for the diagnostic, or a bounded summary when the original detail payload was too large.",
+          "title": "Details"
+        },
+        "message": {
+          "description": "Primary human-readable diagnostic message.",
+          "examples": [
+            "Redirect target route:/spark/missing/ could not be resolved."
+          ],
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "severity": {
+          "$ref": "#/$defs/DiagnosticSeverity",
+          "description": "Diagnostic severity level that callers can use for gating and presentation."
+        },
+        "targetId": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Additional target identifier, such as a path, ref, or release key, that helps callers locate the problem precisely.",
+          "examples": [
+            "/spark/docs/current/"
+          ],
+          "title": "Targetid"
+        }
+      },
+      "required": [
+        "severity",
+        "code",
+        "message"
+      ],
+      "title": "PipelineDiagnosticEntry",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    },
+    "ReducedDiagnosticDetailsSummary": {
+      "additionalProperties": false,
+      "description": "Compact placeholder used when full diagnostic details were too large to keep.",
+      "properties": {
+        "actualBytes": {
+          "description": "Actual serialized size of the original diagnostic details payload in bytes.",
+          "examples": [
+            524288
+          ],
+          "exclusiveMinimum": 0,
+          "title": "Actualbytes",
+          "type": "integer"
+        },
+        "fingerprint": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Stable fingerprint that lets tooling correlate repeated oversized payloads without storing the full payload.",
+          "title": "Fingerprint"
+        },
+        "limitBytes": {
+          "description": "Configured byte limit that the original diagnostic details exceeded.",
+          "examples": [
+            65536
+          ],
+          "exclusiveMinimum": 0,
+          "title": "Limitbytes",
+          "type": "integer"
+        },
+        "omitted": {
+          "const": true,
+          "description": "Always `true`, signalling that the original diagnostic details were intentionally omitted.",
+          "title": "Omitted",
+          "type": "boolean"
+        },
+        "reason": {
+          "const": "sizeLimitExceeded",
+          "description": "Reason why the original diagnostic details were replaced by this bounded summary.",
+          "title": "Reason",
+          "type": "string"
+        },
+        "summary": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Short human-readable summary of the omitted details payload.",
+          "title": "Summary"
+        }
+      },
+      "required": [
+        "omitted",
+        "reason",
+        "actualBytes",
+        "limitBytes"
+      ],
+      "title": "ReducedDiagnosticDetailsSummary",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    }
+  },
+  "$id": "https://buildish.org/components/site-pipeline/schemas/diagnostics-data-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Public staged diagnostics file at ``data/diagnostics.json``.",
+  "items": {
+    "$ref": "#/$defs/PipelineDiagnosticEntry"
+  },
+  "title": "Site Pipeline data/diagnostics.json v1",
+  "type": "array",
+  "x-buildish-contract": {
+    "category": "emitted",
+    "filePath": "data/diagnostics.json",
+    "ownership": "pipeline-derived",
+    "summary": "Structured diagnostics emitted during planning, checking, or staging."
+  }
+}

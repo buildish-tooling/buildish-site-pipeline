@@ -1,0 +1,57 @@
+##
+## Copyright 2026 The Buildish Authors
+##
+## Licensed under the Apache License, Version 2.0 (the "License");
+## you may not use this file except in compliance with the License.
+## You may obtain a copy of the License at
+##
+## http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS,
+## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+## See the License for the specific language governing permissions and
+## limitations under the License.
+
+name: Container image retention
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Report eligible package versions without deleting them
+        required: false
+        default: true
+        type: boolean
+  schedule:
+    - cron: '19 4 * * *'
+
+permissions: {}
+
+concurrency:
+  group: container-image-retention
+  cancel-in-progress: false
+
+jobs:
+  prune-untagged-versions:
+    name: Delete untagged image versions older than seven days
+    if: github.repository_owner == 'buildish-tooling'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      packages: write
+    steps:
+      - name: Apply the retention policy
+        # v3.1.0, security-reviewed 2026-08-03. Re-review before changing this
+        # digest because the upstream action metadata uses a mutable image tag.
+        uses: docker://ghcr.io/snok/container-retention-policy@sha256:884037f146d6ef574b61fbcc59bef490f887322e6b9dc2eefcf364cb4e9b4112
+        env:
+          RUST_LOG: container_retention_policy=info
+        with:
+          args: >-
+            --account=buildish-tooling
+            --token=${{ secrets.GITHUB_TOKEN }}
+            --image-names=buildish-site-pipeline
+            --tag-selection=untagged
+            --cut-off=7d
+            --dry-run=${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || false }}

@@ -1,0 +1,517 @@
+{
+  "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
+  "$defs": {
+    "DiagnosticSeverity": {
+      "description": "Severity level for pipeline diagnostics.",
+      "enum": [
+        "info",
+        "warning",
+        "error"
+      ],
+      "title": "DiagnosticSeverity",
+      "type": "string"
+    },
+    "MaterializationInputKind": {
+      "description": "Planning/build/watch local-input category.",
+      "enum": [
+        "sitePages",
+        "siteAssets",
+        "vendorAssets",
+        "development",
+        "namedRef",
+        "lineHead",
+        "candidate",
+        "released"
+      ],
+      "title": "MaterializationInputKind",
+      "type": "string"
+    },
+    "MaterializationStatus": {
+      "description": "Readiness state of a required local input.",
+      "enum": [
+        "present",
+        "missing",
+        "stale",
+        "unresolved"
+      ],
+      "title": "MaterializationStatus",
+      "type": "string"
+    },
+    "PipelineDiagnosticEntry": {
+      "additionalProperties": false,
+      "description": "Structured diagnostic emitted during planning, checking, or staging.",
+      "properties": {
+        "artifactKey": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Artifact key associated with the diagnostic when a specific artifact is directly affected.",
+          "examples": [
+            "runtime"
+          ],
+          "title": "Artifactkey"
+        },
+        "code": {
+          "description": "Stable machine-readable diagnostic code.",
+          "examples": [
+            "catalog.invalidRedirectTarget"
+          ],
+          "minLength": 1,
+          "title": "Code",
+          "type": "string"
+        },
+        "componentSlug": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Component slug associated with the diagnostic when a specific component is directly affected.",
+          "examples": [
+            "spark"
+          ],
+          "title": "Componentslug"
+        },
+        "details": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReducedDiagnosticDetailsSummary"
+            },
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Structured detail payload for the diagnostic, or a bounded summary when the original detail payload was too large.",
+          "title": "Details"
+        },
+        "message": {
+          "description": "Primary human-readable diagnostic message.",
+          "examples": [
+            "Redirect target route:/spark/missing/ could not be resolved."
+          ],
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "severity": {
+          "$ref": "#/$defs/DiagnosticSeverity",
+          "description": "Diagnostic severity level that callers can use for gating and presentation."
+        },
+        "targetId": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Additional target identifier, such as a path, ref, or release key, that helps callers locate the problem precisely.",
+          "examples": [
+            "/spark/docs/current/"
+          ],
+          "title": "Targetid"
+        }
+      },
+      "required": [
+        "severity",
+        "code",
+        "message"
+      ],
+      "title": "PipelineDiagnosticEntry",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    },
+    "PlanningTarget": {
+      "description": "Planning intent for later staging behavior.",
+      "enum": [
+        "build",
+        "watch"
+      ],
+      "title": "PlanningTarget",
+      "type": "string"
+    },
+    "ReducedDiagnosticDetailsSummary": {
+      "additionalProperties": false,
+      "description": "Compact placeholder used when full diagnostic details were too large to keep.",
+      "properties": {
+        "actualBytes": {
+          "description": "Actual serialized size of the original diagnostic details payload in bytes.",
+          "examples": [
+            524288
+          ],
+          "exclusiveMinimum": 0,
+          "title": "Actualbytes",
+          "type": "integer"
+        },
+        "fingerprint": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Stable fingerprint that lets tooling correlate repeated oversized payloads without storing the full payload.",
+          "title": "Fingerprint"
+        },
+        "limitBytes": {
+          "description": "Configured byte limit that the original diagnostic details exceeded.",
+          "examples": [
+            65536
+          ],
+          "exclusiveMinimum": 0,
+          "title": "Limitbytes",
+          "type": "integer"
+        },
+        "omitted": {
+          "const": true,
+          "description": "Always `true`, signalling that the original diagnostic details were intentionally omitted.",
+          "title": "Omitted",
+          "type": "boolean"
+        },
+        "reason": {
+          "const": "sizeLimitExceeded",
+          "description": "Reason why the original diagnostic details were replaced by this bounded summary.",
+          "title": "Reason",
+          "type": "string"
+        },
+        "summary": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Short human-readable summary of the omitted details payload.",
+          "title": "Summary"
+        }
+      },
+      "required": [
+        "omitted",
+        "reason",
+        "actualBytes",
+        "limitBytes"
+      ],
+      "title": "ReducedDiagnosticDetailsSummary",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    },
+    "ResolvedMaterializationEntry": {
+      "additionalProperties": false,
+      "description": "One local checkout or fetched input that the planner expects to exist.",
+      "properties": {
+        "artifactKey": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Artifact key for the materialized input when the requirement is tied to one independently versioned artifact.",
+          "examples": [
+            "runtime"
+          ],
+          "title": "Artifactkey"
+        },
+        "commitSha": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Resolved commit SHA for the required input when one was discovered.",
+          "examples": [
+            "6f0fd1f7b2c4a6d8e9f00123456789abcdef0123"
+          ],
+          "title": "Commitsha"
+        },
+        "componentSlug": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Component slug for the materialized input when the requirement is tied to a specific component.",
+          "examples": [
+            "spark"
+          ],
+          "title": "Componentslug"
+        },
+        "expectedLocalPath": {
+          "description": "Local filesystem path where the planner expects this input to be present or materialized.",
+          "examples": [
+            ".buildish/materialized/apache-spark/main"
+          ],
+          "minLength": 1,
+          "title": "Expectedlocalpath",
+          "type": "string"
+        },
+        "inputKind": {
+          "$ref": "#/$defs/MaterializationInputKind",
+          "description": "Kind of materialized input, such as a component checkout, artifact checkout, or provider-derived fetch target."
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Short explanation of how the planner derived this materialization requirement.",
+          "title": "Provenance"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-readable explanation of why this input is required or why its current status matters.",
+          "title": "Reason"
+        },
+        "ref": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Exact source-control ref when the planner resolved this input from a branch or named ref.",
+          "examples": [
+            "refs/heads/main"
+          ],
+          "title": "Ref"
+        },
+        "releaseLine": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Release-line key when the required local input is scoped to one maintenance line.",
+          "examples": [
+            "4.0"
+          ],
+          "title": "Releaseline"
+        },
+        "sourceKey": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Named source binding that produced this materialization requirement.",
+          "examples": [
+            "apache-spark"
+          ],
+          "title": "Sourcekey"
+        },
+        "status": {
+          "$ref": "#/$defs/MaterializationStatus",
+          "description": "Current materialization status, such as already present, missing, or needing refresh."
+        },
+        "tag": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Exact tag name when the planner resolved this input from a tagged release.",
+          "examples": [
+            "v4.0.0"
+          ],
+          "title": "Tag"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Exact version when the required local input is scoped to one released version.",
+          "examples": [
+            "4.0.0"
+          ],
+          "title": "Version"
+        },
+        "watchEligible": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Whether watch mode can safely monitor this input for incremental restaging.",
+          "title": "Watcheligible"
+        }
+      },
+      "required": [
+        "inputKind",
+        "expectedLocalPath",
+        "status"
+      ],
+      "title": "ResolvedMaterializationEntry",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    }
+  },
+  "$id": "https://buildish.org/components/site-pipeline/schemas/materialization-report-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Machine-readable planning report for required local inputs.",
+  "examples": [
+    {
+      "diagnostics": [],
+      "entries": [
+        {
+          "artifactKey": "runtime",
+          "componentSlug": "spark",
+          "expectedLocalPath": ".buildish/materialized/apache-spark/v4.0.0",
+          "inputKind": "released",
+          "reason": "Release docs are staged from the release tag checkout.",
+          "sourceKey": "apache-spark",
+          "status": "present",
+          "tag": "v4.0.0",
+          "version": "4.0.0",
+          "watchEligible": false
+        }
+      ],
+      "generatedAt": "2026-04-06T08:30:00Z",
+      "schemaVersion": 1,
+      "target": "build"
+    }
+  ],
+  "properties": {
+    "diagnostics": {
+      "description": "Structured diagnostics emitted while resolving required local inputs for this planning target.",
+      "items": {
+        "$ref": "#/$defs/PipelineDiagnosticEntry"
+      },
+      "title": "Diagnostics",
+      "type": "array"
+    },
+    "entries": {
+      "description": "Required local inputs together with their expected locations and current materialization status.",
+      "items": {
+        "$ref": "#/$defs/ResolvedMaterializationEntry"
+      },
+      "title": "Entries",
+      "type": "array"
+    },
+    "generatedAt": {
+      "description": "Timestamp when this planning report was generated.",
+      "format": "date-time",
+      "title": "Generatedat",
+      "type": "string"
+    },
+    "schemaVersion": {
+      "const": 1,
+      "description": "Schema version for the materialization planning report.",
+      "title": "Schemaversion",
+      "type": "integer"
+    },
+    "target": {
+      "$ref": "#/$defs/PlanningTarget",
+      "description": "Planning target that this report was generated for, such as build or watch preparation."
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "target",
+    "entries"
+  ],
+  "title": "Site Pipeline Materialization Report v1",
+  "type": "object",
+  "x-buildish-contract": {
+    "category": "emitted",
+    "ownership": "pipeline-derived",
+    "summary": "Planning inventory of required local inputs and their current materialization status."
+  }
+}

@@ -1,0 +1,236 @@
+{
+  "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
+  "$defs": {
+    "CliDiagnostic": {
+      "additionalProperties": false,
+      "description": "Structured operator-facing failure without internal exception details.",
+      "properties": {
+        "category": {
+          "$ref": "#/$defs/CliErrorCategory",
+          "description": "High-level failure category suitable for automation branching."
+        },
+        "code": {
+          "description": "Stable machine-readable CLI failure code.",
+          "examples": [
+            "input-validation-failed"
+          ],
+          "minLength": 1,
+          "title": "Code",
+          "type": "string"
+        },
+        "issues": {
+          "default": [],
+          "description": "Bounded actionable issue details retained for this failure.",
+          "items": {
+            "$ref": "#/$defs/CliDiagnosticIssue"
+          },
+          "title": "Issues",
+          "type": "array"
+        },
+        "message": {
+          "description": "Concise human-readable summary of the failure.",
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "omittedIssueCount": {
+          "default": 0,
+          "description": "Number of additional issues omitted to keep the failure bounded.",
+          "minimum": 0,
+          "title": "Omittedissuecount",
+          "type": "integer"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Sanitized input name associated with the failure, when available.",
+          "examples": [
+            "site/catalog.yaml"
+          ],
+          "title": "Source"
+        }
+      },
+      "required": [
+        "category",
+        "code",
+        "message"
+      ],
+      "title": "CliDiagnostic",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    },
+    "CliDiagnosticIssue": {
+      "additionalProperties": false,
+      "description": "One bounded, actionable detail attached to a CLI failure.",
+      "properties": {
+        "actualBytes": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Observed input size when the issue reports a size limit.",
+          "title": "Actualbytes"
+        },
+        "code": {
+          "description": "Stable machine-readable issue code.",
+          "examples": [
+            "required"
+          ],
+          "minLength": 1,
+          "title": "Code",
+          "type": "string"
+        },
+        "limitBytes": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Configured maximum input size when the issue reports a size limit.",
+          "title": "Limitbytes"
+        },
+        "location": {
+          "description": "Bounded source or field location for the issue.",
+          "examples": [
+            "components[0].slug"
+          ],
+          "minLength": 1,
+          "title": "Location",
+          "type": "string"
+        },
+        "message": {
+          "description": "Concise human-readable explanation of the issue.",
+          "examples": [
+            "Field required"
+          ],
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "location",
+        "code",
+        "message"
+      ],
+      "title": "CliDiagnosticIssue",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    },
+    "CliErrorCategory": {
+      "description": "Stable high-level failure categories for CLI automation.",
+      "enum": [
+        "invocation",
+        "input",
+        "planning",
+        "internal"
+      ],
+      "title": "CliErrorCategory",
+      "type": "string"
+    }
+  },
+  "$id": "https://buildish.org/components/site-pipeline/schemas/cli-failure-report-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Stable JSON envelope emitted when no command report can be produced.",
+  "examples": [
+    {
+      "command": "check",
+      "error": {
+        "category": "input",
+        "code": "input-validation-failed",
+        "issues": [
+          {
+            "code": "required",
+            "location": "components[0].slug",
+            "message": "Field required"
+          }
+        ],
+        "message": "Document does not satisfy its schema",
+        "omittedIssueCount": 0,
+        "source": "site/catalog.yaml"
+      },
+      "exitCode": 1,
+      "kind": "cliFailure",
+      "schemaVersion": 1
+    }
+  ],
+  "properties": {
+    "command": {
+      "description": "Command whose normal JSON report could not be produced.",
+      "enum": [
+        "plan",
+        "check",
+        "build",
+        "watch"
+      ],
+      "title": "Command",
+      "type": "string"
+    },
+    "error": {
+      "$ref": "#/$defs/CliDiagnostic",
+      "description": "Structured error category, code, message, and bounded issue details."
+    },
+    "exitCode": {
+      "description": "CLI process exit code associated with this failure.",
+      "enum": [
+        1,
+        2,
+        3
+      ],
+      "title": "Exitcode",
+      "type": "integer"
+    },
+    "kind": {
+      "const": "cliFailure",
+      "description": "Discriminator separating failures from command-specific reports.",
+      "title": "Kind",
+      "type": "string"
+    },
+    "schemaVersion": {
+      "const": 1,
+      "description": "Schema version for the CLI failure report.",
+      "title": "Schemaversion",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "kind",
+    "command",
+    "exitCode",
+    "error"
+  ],
+  "title": "Site Pipeline CLI Failure Report v1",
+  "type": "object",
+  "x-buildish-contract": {
+    "category": "emitted",
+    "ownership": "pipeline-derived",
+    "summary": "Versioned CLI failure envelope emitted in place of a requested JSON command report."
+  }
+}

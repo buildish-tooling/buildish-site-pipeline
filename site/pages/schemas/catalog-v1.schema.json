@@ -1,0 +1,2721 @@
+{
+  "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
+  "$defs": {
+    "ArtifactConfig": {
+      "additionalProperties": false,
+      "description": "One independently versioned release unit inside a component.",
+      "properties": {
+        "assetsRoot": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Artifact-specific asset root that overrides inherited component asset locations for this artifact's versioned output.",
+          "examples": [
+            "docs/runtime/assets"
+          ],
+          "title": "Assetsroot"
+        },
+        "compatibility": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/CompatibilityAssertionConfig"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Compatibility statements that should be emitted for this artifact in staged metadata.",
+          "title": "Compatibility"
+        },
+        "displayName": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-readable artifact label shown to readers when the raw key is not ideal UI text.",
+          "examples": [
+            "Runtime"
+          ],
+          "title": "Displayname"
+        },
+        "docsRoot": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Artifact-specific docs root that overrides any inherited docs location when versioned docs live in a custom subdirectory.",
+          "examples": [
+            "docs/runtime"
+          ],
+          "title": "Docsroot"
+        },
+        "key": {
+          "description": "Stable artifact identifier used in typed references, staged metadata, and provider records.",
+          "examples": [
+            "runtime"
+          ],
+          "minLength": 1,
+          "title": "Key",
+          "type": "string"
+        },
+        "lifecycle": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArtifactLifecycleConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Lifecycle metadata for stable versions, release lines, and support policy for this artifact."
+        },
+        "mounts": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/MountConfig"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Mounted generated or imported subtrees that belong to this artifact's published surface.",
+          "title": "Mounts"
+        },
+        "publicationSelection": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PublicationSelectionPolicy"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Artifact-specific override for which version contexts should be staged and published."
+        },
+        "source": {
+          "description": "Named source entry that owns the versioned docs and assets for this artifact.",
+          "examples": [
+            "apache-spark"
+          ],
+          "minLength": 1,
+          "title": "Source",
+          "type": "string"
+        },
+        "versioning": {
+          "$ref": "#/$defs/ArtifactVersioningConfig",
+          "description": "Rules for discovering development refs, maintenance refs, tags, and named refs for this artifact."
+        }
+      },
+      "required": [
+        "key",
+        "source",
+        "versioning"
+      ],
+      "title": "ArtifactConfig",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
+    },
+    "ArtifactLifecycleConfig": {
+      "additionalProperties": false,
+      "description": "Lifecycle metadata for an artifact's stable versions, release lines, and support policy.",
+      "properties": {
+        "defaultSupportWindow": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SupportWindow"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Fallback lifecycle window applied when a line or exact release does not provide a more specific support window."
+        },
+        "latestStable": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Most recent stable version that readers should treat as the default recommendation for this artifact.",
+          "examples": [
+            "4.0.1"
+          ],
+          "title": "Lateststable"
+        },
+        "releaseLines": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ReleaseLineConfig"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Release-line definitions for this artifact, including latest versions and optional support metadata.",
+          "title": "Releaselines"
+        },
+        "releases": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ExactReleaseConfig"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Per-version lifecycle metadata and publication overrides for exact released versions.",
+          "title": "Releases"
+        },
+        "supportPolicyUrl": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Canonical URL for the support policy document that readers should consult for this artifact.",
+          "title": "Supportpolicyurl"
+        },
+        "supportStatusVocabulary": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "$ref": "#/$defs/SupportStatusDefinition"
+              },
+              "propertyNames": {
+                "minLength": 1
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Reusable support-status definitions that release lines and exact releases can refer to by key.",
+          "title": "Supportstatusvocabulary"
+        }
+      },
+      "title": "ArtifactLifecycleConfig",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
+    },
+    "ArtifactVersioningConfig": {
+      "additionalProperties": false,
+      "description": "How the pipeline discovers development, maintenance, tag, and named-ref versions.",
+      "properties": {
+        "developmentRef": {
+          "description": "Source-control ref that represents the moving development docs for this artifact.",
+          "examples": [
+            "main"
+          ],
+          "minLength": 1,
+          "title": "Developmentref",
+          "type": "string"
+        },
+        "maintenanceRefPattern": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Pattern used to derive maintenance branch refs from a release-line key, usually with `{line}` as the substitution placeholder.",
+          "examples": [
+            "release/{line}"
+          ],
+          "title": "Maintenancerefpattern"
+        },
+        "namedRefs": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/NamedRefConfig"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Additional intentionally named version contexts, such as preview or stable branches, that should be selectable by key.",
+          "title": "Namedrefs"
+        },
+        "tagPattern": {
+          "description": "Regular expression used to recognize provider tags that belong to this artifact's version stream.",
+          "examples": [
+            "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
+          ],
+          "minLength": 1,
+          "title": "Tagpattern",
+          "type": "string"
+        }
+      },
+      "required": [
+        "developmentRef",
+        "tagPattern"
+      ],
+      "title": "ArtifactVersioningConfig",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
+    },
+    "CandidateSelectionMode": {
+      "description": "Strategy used to select a candidate version.",
+      "enum": [
+        "none",
+        "latest",
+        "explicit"
+      ],
+      "title": "CandidateSelectionMode",
+      "type": "string"
+    },
+    "CandidateSelectionPolicy": {
+      "additionalProperties": false,
+      "description": "Rule for which release candidates should become published contexts.",
+      "properties": {
+        "externalIds": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Provider-specific candidate identifiers to include when version strings alone are not enough to identify the desired candidate records.",
+          "examples": [
+            [
+              "github:runtime-4.1.0-rc1"
+            ]
+          ],
+          "title": "Externalids"
+        },
+        "mode": {
+          "$ref": "#/$defs/CandidateSelectionMode",
+          "description": "Selection strategy for candidate releases, such as disabling them or selecting an explicit set."
+        },
+        "versions": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Candidate version strings to include when `mode` is `explicit` and provider versions are available.",
+          "examples": [
+            [
+              "4.1.0-rc1"
+            ]
+          ],
+          "title": "Versions"
+        }
+      },
+      "required": [
+        "mode"
+      ],
+      "title": "CandidateSelectionPolicy",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
+    },
+    "CatalogDefaults": {
+      "additionalProperties": false,
+      "description": "Shared defaults applied before per-component overrides.",
+      "properties": {
+        "assetsRoot": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Default repository-relative root for component static assets.",
+          "title": "Assetsroot"
+        },
+        "docsRoot": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Default repository-relative root for component docs content.",
+          "title": "Docsroot"
+        },
+        "localization": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LocalizationConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Shared localization defaults inherited by components unless they override them."
+        },
+        "metadataFile": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Default location of `site/component.yaml` within each source tree.",
+          "title": "Metadatafile"
+        },
+        "pagesRoot": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Default repository-relative root for non-versioned component pages.",
+          "title": "Pagesroot"
+        },
+        "publication": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PublicationDefaults"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Shared publication defaults inherited by components unless they override them."
+        }
+      },
+      "title": "CatalogDefaults",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
+    },
+    "CompatibilityAssertionConfig": {
+      "additionalProperties": false,
+      "description": "Compatibility statement between two published identities, such as an artifact and a supported platform.",
+      "properties": {
+        "confidence": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional confidence label that tells readers how strong or direct the supporting evidence is.",
+          "examples": [
+            "verified"
+          ],
+          "title": "Confidence"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Additional human-readable explanation, caveats, or migration advice for the compatibility statement.",
+          "title": "Notes"
+        },
+        "relation": {
+          "description": "Relationship label that names the compatibility statement, such as `testedWith`, `requires`, or `incompatibleWith`.",
+          "examples": [
+            "testedWith"
+          ],
+          "minLength": 1,
+          "title": "Relation",
+          "type": "string"
+        },
+        "scope": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional scope label that narrows the compatibility statement to one subsystem, API surface, or deployment mode.",
+          "examples": [
+            "kubernetes"
+          ],
+          "title": "Scope"
+        },
+        "subjectRef": {
+          "description": "Typed internal reference string for the thing whose compatibility is being described.",
+          "examples": [
+            "artifact:spark/runtime"
+          ],
+          "minLength": 1,
+          "title": "Subjectref",
+          "type": "string"
+        },
+        "targetRef": {
+          "description": "Typed internal reference string for the thing that the subject is compatible with or constrained by.",
+          "examples": [
+            "artifact:spark/operator"
+          ],
+          "minLength": 1,
+          "title": "Targetref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "subjectRef",
+        "targetRef",
+        "relation"
+      ],
+      "title": "CompatibilityAssertionConfig",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
+    },
+    "ComponentCatalogEntry": {
+      "additionalProperties": false,
+      "description": "Component entry in the consumer catalog.",
+      "properties": {
+        "artifacts": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ArtifactConfig"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Independently versioned artifacts belonging to this component.",
+          "title": "Artifacts"
+        },
+        "compatibility": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/CompatibilityAssertionConfig"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Component-level compatibility assertions emitted into staged metadata.",
+          "title": "Compatibility"
+        },
+        "content": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ComponentContentSelection"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Shared content-source selection for component pages, docs, and assets."
+        },
+        "displayName": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-readable component name override or convenience value.",
+          "title": "Displayname"
+        },
+        "group": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional group key for inherited defaults and renderer grouping.",
+          "title": "Group"
+        },
+        "localDir": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Simple shorthand for binding the component to one workspace-local checkout directory.",
+          "title": "Localdir"
+        },
+        "localization": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LocalizationConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Component-specific localization overrides."
+        },
+        "mounts": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/MountConfig"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Component-level generated or imported documentation mounts.",
+          "title": "Mounts"
+        },
+        "publication": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PublicationConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Explicit publication configuration for this component."
+        },
+        "publicationSelection": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PublicationSelectionPolicy"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Default version-context selection policy inherited by contained artifacts unless they override it."
+        },
+        "slug": {
+          "description": "Stable component identifier.",
+          "minLength": 1,
+          "title": "Slug",
+          "type": "string"
+        },
+        "weight": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional ordering hint for component listings, menus, and other consumer-rendered component collections.",
+          "title": "Weight"
+        }
+      },
+      "required": [
+        "slug"
+      ],
+      "title": "ComponentCatalogEntry",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
+    },
+    "ComponentContentSelection": {
+      "additionalProperties": false,
+      "description": "Source selection for a component's shared pages, docs, and assets.",
+      "properties": {
+        "source": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Named source that owns shared component pages, docs, and assets roots.",
+          "title": "Source"
+        }
+      },
+      "title": "ComponentContentSelection",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
+    },
+    "ExactReleaseConfig": {
+      "additionalProperties": false,
+      "description": "Per-version lifecycle metadata and publication overrides for one exact release.",
+      "properties": {
+        "publicationState": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PublicationState"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Publication-state override for this version, such as published, withdrawn, or tombstoned."
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-readable explanation of the withdrawal, redirect, or support-state override for this release.",
+          "examples": [
+            "Superseded by 4.0.1."
+          ],
+          "title": "Reason"
+        },
+        "redirectTarget": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Replacement route or external URL to send readers to when `withdrawalBehavior` is `redirect`.",
+          "examples": [
+            "route:/spark/releases/4.0.1/"
+          ],
+          "title": "Redirecttarget"
+        },
+        "releaseLine": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Release-line key that this version belongs to when the provider data alone does not already make that relationship obvious.",
+          "examples": [
+            "4.0"
+          ],
+          "title": "Releaseline"
+        },
+        "supportStatus": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Support-status key or label that should override the line-level status for this exact version.",
+          "examples": [
+            "withdrawn"
+          ],
+          "title": "Supportstatus"
+        },
+        "supportWindow": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SupportWindow"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Lifecycle dates and support notes that apply only to this exact release."
+        },
+        "version": {
+          "description": "Exact released version that this metadata entry applies to.",
+          "examples": [
+            "4.0.0"
+          ],
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "withdrawalBehavior": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/WithdrawalBehavior"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "What readers should experience when this release has been withdrawn, for example a redirect or a hard removal."
+        }
+      },
+      "required": [
+        "version"
+      ],
+      "title": "ExactReleaseConfig",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
+    },
+    "GroupConfig": {
+      "additionalProperties": false,
+      "description": "Reusable defaults and grouping hints shared by several components.",
+      "properties": {
+        "displayName": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-readable group name for renderers or generated navigation.",
+          "title": "Displayname"
+        },
+        "navigationSection": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional renderer-facing grouping label for navigation or listings.",
+          "title": "Navigationsection"
+        },
+        "pathPrefix": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Shared public path prefix applied to grouped component publication roots.",
+          "title": "Pathprefix"
+        },
+        "publication": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PublicationConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Publication defaults inherited by grouped components unless they override them."
+        },
+        "weight": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional ordering hint shared by components in this group.",
+          "title": "Weight"
+        }
+      },
+      "title": "GroupConfig",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
+    },
+    "IndexBehavior": {
+      "description": "Renderer hint for version/ref index visibility.",
+      "enum": [
+        "full",
+        "metadataOnly",
+        "none"
+      ],
+      "title": "IndexBehavior",
+      "type": "string"
+    },
+    "LineHeadSelectionMode": {
+      "description": "Strategy used to derive a release-line head record.",
+      "enum": [
+        "none",
+        "allAuthored",
+        "explicit"
+      ],
+      "title": "LineHeadSelectionMode",
+      "type": "string"
+    },
+    "LineHeadSelectionPolicy": {
+      "additionalProperties": false,
+      "description": "Rule for which release-line head refs should appear as publishable contexts.",
+      "properties": {
+        "keys": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Explicit release-line keys to publish when `mode` is `explicit`.",
+          "examples": [
+            [
+              "3.5",
+              "4.0"
+            ]
+          ],
+          "title": "Keys"
+        },
+        "mode": {
+          "$ref": "#/$defs/LineHeadSelectionMode",
+          "description": "Selection strategy for release-line head contexts, such as taking all lines or only an explicit subset."
+        }
+      },
+      "required": [
+        "mode"
+      ],
+      "title": "LineHeadSelectionPolicy",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
+    },
+    "LinkCheckConfig": {
+      "additionalProperties": false,
+      "description": "Site-wide policy for internal page-link validation during ``check``.",
+      "properties": {
+        "checkRootAbsolute": {
+          "default": false,
+          "description": "Whether root-absolute links such as `/components/foo/` should also be validated when they match declared internal prefixes.",
+          "title": "Checkrootabsolute",
+          "type": "boolean"
+        },
+        "enabled": {
+          "default": true,
+          "description": "Whether the pipeline should validate authored internal page links against resolved public routes.",
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "internalPrefixes": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Root-absolute public-path prefixes that should be treated as internal links when root-absolute checking is enabled.",
+          "examples": [
+            [
+              "/components/",
+              "/docs/"
+            ]
+          ],
+          "title": "Internalprefixes"
+        },
+        "mode": {
+          "$ref": "#/$defs/LinkCheckMode",
+          "default": "directory",
+          "description": "How authored relative page links should resolve in the published site."
+        }
+      },
+      "title": "LinkCheckConfig",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
+    },
+    "LinkCheckMode": {
+      "description": "Supported staged public-path resolution strategies for internal page links.",
+      "enum": [
+        "directory",
+        "file-html"
+      ],
+      "title": "LinkCheckMode",
+      "type": "string"
+    },
+    "LocalizationConfig": {
+      "additionalProperties": false,
+      "description": "Locale and translation defaults.",
+      "properties": {
+        "defaultLocale": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Default locale used when a page does not declare a more specific locale.",
+          "title": "Defaultlocale"
+        },
+        "fallbackLocale": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Fallback locale used when a requested translation is unavailable.",
+          "title": "Fallbacklocale"
+        },
+        "routeMode": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RouteMode"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "How localized pages should be routed within the published URL space."
+        },
+        "supportedLocales": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Supported locale keys for this site or component.",
+          "title": "Supportedlocales"
+        }
+      },
+      "title": "LocalizationConfig",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
+    },
+    "MountConfig": {
+      "additionalProperties": false,
+      "description": "Mounted subtree, such as generated API docs or imported assets, published below one public path.",
+      "properties": {
+        "indexBehavior": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/IndexBehavior"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "How the mounted subtree should participate in generated indexes, listings, or navigation structures."
+        },
+        "kind": {
+          "description": "Short kind label that tells renderers and tooling what sort of mounted content this is.",
+          "examples": [
+            "generatedApi"
+          ],
+          "minLength": 1,
+          "title": "Kind",
+          "type": "string"
+        },
+        "metadata": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Small JSON-like extension object for extra mount metadata that downstream tooling may consume.",
+          "title": "Metadata"
+        },
+        "mountPath": {
+          "description": "Public path where the mounted subtree should appear in the published site.",
+          "examples": [
+            "/spark/api/"
+          ],
+          "minLength": 1,
+          "title": "Mountpath",
+          "type": "string"
+        },
+        "ownership": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Logical owner label used in staged metadata to explain who is responsible for this mounted subtree.",
+          "examples": [
+            "runtime-docs"
+          ],
+          "title": "Ownership"
+        },
+        "source": {
+          "description": "Typed source reference that identifies the generated or imported subtree to mount.",
+          "examples": [
+            "generated/api"
+          ],
+          "minLength": 1,
+          "title": "Source",
+          "type": "string"
+        },
+        "trustClass": {
+          "$ref": "#/$defs/TrustClass",
+          "description": "Trust level for the mounted content, used by downstream tooling to decide how much confidence to place in its structure or metadata."
+        },
+        "versionScope": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional label describing which version context this mount belongs to, when the same component can expose several mounted trees.",
+          "examples": [
+            "release"
+          ],
+          "title": "Versionscope"
+        }
+      },
+      "required": [
+        "source",
+        "mountPath",
+        "kind",
+        "trustClass"
+      ],
+      "title": "MountConfig",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
+    },
+    "NamedRefConfig": {
+      "additionalProperties": false,
+      "description": "Named source-control ref intentionally exposed as a stable version context.",
+      "properties": {
+        "description": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-readable explanation of what this named ref contains or who should use it.",
+          "examples": [
+            "Early access docs for the next planned minor release."
+          ],
+          "title": "Description"
+        },
+        "displayName": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-readable label shown in version pickers, breadcrumbs, or other rendered UI.",
+          "examples": [
+            "Preview"
+          ],
+          "title": "Displayname"
+        },
+        "key": {
+          "description": "Stable identifier used elsewhere in the catalog to select this named ref.",
+          "examples": [
+            "preview"
+          ],
+          "minLength": 1,
+          "title": "Key",
+          "type": "string"
+        },
+        "maturity": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Short maturity label that explains how stable or experimental this named ref should be treated.",
+          "examples": [
+            "preview"
+          ],
+          "title": "Maturity"
+        },
+        "ref": {
+          "description": "Exact source-control ref to resolve when this named context is selected.",
+          "examples": [
+            "refs/heads/preview"
+          ],
+          "minLength": 1,
+          "title": "Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "ref"
+      ],
+      "title": "NamedRefConfig",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
+    },
+    "OriginConfig": {
+      "additionalProperties": false,
+      "description": "Named public base URL that published routes can resolve against.",
+      "properties": {
+        "baseUrl": {
+          "description": "Base public URL for this publication origin.",
+          "minLength": 1,
+          "title": "Baseurl",
+          "type": "string"
+        },
+        "canonical": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Whether this origin should be treated as canonical when multiple origins publish the same target.",
+          "title": "Canonical"
+        },
+        "labels": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional human-readable labels for renderer or deployment tooling.",
+          "title": "Labels"
+        }
+      },
+      "required": [
+        "baseUrl"
+      ],
+      "title": "OriginConfig",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
+    },
+    "PublicationConfig": {
+      "additionalProperties": false,
+      "description": "Resolved-or-authored route layout choices for a component or artifact.",
+      "properties": {
+        "aliases": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/RouteAliasConfig"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Additional public aliases that should resolve to the same published target.",
+          "title": "Aliases"
+        },
+        "assetsPath": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Explicit public path for static assets below the component root.",
+          "title": "Assetspath"
+        },
+        "canonicalPath": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional canonical public path used when aliases or multiple origins are present.",
+          "title": "Canonicalpath"
+        },
+        "componentPath": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Explicit public path for the component landing page or overview root.",
+          "title": "Componentpath"
+        },
+        "developmentPath": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Explicit public path for the moving development docs surface.",
+          "title": "Developmentpath"
+        },
+        "docsPath": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Explicit public docs landing path exposed to downstream consumers; defaults to the development path unless an additional docs segment or override is configured.",
+          "title": "Docspath"
+        },
+        "mountPath": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Explicit public root path for the component's published content.",
+          "examples": [
+            "/spark/"
+          ],
+          "title": "Mountpath"
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Publication origin key to use for this component or artifact.",
+          "title": "Origin"
+        },
+        "pathSegment": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Path segment appended below an inherited path prefix or mount root.",
+          "title": "Pathsegment"
+        },
+        "redirects": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/RedirectRuleConfig"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Redirect rules to emit for legacy or moved routes.",
+          "title": "Redirects"
+        }
+      },
+      "title": "PublicationConfig",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
+    },
+    "PublicationDefaults": {
+      "additionalProperties": false,
+      "description": "Default routing segments used to derive publication paths.",
+      "properties": {
+        "assetsSegment": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Default path segment appended below the component root for static assets.",
+          "title": "Assetssegment"
+        },
+        "developmentSegment": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Default path segment appended below the component root for moving development docs.",
+          "title": "Developmentsegment"
+        },
+        "docsSegment": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional extra path segment appended below the development docs root when docs should live under an additional nested path.",
+          "title": "Docssegment"
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Default publication origin used for component routes when no nearer override is present.",
+          "title": "Origin"
+        }
+      },
+      "title": "PublicationDefaults",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
+    },
+    "PublicationSelectionPolicy": {
+      "additionalProperties": false,
+      "description": "Planning-time rule set for which version contexts are staged and linked.",
+      "properties": {
+        "candidates": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CandidateSelectionPolicy"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Rule for including release-candidate contexts when they should be visible to readers."
+        },
+        "development": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Whether to publish the moving development context represented by the artifact's `developmentRef`.",
+          "title": "Development"
+        },
+        "lineHeads": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LineHeadSelectionPolicy"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Rule for including release-line head contexts such as `4.0` or `3.5`."
+        },
+        "namedRefs": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Named ref keys to include as publishable contexts in addition to development, line-head, or released versions.",
+          "examples": [
+            [
+              "preview",
+              "stable"
+            ]
+          ],
+          "title": "Namedrefs"
+        },
+        "releases": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReleaseSelectionPolicy"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Rule for including exact released-version contexts such as `4.0.1`."
+        }
+      },
+      "title": "PublicationSelectionPolicy",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
+    },
+    "PublicationState": {
+      "description": "Observed provider-side publication state.",
+      "enum": [
+        "published",
+        "hidden",
+        "withdrawn",
+        "tombstoned"
+      ],
+      "title": "PublicationState",
+      "type": "string"
+    },
+    "RedirectRuleConfig": {
+      "additionalProperties": false,
+      "description": "Redirect rule that sends one published path to another internal or external target.",
+      "properties": {
+        "fromOrigin": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional origin override when the redirect should only exist on one named publication origin.",
+          "examples": [
+            "archive"
+          ],
+          "title": "Fromorigin"
+        },
+        "fromPath": {
+          "description": "Public path that should redirect instead of serving its own content.",
+          "examples": [
+            "/spark/docs/current/"
+          ],
+          "minLength": 1,
+          "title": "Frompath",
+          "type": "string"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Short explanation of why the redirect exists, for example to describe a rename, consolidation, or withdrawn release route.",
+          "examples": [
+            "Development docs moved to the new route."
+          ],
+          "title": "Reason"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "HTTP redirect status to emit; when omitted, downstream tooling applies its default redirect status.",
+          "examples": [
+            308
+          ],
+          "title": "Status"
+        },
+        "target": {
+          "description": "Destination of the redirect, either as a typed internal reference string or as a fully qualified external URL.",
+          "examples": [
+            "route:/spark/development/"
+          ],
+          "minLength": 1,
+          "title": "Target",
+          "type": "string"
+        }
+      },
+      "required": [
+        "fromPath",
+        "target"
+      ],
+      "title": "RedirectRuleConfig",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
+    },
+    "ReleaseLineConfig": {
+      "additionalProperties": false,
+      "description": "One logical release line, such as `4.0`, together with its lifecycle metadata.",
+      "properties": {
+        "aliases": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Alternate labels that should also resolve to this release line in generated metadata or UI.",
+          "examples": [
+            [
+              "stable"
+            ]
+          ],
+          "title": "Aliases"
+        },
+        "displayName": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-readable label shown to readers when the raw line key is not ideal UI text.",
+          "examples": [
+            "4.0 line"
+          ],
+          "title": "Displayname"
+        },
+        "key": {
+          "description": "Stable key for the release line, typically matching the family label used in URLs and navigation.",
+          "examples": [
+            "4.0"
+          ],
+          "minLength": 1,
+          "title": "Key",
+          "type": "string"
+        },
+        "latest": {
+          "description": "Latest released version currently considered the head of this release line.",
+          "examples": [
+            "4.0.1"
+          ],
+          "minLength": 1,
+          "title": "Latest",
+          "type": "string"
+        },
+        "maintenanceRef": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Explicit maintenance branch ref for the line when it should not be derived from `maintenanceRefPattern`.",
+          "examples": [
+            "refs/heads/release-4.0"
+          ],
+          "title": "Maintenanceref"
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional parent release-line key used to model lineage such as `4.x` inheriting from `3.x` policy or navigation structure.",
+          "examples": [
+            "3.5"
+          ],
+          "title": "Parent"
+        },
+        "supportStatus": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Support-status key or label that should be shown for the line as a whole.",
+          "examples": [
+            "supported"
+          ],
+          "title": "Supportstatus"
+        },
+        "supportWindow": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SupportWindow"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Lifecycle dates and support notes that apply to the release line."
+        }
+      },
+      "required": [
+        "key",
+        "latest"
+      ],
+      "title": "ReleaseLineConfig",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
+    },
+    "ReleaseSelectionMode": {
+      "description": "Strategy used to select a released version.",
+      "enum": [
+        "latestPerLine",
+        "latestN",
+        "allKnown",
+        "explicit"
+      ],
+      "title": "ReleaseSelectionMode",
+      "type": "string"
+    },
+    "ReleaseSelectionPolicy": {
+      "additionalProperties": false,
+      "description": "Rule for which exact released versions should become published contexts.",
+      "properties": {
+        "count": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "How many most-recent releases to include when `mode` is `latestN`.",
+          "examples": [
+            3
+          ],
+          "title": "Count"
+        },
+        "mode": {
+          "$ref": "#/$defs/ReleaseSelectionMode",
+          "description": "Selection strategy for released versions, for example the latest `n` releases or one explicit version list."
+        },
+        "versions": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Exact released versions to include when `mode` is `explicit`.",
+          "examples": [
+            [
+              "4.0.0",
+              "4.0.1"
+            ]
+          ],
+          "title": "Versions"
+        }
+      },
+      "required": [
+        "mode"
+      ],
+      "title": "ReleaseSelectionPolicy",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
+    },
+    "RouteAliasConfig": {
+      "additionalProperties": false,
+      "description": "Additional public route that resolves to the same published destination.",
+      "properties": {
+        "label": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-readable label that renderers can use when presenting this alias in navigation or metadata.",
+          "examples": [
+            "stable"
+          ],
+          "title": "Label"
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional origin override when the alias should only exist on one named publication origin.",
+          "examples": [
+            "archive"
+          ],
+          "title": "Origin"
+        },
+        "path": {
+          "description": "Alternate public path that should resolve to the same page family or landing target as the primary route.",
+          "examples": [
+            "/spark/stable/"
+          ],
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "title": "RouteAliasConfig",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
+    },
+    "RouteMode": {
+      "description": "Locale routing strategy for a published route set.",
+      "enum": [
+        "none",
+        "prefixAll"
+      ],
+      "title": "RouteMode",
+      "type": "string"
+    },
+    "SiteContentConfig": {
+      "additionalProperties": false,
+      "description": "Top-level pages and asset trees that belong to the site as a whole.",
+      "properties": {
+        "assetsRoot": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Repository-relative root for consumer-owned top-level static assets.",
+          "title": "Assetsroot"
+        },
+        "pagesRoot": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Repository-relative root for consumer-owned top-level site pages.",
+          "title": "Pagesroot"
+        },
+        "vendorAssets": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/TopLevelAssetConfig"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Additional imported asset trees mounted into the top-level site assets area.",
+          "title": "Vendorassets"
+        }
+      },
+      "title": "SiteContentConfig",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
+    },
+    "SourceConfig": {
+      "additionalProperties": false,
+      "description": "Named repository or checkout binding reused by components and artifacts.",
+      "properties": {
+        "defaultBranch": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional default branch or ref for this source.",
+          "title": "Defaultbranch"
+        },
+        "localDir": {
+          "description": "Workspace-relative checkout or source directory.",
+          "minLength": 1,
+          "title": "Localdir",
+          "type": "string"
+        },
+        "metadataFile": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional override for the component metadata file inside this source tree.",
+          "title": "Metadatafile"
+        },
+        "repository": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional remote repository URL whose repository root corresponds to this source root.",
+          "title": "Repository"
+        }
+      },
+      "required": [
+        "localDir"
+      ],
+      "title": "SourceConfig",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
+    },
+    "SupportStatusDefinition": {
+      "additionalProperties": false,
+      "description": "One reusable support-status label, description, and default lifecycle behavior.",
+      "properties": {
+        "defaultMaintenancePhase": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Default maintenance-phase label to apply when a release uses this support status and does not provide a more specific phase.",
+          "examples": [
+            "active"
+          ],
+          "title": "Defaultmaintenancephase"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-readable explanation of what this support status means in practice.",
+          "examples": [
+            "Receives regular fixes and new patch releases."
+          ],
+          "title": "Description"
+        },
+        "displayName": {
+          "description": "Human-readable status label shown to readers, such as `Supported` or `Security fixes only`.",
+          "examples": [
+            "Supported"
+          ],
+          "minLength": 1,
+          "title": "Displayname",
+          "type": "string"
+        },
+        "order": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional sort order used when several support statuses should appear in a stable display order.",
+          "examples": [
+            10
+          ],
+          "title": "Order"
+        }
+      },
+      "required": [
+        "displayName"
+      ],
+      "title": "SupportStatusDefinition",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "component-owned"
+      }
+    },
+    "SupportWindow": {
+      "additionalProperties": false,
+      "description": "Lifecycle dates and support notes for one release line or exact release.",
+      "properties": {
+        "endOfActiveSupportDate": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Date after which the release no longer receives full active support.",
+          "title": "Endofactivesupportdate"
+        },
+        "endOfLifeDate": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Final retirement date after which the release should be treated as fully end-of-life.",
+          "title": "Endoflifedate"
+        },
+        "endOfSupportDate": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Date after which the release is no longer supported in normal maintenance channels.",
+          "title": "Endofsupportdate"
+        },
+        "maintenancePhase": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Short label for the current maintenance phase, such as general availability, maintenance, or security-only support.",
+          "examples": [
+            "security-fixes"
+          ],
+          "title": "Maintenancephase"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Additional notes that clarify exceptions, migration advice, or support caveats.",
+          "title": "Notes"
+        },
+        "releaseDate": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Release date for the line or version that this support window describes.",
+          "examples": [
+            "2026-04-01T00:00:00Z"
+          ],
+          "title": "Releasedate"
+        },
+        "supportPolicyUrl": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Canonical URL that explains the support policy referenced by this support window.",
+          "title": "Supportpolicyurl"
+        }
+      },
+      "title": "SupportWindow",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
+    },
+    "TopLevelAssetConfig": {
+      "additionalProperties": false,
+      "description": "Imported asset tree mounted into the shared site asset space.",
+      "properties": {
+        "kind": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Short renderer-facing kind label that distinguishes this asset tree from other mounted assets.",
+          "examples": [
+            "brandAssets"
+          ],
+          "title": "Kind"
+        },
+        "mountPath": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Public path below the site asset space where this imported tree should appear.",
+          "examples": [
+            "/assets/vendor/brand/"
+          ],
+          "title": "Mountpath"
+        },
+        "ownership": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Logical owner label used by tooling to explain where this imported asset tree came from.",
+          "examples": [
+            "site-branding"
+          ],
+          "title": "Ownership"
+        },
+        "source": {
+          "description": "Repository-relative source directory that should be copied or mounted into the published site assets.",
+          "examples": [
+            "vendor/brand"
+          ],
+          "minLength": 1,
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source"
+      ],
+      "title": "TopLevelAssetConfig",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
+    },
+    "TrustClass": {
+      "description": "Trust posture of a mounted content subtree.",
+      "enum": [
+        "passive",
+        "active"
+      ],
+      "title": "TrustClass",
+      "type": "string"
+    },
+    "ValidationConfig": {
+      "additionalProperties": false,
+      "description": "Optional site-wide validation policies that affect ``check`` behavior.",
+      "properties": {
+        "linkChecks": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LinkCheckConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional internal page-link checking policy resolved against staged public routes."
+        }
+      },
+      "title": "ValidationConfig",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
+    },
+    "WithdrawalBehavior": {
+      "description": "Author-directed behavior for a withdrawn release.",
+      "enum": [
+        "notice",
+        "redirect",
+        "omit"
+      ],
+      "title": "WithdrawalBehavior",
+      "type": "string"
+    }
+  },
+  "$id": "https://buildish.org/components/site-pipeline/schemas/catalog-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Consumer-authored site catalog from ``site/catalog.yaml``.",
+  "examples": [
+    {
+      "components": [
+        {
+          "artifacts": [
+            {
+              "key": "runtime",
+              "lifecycle": {
+                "releaseLines": [
+                  {
+                    "key": "4.0",
+                    "latest": "4.0.0",
+                    "maintenanceRef": "maintenance/4.0"
+                  }
+                ],
+                "releases": [
+                  {
+                    "version": "4.0.0"
+                  }
+                ]
+              },
+              "publicationSelection": {
+                "development": true,
+                "lineHeads": {
+                  "mode": "allAuthored"
+                },
+                "releases": {
+                  "mode": "latestPerLine"
+                }
+              },
+              "source": "runtime",
+              "versioning": {
+                "developmentRef": "main",
+                "tagPattern": "^v.*$"
+              }
+            }
+          ],
+          "content": {
+            "source": "runtime"
+          },
+          "publication": {
+            "mountPath": "/spark/"
+          },
+          "slug": "spark",
+          "weight": 100
+        }
+      ],
+      "defaults": {
+        "docsRoot": "docs",
+        "publication": {
+          "origin": "docs"
+        }
+      },
+      "origins": {
+        "docs": {
+          "baseUrl": "https://docs.example.org"
+        }
+      },
+      "schemaVersion": 1,
+      "site": {},
+      "sources": {
+        "runtime": {
+          "localDir": "components/runtime"
+        }
+      }
+    }
+  ],
+  "properties": {
+    "components": {
+      "description": "Participating components in this consumer-authored catalog.",
+      "items": {
+        "$ref": "#/$defs/ComponentCatalogEntry"
+      },
+      "title": "Components",
+      "type": "array"
+    },
+    "defaults": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CatalogDefaults"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Shared default settings applied before per-component overrides."
+    },
+    "groups": {
+      "anyOf": [
+        {
+          "additionalProperties": {
+            "$ref": "#/$defs/GroupConfig"
+          },
+          "propertyNames": {
+            "minLength": 1
+          },
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional grouping defaults shared by multiple components.",
+      "title": "Groups"
+    },
+    "origins": {
+      "anyOf": [
+        {
+          "additionalProperties": {
+            "$ref": "#/$defs/OriginConfig"
+          },
+          "propertyNames": {
+            "minLength": 1
+          },
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Named publication origins that components can target.",
+      "title": "Origins"
+    },
+    "schemaVersion": {
+      "const": 1,
+      "description": "Schema version for the catalog format.",
+      "title": "Schemaversion",
+      "type": "integer"
+    },
+    "site": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SiteContentConfig"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Consumer-owned top-level site pages, assets, and vendor-asset declarations."
+    },
+    "sources": {
+      "anyOf": [
+        {
+          "additionalProperties": {
+            "$ref": "#/$defs/SourceConfig"
+          },
+          "propertyNames": {
+            "minLength": 1
+          },
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Named repository or checkout bindings used by components and artifacts.",
+      "title": "Sources"
+    },
+    "validation": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ValidationConfig"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional site-wide validation policies that extend the default `check` behavior."
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "components"
+  ],
+  "title": "Site Pipeline Catalog v1",
+  "type": "object",
+  "x-buildish-contract": {
+    "category": "authored",
+    "filePath": "site/catalog.yaml",
+    "ownership": "consumer-owned",
+    "summary": "Catalog of components, defaults, sources, origins, and publication rules for one site."
+  }
+}

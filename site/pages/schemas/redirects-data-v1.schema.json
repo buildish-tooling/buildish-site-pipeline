@@ -1,0 +1,98 @@
+{
+  "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
+  "$defs": {
+    "RedirectAggregateEntry": {
+      "additionalProperties": false,
+      "description": "Entry in ``data/redirects.json``.",
+      "properties": {
+        "fromUrl": {
+          "description": "Absolute source URL that should redirect.",
+          "minLength": 1,
+          "title": "Fromurl",
+          "type": "string"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Short explanation of why the redirect exists.",
+          "title": "Reason"
+        },
+        "sourceKind": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Short label describing where the redirect originated, such as an alias or withdrawn release rule.",
+          "examples": [
+            "withdrawnRelease"
+          ],
+          "title": "Sourcekind"
+        },
+        "status": {
+          "description": "HTTP redirect status code emitted for this redirect.",
+          "examples": [
+            308
+          ],
+          "title": "Status",
+          "type": "integer"
+        },
+        "toUrl": {
+          "description": "Absolute destination URL that the redirect should send readers to.",
+          "minLength": 1,
+          "title": "Tourl",
+          "type": "string"
+        }
+      },
+      "required": [
+        "fromUrl",
+        "toUrl",
+        "status"
+      ],
+      "title": "RedirectAggregateEntry",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    }
+  },
+  "$id": "https://buildish.org/components/site-pipeline/schemas/redirects-data-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Public staged aggregate file at ``data/redirects.json``.",
+  "properties": {
+    "items": {
+      "description": "Redirect aggregate entries emitted into `data/redirects.json`.",
+      "items": {
+        "$ref": "#/$defs/RedirectAggregateEntry"
+      },
+      "title": "Items",
+      "type": "array"
+    }
+  },
+  "required": [
+    "items"
+  ],
+  "title": "Site Pipeline data/redirects.json v1",
+  "type": "object",
+  "x-buildish-contract": {
+    "category": "emitted",
+    "filePath": "data/redirects.json",
+    "ownership": "pipeline-derived",
+    "summary": "Flat inventory of published redirects and their resolved destination URLs."
+  }
+}

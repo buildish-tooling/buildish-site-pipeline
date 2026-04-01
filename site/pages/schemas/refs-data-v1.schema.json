@@ -1,0 +1,201 @@
+{
+  "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
+  "$defs": {
+    "RecordKind": {
+      "description": "Normalized provider record lifecycle kind.",
+      "enum": [
+        "development",
+        "released",
+        "candidate",
+        "namedRef",
+        "lineHead"
+      ],
+      "title": "RecordKind",
+      "type": "string"
+    },
+    "RefAggregateEntry": {
+      "additionalProperties": false,
+      "description": "Entry in ``data/refs.json``.",
+      "properties": {
+        "artifactKey": {
+          "description": "Owning artifact key for the ref context.",
+          "examples": [
+            "runtime"
+          ],
+          "minLength": 1,
+          "title": "Artifactkey",
+          "type": "string"
+        },
+        "componentSlug": {
+          "description": "Owning component slug for the ref context.",
+          "examples": [
+            "spark"
+          ],
+          "minLength": 1,
+          "title": "Componentslug",
+          "type": "string"
+        },
+        "displayVersion": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-readable label for the ref context.",
+          "examples": [
+            "main"
+          ],
+          "title": "Displayversion"
+        },
+        "externalId": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Provider-specific stable identifier for the upstream ref record.",
+          "title": "Externalid"
+        },
+        "externalUrl": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-browsable upstream URL for the ref record.",
+          "title": "Externalurl"
+        },
+        "kind": {
+          "$ref": "#/$defs/RecordKind",
+          "description": "Ref context kind, limited to development, named-ref, and line-head entries."
+        },
+        "maturity": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Maturity label associated with the ref context.",
+          "examples": [
+            "preview"
+          ],
+          "title": "Maturity"
+        },
+        "namedRefKey": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Catalog-authored named-ref key when this entry represents a named ref.",
+          "examples": [
+            "preview"
+          ],
+          "title": "Namedrefkey"
+        },
+        "provider": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Provider key for the upstream system that supplied this ref record.",
+          "title": "Provider"
+        },
+        "ref": {
+          "description": "Exact source-control ref for the published ref context.",
+          "examples": [
+            "refs/heads/main"
+          ],
+          "minLength": 1,
+          "title": "Ref",
+          "type": "string"
+        },
+        "releaseLine": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Release-line key when the ref context represents a line head.",
+          "examples": [
+            "4.0"
+          ],
+          "title": "Releaseline"
+        }
+      },
+      "required": [
+        "componentSlug",
+        "artifactKey",
+        "kind",
+        "ref"
+      ],
+      "title": "RefAggregateEntry",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    }
+  },
+  "$id": "https://buildish.org/components/site-pipeline/schemas/refs-data-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Public staged aggregate file at ``data/refs.json``.",
+  "properties": {
+    "items": {
+      "description": "Named-ref aggregate entries emitted into `data/refs.json`.",
+      "items": {
+        "$ref": "#/$defs/RefAggregateEntry"
+      },
+      "title": "Items",
+      "type": "array"
+    }
+  },
+  "required": [
+    "items"
+  ],
+  "title": "Site Pipeline data/refs.json v1",
+  "type": "object",
+  "x-buildish-contract": {
+    "category": "emitted",
+    "filePath": "data/refs.json",
+    "ownership": "pipeline-derived",
+    "summary": "Published development, line-head, and named-ref inventory for version navigation."
+  }
+}

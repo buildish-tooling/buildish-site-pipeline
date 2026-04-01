@@ -1,0 +1,98 @@
+# Copyright 2026 The Buildish Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""CLI-specific exception vocabulary."""
+
+from __future__ import annotations
+
+from buildish_site_pipeline.models.emitted.cli_failure import (
+    CliDiagnostic,
+    CliDiagnosticIssue,
+    CliErrorCategory,
+    CliFailureReportV1,
+)
+
+CliFailureReport = CliFailureReportV1
+
+
+class SitePipelineCliError(Exception):
+    """Base class for operator-visible CLI failures."""
+
+    default_category = CliErrorCategory.INTERNAL
+    default_code = "internal-command-failed"
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        code: str | None = None,
+        source: str | None = None,
+        issues: tuple[CliDiagnosticIssue, ...] = (),
+        omitted_issue_count: int = 0,
+    ) -> None:
+        super().__init__(message)
+        self.diagnostic = CliDiagnostic(
+            category=self.default_category,
+            code=code or self.default_code,
+            message=message,
+            source=source,
+            issues=issues,
+            omitted_issue_count=omitted_issue_count,
+        )
+
+    def __str__(self) -> str:
+        """Keep direct exception rendering as actionable as the CLI boundary."""
+
+        return self.diagnostic.render_text()
+
+
+class InvocationError(SitePipelineCliError):
+    """The caller supplied invalid arguments or an unsafe output path."""
+
+    default_category = CliErrorCategory.INVOCATION
+    default_code = "invocation-invalid"
+
+
+class InputDiagnosticError(SitePipelineCliError):
+    """An authored or provider input could not be safely loaded or validated."""
+
+    default_category = CliErrorCategory.INPUT
+    default_code = "input-invalid"
+
+
+class PlanningInputError(SitePipelineCliError):
+    """Validated inputs could not produce a coherent planning result."""
+
+    default_category = CliErrorCategory.PLANNING
+    default_code = "planning-input-invalid"
+
+
+class UnsupportedReportSchemaVersionError(InvocationError):
+    """The caller requested a report schema version that is not supported."""
+
+
+class CommandExecutionError(SitePipelineCliError):
+    """The command failed after successful invocation parsing."""
+
+
+class ReportWriteError(CommandExecutionError):
+    """The CLI could not safely persist a report output."""
+
+
+class StageIntegrityError(CommandExecutionError):
+    """The CLI could not safely publish a finalized stage tree."""
+
+
+class RetainedStageError(CommandExecutionError):
+    """A watch cycle failed, but the previously published stage remains trustworthy."""

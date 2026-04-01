@@ -1,0 +1,588 @@
+{
+  "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
+  "$defs": {
+    "ContentIndexEntry": {
+      "additionalProperties": false,
+      "description": "Entry in ``data/content-index.json``.",
+      "properties": {
+        "ancestorIds": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Ancestor page identifiers ordered from nearest to farthest.",
+          "examples": [
+            [
+              "spark-runtime-4.0.0-docs-root",
+              "spark-runtime-root"
+            ]
+          ],
+          "title": "Ancestorids"
+        },
+        "artifactKey": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Owning artifact key when the page belongs to a specific artifact.",
+          "examples": [
+            "runtime"
+          ],
+          "title": "Artifactkey"
+        },
+        "candidateSequence": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Release-candidate sequence number when the page belongs to a candidate context.",
+          "examples": [
+            1
+          ],
+          "title": "Candidatesequence"
+        },
+        "canonicalUrl": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Explicit canonical URL when it should differ from `url`.",
+          "title": "Canonicalurl"
+        },
+        "componentSlug": {
+          "description": "Owning component slug for the indexed page.",
+          "examples": [
+            "spark"
+          ],
+          "minLength": 1,
+          "title": "Componentslug",
+          "type": "string"
+        },
+        "defaultLocale": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Whether the page represents the default locale within its translation group.",
+          "title": "Defaultlocale"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Longer page description intended for metadata or search snippets.",
+          "title": "Description"
+        },
+        "externalId": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Provider-specific stable identifier for the upstream record that informed the page.",
+          "title": "Externalid"
+        },
+        "id": {
+          "description": "Stable identifier for the indexed page entry.",
+          "examples": [
+            "spark-runtime-4.0.0-getting-started"
+          ],
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "linkTitle": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Shorter title variant used in navigation or link lists.",
+          "examples": [
+            "Start"
+          ],
+          "title": "Linktitle"
+        },
+        "locale": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Locale key for the page when the page participates in localization.",
+          "examples": [
+            "en"
+          ],
+          "title": "Locale"
+        },
+        "maturity": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Maturity label such as preview, beta, or stable.",
+          "examples": [
+            "stable"
+          ],
+          "title": "Maturity"
+        },
+        "originKey": {
+          "description": "Origin key that this indexed page belongs to.",
+          "examples": [
+            "archive"
+          ],
+          "minLength": 1,
+          "title": "Originkey",
+          "type": "string"
+        },
+        "pageKind": {
+          "description": "Short page-kind label used for filtering and presentation.",
+          "examples": [
+            "docsPage"
+          ],
+          "minLength": 1,
+          "title": "Pagekind",
+          "type": "string"
+        },
+        "parentId": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Identifier of the parent indexed page when the page belongs to a hierarchy.",
+          "examples": [
+            "spark-runtime-4.0.0-docs-root"
+          ],
+          "title": "Parentid"
+        },
+        "path": {
+          "description": "Published public path for the page.",
+          "examples": [
+            "/spark/4.0.0/docs/getting-started/"
+          ],
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "provider": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Provider key for the upstream record that informed the page's version metadata.",
+          "title": "Provider"
+        },
+        "publicationState": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PublicationState"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Publication-state label attached to the page's version context."
+        },
+        "releaseLine": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Release-line key attached to the page, if present.",
+          "examples": [
+            "4.0"
+          ],
+          "title": "Releaseline"
+        },
+        "section": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Higher-level section label used for navigation or filtering.",
+          "examples": [
+            "documentation"
+          ],
+          "title": "Section"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PageSourceProvenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Repository-neutral provenance for the authored source file that produced this indexed page."
+        },
+        "summary": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Short summary used for listings, cards, or lightweight search results.",
+          "title": "Summary"
+        },
+        "supportStatus": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Support-status key or label attached to the page's version context.",
+          "examples": [
+            "supported"
+          ],
+          "title": "Supportstatus"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Primary page title shown to readers.",
+          "examples": [
+            "Getting Started"
+          ],
+          "title": "Title"
+        },
+        "translationKey": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Shared key that ties translated sibling pages together.",
+          "examples": [
+            "spark-overview"
+          ],
+          "title": "Translationkey"
+        },
+        "url": {
+          "description": "Canonical absolute URL for the page.",
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        },
+        "versionKind": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RecordKind"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Version-context kind attached when the page belongs to a versioned route set."
+        },
+        "versionLabel": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-readable version label attached to the page, if present.",
+          "examples": [
+            "4.0.0"
+          ],
+          "title": "Versionlabel"
+        },
+        "voteStatus": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Vote-status label when the page belongs to a candidate context.",
+          "examples": [
+            "passed"
+          ],
+          "title": "Votestatus"
+        },
+        "weight": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional ordering hint used by renderers for listings or navigation.",
+          "examples": [
+            100
+          ],
+          "title": "Weight"
+        }
+      },
+      "required": [
+        "id",
+        "componentSlug",
+        "pageKind",
+        "originKey",
+        "path",
+        "url"
+      ],
+      "title": "ContentIndexEntry",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    },
+    "PageSourceProvenance": {
+      "additionalProperties": false,
+      "description": "Repository-neutral pointer to the authored source file for one staged page.",
+      "properties": {
+        "editRef": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Source-control ref that renderers may use for an edit-source link.",
+          "examples": [
+            "main"
+          ],
+          "title": "Editref"
+        },
+        "key": {
+          "description": "Resolved source-binding key that owns the authored page.",
+          "examples": [
+            "runtime"
+          ],
+          "minLength": 1,
+          "title": "Key",
+          "type": "string"
+        },
+        "path": {
+          "description": "Source file path relative to the resolved source binding root.",
+          "examples": [
+            "docs/getting-started.md"
+          ],
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "repository": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Remote repository URL whose repository root corresponds to the resolved source binding root, when declared.",
+          "examples": [
+            "https://github.com/buildish-tooling/buildish-site-pipeline"
+          ],
+          "title": "Repository"
+        },
+        "viewRef": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Source-control ref that renderers may use for a view-source link.",
+          "examples": [
+            "main"
+          ],
+          "title": "Viewref"
+        }
+      },
+      "required": [
+        "key",
+        "path"
+      ],
+      "title": "PageSourceProvenance",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    },
+    "PublicationState": {
+      "description": "Observed provider-side publication state.",
+      "enum": [
+        "published",
+        "hidden",
+        "withdrawn",
+        "tombstoned"
+      ],
+      "title": "PublicationState",
+      "type": "string"
+    },
+    "RecordKind": {
+      "description": "Normalized provider record lifecycle kind.",
+      "enum": [
+        "development",
+        "released",
+        "candidate",
+        "namedRef",
+        "lineHead"
+      ],
+      "title": "RecordKind",
+      "type": "string"
+    }
+  },
+  "$id": "https://buildish.org/components/site-pipeline/schemas/content-index-data-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Public staged aggregate file at ``data/content-index.json``.",
+  "properties": {
+    "items": {
+      "description": "Content-index entries emitted into `data/content-index.json`.",
+      "items": {
+        "$ref": "#/$defs/ContentIndexEntry"
+      },
+      "title": "Items",
+      "type": "array"
+    }
+  },
+  "required": [
+    "items"
+  ],
+  "title": "Site Pipeline data/content-index.json v1",
+  "type": "object",
+  "x-buildish-contract": {
+    "category": "emitted",
+    "filePath": "data/content-index.json",
+    "ownership": "pipeline-derived",
+    "summary": "Search and navigation index for staged pages with titles, ancestry, and version metadata."
+  }
+}

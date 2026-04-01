@@ -1,0 +1,203 @@
+{
+  "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
+  "$defs": {
+    "RouteAggregateEntry": {
+      "additionalProperties": false,
+      "description": "Entry in ``data/routes.json``.",
+      "properties": {
+        "artifactKey": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Owning artifact key when the route belongs to a specific artifact.",
+          "examples": [
+            "runtime"
+          ],
+          "title": "Artifactkey"
+        },
+        "baseUrl": {
+          "description": "Base URL for the route's origin.",
+          "minLength": 1,
+          "title": "Baseurl",
+          "type": "string"
+        },
+        "canonical": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Whether this route should be treated as the canonical route among equivalent alternatives.",
+          "title": "Canonical"
+        },
+        "componentSlug": {
+          "description": "Owning component slug for the route.",
+          "examples": [
+            "spark"
+          ],
+          "minLength": 1,
+          "title": "Componentslug",
+          "type": "string"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-readable label for the route, if present.",
+          "examples": [
+            "4.0 docs"
+          ],
+          "title": "Label"
+        },
+        "locale": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Locale key when the route belongs to a localized page family.",
+          "examples": [
+            "en"
+          ],
+          "title": "Locale"
+        },
+        "originKey": {
+          "description": "Origin key that this public route belongs to.",
+          "examples": [
+            "archive"
+          ],
+          "minLength": 1,
+          "title": "Originkey",
+          "type": "string"
+        },
+        "path": {
+          "description": "Public path for the route.",
+          "examples": [
+            "/spark/4.0.0/docs/"
+          ],
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "routeKind": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Short route-kind label such as component root, docs root, alias, or release page.",
+          "examples": [
+            "docsRoot"
+          ],
+          "title": "Routekind"
+        },
+        "section": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Higher-level section label for the route, if present.",
+          "examples": [
+            "documentation"
+          ],
+          "title": "Section"
+        },
+        "targetId": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Stable target identifier used to correlate equivalent routes or aliases.",
+          "examples": [
+            "spark-runtime-4.0.0-docs"
+          ],
+          "title": "Targetid"
+        },
+        "url": {
+          "description": "Absolute URL for the route after joining `baseUrl` and `path`.",
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "originKey",
+        "baseUrl",
+        "path",
+        "url",
+        "componentSlug"
+      ],
+      "title": "RouteAggregateEntry",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    }
+  },
+  "$id": "https://buildish.org/components/site-pipeline/schemas/routes-data-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Public staged aggregate file at ``data/routes.json``.",
+  "properties": {
+    "items": {
+      "description": "Route aggregate entries emitted into `data/routes.json`.",
+      "items": {
+        "$ref": "#/$defs/RouteAggregateEntry"
+      },
+      "title": "Items",
+      "type": "array"
+    }
+  },
+  "required": [
+    "items"
+  ],
+  "title": "Site Pipeline data/routes.json v1",
+  "type": "object",
+  "x-buildish-contract": {
+    "category": "emitted",
+    "filePath": "data/routes.json",
+    "ownership": "pipeline-derived",
+    "summary": "Flat inventory of published routes with resolved URLs, labels, and ownership metadata."
+  }
+}

@@ -35,8 +35,8 @@ With `--repo-root <consumer-repo>`, the current contract resolves:
 - optional `site/components.local.yaml` overrides relative to the consumer repo
   root.
 
-Missing component checkouts are ignored cleanly rather than treated as errors or
-collapsed into unrelated parent watch roots.
+Missing component checkouts are ignored cleanly by default rather than treated
+as errors or collapsed into unrelated parent watch roots.
 
 ## Keep identity separate from workspace bindings
 
@@ -59,7 +59,7 @@ Source resolution should remain conservative:
 1. CI-provided resolved inputs, when a workflow materializes them explicitly
 2. local checkout overrides from `site/components.local.yaml`
 3. committed catalog checkout hints and conventional sibling discovery
-4. missing checkout -> skip the component cleanly
+4. missing checkout -> skip the component cleanly unless strict mode is enabled
 
 Content-structure precedence remains separate:
 
@@ -75,7 +75,17 @@ A local build may therefore stage only a subset of the published component
 inventory.
 
 That is why the pipeline treats missing component checkouts as a normal local
-state rather than a failure.
+state rather than a failure in the default `skip` mode.
+
+Example local-friendly config:
+
+```yaml
+schemaVersion: 1
+site:
+  siteTitle: Example Project Site
+  projectStatus: incubating
+  # missingComponents omitted -> defaults to skip
+```
 
 ## CI guidance
 
@@ -89,7 +99,16 @@ A good model is to record, for each staged source:
 - resolved commit SHA, and
 - checkout or snapshot path used for the build.
 
-The rest of the workflow should then consume only those resolved inputs.
+The rest of the workflow should then consume only those resolved inputs. For
+deployment or publication workflows, prefer `--missing-components fail` or
+`site.missingComponents: fail` so CI fails fast when a required checkout was not
+materialized.
+
+Example CI or deployment invocation using strict mode:
+
+```bash
+site-pipeline build --repo-root . --missing-components fail
+```
 
 ## Scaling release inputs
 

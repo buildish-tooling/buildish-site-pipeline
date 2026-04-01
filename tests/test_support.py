@@ -43,6 +43,33 @@ def write_files(root: Path, files: Mapping[str, str]) -> None:
         write_text(root / relative_path, contents)
 
 
+def catalog_defaults(**overrides: object) -> dict[str, object]:
+    """Return the standard fixture defaults for a components catalog."""
+
+    defaults: dict[str, object] = {
+        "metadataFile": "site/component.yaml",
+        "pagesRoot": "site/pages",
+        "docsRoot": "site/docs",
+        "assetsRoot": "site/assets",
+    }
+    defaults.update(overrides)
+    return defaults
+
+
+def catalog_payload(
+    *components: dict[str, object], defaults: dict[str, object] | None = None
+) -> dict[str, object]:
+    """Build one test components catalog payload."""
+
+    payload: dict[str, object] = {
+        "schemaVersion": 1,
+        "components": list(components),
+    }
+    if defaults is not None:
+        payload["defaults"] = defaults
+    return payload
+
+
 def dump_yaml(path: Path, payload: object) -> None:
     """Serialize a YAML payload using the test-suite formatting convention."""
 

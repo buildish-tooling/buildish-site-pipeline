@@ -67,7 +67,8 @@ Current supported settings include:
 - `workspace.stagePath`, defaulting to `site/.stage`,
 - `workspace.previewPath`, defaulting to `site/.preview`,
 - `site.siteTitle`, and
-- `site.projectStatus` with allowed values `incubating`, `graduated`, or `retired`.
+- `site.projectStatus` with allowed values `incubating`, `graduated`, or `retired`, and
+- `site.missingComponents` with allowed values `skip` or `fail`.
 
 Precedence is:
 
@@ -111,6 +112,14 @@ Watch mode intentionally rebuilds the stage root without rewriting the preview
 root on every change. That keeps interactive development responsive and avoids
 unnecessary file-system churn for downstream renderers.
 
+The `missingComponents` policy applies consistently to `build`, `preview`, and
+`watch`:
+
+- `skip` (default) keeps local partial workspaces usable by skipping missing
+  component checkouts.
+- `fail` turns a missing component checkout into an immediate build error, which
+  is better suited to deployment or production validation.
+
 ## Containerized distribution
 
 The project can also be distributed as a multi-platform container image whose
@@ -136,8 +145,8 @@ base image.
 
 At minimum, the stage root contains:
 
-- `content/components/<slug>/_index.md` and additional component pages,
-- `content/components/<slug>/development/docs/...`,
+- `content/components/<slug>/_index.md` and additional component pages for available components,
+- `content/components/<slug>/development/docs/...` when component docs exist,
 - `content/components/<slug>/development/version.yaml`,
 - `content/components/<slug>/lifecycle.yaml`,
 - `data/components.yaml`,

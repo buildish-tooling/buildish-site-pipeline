@@ -26,10 +26,14 @@ Use this guide when wiring Site Pipeline into a consumer repository.
 
 You can either:
 
+- run the published `buildish-site-pipeline` container image in CI or other container-first automation.
 - install the package into the consumer site's Python environment, or
-- run the published `site-pipeline` container image in CI or other container-first automation.
+- only during local development, a path dependency is also fine as long as the consumer only invokes the 
+  `site-pipeline` CLI from its managed runtime.
 
-During local development, a path dependency is also fine as long as the consumer invokes the `site-pipeline` CLI from its managed runtime.
+> [!NOTE]
+> Consumers aways access the site-pipeline via the CLI, either via the container or the executable from
+> the Python package. There is no programmatic API that consumers should use.
 
 ## 2. Create the site workspace
 
@@ -51,6 +55,21 @@ workspace:
 site:
   siteTitle: Example Project Site
   projectStatus: incubating
+```
+
+`missingComponents` is optional. If omitted, the pipeline defaults to `skip`,
+which is friendlier for local partial workspaces. Set it to `fail` only when a
+consumer wants every catalog component checkout to be present for a run, like for
+production site deployments.
+
+Example local-friendly config using the default `skip` behavior:
+
+```yaml
+schemaVersion: 1
+site:
+  siteTitle: Example Project Site
+  projectStatus: incubating
+  # missingComponents omitted -> defaults to skip
 ```
 
 ## 3. Define the component catalog
@@ -92,6 +111,12 @@ Run the pipeline from the consumer environment and pass an explicit repo root:
 site-pipeline build --repo-root .
 ```
 
+Example CI or deployment invocation using strict mode:
+
+```bash
+site-pipeline build --repo-root . --missing-components fail
+```
+
 The resulting staged tree under `site/.stage/` becomes the single source of
 truth for the downstream renderer.
 
@@ -116,6 +141,10 @@ Typical local workflows use:
 - `site-pipeline preview` for a deliberately barebones preview server. It is not
   a substitute for the consumer's real renderer.
 
+Those commands all honor the same missing-component policy. The default `skip`
+mode is appropriate for local partial workspaces, while CI or deployment flows
+should usually opt into `fail`.
+
 In CI, run the pipeline before the site renderer so the published build always
 consumes staged content from the contract boundary. Container-first consumers can
 make the published `site-pipeline` image their default CI runtime, while
@@ -125,7 +154,8 @@ own CI image from that base.
 A practical split is:
 
 - native tools for local `watch` / `preview` workflows, and
-- containerized `site-pipeline` usage as the default CI path.
+- containerized `site-pipeline` usage as the default CI path, typically with
+  `--missing-components fail`.
 
 ## Migration notes
 

@@ -34,7 +34,7 @@ from pathlib import Path
 
 from .builder import build
 from .common import first_non_none
-from .config import ProjectStatus, resolve_pipeline_config
+from .config import MissingComponentsPolicy, ProjectStatus, resolve_pipeline_config
 from .constants import (
     STAGED_VENDOR_ASSETS,
     WATCH_DEBOUNCE_MS,
@@ -289,6 +289,7 @@ def watch_and_build(
     preview_path: str | Path | None = None,
     site_title: str | None = None,
     project_status: ProjectStatus | None = None,
+    missing_components: MissingComponentsPolicy | None = None,
 ) -> None:
     """Continuously rebuild ``site/.stage`` whenever relevant inputs change.
 
@@ -309,6 +310,7 @@ def watch_and_build(
         preview_path=preview_path,
         site_title=site_title,
         project_status=project_status,
+        missing_components=missing_components,
     )
     resolved_repo_root = resolved_config.repo_root
     stage_root = resolved_config.stage_path
@@ -322,6 +324,7 @@ def watch_and_build(
         preview_path=preview_path,
         site_title=site_title,
         project_status=project_status,
+        missing_components=missing_components,
     )
     print(
         f"Built {len(results)} component(s) into {stage_root.relative_to(resolved_repo_root).as_posix()}"
@@ -378,6 +381,7 @@ def watch_and_build(
                     preview_path=preview_path,
                     site_title=site_title,
                     project_status=project_status,
+                    missing_components=missing_components,
                 )
                 print(
                     f"Built {len(results)} component(s) into {stage_root.relative_to(resolved_repo_root).as_posix()}"

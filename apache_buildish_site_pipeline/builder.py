@@ -26,7 +26,12 @@ from pathlib import Path
 from typing import Literal
 
 from .common import first_non_none
-from .config import ProjectStatus, resolve_pipeline_config, resolve_workspace_paths
+from .config import (
+    MissingComponentsPolicy,
+    ProjectStatus,
+    resolve_pipeline_config,
+    resolve_workspace_paths,
+)
 from .constants import DEFAULT_TAG_PATTERN
 from .filesystem import (
     copy_tree_without_symlinks,
@@ -511,6 +516,8 @@ def stage_component(
     defaults: ComponentCatalogDefaults,
     catalog_index: int,
     local_overrides: ComponentsLocalOverrides | None = None,
+    *,
+    missing_components: MissingComponentsPolicy = "skip",
 ) -> ComponentBuildResult:
     """Stage one component described in the resolved component catalog."""
 
@@ -519,6 +526,10 @@ def stage_component(
     repo_path = resolve_component_repo_path(repo_root, component, local_overrides)
     warnings: list[str] = []
     available = repo_path.is_dir()
+    if not available and missing_components == "fail":
+        raise ValueError(
+            f"Missing component checkout for '{slug}': expected {repo_path}"
+        )
     navigation_weight = (
         component.weight if component.weight is not None else catalog_index * 10
     )
@@ -703,6 +714,7 @@ def build(
     preview_path: str | Path | None = None,
     site_title: str | None = None,
     project_status: ProjectStatus | None = None,
+    missing_components: MissingComponentsPolicy | None = None,
 ) -> list[ComponentBuildResult]:
     """Build the staged site contract and, optionally, the lightweight preview pages.
 
@@ -720,6 +732,7 @@ def build(
         preview_path=preview_path,
         site_title=site_title,
         project_status=project_status,
+        missing_components=missing_components,
     )
     resolved_repo_root = resolved_config.repo_root
     site_root = resolved_config.site_root
@@ -749,6 +762,7 @@ def build(
             catalog.defaults,
             index,
             local_overrides=local_overrides,
+            missing_components=resolved_config.missing_components,
         )
         for index, component in enumerate(catalog.components, start=1)
     ]
@@ -895,6 +909,7 @@ def preview(
     preview_path: str | Path | None = None,
     site_title: str | None = None,
     project_status: ProjectStatus | None = None,
+    missing_components: MissingComponentsPolicy | None = None,
 ) -> None:
     """Serve the deliberately barebones preview tree with Python's HTTP server."""
 
@@ -908,6 +923,7 @@ def preview(
         preview_path=preview_path,
         site_title=site_title,
         project_status=project_status,
+        missing_components=missing_components,
     )
     resolved_workspace = resolve_workspace_paths(
         resolved_repo_root,

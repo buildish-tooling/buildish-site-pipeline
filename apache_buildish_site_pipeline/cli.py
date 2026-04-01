@@ -54,6 +54,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         choices=["incubating", "graduated", "retired"],
         help="Override the effective project status",
     )
+    common.add_argument(
+        "--missing-components",
+        choices=["skip", "fail"],
+        help="Control whether missing component checkouts are skipped or fail the run",
+    )
 
     parser = argparse.ArgumentParser(
         description=(
@@ -116,6 +121,7 @@ def main(argv: list[str] | None = None) -> int:
             preview_path=args.preview_path,
             site_title=args.site_title,
             project_status=args.project_status,
+            missing_components=args.missing_components,
         )
         print(f"Built {len(results)} component(s)")
         return 0
@@ -140,6 +146,7 @@ def main(argv: list[str] | None = None) -> int:
             preview_path=args.preview_path,
             site_title=args.site_title,
             project_status=args.project_status,
+            missing_components=args.missing_components,
         )
         return 0
     preview(
@@ -152,5 +159,6 @@ def main(argv: list[str] | None = None) -> int:
         preview_path=args.preview_path,
         site_title=args.site_title,
         project_status=args.project_status,
+        missing_components=args.missing_components,
     )
     return 0

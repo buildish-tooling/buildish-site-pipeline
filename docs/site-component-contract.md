@@ -29,8 +29,8 @@ the component repositories that participate in staging.
   content,
 - component repositories are discovered from the catalog and may live anywhere
   reachable from the workspace root,
-- missing component repositories are allowed during local builds and CI and are
-  skipped cleanly, and
+- missing component repositories are skipped cleanly by default, while strict
+  builds may opt into `missingComponents: fail` or `--missing-components fail`, and
 - pipeline-managed outputs default to `site/.stage` and `site/.preview`.
 
 All configured consumer-workspace paths must remain inside the repo root. The
@@ -168,9 +168,9 @@ Only exact-version tags matching the configured `tagPattern` are accepted for
 
 At minimum, the configured `workspace.stagePath` contains:
 
-- `content/components/<slug>/_index.md`
-- `content/components/<slug>/...` for additional component pages
-- `content/components/<slug>/development/docs/...`
+- `content/components/<slug>/_index.md` for available components
+- `content/components/<slug>/...` for additional component pages on available components
+- `content/components/<slug>/development/docs/...` when component docs exist
 - `content/components/<slug>/development/version.yaml`
 - `content/components/<slug>/lifecycle.yaml`
 - `data/components.yaml`

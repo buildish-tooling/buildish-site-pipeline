@@ -26,6 +26,7 @@ from .filesystem import repo_root_from
 from .models import YamlModel
 
 ProjectStatus = Literal["incubating", "graduated", "retired"]
+MissingComponentsPolicy = Literal["skip", "fail"]
 
 DEFAULT_SITE_PIPELINE_CONFIG_PATH = Path("site/site-pipeline.yaml")
 DEFAULT_CATALOG_PATH = Path("site/components.yaml")
@@ -34,6 +35,7 @@ DEFAULT_STAGE_PATH = Path("site/.stage")
 DEFAULT_PREVIEW_PATH = Path("site/.preview")
 DEFAULT_SITE_TITLE = "Apache Project Site"
 DEFAULT_PROJECT_STATUS: ProjectStatus = "incubating"
+DEFAULT_MISSING_COMPONENTS_POLICY: MissingComponentsPolicy = "skip"
 
 
 class SitePipelineSiteConfig(YamlModel):
@@ -41,6 +43,7 @@ class SitePipelineSiteConfig(YamlModel):
 
     site_title: str | None = None
     project_status: ProjectStatus | None = None
+    missing_components: MissingComponentsPolicy | None = None
 
 
 class SitePipelineWorkspaceConfig(YamlModel):
@@ -81,6 +84,7 @@ class ResolvedPipelineConfig(ResolvedWorkspacePaths):
     catalog_path: Path
     site_title: str
     project_status: ProjectStatus
+    missing_components: MissingComponentsPolicy
 
 
 def resolve_workspace_paths(
@@ -119,6 +123,7 @@ def resolve_pipeline_config(
     preview_path: str | Path | None = None,
     site_title: str | None = None,
     project_status: ProjectStatus | None = None,
+    missing_components: MissingComponentsPolicy | None = None,
 ) -> ResolvedPipelineConfig:
     """Resolve the effective configuration for one pipeline invocation."""
 
@@ -154,6 +159,11 @@ def resolve_pipeline_config(
         site_title=site_title or file_config.site.site_title or DEFAULT_SITE_TITLE,
         project_status=(
             project_status or file_config.site.project_status or DEFAULT_PROJECT_STATUS
+        ),
+        missing_components=(
+            missing_components
+            or file_config.site.missing_components
+            or DEFAULT_MISSING_COMPONENTS_POLICY
         ),
     )
 

@@ -47,6 +47,10 @@ environment-specific runtime choices.
 - renderer integration, templates, shortcodes, navigation, and branding, and
 - publishing, release, and CI policy.
 
+The extracted repository can also publish a renderer-agnostic container image that
+simply runs `site-pipeline`.
+That image is part of the pipeline distribution story, not part of the renderer contract.
+
 Consumer-specific helpers are outside the core pipeline contract. For example, a
 consumer site may add convenience shortcodes for component pages, but those are
 owned by that renderer layer rather than by the staging package.
@@ -107,6 +111,15 @@ Watch mode intentionally rebuilds the stage root without rewriting the preview
 root on every change. That keeps interactive development responsive and avoids
 unnecessary file-system churn for downstream renderers.
 
+## Containerized distribution
+
+The project can also be distributed as a multi-platform container image whose
+entrypoint is `site-pipeline`. That image is intended mainly for CI or other
+container-first workflows. It deliberately does not bundle renderer-specific
+tooling such as Hugo, Node, themes, or publishing scripts. Consumers that need
+those tools should derive their own images from the generic `site-pipeline`
+base image.
+
 ## Inputs and outputs
 
 ### Inputs
@@ -152,6 +165,8 @@ The current implementation keeps these guardrails:
 ## Read next
 
 - [Site component contract](../site-component-contract/)
+- [Consumer workspace and CI model](../workspace-and-ci-model/)
+- [Design principles and future evolution](../design-principles/)
 - [Adoption guide](../adoption-guide/)
 - [Workspace examples](../examples/)
 

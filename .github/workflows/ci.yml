@@ -1,0 +1,205 @@
+##
+## Copyright 2026 The Apache Software Foundation
+##
+## Licensed under the Apache License, Version 2.0 (the "License");
+## you may not use this file except in compliance with the License.
+## You may obtain a copy of the License at
+##
+## http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS,
+## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+## See the License for the specific language governing permissions and
+## limitations under the License.
+
+name: CI
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  changes:
+    name: Detect relevant changes
+    runs-on: ubuntu-latest
+    outputs:
+      check: ${{ steps.filter.outputs.check }}
+      container_image: ${{ steps.filter.outputs.container_image }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Detect changes that require CI jobs
+        id: filter
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: bash .github/scripts/ci-detect-changes.sh
+
+  rat:
+    name: Apache RAT
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Java 21
+        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.0.0
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: RAT check
+        run: tools/rat/rat-check.sh
+
+  check:
+    name: Check
+    needs: changes
+    if: needs.changes.outputs.check == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
+
+      - name: Install Python 3.13 for uv-managed commands
+        run: uv python install 3.13
+
+      - name: Run make check
+        run: make check
+
+  container-image:
+    name: Site Pipeline image
+    needs: changes
+    if: needs.changes.outputs.container_image == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE_REF: ghcr.io/${{ github.repository_owner }}/buildish-site-pipeline:latest
+      PLATFORMS: linux/amd64,linux/arm64
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4.0.0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+
+      - name: Build multi-platform image without publishing
+        run: tools/site-pipeline-image/build-image.sh --engine docker --image "$IMAGE_REF" --platforms "$PLATFORMS"
+
+      - name: Log in to GHCR
+        if: github.repository_owner == 'apache' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          printf '%s' "$GITHUB_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+
+      - name: Publish multi-platform image to GHCR
+        if: github.repository_owner == 'apache' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        run: tools/site-pipeline-image/build-image.sh --engine docker --image "$IMAGE_REF" --platforms "$PLATFORMS" --push
+
+  codeql:
+    name: CodeQL
+    if: github.repository_owner == 'apache'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@5c8a8a642e79153f5d047b10ec1cba1d1cc65699 # v3.35.1
+        with:
+          languages: python
+          build-mode: none
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@5c8a8a642e79153f5d047b10ec1cba1d1cc65699 # v3.35.1
+
+  zizmor:
+    name: zizmor
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run zizmor
+        uses: zizmorcore/zizmor-action@71321a20a9ded102f6e9ce5718a2fcec2c4f70d8 # v0.5.2
+        with:
+          advanced-security: false
+
+  required_checks:
+    name: Required Checks
+    if: ${{ always() }}
+    needs:
+      - changes
+      - rat
+      - check
+      - container-image
+      - codeql
+      - zizmor
+    runs-on: ubuntu-latest
+    steps:
+      - name: Assert all required jobs succeeded or were intentionally skipped
+        env:
+          CHANGES_RESULT: ${{ needs.changes.result }}
+          RAT_RESULT: ${{ needs.rat.result }}
+          CHECK_RESULT: ${{ needs.check.result }}
+          CONTAINER_IMAGE_RESULT: ${{ needs.container-image.result }}
+          CODEQL_RESULT: ${{ needs.codeql.result }}
+          ZIZMOR_RESULT: ${{ needs.zizmor.result }}
+        run: |
+          for result in \
+            "$CHANGES_RESULT" \
+            "$RAT_RESULT" \
+            "$CHECK_RESULT" \
+            "$CONTAINER_IMAGE_RESULT" \
+            "$CODEQL_RESULT" \
+            "$ZIZMOR_RESULT"; do
+            case "$result" in
+              success|skipped) ;;
+              *)
+                echo "Unexpected dependency result: $result"
+                exit 1
+                ;;
+            esac
+          done
+
+          echo "All required jobs succeeded for this event."

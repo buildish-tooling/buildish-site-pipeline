@@ -325,7 +325,7 @@ class ExtractedSitePipelineTest(unittest.TestCase):
             self.assertIn((mammoth / "site" / "docs").resolve(), watch_roots)
             self.assertIn((mammoth / "site" / "assets").resolve(), watch_roots)
 
-    def test_collect_watch_roots_includes_catalog_component_inputs_and_missing_repo_parent(
+    def test_collect_watch_roots_ignores_missing_component_checkout_paths(
         self,
     ) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -398,7 +398,8 @@ class ExtractedSitePipelineTest(unittest.TestCase):
             self.assertIn((mammoth / "site" / "pages").resolve(), watch_roots)
             self.assertIn((mammoth / "site" / "docs").resolve(), watch_roots)
             self.assertIn((mammoth / "site" / "assets").resolve(), watch_roots)
-            self.assertIn(workspace.resolve(), watch_roots)
+            self.assertNotIn(workspace.resolve(), watch_roots)
+            self.assertNotIn((workspace / "missing-component").resolve(), watch_roots)
             self.assertNotIn((repo_root / "site" / "pipeline").resolve(), watch_roots)
             self.assertNotIn((repo_root / "site" / "pipeline" / ".venv").resolve(), watch_roots)
 

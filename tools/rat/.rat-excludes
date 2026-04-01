@@ -13,12 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-schemaVersion: 1
-component:
-  slug: site-pipeline
-  displayName: Site Pipeline
-  repository: https://github.com/apache/buildish-site-pipeline
-content:
-  docsRoot: docs
-navigation:
-  section: components
+.git/**
+.idea/**
+build/**
+dist/**
+**/.idea/**
+**/.venv/**
+**/__pycache__/**
+**/*.swp
+**/uv.lock
+**/.mypy_cache/**
+**/.ruff_cache/**
+**/*.egg-info/**
+tests/fixtures/second-consumer-workspace/worktrees/rocket-cache-alt/site/assets/logos/mark.txt

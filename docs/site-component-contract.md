@@ -205,5 +205,7 @@ The pipeline enforces these guardrails:
 ## Read next
 
 - [Site Pipeline overview](../site-pipeline/)
+- [Consumer workspace and CI model](../workspace-and-ci-model/)
+- [Design principles and future evolution](../design-principles/)
 - [Adoption guide](../adoption-guide/)
 - [Workspace examples](../examples/)

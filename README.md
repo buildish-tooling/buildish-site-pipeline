@@ -25,6 +25,7 @@ inputs, and emits metadata that a downstream renderer can consume.
 
 - the `apache_buildish_site_pipeline` Python package,
 - the `site-pipeline` CLI entrypoint,
+- an optional multi-platform container image that runs `site-pipeline`,
 - contract and adoption docs under `docs/`, and
 - a small self-contained generic test suite.
 
@@ -44,7 +45,7 @@ inputs, and emits metadata that a downstream renderer can consume.
 
 ## Quick start
 
-1. Add the package to the consumer site's Python environment.
+1. Either add the package to the consumer site's Python environment or use the published container image in CI.
 2. Create a component catalog, defaulting to `site/components.yaml`.
 3. Provide per-component `site/component.yaml`, `site/pages/`, `site/docs/`,
    and optional `site/assets/` inputs.
@@ -77,3 +78,11 @@ By default this writes wheels plus `dist/snapshots/latest.json`. That manifest
 includes the exact `file://` dependency spec a local consumer can use while the
 project is still only being shared on one machine.
 
+
+## Container image
+
+The repository also publishes a renderer-agnostic container image whose entrypoint is `site-pipeline`.
+
+That image is intended primarily for CI or other container-first environments. Consumers that also need Hugo, Node, or site-specific publishing helpers should build their own derived images on top of this base image rather than asking the generic pipeline image to own renderer-specific tooling.
+
+Local image build/publish helpers live under `tools/site-pipeline-image/`.

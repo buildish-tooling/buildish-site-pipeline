@@ -22,11 +22,14 @@ limitations under the License.
 
 Use this guide when wiring Site Pipeline into a consumer repository.
 
-## 1. Add the dependency
+## 1. Choose how the consumer will run the pipeline
 
-Install the package into the consumer site's Python environment with your chosen
-package manager. During local development, a path dependency is also fine as
-long as the consumer invokes the `site-pipeline` CLI from its managed runtime.
+You can either:
+
+- install the package into the consumer site's Python environment, or
+- run the published `site-pipeline` container image in CI or other container-first automation.
+
+During local development, a path dependency is also fine as long as the consumer invokes the `site-pipeline` CLI from its managed runtime.
 
 ## 2. Create the site workspace
 
@@ -114,7 +117,15 @@ Typical local workflows use:
   a substitute for the consumer's real renderer.
 
 In CI, run the pipeline before the site renderer so the published build always
-consumes staged content from the contract boundary.
+consumes staged content from the contract boundary. Container-first consumers can
+make the published `site-pipeline` image their default CI runtime, while
+consumers that also need Hugo, Node, or publishing helpers should derive their
+own CI image from that base.
+
+A practical split is:
+
+- native tools for local `watch` / `preview` workflows, and
+- containerized `site-pipeline` usage as the default CI path.
 
 ## Migration notes
 

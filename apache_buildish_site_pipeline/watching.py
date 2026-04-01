@@ -84,12 +84,9 @@ def _component_watch_roots(
 
     slug = component.slug
     repo_path = resolve_component_repo_path(repo_root, component, local_overrides)
-    parent_fallback = (
-        repo_path.parent if repo_path.parent.exists() else repo_root.parent.resolve()
-    )
 
     if not repo_path.exists():
-        return {watchable_existing_path(repo_path, parent_fallback)}
+        return set()
 
     metadata_relative = (
         component.metadata_file or defaults.metadata_file or "site/component.yaml"

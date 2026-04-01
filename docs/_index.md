@@ -23,3 +23,12 @@ predictable staged site contract.
 
 Use these docs to understand the split between pipeline-owned staging behavior
 and consumer-owned rendering, navigation, and publishing.
+
+## Guide map
+
+- [Site Pipeline overview](site-pipeline/)
+- [Site component contract](site-component-contract/)
+- [Consumer workspace and CI model](workspace-and-ci-model/)
+- [Design principles and future evolution](design-principles/)
+- [Adoption guide](adoption-guide/)
+- [Workspace examples](examples/)

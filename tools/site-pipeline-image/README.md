@@ -1,0 +1,76 @@
+<!--
+Copyright 2026 The Apache Software Foundation
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+# Apache Buildish Site Pipeline container image
+
+This directory contains the reusable container image definition for the generic `site-pipeline` CLI runtime.
+
+The image intentionally stays renderer-agnostic. It installs the extracted Python package and exposes the `site-pipeline` entrypoint, but it does **not** bundle Hugo, Node, consumer layouts, themes, or publishing logic.
+
+That split keeps the image useful for container-first CI pipelines while letting consumers build their own derived images with renderer-specific tooling on top.
+
+## Local multi-platform image build script
+
+Use `build-image.sh` for the actual image automation.
+
+- Default platforms: `linux/amd64,linux/arm64`
+- Default engine selection: `podman`, then `docker`
+- Publishing is opt-in via `--push`
+
+Examples:
+
+- `tools/site-pipeline-image/build-image.sh --image ghcr.io/example/buildish-site-pipeline:latest --dry-run`
+- `tools/site-pipeline-image/build-image.sh --engine podman --image ghcr.io/example/buildish-site-pipeline:latest`
+- `tools/site-pipeline-image/build-image.sh --engine docker --image ghcr.io/example/buildish-site-pipeline:latest --push`
+
+Local multi-platform builds may require binfmt/QEMU support on the host.
+
+For `podman`, the build script builds each target platform sequentially into a manifest list and fails early with a clear prerequisite error if required binfmt/QEMU handlers are missing.
+
+## Local publish testing with a localhost registry
+
+The script is safe by default:
+
+- no publishing happens unless `--push` is provided
+- insecure publishing is disabled unless `--allow-insecure-localhost-registry` is also provided
+- insecure publishing is only allowed for explicit localhost or loopback registry references
+
+Current support:
+
+- localhost insecure publish testing is supported with `podman`
+- `docker` remains limited to the normal secure publish path
+
+Example once you have a localhost registry listening on port `5000`:
+
+- `tools/site-pipeline-image/build-image.sh --engine podman --image localhost:5000/buildish-site-pipeline:test --push --allow-insecure-localhost-registry`
+
+## Reusable localhost registry integration test
+
+Use `test-local-registry.sh` to exercise the full local publish path end to end.
+
+It will:
+
+- start a pinned local registry container bound only to `127.0.0.1`
+- invoke `build-image.sh` with explicit localhost insecure-push opt-in
+- fetch the published manifest list from the registry API
+- verify that `linux/amd64` and `linux/arm64` were published
+- clean up the local registry container automatically unless `--keep-registry` is used
+
+The pinned local registry image reference is sourced from `tools/site-pipeline-image/Containerfile-local-registry` so Renovate can manage it.
+
+## GitHub Actions
+
+`.github/workflows/ci.yml` runs `make check`, builds the multi-platform image for `linux/amd64` and `linux/arm64`, and publishes it to GHCR on trusted Apache-owned pushes.

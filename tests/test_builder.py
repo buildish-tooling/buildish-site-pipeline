@@ -92,7 +92,50 @@ def _seed_multi_component_fixture(
     return repo_root
 
 
+def _staged_component_content_root(repo_root: Path) -> Path:
+    return repo_root / "site" / ".stage" / "content" / "components" / "mammoth-cache"
+
+
+def _staged_component_docs_root(repo_root: Path) -> Path:
+    return _staged_component_content_root(repo_root) / "development" / "docs"
+
+
+def _staged_component_assets_root(repo_root: Path) -> Path:
+    return (
+        repo_root
+        / "site"
+        / ".stage"
+        / "static"
+        / "components"
+        / "mammoth-cache"
+        / "development"
+        / "assets"
+    )
+
+
 class BuildEdgeCaseTest(unittest.TestCase):
+    def test_build_requires_component_pages_root_when_not_configured(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = _seed_build_fixture(
+                Path(temp_dir),
+                component_files={"README.md": "workspace checkout\n"},
+                defaults={"metadataFile": "site/component.yaml"},
+            )
+
+            with self.assertRaisesRegex(ValueError, "Missing required pagesRoot"):
+                site_pipeline.build(repo_root)
+
+    def test_build_rejects_missing_component_pages_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = _seed_build_fixture(
+                Path(temp_dir),
+                component_files={"README.md": "workspace checkout\n"},
+                defaults=catalog_defaults(pagesRoot="site/missing-pages"),
+            )
+
+            with self.assertRaisesRegex(ValueError, "pagesRoot for mammoth-cache does not exist"):
+                site_pipeline.build(repo_root)
+
     def test_build_marks_missing_components_unavailable_by_default(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             workspace = Path(temp_dir)
@@ -189,6 +232,187 @@ class BuildEdgeCaseTest(unittest.TestCase):
 
             with self.assertRaisesRegex(ValueError, "must contain _index.md"):
                 site_pipeline.build(repo_root)
+
+    def test_build_warns_when_docs_root_has_no_index(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = _seed_build_fixture(
+                Path(temp_dir),
+                component_files={
+                    "site/pages/_index.md": "# Mammoth Cache\n\nLanding page.\n",
+                    "site/docs/getting-started.md": "# Getting started\n\nRead this first.\n",
+                },
+            )
+
+            results = site_pipeline.build(repo_root)
+            result = results[0]
+            staged_doc = _staged_component_docs_root(repo_root) / "getting-started.md"
+
+            self.assertTrue(staged_doc.is_file())
+            self.assertIsNone(result.raw_docs_root_path)
+            self.assertIn(
+                "Docs root is missing _index.md; add a site-oriented docs landing page.",
+                result.warnings,
+            )
+
+    def test_build_does_not_touch_preview_tree_when_preview_is_disabled(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = _seed_build_fixture(
+                Path(temp_dir),
+                component_files={"site/pages/_index.md": "# Mammoth Cache\n\nLanding page.\n"},
+            )
+            preview_root = repo_root / "site" / ".preview"
+            write_files(
+                repo_root,
+                {
+                    "site/.preview/index.html": "old preview\n",
+                    "site/.preview/assets/app.js": "console.log('keep');\n",
+                },
+            )
+
+            site_pipeline.build(repo_root, include_preview=False)
+
+            self.assertEqual("old preview\n", (preview_root / "index.html").read_text())
+            self.assertEqual(
+                "console.log('keep');\n",
+                (preview_root / "assets" / "app.js").read_text(),
+            )
+
+    def test_build_stages_authored_site_pages_with_site_pipeline_front_matter(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = _seed_build_fixture(
+                Path(temp_dir),
+                component_files={"site/pages/_index.md": "# Mammoth Cache\n\nLanding page.\n"},
+            )
+            write_files(
+                repo_root,
+                {
+                    "site/content/guide.md": "# Guide\n\nHello from the consumer site.\n",
+                },
+            )
+
+            site_pipeline.build(repo_root, site_title="Friendly Site")
+
+            staged_root_index = (repo_root / "site" / ".stage" / "content" / "_index.md").read_text()
+            staged_guide = (repo_root / "site" / ".stage" / "content" / "guide.md").read_text()
+
+            self.assertIn("title: Friendly Site", staged_root_index)
+            self.assertIn("sitePipeline:", staged_root_index)
+            self.assertIn("sitePipeline:", staged_guide)
+
+    def test_build_records_assets_root_when_component_assets_are_staged(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = _seed_build_fixture(
+                Path(temp_dir),
+                component_files={
+                    "site/pages/_index.md": "# Mammoth Cache\n\nLanding page.\n",
+                    "site/assets/logo.svg": "<svg></svg>\n",
+                },
+            )
+
+            results = site_pipeline.build(repo_root)
+            result = results[0]
+            staged_asset = _staged_component_assets_root(repo_root) / "logo.svg"
+
+            self.assertEqual(1, result.asset_count)
+            self.assertEqual(
+                "/components/mammoth-cache/development/assets/",
+                result.raw_assets_root_path,
+            )
+            self.assertTrue(staged_asset.is_file())
+
+    def test_build_keeps_non_markdown_component_content_unmodified(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = _seed_build_fixture(
+                Path(temp_dir),
+                component_files={
+                    "site/pages/_index.md": "# Mammoth Cache\n\nLanding page.\n",
+                    "site/pages/guide.md": "# Guide\n\nMore detail.\n",
+                    "site/pages/notes.txt": "plain notes\n",
+                    "site/docs/_index.md": "# Docs\n\nRead me first.\n",
+                    "site/docs/reference.adoc": "= Reference\n",
+                    "site/docs/raw.txt": "raw text\n",
+                },
+            )
+
+            results = site_pipeline.build(repo_root)
+            result = results[0]
+            staged_component_root = _staged_component_content_root(repo_root)
+            staged_docs_root = _staged_component_docs_root(repo_root)
+            staged_guide = (staged_component_root / "guide.md").read_text(encoding="utf-8")
+            staged_notes = (staged_component_root / "notes.txt").read_text(encoding="utf-8")
+            staged_reference = (staged_docs_root / "reference.adoc").read_text(encoding="utf-8")
+            staged_raw = (staged_docs_root / "raw.txt").read_text(encoding="utf-8")
+
+            self.assertIn("kind: component-page", staged_guide)
+            self.assertEqual("plain notes\n", staged_notes)
+            self.assertEqual("= Reference\n", staged_reference)
+            self.assertEqual("raw text\n", staged_raw)
+            self.assertEqual(
+                ["Docs", "Reference"],
+                [link.label for link in result.doc_links],
+            )
+
+    def test_build_allows_missing_authored_site_content_root(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = _seed_build_fixture(
+                Path(temp_dir),
+                component_files={"site/pages/_index.md": "# Mammoth Cache\n\nLanding page.\n"},
+            )
+
+            site_pipeline.build(repo_root, authored_site_content_path="site/missing-content")
+
+            self.assertFalse(
+                (repo_root / "site" / ".stage" / "content" / "_index.md").exists()
+            )
+
+    def test_build_keeps_non_markdown_authored_site_files_unmodified(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = _seed_build_fixture(
+                Path(temp_dir),
+                component_files={"site/pages/_index.md": "# Mammoth Cache\n\nLanding page.\n"},
+            )
+            write_files(
+                repo_root,
+                {
+                    "site/content/robots.txt": "User-agent: *\nDisallow:\n",
+                },
+            )
+
+            site_pipeline.build(repo_root, site_title="Friendly Site")
+
+            self.assertEqual(
+                "User-agent: *\nDisallow:\n",
+                (repo_root / "site" / ".stage" / "content" / "robots.txt").read_text(
+                    encoding="utf-8"
+                ),
+            )
+
+    def test_build_uses_explicit_component_tag_pattern_for_lifecycle_versions(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = _seed_build_fixture(
+                Path(temp_dir),
+                component_files={
+                    "site/pages/_index.md": "# Mammoth Cache\n\nLanding page.\n",
+                    "site/component.yaml": (
+                        "schemaVersion: 1\n"
+                        "component:\n"
+                        "  displayName: Mammoth Cache\n"
+                        "versioning:\n"
+                        "  tagPattern: ^release-[0-9]+$\n"
+                        "lifecycle:\n"
+                        "  latestStable: release-7\n"
+                        "  releaseLines:\n"
+                        "    - line: stable\n"
+                        "      latest: release-7\n"
+                        "      status: maintained\n"
+                    ),
+                },
+            )
+
+            result = site_pipeline.build(repo_root)[0]
+
+            self.assertEqual("release-7", result.latest_stable_version)
+            self.assertEqual("release-7", result.release_lines[0].latest)
 
 
 class PreviewTest(unittest.TestCase):

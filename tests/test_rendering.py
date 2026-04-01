@@ -26,6 +26,8 @@ from apache_buildish_site_pipeline.models import ComponentLifecycleReleaseLine
 from apache_buildish_site_pipeline.models import ComponentLifecycleSettings
 from apache_buildish_site_pipeline.models import StagedDocLink
 from apache_buildish_site_pipeline.models import StagedReleaseLine
+from apache_buildish_site_pipeline.rendering import _relative_web_path
+from apache_buildish_site_pipeline.rendering import build_development_index_markdown
 from apache_buildish_site_pipeline.rendering import build_component_preview
 from apache_buildish_site_pipeline.rendering import build_preview_index
 from apache_buildish_site_pipeline.rendering import normalize_lifecycle
@@ -77,6 +79,7 @@ def _component_result(**overrides: object) -> ComponentBuildResult:
 
 class RenderingPathTest(unittest.TestCase):
     def test_public_paths_normalize_directory_and_markdown_routes(self) -> None:
+        self.assertEqual("/components/mammoth-cache", _relative_web_path(Path("components/mammoth-cache")))
         self.assertEqual("/", public_directory_path(Path(".")))
         self.assertEqual("/components/mammoth-cache/", public_directory_path(Path("components/mammoth-cache")))
         self.assertEqual(
@@ -93,6 +96,34 @@ class RenderingPathTest(unittest.TestCase):
 
 
 class LifecycleRenderingTest(unittest.TestCase):
+    def test_normalize_lifecycle_rejects_invalid_latest_stable_version(self) -> None:
+        with self.assertRaisesRegex(ValueError, "Invalid latestStable"):
+            normalize_lifecycle(
+                ComponentLifecycleSettings(latest_stable="1.2.3"),
+                re.compile(r"^v[0-9]+\.[0-9]+\.[0-9]+$"),
+                "mammoth-cache",
+                Path("/workspace/component"),
+                Path("/workspace/stage/content"),
+            )
+
+    def test_normalize_lifecycle_rejects_invalid_release_line_latest(self) -> None:
+        with self.assertRaisesRegex(ValueError, "Invalid release line"):
+            normalize_lifecycle(
+                ComponentLifecycleSettings(
+                    release_lines=(
+                        ComponentLifecycleReleaseLine(
+                            line="v1",
+                            latest="not-a-tag",
+                            status="maintained",
+                        ),
+                    )
+                ),
+                re.compile(r"^v[0-9]+\.[0-9]+\.[0-9]+$"),
+                "mammoth-cache",
+                Path("/workspace/component"),
+                Path("/workspace/stage/content"),
+            )
+
     def test_normalize_lifecycle_returns_release_lines_aliases_and_paths(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             stage_content_root = Path(temp_dir) / "stage" / "content"
@@ -125,6 +156,50 @@ class LifecycleRenderingTest(unittest.TestCase):
         self.assertEqual("/components/mammoth-cache/releases/v1.2.3/", release_lines[0].path)
         self.assertEqual(["stable", "v1"], [entry.alias for entry in alias_mappings])
 
+    def test_normalize_lifecycle_uses_none_for_missing_release_indexes(self) -> None:
+        latest_stable, latest_path, release_lines, alias_mappings = normalize_lifecycle(
+            ComponentLifecycleSettings(
+                latest_stable="v1.2.3",
+                release_lines=(
+                    ComponentLifecycleReleaseLine(
+                        line="v1",
+                        latest="v1.2.3",
+                        status="maintained",
+                    ),
+                ),
+            ),
+            re.compile(r"^v[0-9]+\.[0-9]+\.[0-9]+$"),
+            "mammoth-cache",
+            Path("/workspace/component"),
+            Path("/workspace/stage/content"),
+        )
+
+        self.assertEqual("v1.2.3", latest_stable)
+        self.assertIsNone(latest_path)
+        self.assertIsNone(release_lines[0].path)
+        self.assertEqual((), alias_mappings)
+
+    def test_build_development_index_markdown_reports_when_docs_are_missing(self) -> None:
+        markdown = build_development_index_markdown(
+            _component_result(
+                default_branch=None,
+                doc_links=(),
+                asset_count=0,
+                raw_assets_root_path=None,
+            )
+        )
+
+        self.assertIn("No staged preview docs pages are currently available", markdown)
+        self.assertNotIn("Built from the local", markdown)
+        self.assertNotIn("Open staged assets", markdown)
+
+    def test_build_development_index_markdown_includes_branch_docs_and_assets(self) -> None:
+        markdown = build_development_index_markdown(_component_result())
+
+        self.assertIn("Built from the local `main` branch snapshot.", markdown)
+        self.assertIn("## Docs", markdown)
+        self.assertIn("Open staged assets", markdown)
+
 
 class PreviewRenderingTest(unittest.TestCase):
     def test_build_preview_index_lists_component_statuses(self) -> None:
@@ -154,3 +229,27 @@ class PreviewRenderingTest(unittest.TestCase):
         self.assertIn("Missing release notes", preview)
         self.assertIn("Open staged component landing page", preview)
         self.assertIn("/components/mammoth-cache/releases/v1.2.3/", preview)
+
+    def test_build_component_preview_handles_unlinked_release_information(self) -> None:
+        preview = build_component_preview(
+            _component_result(
+                latest_stable_version="v2.0.0",
+                latest_stable_path=None,
+                raw_development_index_path=None,
+                release_lines=(
+                    StagedReleaseLine(
+                        line="v2",
+                        latest="v2.0.0",
+                        status="maintained",
+                        aliases=(),
+                        path=None,
+                    ),
+                ),
+            ),
+            "/preview/",
+        )
+
+        self.assertIn("Latest stable:</strong> <code>v2.0.0</code>", preview)
+        self.assertNotIn("Open Preview docs index", preview)
+        self.assertIn("latest <code>v2.0.0</code>", preview)
+        self.assertNotIn("aliases:", preview)

@@ -20,10 +20,17 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import apache_buildish_site_pipeline.filesystem as filesystem_module
 from apache_buildish_site_pipeline.filesystem import load_component_metadata
 from apache_buildish_site_pipeline.filesystem import repo_root_from
+from apache_buildish_site_pipeline.models.base import YamlModel
+from apache_buildish_site_pipeline.yaml_support import yaml_safe_value
 
 from tests.test_support import dump_yaml
+
+
+class _SampleYamlModel(YamlModel):
+    name: str
 
 
 class ComponentMetadataLoadingTest(unittest.TestCase):
@@ -125,3 +132,29 @@ class FilesystemHelpersTest(unittest.TestCase):
             repo_root.mkdir()
 
             self.assertEqual(repo_root.resolve(), repo_root_from(str(repo_root)))
+
+    def test_repo_root_from_defaults_to_module_ancestor(self) -> None:
+        self.assertEqual(Path(filesystem_module.__file__).resolve().parents[3], repo_root_from())
+
+
+class YamlModelAndSerializationTest(unittest.TestCase):
+    def test_yaml_model_from_yaml_path_rejects_non_mapping_payload(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "sample.yaml"
+            path.write_text("- item\n", encoding="utf-8")
+
+            with self.assertRaisesRegex(ValueError, "Expected mapping"):
+                _SampleYamlModel.from_yaml_path(path)
+
+    def test_yaml_safe_value_normalizes_models_tuples_and_lists(self) -> None:
+        payload = {
+            "items": (
+                _SampleYamlModel(name="demo"),
+                ["plain", _SampleYamlModel(name="nested")],
+            )
+        }
+
+        self.assertEqual(
+            {"items": [{"name": "demo"}, ["plain", {"name": "nested"}]]},
+            yaml_safe_value(payload),
+        )

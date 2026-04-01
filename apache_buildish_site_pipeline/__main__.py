@@ -12,11 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-.venv/
-build/
-*.egg-info/
-__pycache__/
-.mypy_cache/
-.pytest_cache/
-.ruff_cache/
+"""Module entrypoint for ``python -m apache_buildish_site_pipeline``."""
 
+from .cli import main
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

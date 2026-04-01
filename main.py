@@ -12,11 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-.venv/
-build/
-*.egg-info/
-__pycache__/
-.mypy_cache/
-.pytest_cache/
-.ruff_cache/
+"""Tiny command-line entry point for the site pipeline package."""
 
+from __future__ import annotations
+
+from apache_buildish_site_pipeline import main
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

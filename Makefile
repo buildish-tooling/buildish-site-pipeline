@@ -12,11 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-.venv/
-build/
-*.egg-info/
-__pycache__/
-.mypy_cache/
-.pytest_cache/
-.ruff_cache/
+UV_RUN = uv run --frozen
+SNAPSHOT_OUT_DIR ?= dist/snapshots
+
+.PHONY: lint typecheck test check publish-snapshot-local
+
+lint:
+	$(UV_RUN) ruff check main.py apache_buildish_site_pipeline tests
+
+typecheck:
+	$(UV_RUN) mypy
+
+test:
+	$(UV_RUN) python -m unittest discover -s tests -p 'test_*.py' -v
+
+check: lint typecheck test
+
+publish-snapshot-local:
+	$(UV_RUN) python -m apache_buildish_site_pipeline.snapshot_publish --out-dir $(SNAPSHOT_OUT_DIR)
 

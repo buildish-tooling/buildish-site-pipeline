@@ -12,11 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-.venv/
-build/
-*.egg-info/
-__pycache__/
-.mypy_cache/
-.pytest_cache/
-.ruff_cache/
-
+schemaVersion: 1
+workspace:
+  components:
+    rocket-cache:
+      checkoutDir: ../worktrees/rocket-cache-alt

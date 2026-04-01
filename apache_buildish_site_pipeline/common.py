@@ -12,11 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-.venv/
-build/
-*.egg-info/
-__pycache__/
-.mypy_cache/
-.pytest_cache/
-.ruff_cache/
+"""Small cross-cutting helpers shared across site pipeline modules."""
 
+from __future__ import annotations
+
+
+def first_non_none[ValueT](*values: ValueT | None) -> ValueT | None:
+    """Return the first value that is not ``None``."""
+
+    for value in values:
+        if value is not None:
+            return value
+    return None

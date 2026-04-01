@@ -19,6 +19,7 @@ from __future__ import annotations
 import html
 import re
 from pathlib import Path
+from urllib.parse import quote, urlsplit
 
 from .models import (
     ComponentBuildResult,
@@ -55,6 +56,26 @@ def public_content_page_path(root_segments: list[str], relative_path: Path) -> s
         segments.append(stem)
     suffix = "/".join(root_segments + segments)
     return "/" + suffix.strip("/") + "/"
+
+
+def _preview_component_path(preview_root_path: str, slug: str) -> str:
+    """Return a preview-safe component path for the lightweight index."""
+
+    return f"{preview_root_path}components/{quote(slug, safe='')}/"
+
+
+def _safe_external_href(url: str) -> str | None:
+    """Allow only absolute HTTP(S) links in preview HTML."""
+
+    candidate = url.strip()
+    if not candidate:
+        return None
+    parsed = urlsplit(candidate)
+    if parsed.scheme.lower() not in {"http", "https"}:
+        return None
+    if not parsed.netloc:
+        return None
+    return candidate
 
 
 def _release_index_web_path(
@@ -185,8 +206,9 @@ def build_preview_index(
     items = []
     for result in results:
         status = "available" if result.available else "missing from local workspace"
+        href = _preview_component_path(preview_root_path, result.slug)
         items.append(
-            f"<li><a href='{html.escape(preview_root_path)}components/{result.slug}/'>{html.escape(result.display_name)}</a>"
+            f"<li><a href='{html.escape(href)}'>{html.escape(result.display_name)}</a>"
             f" — <span class='muted'>{html.escape(status)}</span></li>"
         )
     body = (
@@ -216,9 +238,14 @@ def build_component_preview(result: ComponentBuildResult, preview_root_path: str
         f"<p><strong>Workspace directory:</strong> <code>{html.escape(result.local_dir)}</code></p>"
     )
     if result.repository:
-        body.append(
-            f"<p><strong>Repository:</strong> <a href='{html.escape(result.repository)}'>{html.escape(result.repository)}</a></p>"
-        )
+        safe_repository_href = _safe_external_href(result.repository)
+        repository_text = html.escape(result.repository)
+        if safe_repository_href is None:
+            body.append(f"<p><strong>Repository:</strong> {repository_text}</p>")
+        else:
+            body.append(
+                f"<p><strong>Repository:</strong> <a href='{html.escape(safe_repository_href)}'>{repository_text}</a></p>"
+            )
     if result.default_branch:
         body.append(
             f"<p><strong>Default branch:</strong> <code>{html.escape(result.default_branch)}</code></p>"

@@ -49,8 +49,10 @@ inputs, and emits metadata that a downstream renderer can consume.
 2. Create a component catalog, defaulting to `site/components.yaml`.
 3. Provide per-component `site/component.yaml`, `site/pages/`, `site/docs/`,
    and optional `site/assets/` inputs.
-4. Run `site-pipeline build --repo-root <consumer-repo>`.
-5. Point the downstream renderer at the staged outputs under `site/.stage/`.
+4. Keep any machine-local checkout remapping in `site/components.local.yaml`
+   only; it should remain untracked.
+5. Run `site-pipeline build --repo-root <consumer-repo>`.
+6. Point the downstream renderer at the staged outputs under `site/.stage/`.
 
 `site-pipeline preview` is also available for a deliberately barebones preview,
 but it is far away from a real rendered website.

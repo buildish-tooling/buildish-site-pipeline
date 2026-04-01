@@ -48,7 +48,7 @@ In practice that means:
 
 - the shared catalog owns public component identity and default content roots,
 - `site/components.local.yaml` should only redirect a slug to a different local
-  checkout, and
+  checkout, should stay untracked, and
 - local overrides must not redefine published metadata such as slugs,
   repository identity, or lifecycle labels.
 

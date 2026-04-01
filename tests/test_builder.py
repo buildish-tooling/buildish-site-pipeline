@@ -16,6 +16,8 @@
 
 from __future__ import annotations
 
+from contextlib import redirect_stderr
+import io
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -114,6 +116,62 @@ def _staged_component_assets_root(repo_root: Path) -> Path:
 
 
 class BuildEdgeCaseTest(unittest.TestCase):
+    def test_build_warns_when_local_component_overrides_are_active(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = _seed_build_fixture(
+                Path(temp_dir),
+                component_files={
+                    "site/component.yaml": text_block(
+                        """
+                        schemaVersion: 1
+                        component:
+                          displayName: Mammoth Cache
+                        content:
+                          pagesRoot: site/pages
+                          docsRoot: site/docs
+                        """
+                    ),
+                    "site/pages/_index.md": "# Mammoth Cache\n\nLanding page.\n",
+                    "site/docs/_index.md": "# Docs\n\nRead me first.\n",
+                },
+            )
+            dump_yaml(
+                repo_root / "site" / "components.local.yaml",
+                {
+                    "schemaVersion": 1,
+                    "workspace": {
+                        "components": {
+                            "mammoth-cache": {"checkoutDir": "../mammoth-cache"}
+                        }
+                    },
+                },
+            )
+            stderr = io.StringIO()
+
+            with redirect_stderr(stderr):
+                site_pipeline.build(repo_root)
+
+            self.assertIn("site/components.local.yaml", stderr.getvalue())
+            self.assertIn("Treat this file as local-only", stderr.getvalue())
+
+    def test_build_rejects_invalid_component_slug(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir) / "consumer"
+            dump_yaml(
+                repo_root / "site" / "components.yaml",
+                catalog_payload(
+                    {"slug": "../escape", "localDir": "mammoth-cache"},
+                    defaults=catalog_defaults(),
+                ),
+            )
+            write_files(repo_root, {"site/content/_index.md": "# Root\n"})
+
+            with self.assertRaisesRegex(
+                ValueError,
+                "slug must use lowercase letters, digits, and single hyphens only",
+            ):
+                site_pipeline.build(repo_root)
+
     def test_build_requires_component_pages_root_when_not_configured(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             repo_root = _seed_build_fixture(
@@ -448,7 +506,7 @@ class PreviewTest(unittest.TestCase):
             ), patch(
                 "apache_buildish_site_pipeline.builder.socketserver.TCPServer",
                 return_value=_FakeServer(),
-            ):
+            ) as tcp_server_mock:
                 with self.assertRaises(_StopPreview):
                     site_pipeline.preview(repo_root, missing_components="fail")
 
@@ -463,6 +521,9 @@ class PreviewTest(unittest.TestCase):
                 project_status=None,
                 missing_components="fail",
             )
+            tcp_server_mock.assert_called_once()
+            handler = tcp_server_mock.call_args.args[1]
+            self.assertEqual(str(preview_root), handler.keywords["directory"])
 
 
 class CleanTest(unittest.TestCase):

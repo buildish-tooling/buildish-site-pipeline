@@ -19,9 +19,22 @@ from __future__ import annotations
 import re
 from typing import Literal
 
-from pydantic import AliasChoices, Field
+from pydantic import AliasChoices, Field, field_validator
 
 from .base import YamlModel
+
+
+_COMPONENT_SLUG_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+
+
+def _validate_component_slug(value: str) -> str:
+    """Validate the path-safe slug format used across staged component outputs."""
+
+    if _COMPONENT_SLUG_PATTERN.fullmatch(value) is None:
+        raise ValueError(
+            "slug must use lowercase letters, digits, and single hyphens only"
+        )
+    return value
 
 
 class ComponentCatalogDefaults(YamlModel):
@@ -52,6 +65,13 @@ class CatalogComponent(YamlModel):
     tag_pattern: re.Pattern[str] | None = None
     navigation_section: str | None = None
     weight: int | None = None
+
+    @field_validator("slug")
+    @classmethod
+    def validate_slug(cls, value: str) -> str:
+        """Require slugs that are safe to embed in paths and preview URLs."""
+
+        return _validate_component_slug(value)
 
 
 class ComponentsCatalog(YamlModel):

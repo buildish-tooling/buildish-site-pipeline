@@ -22,6 +22,7 @@ import http.server
 import re
 import shutil
 import socketserver
+import sys
 from pathlib import Path
 from typing import Literal
 
@@ -40,6 +41,7 @@ from .filesystem import (
     repo_root_from,
     reset_output_directory,
     resolve_component_repo_path,
+    safe_child_path,
     safe_relative_path,
     stage_vendor_assets,
     write_yaml_like,
@@ -582,12 +584,22 @@ def stage_component(
     if tag_pattern is None:
         tag_pattern = re.compile(DEFAULT_TAG_PATTERN)
 
-    component_root = stage_root / "content" / "components" / slug
+    component_root = safe_child_path(
+        stage_root / "content" / "components",
+        slug,
+        label=f"staged component content path for {slug}",
+    )
     stage_content_root = stage_root / "content"
     stage_static_root = stage_root / "static"
     development_root = component_root / "development"
     docs_root = development_root / "docs"
-    staged_assets_root = stage_static_root / "components" / slug / "development" / "assets"
+    staged_assets_root = safe_child_path(
+        stage_static_root / "components",
+        slug,
+        "development",
+        "assets",
+        label=f"staged component assets path for {slug}",
+    )
 
     if available:
         copied_component_pages = _stage_component_pages(
@@ -703,6 +715,30 @@ def stage_component(
     return result
 
 
+def emit_local_override_warning(
+    repo_root: Path,
+    site_root: Path,
+    local_overrides: ComponentsLocalOverrides,
+) -> None:
+    """Warn once when local checkout overrides are active for this workspace."""
+
+    bindings = local_overrides.workspace.components
+    if not bindings:
+        return
+    overrides_path = site_root / "components.local.yaml"
+    try:
+        display_path = overrides_path.relative_to(repo_root).as_posix()
+    except ValueError:
+        display_path = str(overrides_path)
+    binding_label = "binding" if len(bindings) == 1 else "bindings"
+    print(
+        "Warning: applying local component overrides from "
+        f"{display_path} ({len(bindings)} {binding_label}). "
+        "Treat this file as local-only and do not commit it.",
+        file=sys.stderr,
+    )
+
+
 def build(
     repo_root: str | Path | None = None,
     *,
@@ -715,6 +751,7 @@ def build(
     site_title: str | None = None,
     project_status: ProjectStatus | None = None,
     missing_components: MissingComponentsPolicy | None = None,
+    warn_on_local_overrides: bool = True,
 ) -> list[ComponentBuildResult]:
     """Build the staged site contract and, optionally, the lightweight preview pages.
 
@@ -742,6 +779,8 @@ def build(
     )
     catalog = ComponentsCatalog.from_yaml_path(resolved_config.catalog_path)
     local_overrides = load_components_local_overrides(site_root)
+    if warn_on_local_overrides:
+        emit_local_override_warning(resolved_repo_root, site_root, local_overrides)
 
     stage_root = resolved_config.stage_path
     preview_root = resolved_config.preview_path
@@ -864,7 +903,12 @@ def build(
             encoding="utf-8",
         )
         for result in results:
-            component_preview = preview_root / "components" / result.slug / "index.html"
+            component_preview = safe_child_path(
+                preview_root / "components",
+                result.slug,
+                "index.html",
+                label=f"preview page path for {result.slug}",
+            )
             component_preview.parent.mkdir(parents=True, exist_ok=True)
             component_preview.write_text(
                 build_component_preview(
@@ -933,14 +977,12 @@ def preview(
         preview_path=preview_path,
     )
     handler = functools.partial(
-        http.server.SimpleHTTPRequestHandler, directory=str(resolved_repo_root)
+        http.server.SimpleHTTPRequestHandler,
+        directory=str(resolved_workspace.preview_path),
     )
     with socketserver.TCPServer(("127.0.0.1", port), handler) as httpd:
-        preview_relative = resolved_workspace.preview_path.relative_to(
-            resolved_workspace.repo_root
-        ).as_posix()
         print(
             "Serving deliberately barebones preview at "
-            f"http://127.0.0.1:{port}/{preview_relative}/"
+            f"http://127.0.0.1:{port}/"
         )
         httpd.serve_forever()

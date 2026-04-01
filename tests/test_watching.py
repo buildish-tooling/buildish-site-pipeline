@@ -500,6 +500,45 @@ class WatchBuildLoopTest(unittest.TestCase):
                 self.assertEqual(repo_root, call.args[0])
                 self.assertEqual("fail", call.kwargs["missing_components"])
                 self.assertFalse(call.kwargs["include_preview"])
+                self.assertFalse(call.kwargs["warn_on_local_overrides"])
+
+    def test_watch_and_build_warns_once_when_local_overrides_are_active(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir) / "consumer"
+            site_root = repo_root / "site"
+            watch_roots = [site_root / "components.yaml"]
+            stderr = io.StringIO()
+            site_root.mkdir(parents=True)
+            site_root.joinpath("components.local.yaml").write_text(
+                "schemaVersion: 1\n"
+                "workspace:\n"
+                "  components:\n"
+                "    mammoth-cache:\n"
+                "      checkoutDir: ../mammoth-cache\n"
+            )
+
+            with patch(
+                "apache_buildish_site_pipeline.watching.resolve_pipeline_config",
+                return_value=_resolved_watch_config(repo_root),
+            ), patch(
+                "apache_buildish_site_pipeline.watching.collect_watch_roots",
+                side_effect=[watch_roots, watch_roots, _StopWatching()],
+            ), patch(
+                "apache_buildish_site_pipeline.watching.build",
+                return_value=[object()],
+            ) as build_mock, patch.dict(
+                sys.modules,
+                {
+                    "watchfiles": _watchfiles_module(
+                        {(1, str(repo_root / "site" / "components.yaml"))}
+                    )
+                },
+            ), redirect_stderr(stderr):
+                with self.assertRaises(_StopWatching):
+                    watch_and_build(repo_root)
+
+            self.assertEqual(2, build_mock.call_count)
+            self.assertEqual(1, stderr.getvalue().count("site/components.local.yaml"))
 
     def test_watch_and_build_reports_rebuild_and_watch_root_failures(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

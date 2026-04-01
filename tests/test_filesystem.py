@@ -28,6 +28,7 @@ from apache_buildish_site_pipeline.filesystem import read_text_if_exists
 from apache_buildish_site_pipeline.filesystem import resolve_component_repo_path
 from apache_buildish_site_pipeline.filesystem import resolve_vendor_asset_source
 from apache_buildish_site_pipeline.filesystem import reset_output_directory
+from apache_buildish_site_pipeline.filesystem import safe_child_path
 from apache_buildish_site_pipeline.filesystem import safe_relative_path
 from apache_buildish_site_pipeline.filesystem import safe_repo_path
 from apache_buildish_site_pipeline.filesystem import safe_workspace_checkout_path
@@ -101,6 +102,14 @@ class PathSafetyTest(unittest.TestCase):
             base.mkdir()
 
             self.assertIsNone(safe_relative_path(base, "", "docsRoot"))
+
+    def test_safe_child_path_rejects_derived_paths_that_escape_the_parent(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            parent = Path(temp_dir) / "preview"
+            parent.mkdir()
+
+            with self.assertRaisesRegex(ValueError, "escapes allowed root"):
+                safe_child_path(parent, "..", "index.html", label="preview output")
 
 
 class CopyAndResetHelpersTest(unittest.TestCase):

@@ -165,6 +165,12 @@ def safe_relative_path(
     return _ensure_within(base, base / relative_path, label)
 
 
+def safe_child_path(parent: Path, *relative_parts: str, label: str) -> Path:
+    """Resolve a derived child path beneath ``parent`` and reject escapes."""
+
+    return _ensure_within(parent, parent.joinpath(*relative_parts), label)
+
+
 def copy_tree_without_symlinks(source: Path, destination: Path) -> list[Path]:
     """Copy a directory tree while skipping dotfiles and symbolic links."""
 

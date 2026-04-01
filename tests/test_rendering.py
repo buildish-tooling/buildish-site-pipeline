@@ -221,6 +221,20 @@ class PreviewRenderingTest(unittest.TestCase):
         self.assertIn("href='/preview/components/mammoth-cache/'", preview)
         self.assertIn("missing from local workspace", preview)
 
+    def test_build_preview_index_url_encodes_component_slug(self) -> None:
+        preview = build_preview_index(
+            [_component_result(slug="rocket-cache'><script>alert(1)</script>")],
+            site_title="Example Buildish",
+            preview_root_path="/preview/",
+            staged_root_markdown_path="/stage/content/_index.md",
+        )
+
+        self.assertNotIn("<script>", preview)
+        self.assertIn(
+            "href='/preview/components/rocket-cache%27%3E%3Cscript%3Ealert%281%29%3C%2Fscript%3E/'",
+            preview,
+        )
+
     def test_build_component_preview_renders_doc_links_release_lines_and_warnings(self) -> None:
         preview = build_component_preview(_component_result(), "/preview/")
 
@@ -229,6 +243,14 @@ class PreviewRenderingTest(unittest.TestCase):
         self.assertIn("Missing release notes", preview)
         self.assertIn("Open staged component landing page", preview)
         self.assertIn("/components/mammoth-cache/releases/v1.2.3/", preview)
+
+    def test_build_component_preview_renders_unsafe_repository_scheme_as_text(self) -> None:
+        preview = build_component_preview(
+            _component_result(repository="javascript:alert(1)"), "/preview/"
+        )
+
+        self.assertIn("Repository:</strong> javascript:alert(1)", preview)
+        self.assertNotIn("href='javascript:alert(1)'", preview)
 
     def test_build_component_preview_handles_unlinked_release_information(self) -> None:
         preview = build_component_preview(

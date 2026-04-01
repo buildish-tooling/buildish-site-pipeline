@@ -32,7 +32,7 @@ import sys
 import tomllib
 from pathlib import Path
 
-from .builder import build
+from .builder import build, emit_local_override_warning
 from .common import first_non_none
 from .config import MissingComponentsPolicy, ProjectStatus, resolve_pipeline_config
 from .constants import (
@@ -314,6 +314,12 @@ def watch_and_build(
     )
     resolved_repo_root = resolved_config.repo_root
     stage_root = resolved_config.stage_path
+    local_overrides = load_components_local_overrides(resolved_config.site_root)
+    emit_local_override_warning(
+        resolved_repo_root,
+        resolved_config.site_root,
+        local_overrides,
+    )
     results = build(
         resolved_repo_root,
         include_preview=False,
@@ -325,6 +331,7 @@ def watch_and_build(
         site_title=site_title,
         project_status=project_status,
         missing_components=missing_components,
+        warn_on_local_overrides=False,
     )
     print(
         f"Built {len(results)} component(s) into {stage_root.relative_to(resolved_repo_root).as_posix()}"
@@ -382,6 +389,7 @@ def watch_and_build(
                     site_title=site_title,
                     project_status=project_status,
                     missing_components=missing_components,
+                    warn_on_local_overrides=False,
                 )
                 print(
                     f"Built {len(results)} component(s) into {stage_root.relative_to(resolved_repo_root).as_posix()}"

@@ -1,0 +1,51 @@
+#
+# Copyright 2026 The Buildish Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+FROM ghcr.io/astral-sh/uv:0.12.1@sha256:cf4eedcaa81655197f625739489effcbe71b61ceb1506f332c3facae5deceded AS uvbin
+
+FROM docker.io/library/python:3.13-bookworm@sha256:353cf2106d143e1d28f5d7c10c5f5c0387085bba22ef0f7f7e52c2c330fb1779
+
+COPY --from=uvbin /uv /uvx /usr/local/bin/
+
+WORKDIR /opt/site-pipeline
+COPY README.md pyproject.toml uv.lock main.py dist-release-legal/LICENSE dist-release-legal/NOTICE ./
+COPY src ./src
+COPY tools/helpers ./tools/helpers
+RUN set -eux; \
+    : "Install base OS runtime packages."; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends ca-certificates; \
+    rm -rf /var/lib/apt/lists/*; \
+    : "Prepare the build-time license layout expected by setuptools."; \
+    mkdir -p dist-release-legal; \
+    cp LICENSE NOTICE dist-release-legal/; \
+    : "Install the packaged CLI into the runtime virtual environment."; \
+    uv sync --frozen --no-dev --no-editable; \
+    uv pip install --python /opt/site-pipeline/.venv/bin/python --no-deps .; \
+    : "Drop build-only inputs from the final image."; \
+    rm -rf tools dist-release-legal pyproject.toml uv.lock; \
+    : "Create the non-root runtime user."; \
+    groupadd --system --gid 10001 site-pipeline; \
+    useradd --system --uid 10001 --gid site-pipeline --create-home --home-dir /home/site-pipeline site-pipeline; \
+    mkdir -p /workspace; \
+    chown -R site-pipeline:site-pipeline /home/site-pipeline /workspace
+
+ENV PATH=/opt/site-pipeline/.venv/bin:$PATH \
+    HOME=/home/site-pipeline \
+    PYTHONDONTWRITEBYTECODE=1
+WORKDIR /workspace
+USER site-pipeline
+ENTRYPOINT ["site-pipeline"]
+CMD ["--help"]

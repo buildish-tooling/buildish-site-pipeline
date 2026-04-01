@@ -1,0 +1,614 @@
+{
+  "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
+  "$defs": {
+    "ProviderAsset": {
+      "additionalProperties": false,
+      "description": "Downloadable asset attached to one provider release or candidate record.",
+      "properties": {
+        "checksums": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "propertyNames": {
+                "minLength": 1
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Checksum values keyed by algorithm name, such as `sha512` or `sha256`.",
+          "title": "Checksums"
+        },
+        "kind": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Short asset kind label, for example `binary`, `source`, `signature`, or `sbom`.",
+          "examples": [
+            "binary"
+          ],
+          "title": "Kind"
+        },
+        "mediaType": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Declared media type for the asset payload when the provider exposes it.",
+          "examples": [
+            "application/gzip"
+          ],
+          "title": "Mediatype"
+        },
+        "name": {
+          "description": "Filename or display label of the downloadable asset.",
+          "examples": [
+            "spark-4.0.0-bin.tgz"
+          ],
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "provenanceUrl": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "URL of provenance or attestation metadata associated with this asset, if available.",
+          "title": "Provenanceurl"
+        },
+        "sbomUrl": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "URL of the asset's software bill of materials, if available.",
+          "title": "Sbomurl"
+        },
+        "signatureUrl": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "URL of the detached signature file, if available.",
+          "title": "Signatureurl"
+        },
+        "size": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Asset size in bytes when the provider exposes it.",
+          "examples": [
+            125004321
+          ],
+          "title": "Size"
+        },
+        "url": {
+          "description": "Canonical download URL for the asset.",
+          "examples": [
+            "https://downloads.example.org/spark-4.0.0-bin.tgz"
+          ],
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "url"
+      ],
+      "title": "ProviderAsset",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "provider",
+        "ownership": "provider-derived"
+      }
+    },
+    "PublicationState": {
+      "description": "Observed provider-side publication state.",
+      "enum": [
+        "published",
+        "hidden",
+        "withdrawn",
+        "tombstoned"
+      ],
+      "title": "PublicationState",
+      "type": "string"
+    },
+    "ReleaseAggregateEntry": {
+      "additionalProperties": false,
+      "description": "Entry in ``data/releases.json``.",
+      "properties": {
+        "artifactKey": {
+          "description": "Owning artifact key for the release.",
+          "examples": [
+            "runtime"
+          ],
+          "minLength": 1,
+          "title": "Artifactkey",
+          "type": "string"
+        },
+        "assets": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ProviderAsset"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Downloadable assets attached to the release.",
+          "title": "Assets"
+        },
+        "componentSlug": {
+          "description": "Owning component slug for the release.",
+          "examples": [
+            "spark"
+          ],
+          "minLength": 1,
+          "title": "Componentslug",
+          "type": "string"
+        },
+        "displayVersion": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-readable version label when it should differ from the raw version string.",
+          "title": "Displayversion"
+        },
+        "externalId": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Provider-specific stable identifier for the upstream release record.",
+          "examples": [
+            "github:release:runtime-4.0.0"
+          ],
+          "title": "Externalid"
+        },
+        "externalUrl": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-browsable upstream URL for the release record.",
+          "title": "Externalurl"
+        },
+        "maturity": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Maturity label such as stable, preview, or beta.",
+          "examples": [
+            "stable"
+          ],
+          "title": "Maturity"
+        },
+        "provider": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Provider key for the upstream system that supplied this release record.",
+          "examples": [
+            "github-releases"
+          ],
+          "title": "Provider"
+        },
+        "publicationState": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PublicationState"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Publication-state label for the release, such as published, withdrawn, or tombstoned."
+        },
+        "publishedAt": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Timestamp when the release became publicly available.",
+          "title": "Publishedat"
+        },
+        "redirectTarget": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Replacement route or external URL used when a withdrawn release redirects readers elsewhere.",
+          "examples": [
+            "route:/spark/releases/4.0.1/"
+          ],
+          "title": "Redirecttarget"
+        },
+        "releaseLine": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Release-line key that groups this release with related versions.",
+          "examples": [
+            "4.0"
+          ],
+          "title": "Releaseline"
+        },
+        "releaseLineAncestors": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Ancestor release-line keys ordered from nearest to farthest.",
+          "examples": [
+            [
+              "4.x",
+              "stable"
+            ]
+          ],
+          "title": "Releaselineancestors"
+        },
+        "supportStatus": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Support-status key or label associated with the release.",
+          "examples": [
+            "supported"
+          ],
+          "title": "Supportstatus"
+        },
+        "supportWindow": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SupportWindow"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Lifecycle dates and support notes associated with the release."
+        },
+        "tag": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Exact tag associated with the release, if known.",
+          "examples": [
+            "v4.0.0"
+          ],
+          "title": "Tag"
+        },
+        "urls": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "propertyNames": {
+                "minLength": 1
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Additional named URLs related to the release, such as notes, downloads, or verification material.",
+          "title": "Urls"
+        },
+        "version": {
+          "description": "Exact released version represented by this aggregate entry.",
+          "examples": [
+            "4.0.0"
+          ],
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "withdrawalBehavior": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/WithdrawalBehavior"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Behavior that readers should experience when the release has been withdrawn."
+        }
+      },
+      "required": [
+        "componentSlug",
+        "artifactKey",
+        "version"
+      ],
+      "title": "ReleaseAggregateEntry",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    },
+    "SupportWindow": {
+      "additionalProperties": false,
+      "description": "Lifecycle dates and support notes for one release line or exact release.",
+      "properties": {
+        "endOfActiveSupportDate": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Date after which the release no longer receives full active support.",
+          "title": "Endofactivesupportdate"
+        },
+        "endOfLifeDate": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Final retirement date after which the release should be treated as fully end-of-life.",
+          "title": "Endoflifedate"
+        },
+        "endOfSupportDate": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Date after which the release is no longer supported in normal maintenance channels.",
+          "title": "Endofsupportdate"
+        },
+        "maintenancePhase": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Short label for the current maintenance phase, such as general availability, maintenance, or security-only support.",
+          "examples": [
+            "security-fixes"
+          ],
+          "title": "Maintenancephase"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Additional notes that clarify exceptions, migration advice, or support caveats.",
+          "title": "Notes"
+        },
+        "releaseDate": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Release date for the line or version that this support window describes.",
+          "examples": [
+            "2026-04-01T00:00:00Z"
+          ],
+          "title": "Releasedate"
+        },
+        "supportPolicyUrl": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Canonical URL that explains the support policy referenced by this support window.",
+          "title": "Supportpolicyurl"
+        }
+      },
+      "title": "SupportWindow",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
+    },
+    "WithdrawalBehavior": {
+      "description": "Author-directed behavior for a withdrawn release.",
+      "enum": [
+        "notice",
+        "redirect",
+        "omit"
+      ],
+      "title": "WithdrawalBehavior",
+      "type": "string"
+    }
+  },
+  "$id": "https://buildish.org/components/site-pipeline/schemas/releases-data-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Public staged aggregate file at ``data/releases.json``.",
+  "properties": {
+    "items": {
+      "description": "Released-version aggregate entries emitted into `data/releases.json`.",
+      "items": {
+        "$ref": "#/$defs/ReleaseAggregateEntry"
+      },
+      "title": "Items",
+      "type": "array"
+    }
+  },
+  "required": [
+    "items"
+  ],
+  "title": "Site Pipeline data/releases.json v1",
+  "type": "object",
+  "x-buildish-contract": {
+    "category": "emitted",
+    "filePath": "data/releases.json",
+    "ownership": "pipeline-derived",
+    "summary": "Published released-version inventory with lifecycle, support, and asset metadata."
+  }
+}

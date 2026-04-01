@@ -1,0 +1,287 @@
+{
+  "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
+  "$defs": {
+    "ComponentIdentity": {
+      "additionalProperties": false,
+      "description": "Stable identity for a component repository.",
+      "properties": {
+        "displayName": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-readable component name shown in rendered navigation and listings.",
+          "title": "Displayname"
+        },
+        "slug": {
+          "description": "Stable component identifier used by consumer catalogs and staged metadata.",
+          "minLength": 1,
+          "title": "Slug",
+          "type": "string"
+        }
+      },
+      "required": [
+        "slug"
+      ],
+      "title": "ComponentIdentity",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "component-owned"
+      }
+    },
+    "ComponentLifecycleHints": {
+      "additionalProperties": false,
+      "description": "Optional lifecycle defaults shared across all artifacts in a component repository.",
+      "properties": {
+        "latestStable": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Latest stable version for the component when one overall release line is enough.",
+          "title": "Lateststable"
+        },
+        "supportStatusVocabulary": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "$ref": "#/$defs/SupportStatusDefinition"
+              },
+              "propertyNames": {
+                "minLength": 1
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional support-status vocabulary shared by artifacts in this repository.",
+          "title": "Supportstatusvocabulary"
+        }
+      },
+      "title": "ComponentLifecycleHints",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "component-owned"
+      }
+    },
+    "ContentRoots": {
+      "additionalProperties": false,
+      "description": "Repository-relative locations of authored component content.",
+      "properties": {
+        "assetsRoot": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Repository-relative root for component-owned static assets.",
+          "title": "Assetsroot"
+        },
+        "docsRoot": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Repository-relative root for versioned or development docs content.",
+          "title": "Docsroot"
+        },
+        "pagesRoot": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Repository-relative root for non-versioned component-owned pages.",
+          "title": "Pagesroot"
+        }
+      },
+      "title": "ContentRoots",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "component-owned"
+      }
+    },
+    "SupportStatusDefinition": {
+      "additionalProperties": false,
+      "description": "One reusable support-status label, description, and default lifecycle behavior.",
+      "properties": {
+        "defaultMaintenancePhase": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Default maintenance-phase label to apply when a release uses this support status and does not provide a more specific phase.",
+          "examples": [
+            "active"
+          ],
+          "title": "Defaultmaintenancephase"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-readable explanation of what this support status means in practice.",
+          "examples": [
+            "Receives regular fixes and new patch releases."
+          ],
+          "title": "Description"
+        },
+        "displayName": {
+          "description": "Human-readable status label shown to readers, such as `Supported` or `Security fixes only`.",
+          "examples": [
+            "Supported"
+          ],
+          "minLength": 1,
+          "title": "Displayname",
+          "type": "string"
+        },
+        "order": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional sort order used when several support statuses should appear in a stable display order.",
+          "examples": [
+            10
+          ],
+          "title": "Order"
+        }
+      },
+      "required": [
+        "displayName"
+      ],
+      "title": "SupportStatusDefinition",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "component-owned"
+      }
+    }
+  },
+  "$id": "https://buildish.org/components/site-pipeline/schemas/component-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Component-owned metadata from ``site/component.yaml``.",
+  "examples": [
+    {
+      "component": {
+        "displayName": "Apache Spark",
+        "slug": "spark"
+      },
+      "content": {
+        "docsRoot": "docs",
+        "pagesRoot": "site/pages"
+      },
+      "lifecycle": {
+        "latestStable": "4.0.0",
+        "supportStatusVocabulary": {
+          "active": {
+            "displayName": "Active",
+            "order": 10
+          }
+        }
+      },
+      "schemaVersion": 1
+    }
+  ],
+  "properties": {
+    "component": {
+      "$ref": "#/$defs/ComponentIdentity",
+      "description": "Stable identity for the component repository."
+    },
+    "content": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ContentRoots"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Repository-relative authored content roots owned by this component."
+    },
+    "lifecycle": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ComponentLifecycleHints"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional high-level lifecycle hints shared across the component repository."
+    },
+    "schemaVersion": {
+      "const": 1,
+      "description": "Schema version for the component metadata file.",
+      "title": "Schemaversion",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "component"
+  ],
+  "title": "Site Pipeline Component Metadata v1",
+  "type": "object",
+  "x-buildish-contract": {
+    "category": "authored",
+    "filePath": "site/component.yaml",
+    "ownership": "component-owned",
+    "summary": "Stable component identity, repository content roots, and shared lifecycle hints."
+  }
+}

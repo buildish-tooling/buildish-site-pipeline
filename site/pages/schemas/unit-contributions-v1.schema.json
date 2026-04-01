@@ -1,0 +1,512 @@
+{
+  "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
+  "$defs": {
+    "PageSourceProvenance": {
+      "additionalProperties": false,
+      "description": "Repository-neutral pointer to the authored source file for one staged page.",
+      "properties": {
+        "editRef": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Source-control ref that renderers may use for an edit-source link.",
+          "examples": [
+            "main"
+          ],
+          "title": "Editref"
+        },
+        "key": {
+          "description": "Resolved source-binding key that owns the authored page.",
+          "examples": [
+            "runtime"
+          ],
+          "minLength": 1,
+          "title": "Key",
+          "type": "string"
+        },
+        "path": {
+          "description": "Source file path relative to the resolved source binding root.",
+          "examples": [
+            "docs/getting-started.md"
+          ],
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "repository": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Remote repository URL whose repository root corresponds to the resolved source binding root, when declared.",
+          "examples": [
+            "https://github.com/buildish-tooling/buildish-site-pipeline"
+          ],
+          "title": "Repository"
+        },
+        "viewRef": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Source-control ref that renderers may use for a view-source link.",
+          "examples": [
+            "main"
+          ],
+          "title": "Viewref"
+        }
+      },
+      "required": [
+        "key",
+        "path"
+      ],
+      "title": "PageSourceProvenance",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    },
+    "StagedPageContributionWire": {
+      "additionalProperties": false,
+      "description": "Metadata emitted by one page-staging worker for later aggregation.",
+      "properties": {
+        "artifactKey": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Owning artifact key when the page belongs to a specific artifact.",
+          "examples": [
+            "runtime"
+          ],
+          "title": "Artifactkey"
+        },
+        "canonicalUrl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Explicit canonical URL for the page when it should differ from `publicUrl`.",
+          "title": "Canonicalurl"
+        },
+        "componentPath": {
+          "description": "Public root path for the owning component.",
+          "examples": [
+            "/spark/"
+          ],
+          "title": "Componentpath",
+          "type": "string"
+        },
+        "componentSlug": {
+          "description": "Owning component slug for the staged page.",
+          "examples": [
+            "spark"
+          ],
+          "title": "Componentslug",
+          "type": "string"
+        },
+        "componentUrl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Absolute URL root for the owning component, if known.",
+          "title": "Componenturl"
+        },
+        "defaultLocale": {
+          "default": false,
+          "description": "Whether the staged page represents the default locale within its translation group.",
+          "title": "Defaultlocale",
+          "type": "boolean"
+        },
+        "derivedDescription": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Body-derived page description inferred from authored content during staging, if present.",
+          "title": "Deriveddescription"
+        },
+        "derivedTitle": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Body-derived page title inferred from authored content during staging, if present.",
+          "examples": [
+            "Getting Started"
+          ],
+          "title": "Derivedtitle"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Primary page description extracted or derived during staging, if present.",
+          "title": "Description"
+        },
+        "linkTitle": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Shorter link title extracted during staging, if present.",
+          "examples": [
+            "Start"
+          ],
+          "title": "Linktitle"
+        },
+        "locale": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Locale key for the staged page when localization is enabled.",
+          "examples": [
+            "en"
+          ],
+          "title": "Locale"
+        },
+        "originKey": {
+          "description": "Origin key selected for the staged page.",
+          "examples": [
+            "archive"
+          ],
+          "title": "Originkey",
+          "type": "string"
+        },
+        "pageKind": {
+          "description": "Short page-kind label for the staged page.",
+          "examples": [
+            "docsPage"
+          ],
+          "title": "Pagekind",
+          "type": "string"
+        },
+        "publicPath": {
+          "description": "Published public path for the staged page.",
+          "examples": [
+            "/spark/4.0.0/docs/getting-started/"
+          ],
+          "title": "Publicpath",
+          "type": "string"
+        },
+        "publicUrl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Canonical absolute URL for the staged page, if known.",
+          "title": "Publicurl"
+        },
+        "section": {
+          "description": "Higher-level section label for the staged page.",
+          "examples": [
+            "documentation"
+          ],
+          "title": "Section",
+          "type": "string"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PageSourceProvenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Coordinator-derived repository provenance for the authored source file. Worker-supplied and retained values are overwritten during normalization."
+        },
+        "sourcePath": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Source file path that produced the staged page. Private worker fragments may use an absolute path; the coordinator rewrites workspace sources to workspace-relative form and omits other sources before retaining this internal metadata in the stage.",
+          "examples": [
+            "components/runtime/docs/getting-started.md"
+          ],
+          "title": "Sourcepath"
+        },
+        "stageRelativePath": {
+          "description": "Stage-relative file path of the staged page contribution.",
+          "examples": [
+            "content/spark/4.0.0/docs/getting-started/index.md"
+          ],
+          "title": "Stagerelativepath",
+          "type": "string"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Primary page title extracted during staging.",
+          "examples": [
+            "Getting Started"
+          ],
+          "title": "Title"
+        },
+        "translationKey": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Shared key that ties translated sibling pages together.",
+          "examples": [
+            "spark-overview"
+          ],
+          "title": "Translationkey"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Exact version string associated with the staged page, if present.",
+          "examples": [
+            "4.0.0"
+          ],
+          "title": "Version"
+        },
+        "versionContext": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Serialized version-context payload associated with the staged page.",
+          "title": "Versioncontext"
+        },
+        "versionKind": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Version-record kind associated with the staged page, if present.",
+          "examples": [
+            "release"
+          ],
+          "title": "Versionkind"
+        },
+        "versionRef": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Source-control ref associated with the staged page, if present.",
+          "examples": [
+            "refs/tags/v4.0.0"
+          ],
+          "title": "Versionref"
+        }
+      },
+      "required": [
+        "stageRelativePath",
+        "componentSlug",
+        "section",
+        "pageKind",
+        "publicPath",
+        "componentPath",
+        "originKey"
+      ],
+      "title": "StagedPageContributionWire",
+      "type": "object"
+    },
+    "UnitContributionManifestWire": {
+      "additionalProperties": false,
+      "description": "Worker-emitted contribution fragment consumed by the coordinator.",
+      "properties": {
+        "pages": {
+          "default": [],
+          "description": "Staged page contributions emitted by the worker for later aggregation.",
+          "items": {
+            "$ref": "#/$defs/StagedPageContributionWire"
+          },
+          "title": "Pages",
+          "type": "array"
+        },
+        "unitId": {
+          "description": "Worker unit identifier that owns this contribution manifest.",
+          "examples": [
+            "component:spark:runtime"
+          ],
+          "title": "Unitid",
+          "type": "string"
+        }
+      },
+      "required": [
+        "unitId"
+      ],
+      "title": "UnitContributionManifestWire",
+      "type": "object"
+    }
+  },
+  "$id": "https://buildish.org/components/site-pipeline/schemas/unit-contributions-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Stable per-unit page contribution manifests retained in the visible stage.",
+  "examples": [
+    {
+      "schemaVersion": 1,
+      "units": [
+        {
+          "pages": [
+            {
+              "artifactKey": "runtime",
+              "componentPath": "/spark/",
+              "componentSlug": "spark",
+              "defaultLocale": false,
+              "originKey": "archive",
+              "pageKind": "docsPage",
+              "publicPath": "/spark/4.0.0/docs/getting-started/",
+              "section": "documentation",
+              "source": {
+                "editRef": "main",
+                "key": "runtime",
+                "path": "docs/getting-started.md",
+                "repository": "https://github.com/apache/spark",
+                "viewRef": "main"
+              },
+              "sourcePath": "components/runtime/docs/getting-started.md",
+              "stageRelativePath": "content/spark/4.0.0/docs/getting-started/index.md",
+              "title": "Getting Started",
+              "version": "4.0.0",
+              "versionKind": "released"
+            }
+          ],
+          "unitId": "component:spark:runtime"
+        }
+      ]
+    }
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1,
+      "default": 1,
+      "description": "Schema version for the persisted unit-contribution manifest file.",
+      "title": "Schemaversion",
+      "type": "integer"
+    },
+    "units": {
+      "default": [],
+      "description": "Worker contribution manifests retained for every staged unit that currently owns visible output.",
+      "items": {
+        "$ref": "#/$defs/UnitContributionManifestWire"
+      },
+      "title": "Units",
+      "type": "array"
+    }
+  },
+  "title": "Site Pipeline data/_pipeline/unit-contributions.json v1",
+  "type": "object",
+  "x-buildish-contract": {
+    "category": "emitted",
+    "filePath": "data/_pipeline/unit-contributions.json",
+    "ownership": "pipeline-derived",
+    "summary": "Per-unit page contribution manifests retained in the visible stage."
+  }
+}

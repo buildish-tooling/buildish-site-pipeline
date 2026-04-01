@@ -1,0 +1,161 @@
+{
+  "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
+  "$defs": {
+    "IndexBehavior": {
+      "description": "Renderer hint for version/ref index visibility.",
+      "enum": [
+        "full",
+        "metadataOnly",
+        "none"
+      ],
+      "title": "IndexBehavior",
+      "type": "string"
+    },
+    "MountAggregateEntry": {
+      "additionalProperties": false,
+      "description": "Entry in ``data/mounts.json``.",
+      "properties": {
+        "indexBehavior": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/IndexBehavior"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "How the mounted subtree should participate in generated indexes or listings."
+        },
+        "kind": {
+          "description": "Short mount kind label that tells consumers what sort of subtree this is.",
+          "examples": [
+            "generatedApi"
+          ],
+          "minLength": 1,
+          "title": "Kind",
+          "type": "string"
+        },
+        "metadata": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Small JSON-like extension object for extra mount metadata consumed by downstream tooling.",
+          "title": "Metadata"
+        },
+        "mountId": {
+          "description": "Stable aggregate identifier for the mount entry.",
+          "examples": [
+            "spark-runtime-generated-api"
+          ],
+          "minLength": 1,
+          "title": "Mountid",
+          "type": "string"
+        },
+        "ownerId": {
+          "description": "Aggregate identifier for the component or artifact that owns the mount.",
+          "examples": [
+            "artifact:spark/runtime"
+          ],
+          "minLength": 1,
+          "title": "Ownerid",
+          "type": "string"
+        },
+        "publicPath": {
+          "description": "Public path where the mounted subtree is published.",
+          "examples": [
+            "/spark/api/"
+          ],
+          "minLength": 1,
+          "title": "Publicpath",
+          "type": "string"
+        },
+        "sourceRef": {
+          "description": "Typed source reference for the generated or imported subtree being mounted.",
+          "examples": [
+            "generated/api"
+          ],
+          "minLength": 1,
+          "title": "Sourceref",
+          "type": "string"
+        },
+        "trustClass": {
+          "$ref": "#/$defs/TrustClass",
+          "description": "Trust level assigned to the mounted content."
+        },
+        "versionContext": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional version-context label that scopes the mount to one publication context.",
+          "examples": [
+            "release"
+          ],
+          "title": "Versioncontext"
+        }
+      },
+      "required": [
+        "mountId",
+        "ownerId",
+        "kind",
+        "trustClass",
+        "publicPath",
+        "sourceRef"
+      ],
+      "title": "MountAggregateEntry",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    },
+    "TrustClass": {
+      "description": "Trust posture of a mounted content subtree.",
+      "enum": [
+        "passive",
+        "active"
+      ],
+      "title": "TrustClass",
+      "type": "string"
+    }
+  },
+  "$id": "https://buildish.org/components/site-pipeline/schemas/mounts-data-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Public staged aggregate file at ``data/mounts.json``.",
+  "properties": {
+    "items": {
+      "description": "Mount aggregate entries emitted into `data/mounts.json`.",
+      "items": {
+        "$ref": "#/$defs/MountAggregateEntry"
+      },
+      "title": "Items",
+      "type": "array"
+    }
+  },
+  "required": [
+    "items"
+  ],
+  "title": "Site Pipeline data/mounts.json v1",
+  "type": "object",
+  "x-buildish-contract": {
+    "category": "emitted",
+    "filePath": "data/mounts.json",
+    "ownership": "pipeline-derived",
+    "summary": "Mounted content and asset subtrees published under resolved public paths."
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
+  "$defs": {
+    "AggregateDependencyEntryV1": {
+      "additionalProperties": false,
+      "description": "One coordinator-owned aggregate and the units that may change its payload.",
+      "properties": {
+        "dependentUnitIds": {
+          "default": [],
+          "description": "Unit identifiers whose output can invalidate or change this aggregate file.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Dependentunitids",
+          "type": "array"
+        },
+        "stageRelativePath": {
+          "description": "Coordinator-owned aggregate file inside the visible stage.",
+          "examples": [
+            "data/components.json"
+          ],
+          "minLength": 1,
+          "title": "Stagerelativepath",
+          "type": "string"
+        }
+      },
+      "required": [
+        "stageRelativePath"
+      ],
+      "title": "AggregateDependencyEntryV1",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    }
+  },
+  "$id": "https://buildish.org/components/site-pipeline/schemas/aggregate-dependencies-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Shared-output dependency map for the current first-wave coordinator outputs.",
+  "examples": [
+    {
+      "entries": [
+        {
+          "dependentUnitIds": [
+            "component:spark:runtime",
+            "component:spark:site"
+          ],
+          "stageRelativePath": "data/components.json"
+        }
+      ],
+      "schemaVersion": 1
+    }
+  ],
+  "properties": {
+    "entries": {
+      "default": [],
+      "description": "Coordinator-owned aggregate files together with the units that may change them.",
+      "items": {
+        "$ref": "#/$defs/AggregateDependencyEntryV1"
+      },
+      "title": "Entries",
+      "type": "array"
+    },
+    "schemaVersion": {
+      "const": 1,
+      "default": 1,
+      "description": "Schema version for the aggregate-dependency map.",
+      "title": "Schemaversion",
+      "type": "integer"
+    }
+  },
+  "title": "Site Pipeline data/_pipeline/aggregate-dependencies.json v1",
+  "type": "object",
+  "x-buildish-contract": {
+    "category": "emitted",
+    "filePath": "data/_pipeline/aggregate-dependencies.json",
+    "ownership": "pipeline-derived",
+    "summary": "Coordinator aggregate files and the units that can invalidate them."
+  }
+}

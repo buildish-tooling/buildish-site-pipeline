@@ -98,6 +98,64 @@ class ExtractedSitePipelineTest(unittest.TestCase):
 
             self.assertEqual("Unreleased", metadata.versioning.development_label)
 
+    def test_load_component_metadata_rejects_invalid_tag_pattern(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir) / "mammoth-cache"
+            dump_yaml(
+                repo_root / "site" / "component.yaml",
+                {"schemaVersion": 1, "versioning": {"tagPattern": "["}},
+            )
+
+            with self.assertRaisesRegex(ValueError, "Invalid YAML"):
+                load_component_metadata(
+                    repo_root, "site/component.yaml", "mammoth-cache"
+                )
+
+    def test_load_component_metadata_rejects_invalid_release_line_aliases(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir) / "mammoth-cache"
+            dump_yaml(
+                repo_root / "site" / "component.yaml",
+                {
+                    "schemaVersion": 1,
+                    "lifecycle": {
+                        "releaseLines": [
+                            {
+                                "line": "v1",
+                                "latest": "v1.2.3",
+                                "status": "maintained",
+                                "aliases": "stable",
+                            }
+                        ]
+                    },
+                },
+            )
+
+            with self.assertRaisesRegex(ValueError, "Invalid YAML"):
+                load_component_metadata(
+                    repo_root, "site/component.yaml", "mammoth-cache"
+                )
+
+    def test_load_component_metadata_rejects_null_nested_sections(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir) / "mammoth-cache"
+            dump_yaml(
+                repo_root / "site" / "component.yaml",
+                {
+                    "schemaVersion": 1,
+                    "component": None,
+                    "content": None,
+                    "versioning": None,
+                    "lifecycle": None,
+                    "navigation": None,
+                },
+            )
+
+            with self.assertRaisesRegex(ValueError, "Invalid YAML"):
+                load_component_metadata(
+                    repo_root, "site/component.yaml", "mammoth-cache"
+                )
+
     def test_build_reads_workspace_paths_from_config_file(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             workspace = Path(temp_dir)
@@ -164,9 +222,17 @@ class ExtractedSitePipelineTest(unittest.TestCase):
             self.assertTrue((repo_root / "build" / "site-stage" / "manifest.yaml").is_file())
             self.assertTrue((repo_root / "build" / "site-preview" / "index.html").is_file())
 
-    def test_collect_watch_roots_uses_local_pipeline_dependency_source(self) -> None:
+    def test_collect_watch_roots_uses_local_pipeline_snapshot_wheel(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
-            repo_root = Path(temp_dir) / "consumer"
+            workspace = Path(temp_dir)
+            repo_root = workspace / "consumer"
+            wheel_path = (
+                workspace
+                / "buildish-site-pipeline"
+                / "dist"
+                / "snapshots"
+                / "apache_buildish_site_pipeline-0.1.0.devfixture+gtest-py3-none-any.whl"
+            )
             write_files(
                 repo_root,
                 {
@@ -176,16 +242,288 @@ class ExtractedSitePipelineTest(unittest.TestCase):
                     name='consumer'
 
                     [tool.uv.sources]
-                    apache-buildish-site-pipeline = { path = "../../buildish-site-pipeline" }
+                    apache-buildish-site-pipeline = { path = "../../../buildish-site-pipeline/dist/snapshots/apache_buildish_site_pipeline-0.1.0.devfixture+gtest-py3-none-any.whl" }
                     """),
-                    "buildish-site-pipeline/apache_buildish_site_pipeline/__init__.py": "",
+                    "site/pipeline/apache_buildish_site_pipeline/__init__.py": "",
                     "site/content/_index.md": "# Root\n",
                 },
             )
+            wheel_path.parent.mkdir(parents=True, exist_ok=True)
+            wheel_path.write_text("stub wheel\n", encoding="utf-8")
             dump_yaml(repo_root / "site" / "components.yaml", {"schemaVersion": 1, "components": []})
 
             watch_roots = set(site_pipeline.collect_watch_roots(repo_root))
-            self.assertIn((repo_root / "buildish-site-pipeline").resolve(), watch_roots)
+            self.assertIn(wheel_path.resolve(), watch_roots)
+            self.assertNotIn(
+                (repo_root / "site" / "pipeline" / "apache_buildish_site_pipeline").resolve(),
+                watch_roots,
+            )
+
+    def test_collect_watch_roots_uses_components_local_yaml_checkout_override(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir)
+            repo_root = workspace / "consumer"
+            write_files(
+                repo_root,
+                {
+                    "site/pipeline/main.py": "raise SystemExit(0)\n",
+                    "site/pipeline/pyproject.toml": "[project]\nname='stub'\n",
+                    "site/pipeline/uv.lock": "version = 1\n",
+                    "site/pipeline/apache_buildish_site_pipeline/__init__.py": "",
+                    "site/content/_index.md": "# Root\n",
+                },
+            )
+            dump_yaml(
+                repo_root / "site" / "components.yaml",
+                {
+                    "schemaVersion": 1,
+                    "defaults": {
+                        "metadataFile": "site/component.yaml",
+                        "pagesRoot": "site/pages",
+                        "docsRoot": "site/docs",
+                        "assetsRoot": "site/assets",
+                    },
+                    "components": [
+                        {"slug": "mammoth-cache", "localDir": "mammoth-cache"}
+                    ],
+                },
+            )
+            dump_yaml(
+                repo_root / "site" / "components.local.yaml",
+                {
+                    "schemaVersion": 1,
+                    "workspace": {
+                        "components": {
+                            "mammoth-cache": {"checkoutDir": "../src/mammoth-cache"}
+                        }
+                    },
+                },
+            )
+
+            mammoth = workspace / "src" / "mammoth-cache"
+            write_files(
+                mammoth,
+                {"site/pages/_index.md": "# Mammoth\n\nLanding page.\n"},
+            )
+            (mammoth / "site" / "docs").mkdir(parents=True)
+            (mammoth / "site" / "assets").mkdir(parents=True)
+            dump_yaml(
+                mammoth / "site" / "component.yaml",
+                {"schemaVersion": 1, "component": {"displayName": "Mammoth"}},
+            )
+
+            watch_roots = set(site_pipeline.collect_watch_roots(repo_root))
+
+            self.assertIn(
+                (repo_root / "site" / "components.local.yaml").resolve(),
+                watch_roots,
+            )
+            self.assertIn((mammoth / "site" / "component.yaml").resolve(), watch_roots)
+            self.assertIn((mammoth / "site" / "pages").resolve(), watch_roots)
+            self.assertIn((mammoth / "site" / "docs").resolve(), watch_roots)
+            self.assertIn((mammoth / "site" / "assets").resolve(), watch_roots)
+
+    def test_collect_watch_roots_includes_catalog_component_inputs_and_missing_repo_parent(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir)
+            repo_root = workspace / "consumer"
+            write_files(
+                repo_root,
+                {
+                    "site/pipeline/main.py": "raise SystemExit(0)\n",
+                    "site/pipeline/pyproject.toml": "[project]\nname='stub'\n",
+                    "site/pipeline/uv.lock": "version = 1\n",
+                    "site/pipeline/apache_buildish_site_pipeline/__init__.py": "",
+                    "site/content/_index.md": "# Root\n",
+                },
+            )
+            dump_yaml(
+                repo_root / "site" / "site-pipeline.yaml",
+                {"schemaVersion": 1, "site": {"projectStatus": "incubating"}},
+            )
+            (repo_root / "site" / "pipeline" / ".venv" / "bin").mkdir(parents=True)
+            (repo_root / "site" / "pipeline" / ".idea").mkdir(parents=True)
+            dump_yaml(
+                repo_root / "site" / "components.yaml",
+                {
+                    "schemaVersion": 1,
+                    "defaults": {
+                        "metadataFile": "site/component.yaml",
+                        "pagesRoot": "site/pages",
+                        "docsRoot": "site/docs",
+                        "assetsRoot": "site/assets",
+                    },
+                    "components": [
+                        {"slug": "mammoth-cache", "localDir": "mammoth-cache"},
+                        {"slug": "missing-component", "localDir": "missing-component"},
+                    ],
+                },
+            )
+
+            mammoth = workspace / "mammoth-cache"
+            write_files(
+                mammoth,
+                {"site/pages/_index.md": "# Mammoth\n\nLanding page.\n"},
+            )
+            (mammoth / "site" / "docs").mkdir(parents=True)
+            (mammoth / "site" / "assets").mkdir(parents=True)
+            dump_yaml(
+                mammoth / "site" / "component.yaml",
+                {"schemaVersion": 1, "component": {"displayName": "Mammoth"}},
+            )
+
+            watch_roots = set(site_pipeline.collect_watch_roots(repo_root))
+
+            self.assertIn((repo_root / "site" / "components.yaml").resolve(), watch_roots)
+            self.assertIn(
+                (repo_root / "site" / "site-pipeline.yaml").resolve(),
+                watch_roots,
+            )
+            self.assertIn((repo_root / "site" / "content").resolve(), watch_roots)
+            self.assertIn((repo_root / "site" / "pipeline" / "main.py").resolve(), watch_roots)
+            self.assertIn(
+                (repo_root / "site" / "pipeline" / "pyproject.toml").resolve(),
+                watch_roots,
+            )
+            self.assertIn((repo_root / "site" / "pipeline" / "uv.lock").resolve(), watch_roots)
+            self.assertIn(
+                (repo_root / "site" / "pipeline" / "apache_buildish_site_pipeline").resolve(),
+                watch_roots,
+            )
+            self.assertIn((mammoth / "site" / "component.yaml").resolve(), watch_roots)
+            self.assertIn((mammoth / "site" / "pages").resolve(), watch_roots)
+            self.assertIn((mammoth / "site" / "docs").resolve(), watch_roots)
+            self.assertIn((mammoth / "site" / "assets").resolve(), watch_roots)
+            self.assertIn(workspace.resolve(), watch_roots)
+            self.assertNotIn((repo_root / "site" / "pipeline").resolve(), watch_roots)
+            self.assertNotIn((repo_root / "site" / "pipeline" / ".venv").resolve(), watch_roots)
+
+    def test_collect_watch_roots_uses_configured_catalog_path(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir)
+            repo_root = workspace / "consumer"
+            write_files(
+                repo_root,
+                {
+                    "site/pipeline/main.py": "raise SystemExit(0)\n",
+                    "site/pipeline/pyproject.toml": "[project]\nname='stub'\n",
+                    "site/pipeline/uv.lock": "version = 1\n",
+                    "site/pipeline/apache_buildish_site_pipeline/__init__.py": "",
+                    "site/content/_index.md": "# Root\n",
+                },
+            )
+            dump_yaml(
+                repo_root / "site" / "site-pipeline.yaml",
+                {
+                    "schemaVersion": 1,
+                    "workspace": {"catalogPath": "site/catalogs/components.yaml"},
+                },
+            )
+            dump_yaml(
+                repo_root / "site" / "catalogs" / "components.yaml",
+                {
+                    "schemaVersion": 1,
+                    "defaults": {
+                        "metadataFile": "site/component.yaml",
+                        "pagesRoot": "site/pages",
+                        "docsRoot": "site/docs",
+                        "assetsRoot": "site/assets",
+                    },
+                    "components": [
+                        {"slug": "mammoth-cache", "localDir": "mammoth-cache"}
+                    ],
+                },
+            )
+
+            mammoth = workspace / "mammoth-cache"
+            write_files(
+                mammoth,
+                {"site/pages/_index.md": "# Mammoth\n\nLanding page.\n"},
+            )
+            (mammoth / "site" / "docs").mkdir(parents=True)
+            (mammoth / "site" / "assets").mkdir(parents=True)
+            dump_yaml(
+                mammoth / "site" / "component.yaml",
+                {"schemaVersion": 1, "component": {"displayName": "Mammoth"}},
+            )
+
+            watch_roots = set(site_pipeline.collect_watch_roots(repo_root))
+
+            self.assertIn(
+                (repo_root / "site" / "catalogs" / "components.yaml").resolve(),
+                watch_roots,
+            )
+            self.assertNotIn((repo_root / "site" / "components.yaml").resolve(), watch_roots)
+            self.assertNotIn((repo_root / "site" / "pipeline" / ".idea").resolve(), watch_roots)
+
+    def test_collect_watch_roots_uses_configured_authored_site_content_path(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir)
+            repo_root = workspace / "consumer"
+            write_files(
+                repo_root,
+                {
+                    "site/pipeline/main.py": "raise SystemExit(0)\n",
+                    "site/pipeline/pyproject.toml": "[project]\nname='stub'\n",
+                    "site/pipeline/uv.lock": "version = 1\n",
+                    "site/pipeline/apache_buildish_site_pipeline/__init__.py": "",
+                    "docs-src/_index.md": "# Docs source\n",
+                },
+            )
+            dump_yaml(
+                repo_root / "site" / "site-pipeline.yaml",
+                {
+                    "schemaVersion": 1,
+                    "workspace": {"authoredSiteContentPath": "docs-src"},
+                },
+            )
+            dump_yaml(
+                repo_root / "site" / "components.yaml",
+                {
+                    "schemaVersion": 1,
+                    "defaults": {
+                        "metadataFile": "site/component.yaml",
+                        "pagesRoot": "site/pages",
+                        "docsRoot": "site/docs",
+                        "assetsRoot": "site/assets",
+                    },
+                    "components": [
+                        {"slug": "mammoth-cache", "localDir": "mammoth-cache"}
+                    ],
+                },
+            )
+
+            mammoth = workspace / "mammoth-cache"
+            write_files(
+                mammoth,
+                {"site/pages/_index.md": "# Mammoth\n\nLanding page.\n"},
+            )
+            (mammoth / "site" / "docs").mkdir(parents=True)
+            dump_yaml(
+                mammoth / "site" / "component.yaml",
+                {"schemaVersion": 1, "component": {"displayName": "Mammoth"}},
+            )
+
+            watch_roots = set(site_pipeline.collect_watch_roots(repo_root))
+
+            self.assertIn((repo_root / "docs-src").resolve(), watch_roots)
+            self.assertNotIn((repo_root / "site" / "content").resolve(), watch_roots)
+
+    def test_is_relevant_watch_path_allows_explicit_vendor_asset_paths(self) -> None:
+        self.assertTrue(
+            site_pipeline.is_relevant_watch_path(
+                Path("site/node_modules/jquery/dist/jquery.min.js")
+            )
+        )
+        self.assertFalse(
+            site_pipeline.is_relevant_watch_path(Path("site/.stage/content/_index.md"))
+        )
 
     def test_repo_root_from_accepts_string_paths(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

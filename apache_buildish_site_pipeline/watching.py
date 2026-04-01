@@ -135,13 +135,18 @@ def _component_watch_roots(
     return watch_roots
 
 
-def _local_pipeline_source_root(project_root: Path, repo_root: Path) -> Path | None:
-    """Return a local dependency source root for the pipeline package if configured.
+def _local_pipeline_dependency_watch_path(
+    project_root: Path, repo_root: Path
+) -> Path | None:
+    """Return the configured local dependency path to watch for the pipeline package.
 
-    A consumer project can point at a local checkout of the extracted pipeline
-    repository via ``tool.uv.sources``. When present, watch mode should rebuild
-    after changes in that source tree instead of assuming the package lives
-    directly beneath ``site/pipeline/``.
+    A consumer project can point at either a local wheel snapshot or a local
+    checkout of the extracted pipeline repository via ``tool.uv.sources``.
+    When present, watch mode should rebuild after changes at that configured
+    path instead of assuming the package lives directly beneath
+    ``site/pipeline/``. To avoid watching arbitrary filesystem locations, only
+    paths inside the shared workspace rooted at ``repo_root.parent`` are
+    accepted.
     """
 
     pyproject_path = project_root / "pyproject.toml"
@@ -158,12 +163,13 @@ def _local_pipeline_source_root(project_root: Path, repo_root: Path) -> Path | N
     if not isinstance(source_path, str) or not source_path:
         return None
 
+    workspace_root = repo_root.parent.resolve(strict=False)
     candidate = (project_root / source_path).resolve(strict=False)
     try:
-        candidate.relative_to(repo_root.resolve(strict=False))
+        candidate.relative_to(workspace_root)
     except ValueError:
         return None
-    return candidate
+    return watchable_existing_path(candidate, workspace_root)
 
 
 def _pipeline_watch_roots(site_root: Path, repo_root: Path) -> set[Path]:
@@ -172,7 +178,7 @@ def _pipeline_watch_roots(site_root: Path, repo_root: Path) -> set[Path]:
     Watching all of ``site/pipeline/`` recursively would also subscribe to tool
     directories such as ``.venv`` and ``.idea``. The watch loop only needs the
     entrypoint, dependency metadata, and either the in-project package tree or
-    an explicitly configured local dependency source.
+    an explicitly configured local dependency path.
     """
 
     pipeline_root = site_root / "pipeline"
@@ -186,9 +192,11 @@ def _pipeline_watch_roots(site_root: Path, repo_root: Path) -> set[Path]:
         if candidate.exists():
             watch_roots.add(candidate.resolve())
 
-    local_source_root = _local_pipeline_source_root(pipeline_root, repo_root)
-    if local_source_root is not None:
-        watch_roots.add(watchable_existing_path(local_source_root, repo_root))
+    local_dependency_watch_path = _local_pipeline_dependency_watch_path(
+        pipeline_root, repo_root
+    )
+    if local_dependency_watch_path is not None:
+        watch_roots.add(local_dependency_watch_path)
         return watch_roots
 
     package_root = pipeline_root / "apache_buildish_site_pipeline"

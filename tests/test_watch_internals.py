@@ -57,6 +57,22 @@ class WatchInternalTests(unittest.TestCase):
 
         self.assertIsNone(trusted_stage)
 
+    def test_load_trusted_stage_rejects_nested_symlink_in_stage_tree(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            stage_root = workspace_root / "site/.stage"
+            stage_root.mkdir(parents=True, exist_ok=True)
+            _write_stage_manifest(stage_root)
+            content_root = stage_root / "content"
+            content_root.mkdir(parents=True, exist_ok=True)
+            real_page = workspace_root / "index.md"
+            real_page.write_text("# hello\n", encoding="utf-8")
+            (content_root / "index.md").symlink_to(real_page)
+
+            trusted_stage = _load_trusted_stage(stage_root)
+
+        self.assertIsNone(trusted_stage)
+
     def test_load_trusted_stage_rejects_unreadable_manifest(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             workspace_root = Path(tempdir)

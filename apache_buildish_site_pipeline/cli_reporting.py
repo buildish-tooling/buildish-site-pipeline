@@ -113,19 +113,24 @@ def render_text_report(report: ReportModel) -> str:
 
 
 def _validate_safe_output_path(*, cwd: Path, raw_path: Path, forbidden_roots: tuple[Path, ...]) -> Path:
-    candidate_path = raw_path if raw_path.is_absolute() else cwd / raw_path
-    normalized_path = candidate_path.resolve(strict=False)
-    parent_path = normalized_path.parent
+    absolute_path = _absolute_path(cwd=cwd, raw_path=raw_path)
+    normalized_path = absolute_path.resolve(strict=False)
+    parent_path = absolute_path.parent
     if not parent_path.exists() or not parent_path.is_dir():
         raise InvocationError(f"Report output parent directory does not exist: {parent_path}")
     if _contains_symlink(parent_path):
         raise InvocationError(f"Report output parent directory resolves through a symlink: {parent_path}")
-    if normalized_path.exists() and normalized_path.is_symlink():
-        raise InvocationError(f"Report output path must not be a symlink: {normalized_path}")
+    if absolute_path.exists() and absolute_path.is_symlink():
+        raise InvocationError(f"Report output path must not be a symlink: {absolute_path}")
     for forbidden_root in forbidden_roots:
         if normalized_path.is_relative_to(forbidden_root.resolve(strict=False)):
             raise InvocationError(f"Report output must live outside {forbidden_root}")
-    return normalized_path
+    return absolute_path
+
+
+def _absolute_path(*, cwd: Path, raw_path: Path) -> Path:
+    candidate_path = raw_path if raw_path.is_absolute() else cwd / raw_path
+    return Path(os.path.abspath(candidate_path))
 
 
 def _contains_symlink(path: Path) -> bool:
@@ -140,11 +145,12 @@ def _contains_symlink(path: Path) -> bool:
 
 
 def _write_report_file(*, path: Path, content: str) -> None:
-    parent_path = path.parent
+    absolute_path = _absolute_path(cwd=Path.cwd(), raw_path=path)
+    parent_path = absolute_path.parent
     if _contains_symlink(parent_path):
         raise ReportWriteError(f"Report output parent directory resolves through a symlink: {parent_path}")
-    if path.exists() and path.is_symlink():
-        raise ReportWriteError(f"Report output path must not be a symlink: {path}")
+    if absolute_path.exists() and absolute_path.is_symlink():
+        raise ReportWriteError(f"Report output path must not be a symlink: {absolute_path}")
 
     temp_path: Path | None = None
     try:
@@ -152,7 +158,7 @@ def _write_report_file(*, path: Path, content: str) -> None:
             mode="w",
             encoding="utf-8",
             dir=parent_path,
-            prefix=f".{path.name}.",
+            prefix=f".{absolute_path.name}.",
             suffix=".tmp",
             delete=False,
         ) as temp_file:
@@ -160,9 +166,9 @@ def _write_report_file(*, path: Path, content: str) -> None:
             temp_file.flush()
             os.fsync(temp_file.fileno())
             temp_path = Path(temp_file.name)
-        os.replace(temp_path, path)
+        os.replace(temp_path, absolute_path)
     except OSError as exc:
-        raise ReportWriteError(f"Could not write report to {path}: {exc}") from exc
+        raise ReportWriteError(f"Could not write report to {absolute_path}: {exc}") from exc
     finally:
         if temp_path is not None and temp_path.exists():
             temp_path.unlink(missing_ok=True)

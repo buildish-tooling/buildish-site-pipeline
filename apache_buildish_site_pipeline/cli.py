@@ -34,7 +34,7 @@ from .cli_contract import (
 )
 from .cli_dispatch import dispatch_command
 from .cli_errors import CommandExecutionError, InvocationError, SitePipelineCliError
-from .cli_reporting import build_report_request, emit_report
+from .cli_reporting import build_report_request, emit_report, revalidate_report_request
 from .commands.watch import run_watch
 
 
@@ -64,8 +64,15 @@ def _run(*, argv: Sequence[str] | None, stdout: TextIO, stderr: TextIO) -> int:
             return int(result.exit_code)
 
         result = dispatch_command(invocation)
+        report_request = invocation.report_request
+        if report_request.output_path is not None:
+            report_request = revalidate_report_request(
+                cwd=invocation.layout.repo_root,
+                request=report_request,
+                forbidden_roots=(invocation.layout.stage_root, invocation.layout.work_root),
+            )
         emit_report(
-            request=invocation.report_request,
+            request=report_request,
             report=result.report,
             text_output=result.text_output,
             stdout=stdout,

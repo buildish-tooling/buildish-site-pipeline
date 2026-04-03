@@ -23,6 +23,7 @@ from apache_buildish_site_pipeline.planning import evaluate_planning
 from apache_buildish_site_pipeline.staging.execution import (
     finalize_stage_publication,
     materialize_stage_tree,
+    validate_materialized_stage_tree,
     validate_visible_stage_target_path,
 )
 
@@ -477,6 +478,7 @@ def _load_trusted_stage(stage_root: Path) -> TrustedStageState | None:
     try:
         if not normalized_stage_root.exists() or not normalized_stage_root.is_dir():
             return None
+        validate_materialized_stage_tree(normalized_stage_root)
         manifest_path = normalized_stage_root / "manifest.json"
         if not manifest_path.exists() or not manifest_path.is_file() or manifest_path.is_symlink():
             return None

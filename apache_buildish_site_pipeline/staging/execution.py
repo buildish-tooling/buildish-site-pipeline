@@ -168,8 +168,23 @@ def _validate_candidate_stage_root(stage_root: Path) -> None:
     if not stage_root.exists() or not stage_root.is_dir() or stage_root.is_symlink():
         raise StageIntegrityError(f"Candidate stage root is not a normal directory: {stage_root}")
     manifest_path = stage_root / "manifest.json"
-    if not manifest_path.exists() or not manifest_path.is_file():
+    if not manifest_path.exists() or not manifest_path.is_file() or manifest_path.is_symlink():
         raise StageIntegrityError(f"Candidate stage root is missing manifest.json: {stage_root}")
+    validate_materialized_stage_tree(stage_root)
+
+
+def validate_materialized_stage_tree(stage_root: Path) -> None:
+    """Reject staged trees that contain symlinked files or directories."""
+
+    try:
+        for root, dir_names, file_names in os.walk(stage_root, topdown=True, followlinks=False):
+            root_path = Path(root)
+            for name in (*dir_names, *file_names):
+                entry_path = root_path / name
+                if entry_path.is_symlink():
+                    raise StageIntegrityError(f"Stage tree must not contain symlinks: {entry_path}")
+    except OSError as exc:
+        raise StageIntegrityError(f"Could not validate stage tree integrity for {stage_root}: {exc}") from exc
 
 
 def validate_visible_stage_target_path(stage_root: Path) -> None:
@@ -549,4 +564,23 @@ def _write_json_file(path: Path, value) -> None:
         serialized = value.model_dump_json(indent=2, exclude_none=True)
     else:
         serialized = "[\n" + ",\n".join(entry.model_dump_json(indent=2, exclude_none=True) for entry in value) + "\n]"
-    path.write_text(f"{serialized}\n", encoding="utf-8")
+    temp_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=path.parent,
+            prefix=f".{path.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as temp_file:
+            temp_file.write(f"{serialized}\n")
+            temp_file.flush()
+            os.fsync(temp_file.fileno())
+            temp_path = Path(temp_file.name)
+        os.replace(temp_path, path)
+    except OSError as exc:
+        raise StageIntegrityError(f"Could not write stage JSON file {path}: {exc}") from exc
+    finally:
+        if temp_path is not None and temp_path.exists():
+            temp_path.unlink(missing_ok=True)

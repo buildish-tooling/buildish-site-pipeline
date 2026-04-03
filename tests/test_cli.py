@@ -14,6 +14,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from apache_buildish_site_pipeline.cli import _run
+from apache_buildish_site_pipeline.cli_dispatch import dispatch_command as _dispatch_command
 
 
 class CliTests(unittest.TestCase):
@@ -98,6 +99,41 @@ class CliTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 3)
         self.assertIn("resolves through a symlink", stderr.getvalue())
+
+    def test_plan_revalidates_report_output_before_file_emission(self) -> None:
+        with _workspace() as workspace_root:
+            reports_dir = workspace_root / "reports"
+            reports_dir.mkdir(parents=True, exist_ok=True)
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+
+            def _dispatch_and_mutate(invocation):
+                result = _dispatch_command(invocation)
+                real_reports_dir = workspace_root / "real-reports"
+                reports_dir.rename(real_reports_dir)
+                reports_dir.symlink_to(real_reports_dir, target_is_directory=True)
+                return result
+
+            with mock.patch("apache_buildish_site_pipeline.cli.dispatch_command", side_effect=_dispatch_and_mutate):
+                with _cwd(workspace_root):
+                    exit_code = _run(
+                        argv=[
+                            "plan",
+                            "--report-format",
+                            "json",
+                            "--report-schema-version",
+                            "1",
+                            "--report-output",
+                            "reports/out.json",
+                        ],
+                        stdout=stdout,
+                        stderr=stderr,
+                    )
+
+            self.assertEqual(exit_code, 2)
+            self.assertEqual(stdout.getvalue(), "")
+            self.assertIn("Report output parent directory resolves through a symlink", stderr.getvalue())
+            self.assertFalse((workspace_root / "reports/out.json").exists())
 
     def test_watch_json_stdout_is_rejected(self) -> None:
         with _workspace() as workspace_root:

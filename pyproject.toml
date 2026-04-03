@@ -16,6 +16,10 @@ name = "apache-buildish-site-pipeline"
 version = "0.1.0"
 description = "Reusable multi-repository site staging pipeline"
 requires-python = ">=3.13"
+classifiers = [
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.13",
+]
 dependencies = [
     "mistletoe>=1,<2",
     "pydantic>=2.11,<3",

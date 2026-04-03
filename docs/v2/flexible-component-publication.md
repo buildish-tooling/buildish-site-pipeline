@@ -244,8 +244,11 @@ Recommended artifact shape:
 - optional `assetsRoot`
 - `versioning.developmentRef`
 - `versioning.tagPattern`
+- optional `versioning.namedRefs[]`
+- optional `publicationSelection`
 - optional `lifecycle.latestStable`
 - optional `lifecycle.releaseLines`
+- optional `lifecycle.releases[]`
 - optional `lifecycle.supportStatusVocabulary`
 
 Example:
@@ -260,26 +263,41 @@ components:
   - slug: spark
     content:
       source: spark-repo
-    artifacts:
-      - key: runtime
-        displayName: Spark Runtime
-        source: spark-repo
-        docsRoot: docs/runtime
-        versioning:
-          developmentRef: main
-          tagPattern: ^v[0-9]+\.[0-9]+\.[0-9]+$
-      - key: kubernetes-operator
-        displayName: Spark Kubernetes Operator
-        source: operator-repo
-        docsRoot: docs
-        versioning:
-          developmentRef: main
-          tagPattern: ^operator-v[0-9]+\.[0-9]+\.[0-9]+$
+	artifacts:
+		- key: runtime
+		  displayName: Spark Runtime
+		  source: spark-repo
+		  docsRoot: docs/runtime
+		  versioning:
+			developmentRef: main
+			tagPattern: ^v[0-9]+\.[0-9]+\.[0-9]+$
+			namedRefs:
+				- key: preview
+				  ref: preview/docs
+				  displayName: Preview
+				  maturity: preview
+		  publicationSelection:
+			namedRefs: [preview]
+			releases:
+				mode: latest-per-line
+		- key: kubernetes-operator
+		  displayName: Spark Kubernetes Operator
+		  source: operator-repo
+		  docsRoot: docs
+		  versioning:
+			developmentRef: main
+			tagPattern: ^operator-v[0-9]+\.[0-9]+\.[0-9]+$
 ```
 
 With this structure, lifecycle metadata belongs primarily to artifacts. A
-component-level lifecycle can still be emitted by the pipeline as a summary, but
+component-level lifecycle can also be emitted by the pipeline as a summary, but
 it should be treated as derived convenience metadata rather than authored truth.
+
+Publication visibility should stay separate from lifecycle meaning.
+
+That means an artifact may also carry a `publicationSelection` policy used during
+planning and staging. When both component and artifact policy are present, the
+artifact policy should win.
 
 To avoid terminology confusion, `artifact` in this document should mean an
 independently versioned release unit or documentation stream, not every
@@ -414,6 +432,69 @@ forcing the pipeline to pretend those terms are universal.
 The pipeline's job should be to validate references and preserve the vocabulary
 metadata, not to impose semantics beyond basic structure.
 
+## Authored named refs and publication selection
+
+Intentional preview-style publications should be authored explicitly.
+
+Recommended `namedRefs[]` fields under `versioning`:
+
+- `key`
+- `ref`
+- optional `displayName`
+- optional `maturity`
+- optional `description`
+
+Those authored named refs become the stable identities used by planning,
+staging, and aggregate metadata. Provider data may enrich them, but provider
+records should not be required to create them.
+
+Publication visibility should be controlled by a separate
+`publicationSelection` policy rather than by `supportStatus` or release-line
+semantics.
+
+Recommended policy dimensions:
+
+- `development`
+- `lineHeads`
+- `releases`
+- `namedRefs`
+- `candidates`
+
+Recommended built-in default:
+
+- include development docs
+- include all authored line heads
+- include the latest stable release per release line
+- include only explicitly selected authored named refs
+- exclude release candidates unless explicitly requested
+
+This keeps public visibility intentional without making route and lifecycle
+metadata carry planning semantics.
+
+Example:
+
+```yaml
+	artifacts:
+		- key: runtime
+		  versioning:
+			developmentRef: main
+			tagPattern: ^v[0-9]+\.[0-9]+\.[0-9]+$
+			namedRefs:
+				- key: preview
+				  ref: preview/docs
+				  displayName: Preview
+				  maturity: preview
+		  publicationSelection:
+			development: true
+			lineHeads:
+				mode: all-authored
+			releases:
+				mode: latest-per-line
+			namedRefs: [preview]
+			candidates:
+				mode: none
+```
+
 ### Support windows should be structured, but optional
 
 Some projects need more than a support-status key. They need dates and policy
@@ -433,6 +514,65 @@ Typical fields include:
 
 This is mostly additive lifecycle metadata. It should enrich the current model,
 not replace the support-status vocabulary and not absorb compatibility matrices.
+
+## Exact-release publication state
+
+Exact releases sometimes need publication behavior that differs from their
+support posture.
+
+That should be modeled separately through exact-release entries under
+`lifecycle.releases[]`.
+
+Recommended fields:
+
+- `version`
+- optional `releaseLine`
+- optional `supportStatus`
+- optional `supportWindow`
+- optional `publicationState`
+- optional `withdrawalBehavior`
+- optional `redirectTarget`
+- optional `reason`
+
+Recommended `publicationState` vocabulary:
+
+- `published`
+- `hidden`
+- `withdrawn`
+- `tombstoned`
+
+Recommended `withdrawalBehavior` vocabulary:
+
+- `notice`
+- `redirect`
+- `omit`
+
+This keeps maintenance meaning and publication behavior separate:
+
+- `supportStatus` says how a release is maintained
+- `publicationState` says whether and how it is publicly surfaced
+
+For withdrawn or tombstoned releases, the model should support both:
+
+- a notice or tombstone page at the preserved route, and
+- an explicit redirect policy to another route or URL
+
+Example:
+
+```yaml
+	artifacts:
+		- key: runtime
+		  lifecycle:
+			releases:
+				- version: 4.1.0
+				  publicationState: withdrawn
+				  withdrawalBehavior: notice
+				  reason: Recalled pending security fix.
+				- version: 3.2.0
+				  publicationState: tombstoned
+				  withdrawalBehavior: redirect
+				  redirectTarget: /security/runtime/3.2.0/
+```
 
 ## Routing rules
 
@@ -472,7 +612,7 @@ When only `origin` and `mountPath` are provided, the pipeline should derive:
 It should also derive fully qualified URLs by joining each path to the resolved
 origin `baseUrl`.
 
-This keeps the common case simple while still allowing a fully explicit routing
+This keeps the common case simple while also allowing a fully explicit routing
 map when needed.
 
 ### Canonical routes, aliases, and redirects
@@ -515,6 +655,16 @@ The model should support:
 
 Renderers should receive locale and translation data directly rather than trying
 to infer them from path prefixes alone.
+
+Translation linkage itself should be page-authored rather than catalog-authored.
+
+Pages that belong to the same translation set should carry a shared
+`translationKey` in authored page metadata. The pipeline should validate those
+keys, derive locale sibling relationships, and emit `data/translations.json`
+from the staged page set.
+
+That keeps translation equivalence close to the pages that actually vary by
+locale and avoids a brittle central registry in the catalog model.
 
 ## How groups should behave
 
@@ -603,10 +753,12 @@ Recommended normalized `records[]` core fields:
 - optional `displayVersion`
 - optional `tag`
 - optional `ref`
+- optional `namedRefKey`
 - optional `commitSha`
 - optional `releaseLine`
 - optional `releaseLineAncestors`
 - optional `supportStatus`
+- optional `publicationState`
 - optional `maturity`
 - optional `candidateSequence`
 - optional `voteStatus`
@@ -654,9 +806,11 @@ Recommended normalization rules:
   label such as `4.1.0-rc2`
 - `maturity`, `supportStatus`, and `voteStatus` should be optional metadata, not
   required classification keys
+- `namedRefKey` should be present when a provider record enriches an authored
+  named ref rather than introducing an ad hoc discovered ref
 - unknown provider-specific details should go under `extensions`
 
-This keeps the snapshot useful for indexing and rendering while still allowing a
+This keeps the snapshot useful for indexing and rendering while also allowing a
 provider such as ATR to expose richer state over time.
 
 Example minimum shape:
@@ -725,10 +879,17 @@ such as:
 
 - discovered releases,
 - release candidates and vote status,
-- named refs or preview refs,
+- state for authored named refs or preview refs,
 - timestamps,
 - external URLs, and
 - downloadable asset inventories.
+
+Consumer-authored metadata should remain authoritative for:
+
+- which named refs are intentionally publishable,
+- publication-selection policy,
+- exact-release publication behavior such as notice vs redirect, and
+- final public route ownership.
 
 The pipeline should not let provider data silently redefine consumer-owned URL
 layout or component identity. Conversely, authored metadata should not need to
@@ -895,6 +1056,7 @@ sitePipelineComponentPage:
   canonicalUrl: https://spark.example.org/development/docs/sql/
   locale: en
   defaultLocale: true
+  translationKey: runtime-sql-overview
   componentPath: /
   componentUrl: https://spark.example.org/
   version:
@@ -904,6 +1066,7 @@ sitePipelineComponentPage:
     url: https://spark.example.org/releases/4.0.0/
     docsPath: /releases/4.0.0/docs/
     docsUrl: https://spark.example.org/releases/4.0.0/docs/
+    publicationState: published
     releaseLine:
       key: 4.x
       supportStatus: active
@@ -928,13 +1091,13 @@ The necessary attributes break down into a few categories:
 - current page route: page `path` and page `url`
 - route semantics: `canonicalUrl`, optional aliases, and redirect-aware routing
 - locale and translation context: `locale`, default-locale state, and translated
-  siblings
+  siblings derived from page-authored `translationKey`
 - version context: development or released version label and URLs
 - release-line context: current line, ancestor lines, optional support status,
   and optional support-window metadata
 - release provenance: `provider`, `externalId`, `externalUrl`
-- preview and candidate context: `ref`, `maturity`, `candidateSequence`, and
-  optional `voteStatus`
+- preview and candidate context: `ref`, `namedRefKey`, `maturity`,
+  `candidateSequence`, and optional `voteStatus`
 
 For reliability, the pipeline should expose both:
 
@@ -962,27 +1125,30 @@ the pipeline should also emit normalized aggregate metadata files.
 
 Recommended staged metadata outputs:
 
-- `data/components.yaml` for component identity, summaries, groups, origins, and
+- `data/components.json` for component identity, summaries, groups, origins, and
   publication roots
-- `data/artifacts.yaml` for artifact-level lifecycle, tag patterns, source refs,
+- `data/artifacts.json` for artifact-level lifecycle, tag patterns, source refs,
   latest stable versions, release lines, support-status vocabularies, and docs
   roots
-- `data/releases.yaml` for exact release records from authored and provider
-  inputs
-- `data/candidates.yaml` for in-flight release candidates and vote-related state
-- `data/refs.yaml` for development, maintenance, feature, and preview refs when
-  they are intentionally exposed
-- `data/routes.yaml` for resolved origin/path/url mappings and canonical route
+- `data/releases.json` for exact release records from authored and provider
+  inputs, including publication state for hidden, withdrawn, or tombstoned
+  releases
+- `data/candidates.json` for in-flight release candidates and vote-related state
+- `data/refs.json` for development, maintenance, feature, and preview refs when
+  they are intentionally exposed, including authored named-ref keys when present
+- `data/routes.json` for resolved origin/path/url mappings and canonical route
   inventory
-- `data/redirects.yaml` for resolved redirect inventory derived from route
+- `data/redirects.json` for resolved redirect inventory derived from route
   metadata
-- `data/translations.yaml` for translation-set relationships and locale-specific
+- `data/translations.json` for translation-set relationships and locale-specific
   sibling routes
-- `data/compatibility.yaml` for cross-component, cross-artifact, or cross-line
+- `data/compatibility.json` for cross-component, cross-artifact, or cross-line
   compatibility assertions
-- `data/mounts.yaml` for mounted generated or imported documentation subtrees
-- `data/providers.yaml` for loaded provider snapshot provenance and fetch state
-- `data/content-index.yaml` for one normalized entry per staged page
+- `data/mounts.json` for mounted generated or imported documentation subtrees
+- `data/providers.json` for loaded provider snapshot provenance and fetch state
+- `data/content-index.json` for one normalized entry per staged page
+- `data/diagnostics.json` for non-fatal warnings, skipped optional inputs, and
+  stale-provider notices when present
 
 Recommended `content-index` entry fields:
 
@@ -1031,23 +1197,34 @@ The pipeline should reject:
 - duplicate `(origin, path)` publication routes,
 - duplicate canonical routes for the same published target,
 - redirect loops or redirects to unknown internal targets,
+- redirect targets with unsupported URL schemes,
 - overlapping component mounts within the same origin,
 - overlapping generated/imported mounts with conflicting ownership,
 - duplicate artifact keys within a component,
 - ambiguous artifact-to-route mappings,
 - duplicate locale entries within one translation set,
 - incompatible locale route-mode and origin configuration,
+- duplicate authored named-ref keys within one artifact,
+- publication-selection policies that reference unknown release lines, named-ref
+  keys, or exact versions,
 - compatibility assertions that reference unknown subjects or targets,
 - conflicting tag patterns within one artifact definition,
 - provider records that reference unknown components or artifact keys,
 - duplicate provider records for the same `(provider, externalId)` pair,
 - unknown support-status keys on release lines,
+- withdrawn or tombstoned exact releases that declare `withdrawalBehavior:
+  redirect` without a redirect target,
 - malformed support-window date ordering,
 - cycles or broken references in release-line parent chains,
+- path-bearing authored or mounted inputs that escape declared roots after
+  normalization and symlink resolution,
 - collisions with consumer-authored site content,
 - collisions between page, docs, and asset mounts for the same component when
   the result would be ambiguous, and
 - any configuration that leaves a component without a resolvable public mount.
+
+Detailed path-safety, XSS-defense, redirect-safety, and mounted-content trust
+rules are defined in [security-and-trust-model.md](security-and-trust-model.md).
 
 ## Opinionated recommendation
 

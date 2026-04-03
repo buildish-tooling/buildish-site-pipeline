@@ -64,7 +64,7 @@ Recommended responsibilities:
 - reset or prepare pipeline-managed output roots,
 - dispatch component work,
 - collect `ComponentBuildResult`-like summaries,
-- write aggregate metadata such as `manifest.yaml` and `data/*.yaml`,
+- write aggregate metadata such as `manifest.json` and `data/*.json`,
 - stage consumer-authored site content and vendor assets, and
 - optionally produce lightweight preview output.
 
@@ -123,8 +123,8 @@ through process queues.
 
 The parent coordinator should own all shared outputs:
 
-- `manifest.yaml`,
-- aggregated `data/*.yaml`,
+- `manifest.json`,
+- aggregated `data/*.json`,
 - top-level authored site content staging,
 - vendor asset staging, and
 - preview root generation.
@@ -137,6 +137,24 @@ root, for example:
 
 This ownership model avoids write races and keeps failures local to one
 component.
+
+The parent coordinator should write `manifest.json` after the aggregate file
+inventory is finalized so downstream consumers never see a partially declared
+stage contract.
+
+## Recommended stage-root layout
+
+The recommended layout is:
+
+- `manifest.json`
+- `content/site/...`
+- `content/components/<slug>/...`
+- `static/site/...`
+- `static/components/<slug>/...`
+- `data/*.json`
+
+The authoritative definition of that layout lives in
+[staged-output-contract.md](staged-output-contract.md).
 
 ## One-off production build flow
 
@@ -204,7 +222,7 @@ flowchart TD
 
 The current safe default is full stage regeneration on each relevant change.
 Over time, this can evolve toward incremental restaging, but the watch loop
-should still call into the same build/stage engine rather than bypassing it.
+should call into the same build/stage engine rather than bypassing it.
 
 ## Recommended evolution path
 

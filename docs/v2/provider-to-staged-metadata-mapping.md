@@ -26,7 +26,8 @@ just what a provider may supply, but what the pipeline should emit for renderers
 
 ## Mapping principles
 
-- authored metadata remains authoritative for identity, routing, and content roots
+- authored metadata remains authoritative for identity, routing, content roots,
+  publication selection, and exact-release publication behavior
 - provider metadata enriches lifecycle, release, candidate, ref, and asset state
 - page front matter should contain only page-local and immediately relevant
   context
@@ -40,19 +41,18 @@ just what a provider may supply, but what the pipeline should emit for renderers
 Recommended staged outputs that may receive provider-derived data:
 
 - page front matter
-- `data/providers.yaml`
-- `data/components.yaml`
-- `data/artifacts.yaml`
-- `data/releases.yaml`
-- `data/candidates.yaml`
-- `data/refs.yaml`
-- `data/content-index.yaml`
+- `data/providers.json`
+- `data/components.json`
+- `data/artifacts.json`
+- `data/releases.json`
+- `data/candidates.json`
+- `data/refs.json`
+- `data/content-index.json`
 
 ## Serialization format recommendation
 
-Examples in these v2 docs use YAML because it is compact and readable, but
-the pipeline should not assume every renderer can natively consume arbitrary YAML
-data files.
+Page front matter commonly uses YAML, but aggregate metadata needs a more
+portable baseline for renderer and tooling integration.
 
 In practice:
 
@@ -63,12 +63,8 @@ In practice:
 Recommended rule:
 
 - keep page front matter YAML
-- emit aggregate staged metadata in JSON as the interoperability baseline
-- optionally emit YAML mirrors for humans, debugging, and renderer stacks that
-  prefer YAML
-
-If the pipeline emits both formats, they should be byte-for-byte equivalent at
-the data-model level and differ only in serialization.
+- emit aggregate staged metadata in JSON as the contract format
+- treat optional alternate serializations as non-authoritative mirrors
 
 ## What goes into page front matter
 
@@ -117,7 +113,7 @@ sitePipelineComponentPage:
 Anything that must be queried across pages, components, or artifacts should be
 written to `data/` files instead of repeated into front matter.
 
-### `data/providers.yaml`
+### `data/providers.json`
 
 Purpose:
 
@@ -133,7 +129,7 @@ Recommended fields:
 - optional `baseUrl`
 - `fetchedAt`
 
-### `data/components.yaml`
+### `data/components.json`
 
 Provider data should influence component summaries only when it is useful to show
 derived lifecycle state at component level.
@@ -146,7 +142,7 @@ Recommended provider-derived additions:
 
 The full release inventory should not be duplicated here.
 
-### `data/artifacts.yaml`
+### `data/artifacts.json`
 
 This should be the main aggregate view for artifact-level lifecycle and version
 state.
@@ -168,7 +164,7 @@ Each `releaseLines[]` entry may include:
 - optional `supportStatus`
 - optional `headRef`
 
-### `data/releases.yaml`
+### `data/releases.json`
 
 Purpose:
 
@@ -188,12 +184,15 @@ Recommended fields:
 - optional `releaseLine`
 - optional `releaseLineAncestors`
 - optional `supportStatus`
+- optional `publicationState`
+- optional `withdrawalBehavior`
+- optional `redirectTarget`
 - optional `maturity`
 - optional `publishedAt`
 - optional `assets`
 - optional `urls`
 
-### `data/candidates.yaml`
+### `data/candidates.json`
 
 Purpose:
 
@@ -217,7 +216,7 @@ Recommended fields:
 - optional `publishedAt`
 - optional `assets`
 
-### `data/refs.yaml`
+### `data/refs.json`
 
 Purpose:
 
@@ -230,13 +229,14 @@ Recommended fields:
 - `componentSlug`
 - `artifactKey`
 - `kind`
+- optional `namedRefKey`
 - `ref`
 - optional `displayVersion`
 - optional `releaseLine`
 - optional `maturity`
 - optional `externalUrl`
 
-### `data/content-index.yaml`
+### `data/content-index.json`
 
 The content index should denormalize the most useful provider context for each
 page so renderers can query page collections without joining multiple files.
@@ -258,24 +258,27 @@ Recommended provider-derived additions:
 Recommended mapping behavior:
 
 - `released`
-  - emit entry in `data/releases.yaml`
-  - enrich `data/artifacts.yaml` latest release and line summaries
+  - emit entry in `data/releases.json`
+  - merge authored exact-release publication state and withdrawal behavior when
+    present
+  - enrich `data/artifacts.json` latest release and line summaries
   - copy page-local release context into front matter for pages staged from that
     release
 - `candidate`
-  - emit entry in `data/candidates.yaml`
-  - enrich `data/artifacts.yaml` latest candidate summary
+  - emit entry in `data/candidates.json`
+  - enrich `data/artifacts.json` latest candidate summary
   - copy page-local candidate context into front matter for candidate pages
 - `named-ref`
-  - emit entry in `data/refs.yaml`
+  - emit entry in `data/refs.json`
+  - carry the authored named-ref key when the ref matches one
   - copy ref context into front matter for pages staged from that ref
 - `line-head`
-  - emit entry in `data/refs.yaml`
-  - enrich matching release-line summaries in `data/artifacts.yaml`
+  - emit entry in `data/refs.json`
+  - enrich matching release-line summaries in `data/artifacts.json`
   - copy line-head context into front matter when applicable
 - `development`
-  - emit entry in `data/refs.yaml`
-  - mark artifact development context in `data/artifacts.yaml`
+  - emit entry in `data/refs.json`
+  - mark artifact development context in `data/artifacts.json`
   - copy development ref context into front matter for development pages
 
 ## What should not be copied into front matter
@@ -298,8 +301,8 @@ contract, the pipeline should preserve them in aggregate metadata under
 
 Recommended rule:
 
-- allow `extensions` in `data/releases.yaml`, `data/candidates.yaml`,
-  `data/refs.yaml`, and `data/artifacts.yaml`
+- allow `extensions` in `data/releases.json`, `data/candidates.json`,
+  `data/refs.json`, and `data/artifacts.json`
 - do not copy `extensions` into page front matter by default
 
 ## Validation expectations
@@ -329,7 +332,7 @@ Given this provider record:
 
 The pipeline should typically emit:
 
-- one entry in `data/candidates.yaml`
-- an updated candidate summary in `data/artifacts.yaml`
+- one entry in `data/candidates.json`
+- an updated candidate summary in `data/artifacts.json`
 - candidate/version context in front matter for pages staged from that candidate
-- denormalized candidate fields in `data/content-index.yaml` for those pages
+- denormalized candidate fields in `data/content-index.json` for those pages

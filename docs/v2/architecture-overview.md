@@ -198,8 +198,13 @@ After this overview, the most useful next docs are usually:
 
 - [api-contract.md](api-contract.md) for the stable invocation and output
   boundaries
+- [staged-output-contract.md](staged-output-contract.md) for the staged-tree
+  layout and manifest contract
 - [source-resolution-and-materialization.md](source-resolution-and-materialization.md)
   for version selection and local materialization strategy
+- [build-architecture.md](build-architecture.md) for build/watch execution shape
+- [security-and-trust-model.md](security-and-trust-model.md) for trust,
+  validation, and content-safety boundaries
 - [flexible-component-publication.md](flexible-component-publication.md) for the
   main publication and lifecycle model
 - [pipeline-model-schema-reference.md](pipeline-model-schema-reference.md) for
@@ -208,4 +213,3 @@ After this overview, the most useful next docs are usually:
   provider input shape
 - [provider-to-staged-metadata-mapping.md](provider-to-staged-metadata-mapping.md)
   for how provider data enriches staged outputs
-- [build-architecture.md](build-architecture.md) for build/watch execution shape

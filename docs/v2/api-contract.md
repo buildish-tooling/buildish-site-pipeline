@@ -60,12 +60,26 @@ Those commands are the supported way to:
 The exact CLI surface can evolve, but changes to `build` and `watch` should be
 treated as compatibility-sensitive API changes rather than ordinary refactoring.
 
+## Report-only planning helpers
+
+The CLI may also expose report-only helper commands for planning.
+
+Those commands:
+
+- emit machine-readable planning data such as a resolved materialization report,
+- help consumers discover missing or stale local inputs before staging, and
+- do not fetch from SCMs or mutate caches themselves.
+
+That keeps planning visible without turning `build` or `watch` into source-sync
+commands.
+
 ## Stable outputs API
 
 The stable data-plane API is the staged output contract.
 
 That means downstream consumers should integrate against:
 
+- `manifest.json` as the staged-tree entry point,
 - the staged content tree,
 - page-local front matter produced by the pipeline,
 - aggregate metadata files such as routes, lifecycle, releases, and related
@@ -155,8 +169,7 @@ output contract.
 
 ## Future integrations and add-ons
 
-Renderer-specific examples, wrapper scripts, or helper tooling may still be
-useful later.
+Renderer-specific examples, wrapper scripts, or helper tooling may be useful.
 
 But those should be treated as isolated integrations layered on top of the core
 contracts, not as reasons to widen the core API boundary.
@@ -165,9 +178,13 @@ contracts, not as reasons to widen the core API boundary.
 
 - [architecture-overview.md](architecture-overview.md) for the high-level system
   picture
+- [staged-output-contract.md](staged-output-contract.md) for the staged-tree
+  layout and `manifest.json` contract
 - [source-resolution-and-materialization.md](source-resolution-and-materialization.md)
   for version selection and materialized content inputs
 - [build-architecture.md](build-architecture.md) for the recommended execution
   shape of `build` and `watch`
+- [security-and-trust-model.md](security-and-trust-model.md) for path-safety,
+  trust-boundary, and XSS-defense expectations
 - [flexible-component-publication.md](flexible-component-publication.md) for the
   publication and lifecycle model

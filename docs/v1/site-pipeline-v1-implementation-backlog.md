@@ -74,11 +74,11 @@ boundaries.
 
 ## Phase 1: model layer
 
-- [ ] implement the external model package and document loaders
-- [ ] implement shared scalar and validation helpers
-- [ ] implement schema-version dispatch and duplicate-key rejection
-- [ ] implement output-facing report/staged models needed by later phases
-- [ ] add thorough positive, negative, boundary, and security-sensitive tests
+- [x] implement the external model package and document loaders
+- [x] implement shared scalar and validation helpers
+- [x] implement schema-version dispatch and duplicate-key rejection
+- [x] implement output-facing report/staged models needed by later phases
+- [x] add thorough positive, negative, boundary, and security-sensitive tests
 
 Primary reference:
 
@@ -91,14 +91,14 @@ Merge gate:
 
 ## Phase 2: planning and input resolution
 
-- [ ] implement effective authored configuration resolution
-- [ ] implement provider snapshot indexing and authority boundaries
-- [ ] implement version-context selection
-- [ ] implement local-input inventory and readiness classification
-- [ ] implement watch-eligibility and watch-root derivation
-- [ ] implement `ResolvedMaterializationReport`
-- [ ] implement `PlanningEvaluation` and optional `EffectiveBuildPlan` candidate
-- [ ] add deterministic and security-sensitive tests for planning behavior
+- [x] implement effective authored configuration resolution
+- [x] implement provider snapshot indexing and authority boundaries
+- [x] implement version-context selection
+- [x] implement local-input inventory and readiness classification
+- [x] implement watch-eligibility and watch-root derivation
+- [x] implement `ResolvedMaterializationReport`
+- [x] implement `PlanningEvaluation` and optional `EffectiveBuildPlan` candidate
+- [x] add deterministic and security-sensitive tests for planning behavior
 
 Primary reference:
 
@@ -111,12 +111,12 @@ Merge gate:
 
 ## Phase 3: shared evaluation and contextual validation
 
-- [ ] implement the shared evaluation package used by `check`, `build`, and
+- [x] implement the shared evaluation package used by `check`, `build`, and
       `watch`
-- [ ] implement the central diagnostic collector and code registry
+- [x] implement the central diagnostic collector and code registry
 - [ ] implement contextual reference, route, redirect, localization, provider,
       readiness, and page-scan validation modules
-- [ ] implement summary construction and explicit stage-gating decisions
+- [x] implement summary construction and explicit stage-gating decisions
 - [ ] add deterministic, non-happy-path, and security-sensitive evaluation tests
 
 Primary reference:
@@ -149,12 +149,12 @@ Merge gate:
 
 ## Phase 5: CLI and invocation/reporting integration
 
-- [ ] implement the stable `plan`, `check`, `build`, and `watch` command surface
-- [ ] implement immutable invocation objects and parser validation
-- [ ] implement exit-code mapping and command dispatch
-- [ ] implement safe text/JSON report emission and report-file writing
-- [ ] integrate command handlers with the shared lower-layer execution path
-- [ ] add parser, output, exit-code, and report-write safety tests
+- [x] implement the stable `plan`, `check`, `build`, and `watch` command surface
+- [x] implement immutable invocation objects and parser validation
+- [x] implement exit-code mapping and command dispatch
+- [x] implement safe text/JSON report emission and report-file writing
+- [x] integrate command handlers with the shared lower-layer execution path
+- [x] add parser, output, exit-code, and report-write safety tests
 
 Primary reference:
 
@@ -167,12 +167,12 @@ Merge gate:
 
 ## Phase 6: watch mode and retained-stage behavior
 
-- [ ] implement the watch coordinator and explicit cycle state model
-- [ ] implement dirty-set handling and watch-root refresh behavior
-- [ ] implement per-cycle reuse of planning, evaluation, and staging
-- [ ] implement retained last-known-good behavior for ordinary cycle failure
-- [ ] implement exit-required behavior for integrity ambiguity
-- [ ] implement repeated watch-report rewriting without self-trigger loops
+- [x] implement the watch coordinator and explicit cycle state model
+- [x] implement dirty-set handling and watch-root refresh behavior
+- [x] implement per-cycle reuse of planning, evaluation, and staging
+- [x] implement retained last-known-good behavior for ordinary cycle failure
+- [x] implement exit-required behavior for integrity ambiguity
+- [x] implement repeated watch-report rewriting without self-trigger loops
 - [ ] add state-machine, invalidation, filesystem-transition, and safety tests
 
 Primary reference:

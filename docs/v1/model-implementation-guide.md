@@ -647,38 +647,38 @@ Use this checklist during implementation reviews.
 
 ### Architecture and package layout
 
-- [ ] the package is `apache_buildish_site_pipeline.models`, not `model`
-- [ ] modules are grouped by schema-reference section
-- [ ] runtime/execution state has not been mixed into schema modules
-- [ ] shared scalar and enum types exist centrally
+- [x] the package is `apache_buildish_site_pipeline.models`, not `model`
+- [x] modules are grouped by schema-reference section
+- [x] runtime/execution state has not been mixed into schema modules
+- [x] shared scalar and enum types exist centrally
 
 ### Validation and correctness
 
-- [ ] root-document loaders exist and are the only supported external parse path
-- [ ] duplicate YAML keys are rejected
-- [ ] unsupported schema versions fail clearly
-- [ ] unknown fields fail clearly
-- [ ] no partial object is returned on invalid input
-- [ ] cross-field constraints are tested
-- [ ] uniqueness constraints are tested
+- [x] root-document loaders exist and are the only supported external parse path
+- [x] duplicate YAML keys are rejected
+- [x] unsupported schema versions fail clearly
+- [x] unknown fields fail clearly
+- [x] no partial object is returned on invalid input
+- [x] cross-field constraints are tested
+- [x] uniqueness constraints are tested
 
 ### Security
 
-- [ ] path-bearing fields reject obviously unsafe syntax
-- [ ] dangerous URL schemes are rejected
-- [ ] internal-reference grammar is validated
-- [ ] extension-object slots are limited to documented fields only
-- [ ] mount metadata size ceilings are enforced
-- [ ] diagnostic-detail reduction follows the documented rule
-- [ ] public aggregate models avoid machine-local implementation details
-- [ ] local operator override policy is not sourced from repo/provider input
+- [x] path-bearing fields reject obviously unsafe syntax
+- [x] dangerous URL schemes are rejected
+- [x] internal-reference grammar is validated
+- [x] extension-object slots are limited to documented fields only
+- [x] mount metadata size ceilings are enforced
+- [x] diagnostic-detail reduction follows the documented rule
+- [x] public aggregate models avoid machine-local implementation details
+- [x] local operator override policy is not sourced from repo/provider input
 
 ### Serialization and compatibility
 
-- [ ] wire-format field names are `camelCase`
-- [ ] Python attribute names stay `snake_case`
-- [ ] output models have round-trip or serialization stability tests
-- [ ] required fixed-value fields are set consistently
+- [x] wire-format field names are `camelCase`
+- [x] Python attribute names stay `snake_case`
+- [x] output models have round-trip or serialization stability tests
+- [x] required fixed-value fields are set consistently
 
 ## Bottom line
 

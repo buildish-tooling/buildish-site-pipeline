@@ -793,32 +793,32 @@ Test at least:
 
 ### Structure
 
-- [ ] the planning package is separate from `models`, `evaluation`, and `staging`
-- [ ] one central effective-config resolution algorithm exists
-- [ ] one central selection algorithm exists
-- [ ] the planning layer produces `ResolvedMaterializationReport` and
+- [x] the planning package is separate from `models`, `evaluation`, and `staging`
+- [x] one central effective-config resolution algorithm exists
+- [x] one central selection algorithm exists
+- [x] the planning layer produces `ResolvedMaterializationReport` and
       `PlanningEvaluation`
-- [ ] `EffectiveBuildPlan` candidates are produced only when planning
+- [x] `EffectiveBuildPlan` candidates are produced only when planning
       prerequisites are sufficient
 
 ### Correctness
 
-- [ ] `defaults` < `group` < `component` < `artifact` is implemented consistently
-- [ ] arrays replace rather than concatenate
-- [ ] selected contexts match authored publication-selection policy
-- [ ] the reported local-input universe matches what `build` and `watch` consume
-- [ ] `target = watch` planning entries all include `watchEligible`
-- [ ] `EffectiveBuildPlan` candidates are only built when readiness is
+- [x] `defaults` < `group` < `component` < `artifact` is implemented consistently
+- [x] arrays replace rather than concatenate
+- [x] selected contexts match authored publication-selection policy
+- [x] the reported local-input universe matches what `build` and `watch` consume
+- [x] `target = watch` planning entries all include `watchEligible`
+- [x] `EffectiveBuildPlan` candidates are only built when readiness is
       sufficient
 
 ### Security
 
-- [ ] planning performs no hidden fetches or cache mutation
-- [ ] local paths are normalized and rooted before trust decisions
-- [ ] symlink escapes are rejected
-- [ ] provider data does not redefine route ownership or publishability
-- [ ] operator policy stays local and is not repo/provider driven
-- [ ] public planning output does not leak private implementation details
+- [x] planning performs no hidden fetches or cache mutation
+- [x] local paths are normalized and rooted before trust decisions
+- [x] symlink escapes are rejected
+- [x] provider data does not redefine route ownership or publishability
+- [x] operator policy stays local and is not repo/provider driven
+- [x] public planning output does not leak private implementation details
 
 ## Bottom line
 

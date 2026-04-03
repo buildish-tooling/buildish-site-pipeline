@@ -1082,14 +1082,14 @@ This checklist is intended for implementation tracking and later doc reuse.
 
 ### Phase 2 checklist
 
-- [ ] watch coordinator runs only one publication cycle at a time
-- [ ] debounce and burst coalescing are implemented
-- [ ] pending dirty-set accumulation is implemented
-- [ ] pipeline-owned work, stage, and report outputs are excluded from watch input
-- [ ] each cycle builds privately before publication
-- [ ] last-known-good retention works on ordinary cycle failure
-- [ ] initial-cycle failure uses exit-required behavior
-- [ ] watch reports update after initial and later cycles
+- [x] watch coordinator runs only one publication cycle at a time
+- [x] debounce and burst coalescing are implemented
+- [x] pending dirty-set accumulation is implemented
+- [x] pipeline-owned work, stage, and report outputs are excluded from watch input
+- [x] each cycle builds privately before publication
+- [x] last-known-good retention works on ordinary cycle failure
+- [x] initial-cycle failure uses exit-required behavior
+- [x] watch reports update after initial and later cycles
 - [ ] synthetic renderer-probe tests pass
 
 ### Phase 3 checklist

@@ -679,37 +679,37 @@ Test at least:
 
 ### Contract shape
 
-- [ ] only `plan`, `check`, `build`, and `watch` are treated as stable commands
-- [ ] `serve` is not added as a stable command
-- [ ] the public Python package surface is not documented as stable API
-- [ ] shared report flags behave consistently across commands
+- [x] only `plan`, `check`, `build`, and `watch` are treated as stable commands
+- [x] `serve` is not added as a stable command
+- [x] the public Python package surface is not documented as stable API
+- [x] shared report flags behave consistently across commands
 
 ### Correctness
 
-- [ ] `main(argv)` returns application exit codes
-- [ ] parser failures become exit `2`
-- [ ] the command layer reuses the shared engine path
-- [ ] `check` stops before stage mutation
-- [ ] `build` success really means a trustworthy finalized stage exists
-- [ ] `watch` distinguishes retained-failure from exit-required failure
-- [ ] JSON stdout mode never mixes with human chatter
+- [x] `main(argv)` returns application exit codes
+- [x] parser failures become exit `2`
+- [x] the command layer reuses the shared engine path
+- [x] `check` stops before stage mutation
+- [x] `build` success really means a trustworthy finalized stage exists
+- [x] `watch` distinguishes retained-failure from exit-required failure
+- [x] JSON stdout mode never mixes with human chatter
 
 ### Security
 
-- [ ] report destinations are normalized and validated before writing
-- [ ] final report targets do not resolve through symlinks
-- [ ] same-directory temp writes are used for report replacement
-- [ ] operator-policy inputs stay local to CLI/env surfaces
-- [ ] no unexpected debug/path leakage is added to machine-readable output
-- [ ] watch report rewrites revalidate the destination each cycle
+- [x] report destinations are normalized and validated before writing
+- [x] final report targets do not resolve through symlinks
+- [x] same-directory temp writes are used for report replacement
+- [x] operator-policy inputs stay local to CLI/env surfaces
+- [x] no unexpected debug/path leakage is added to machine-readable output
+- [x] watch report rewrites revalidate the destination each cycle
 
 ### Test coverage
 
-- [ ] parser negative cases are covered
-- [ ] JSON stdout exactness is covered
-- [ ] report-write safety is covered
-- [ ] exit-code mapping is covered
-- [ ] watch initial-cycle and retained-failure behavior is covered
+- [x] parser negative cases are covered
+- [x] JSON stdout exactness is covered
+- [x] report-write safety is covered
+- [x] exit-code mapping is covered
+- [x] watch initial-cycle and retained-failure behavior is covered
 
 ## Bottom line
 

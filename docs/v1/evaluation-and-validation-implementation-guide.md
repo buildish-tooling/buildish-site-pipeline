@@ -630,28 +630,28 @@ Test at least:
 
 ### Structure
 
-- [ ] one dedicated `evaluation` package exists
-- [ ] model-layer validation and contextual validation are separated clearly
-- [ ] the evaluation layer consumes the resolved plan rather than rebuilding its
+- [x] one dedicated `evaluation` package exists
+- [x] model-layer validation and contextual validation are separated clearly
+- [x] the evaluation layer consumes the resolved plan rather than rebuilding its
       own planning logic
-- [ ] one central diagnostic collector exists
+- [x] one central diagnostic collector exists
 
 ### Correctness
 
-- [ ] route uniqueness is validated deterministically
-- [ ] redirect targets are validated against known targets and allowed schemes
-- [ ] provider-context matching is validated
-- [ ] readiness states become diagnostics and stage-gating decisions
-- [ ] `check` summary combinations match the schema contract
-- [ ] stage gating is explicit rather than inferred ad hoc in later layers
+- [x] route uniqueness is validated deterministically
+- [x] redirect targets are validated against known targets and allowed schemes
+- [x] provider-context matching is validated
+- [x] readiness states become diagnostics and stage-gating decisions
+- [x] `check` summary combinations match the schema contract
+- [x] stage gating is explicit rather than inferred ad hoc in later layers
 
 ### Security
 
-- [ ] evaluation performs no hidden mutation or fetches
+- [x] evaluation performs no hidden mutation or fetches
 - [ ] rooted path and symlink checks are applied before trust decisions
-- [ ] oversized diagnostic details are reduced safely
-- [ ] operator policy is not repo/provider driven
-- [ ] machine-local details are kept out of public outputs by default
+- [x] oversized diagnostic details are reduced safely
+- [x] operator policy is not repo/provider driven
+- [x] machine-local details are kept out of public outputs by default
 
 ## Bottom line
 

@@ -893,7 +893,7 @@ Test at least:
 
 ### Structure
 
-- [ ] runtime types live under `apache_buildish_site_pipeline.staging`, not
+- [x] runtime types live under `apache_buildish_site_pipeline.staging`, not
       `models`
 - [ ] coordinator-owned logic and worker-owned logic are separated clearly
 - [ ] one explicit worker protocol exists
@@ -901,28 +901,28 @@ Test at least:
 
 ### Correctness
 
-- [ ] one immutable `EffectiveBuildPlan` feeds the staging engine
+- [x] one immutable `EffectiveBuildPlan` feeds the staging engine
 - [ ] ownership is explicit before workers start
 - [ ] aggregates are coordinator-owned only
-- [ ] `manifest.json` is built from the finalized private next stage
-- [ ] `manifest.json` is the last visible finalized write
+- [x] `manifest.json` is built from the finalized private next stage
+- [x] `manifest.json` is the last visible finalized write
 - [ ] pool size changes do not change normalized outputs
 
 ### Security
 
-- [ ] every path is normalized before use
-- [ ] symlinks are resolved before trust decisions
-- [ ] final write targets do not resolve through symlinks
-- [ ] cross-filesystem publication is rejected
+- [x] every path is normalized before use
+- [x] symlinks are resolved before trust decisions
+- [x] final write targets do not resolve through symlinks
+- [x] cross-filesystem publication is rejected
 - [ ] worker fragment references are revalidated by the coordinator
 - [ ] machine-local details do not leak into public outputs
-- [ ] unknown files are not deleted blindly from the stage root
+- [x] unknown files are not deleted blindly from the stage root
 
 ### Watch reuse
 
-- [ ] watch reuses the same staging engine rather than a second path
-- [ ] failed cycles distinguish retain-previous from exit-required
-- [ ] stage/work/report outputs are excluded from watch invalidation
+- [x] watch reuses the same staging engine rather than a second path
+- [x] failed cycles distinguish retain-previous from exit-required
+- [x] stage/work/report outputs are excluded from watch invalidation
 
 ## Bottom line
 

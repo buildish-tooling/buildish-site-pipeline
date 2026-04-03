@@ -22,6 +22,10 @@ limitations under the License.
 
 This document defines the public contract boundaries for the Site Pipeline.
 
+For a prescriptive implementation plan for the CLI layer, command parsing,
+report emission, and exit-code handling, see
+[`cli-api-implementation-guide.md`](cli-api-implementation-guide.md).
+
 The intended principle is:
 
 > The `site-pipeline` executable is the only supported invocation API for stable

@@ -27,3 +27,7 @@ class ReportWriteError(CommandExecutionError):
 
 class StageIntegrityError(CommandExecutionError):
     """The CLI could not safely publish a finalized stage tree."""
+
+
+class RetainedStageError(CommandExecutionError):
+    """A watch cycle failed, but the previously published stage remains trustworthy."""

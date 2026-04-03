@@ -35,6 +35,7 @@ from .cli_contract import (
 from .cli_dispatch import dispatch_command
 from .cli_errors import CommandExecutionError, InvocationError, SitePipelineCliError
 from .cli_reporting import build_report_request, emit_report
+from .commands.watch import run_watch
 
 
 class _ArgumentParser(argparse.ArgumentParser):
@@ -51,6 +52,17 @@ def main(argv: Sequence[str] | None = None) -> int:
 def _run(*, argv: Sequence[str] | None, stdout: TextIO, stderr: TextIO) -> int:
     try:
         invocation = parse_invocation(argv)
+        if isinstance(invocation, WatchInvocation):
+            result = run_watch(invocation, stdout=stdout)
+            if invocation.report_request.output_path is None:
+                emit_report(
+                    request=invocation.report_request,
+                    report=result.report,
+                    text_output=result.text_output,
+                    stdout=stdout,
+                )
+            return int(result.exit_code)
+
         result = dispatch_command(invocation)
         emit_report(
             request=invocation.report_request,

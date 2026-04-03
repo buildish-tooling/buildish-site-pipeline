@@ -1,6 +1,6 @@
 # Copyright 2026 The Apache Software Foundation
 
-"""Minimal stage publication for the build command."""
+"""Stage materialization and publication helpers for build and watch."""
 
 from __future__ import annotations
 
@@ -34,7 +34,7 @@ from apache_buildish_site_pipeline.models.staged_front_matter import (
     ResolvedUrlSet,
 )
 
-from ..cli_errors import StageIntegrityError
+from ..cli_errors import RetainedStageError, StageIntegrityError
 from ..planning.types import ResolvedComponentConfig, ResolvedPublicationPolicy, SelectedVersionContext
 from .types import EffectiveBuildPlan
 
@@ -53,38 +53,92 @@ def publish_stage(
     diagnostics: tuple[PipelineDiagnosticEntry, ...],
     provider_snapshot: ProviderSnapshotV1,
     stage_root: Path,
+    assembly_root: Path | None = None,
+    allow_replace_existing: bool = False,
 ) -> StagePublicationResult:
-    """Publish a finalized stage tree into an absent or empty stage root."""
+    """Materialize and publish one finalized stage tree."""
 
     normalized_stage_root = stage_root.resolve(strict=False)
-    _validate_stage_root(normalized_stage_root)
     parent_path = normalized_stage_root.parent
     parent_path.mkdir(parents=True, exist_ok=True)
 
-    temp_root = Path(
-        tempfile.mkdtemp(prefix=f".{normalized_stage_root.name}.", dir=parent_path),
+    temp_root = (
+        assembly_root.resolve(strict=False)
+        if assembly_root is not None
+        else Path(tempfile.mkdtemp(prefix=f".{normalized_stage_root.name}.", dir=parent_path))
     )
     try:
-        manifest = _materialize_stage(
+        materialize_stage_tree(
             stage_root=temp_root,
             build_plan=build_plan,
             diagnostics=diagnostics,
             provider_snapshot=provider_snapshot,
         )
-        if normalized_stage_root.exists():
-            normalized_stage_root.rmdir()
-        os.replace(temp_root, normalized_stage_root)
+        return finalize_stage_publication(
+            candidate_stage_root=temp_root,
+            stage_root=normalized_stage_root,
+            allow_replace_existing=allow_replace_existing,
+        )
     except Exception:
         shutil.rmtree(temp_root, ignore_errors=True)
         raise
 
+
+def materialize_stage_tree(
+    *,
+    stage_root: Path,
+    build_plan: EffectiveBuildPlan,
+    diagnostics: tuple[PipelineDiagnosticEntry, ...],
+    provider_snapshot: ProviderSnapshotV1,
+) -> StageManifestV1:
+    """Materialize one complete candidate stage tree into a private directory."""
+
+    if stage_root.exists():
+        if stage_root.is_symlink():
+            raise StageIntegrityError(f"Candidate stage root must not be a symlink: {stage_root}")
+        if not stage_root.is_dir():
+            raise StageIntegrityError(f"Candidate stage root must be a directory: {stage_root}")
+        if any(stage_root.iterdir()):
+            raise StageIntegrityError(f"Candidate stage root must be absent or empty: {stage_root}")
+    stage_root.mkdir(parents=True, exist_ok=True)
+
+    return _materialize_stage(
+        stage_root=stage_root,
+        build_plan=build_plan,
+        diagnostics=diagnostics,
+        provider_snapshot=provider_snapshot,
+    )
+
+
+def finalize_stage_publication(
+    *,
+    candidate_stage_root: Path,
+    stage_root: Path,
+    allow_replace_existing: bool = False,
+) -> StagePublicationResult:
+    """Publish a previously materialized candidate stage tree atomically."""
+
+    normalized_candidate_root = candidate_stage_root.resolve(strict=False)
+    normalized_stage_root = stage_root.resolve(strict=False)
+    _validate_candidate_stage_root(normalized_candidate_root)
+    if allow_replace_existing:
+        _validate_replaceable_stage_root(normalized_stage_root)
+        return _replace_stage_root(
+            candidate_stage_root=normalized_candidate_root,
+            stage_root=normalized_stage_root,
+        )
+
+    _validate_initial_stage_root(normalized_stage_root)
+    if normalized_stage_root.exists():
+        normalized_stage_root.rmdir()
+    os.replace(normalized_candidate_root, normalized_stage_root)
     return StagePublicationResult(
         stage_root=normalized_stage_root,
         manifest_path=normalized_stage_root / "manifest.json",
     )
 
 
-def _validate_stage_root(stage_root: Path) -> None:
+def _validate_initial_stage_root(stage_root: Path) -> None:
     if stage_root.exists() and stage_root.is_symlink():
         raise StageIntegrityError(f"Stage root must not be a symlink: {stage_root}")
     if stage_root.exists() and not stage_root.is_dir():
@@ -95,6 +149,55 @@ def _validate_stage_root(stage_root: Path) -> None:
         raise StageIntegrityError(
             f"Stage root must be absent or empty for the initial build implementation: {stage_root}",
         )
+
+
+def _validate_replaceable_stage_root(stage_root: Path) -> None:
+    if stage_root.exists() and stage_root.is_symlink():
+        raise StageIntegrityError(f"Stage root must not be a symlink: {stage_root}")
+    if stage_root.exists() and not stage_root.is_dir():
+        raise StageIntegrityError(f"Stage root must be a directory: {stage_root}")
+
+
+def _validate_candidate_stage_root(stage_root: Path) -> None:
+    if not stage_root.exists() or not stage_root.is_dir() or stage_root.is_symlink():
+        raise StageIntegrityError(f"Candidate stage root is not a normal directory: {stage_root}")
+    manifest_path = stage_root / "manifest.json"
+    if not manifest_path.exists() or not manifest_path.is_file():
+        raise StageIntegrityError(f"Candidate stage root is missing manifest.json: {stage_root}")
+
+
+def _replace_stage_root(*, candidate_stage_root: Path, stage_root: Path) -> StagePublicationResult:
+    parent_path = stage_root.parent
+    parent_path.mkdir(parents=True, exist_ok=True)
+    backup_root = Path(tempfile.mkdtemp(prefix=f".{stage_root.name}.backup.", dir=parent_path))
+    shutil.rmtree(backup_root, ignore_errors=True)
+
+    previous_stage_moved = False
+    try:
+        if stage_root.exists():
+            os.replace(stage_root, backup_root)
+            previous_stage_moved = True
+        os.replace(candidate_stage_root, stage_root)
+    except OSError as exc:
+        if previous_stage_moved and backup_root.exists() and not stage_root.exists():
+            try:
+                os.replace(backup_root, stage_root)
+            except OSError as rollback_exc:
+                raise StageIntegrityError(
+                    f"Could not finalize stage publication or roll back safely for {stage_root}: {rollback_exc}",
+                ) from rollback_exc
+            raise RetainedStageError(
+                f"Could not finalize the newly materialized stage; retained the prior stage at {stage_root}",
+            ) from exc
+        raise StageIntegrityError(f"Could not finalize stage publication for {stage_root}: {exc}") from exc
+    finally:
+        if backup_root.exists():
+            shutil.rmtree(backup_root, ignore_errors=True)
+
+    return StagePublicationResult(
+        stage_root=stage_root,
+        manifest_path=stage_root / "manifest.json",
+    )
 
 
 def _materialize_stage(

@@ -4,17 +4,15 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-
 from apache_buildish_site_pipeline.evaluation import EvaluationMode, EvaluationRequest, run_evaluation
 from apache_buildish_site_pipeline.models.enums import PlanningTarget, StageCommand
-from apache_buildish_site_pipeline.models.planning_stage_contract import StageRunReportV1, StageRunSummary
 from apache_buildish_site_pipeline.planning import evaluate_planning
 from apache_buildish_site_pipeline.staging.execution import publish_stage
 
 from ..cli_contract import ApplicationExitCode, BuildInvocation, CommandResult
 from ..cli_reporting import render_text_report
 from .shared import load_workspace_inputs
+from .stage_report import build_stage_run_report
 
 
 def run_build(invocation: BuildInvocation) -> CommandResult:
@@ -36,7 +34,7 @@ def run_build(invocation: BuildInvocation) -> CommandResult:
         planning=planning,
     )
     if not evaluation.stage_gate.allowed or evaluation.build_plan is None:
-        report = _build_stage_report(
+        report = build_stage_run_report(
             command=StageCommand.BUILD,
             evaluation=evaluation,
             succeeded=False,
@@ -57,7 +55,7 @@ def run_build(invocation: BuildInvocation) -> CommandResult:
         provider_snapshot=loaded_inputs.provider_snapshot,
         stage_root=invocation.layout.stage_root,
     )
-    report = _build_stage_report(
+    report = build_stage_run_report(
         command=StageCommand.BUILD,
         evaluation=evaluation,
         succeeded=True,
@@ -67,23 +65,3 @@ def run_build(invocation: BuildInvocation) -> CommandResult:
         manifest_path=publication.manifest_path,
     )
     return CommandResult(exit_code=ApplicationExitCode.SUCCESS, report=report, text_output=render_text_report(report))
-
-
-def _build_stage_report(*, command, evaluation, succeeded, wrote_stage, stage_usable, stage_root_path, manifest_path):
-    return StageRunReportV1(
-        schema_version=1,
-        generated_at=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-        command=command,
-        summary=StageRunSummary(
-            status=evaluation.run_status,
-            succeeded=succeeded,
-            wrote_stage=wrote_stage,
-            stage_usable=stage_usable,
-            error_count=evaluation.counts.error_count,
-            warning_count=evaluation.counts.warning_count,
-            info_count=evaluation.counts.info_count,
-        ),
-        stage_root_path=str(stage_root_path) if stage_root_path is not None else None,
-        manifest_path=str(manifest_path) if manifest_path is not None else None,
-        diagnostics=list(evaluation.diagnostics),
-    )

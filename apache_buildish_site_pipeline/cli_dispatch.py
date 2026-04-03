@@ -4,11 +4,10 @@
 
 from __future__ import annotations
 
-from .cli_contract import BuildInvocation, CheckInvocation, CommandInvocation, CommandResult, PlanInvocation, WatchInvocation
+from .cli_contract import BuildInvocation, CheckInvocation, CommandInvocation, CommandResult, PlanInvocation
 from .commands.build import run_build
 from .commands.check import run_check
 from .commands.plan import run_plan
-from .commands.watch import run_watch
 
 
 def dispatch_command(invocation: CommandInvocation) -> CommandResult:
@@ -20,6 +19,4 @@ def dispatch_command(invocation: CommandInvocation) -> CommandResult:
         return run_check(invocation)
     if isinstance(invocation, BuildInvocation):
         return run_build(invocation)
-    if isinstance(invocation, WatchInvocation):
-        run_watch()
     raise AssertionError(f"Unsupported invocation type: {type(invocation)!r}")

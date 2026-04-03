@@ -9,6 +9,7 @@ import json
 import os
 import tempfile
 import unittest
+from unittest import mock
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -98,6 +99,90 @@ class CliTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 2)
         self.assertIn("watch JSON reports must be written to a file", stderr.getvalue())
+
+    def test_json_reports_require_schema_version(self) -> None:
+        with _workspace() as workspace_root:
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            with _cwd(workspace_root):
+                exit_code = _run(argv=["plan", "--report-format", "json"], stdout=stdout, stderr=stderr)
+
+        self.assertEqual(exit_code, 2)
+        self.assertIn("requires --report-schema-version 1", stderr.getvalue())
+
+    def test_watch_initial_failure_without_trusted_stage_exits_three(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            (workspace_root / "site/components.yaml").unlink()
+            report_path = workspace_root / "watch-report.json"
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            with _cwd(workspace_root):
+                exit_code = _run(
+                    argv=[
+                        "watch",
+                        "--report-format",
+                        "json",
+                        "--report-schema-version",
+                        "1",
+                        "--report-output",
+                        str(report_path),
+                    ],
+                    stdout=stdout,
+                    stderr=stderr,
+                )
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(exit_code, 3)
+        self.assertEqual(report["command"], "watch")
+        self.assertEqual(report["cycle"], 1)
+        self.assertFalse(report["summary"]["stageUsable"])
+        self.assertIn("Initial watch cycle failed", stderr.getvalue())
+
+    def test_watch_retains_last_trusted_stage_on_later_cycle_failure(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            report_path = workspace_root / "watch-report.json"
+            watched_file = workspace_root / "components/runtime/docs/releases/4.0.0/index.md"
+            manifest_path = workspace_root / "site/.stage/manifest.json"
+            staged_file = (
+                workspace_root / "site/.stage/content/components/spark/contexts/releases/4.0.0/releases/4.0.0/index.md"
+            )
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+
+            def _event_batches(*, watch_roots):
+                del watch_roots
+                (workspace_root / "site/components.yaml").unlink()
+                yield (watched_file,)
+
+            with mock.patch("apache_buildish_site_pipeline.commands.watch._iter_watch_events", side_effect=_event_batches):
+                with _cwd(workspace_root):
+                    exit_code = _run(
+                        argv=[
+                            "watch",
+                            "--report-format",
+                            "json",
+                            "--report-schema-version",
+                            "1",
+                            "--report-output",
+                            str(report_path),
+                        ],
+                        stdout=stdout,
+                        stderr=stderr,
+                    )
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+            manifest_exists = manifest_path.exists()
+            staged_file_exists = staged_file.exists()
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(report["command"], "watch")
+        self.assertEqual(report["cycle"], 2)
+        self.assertFalse(report["summary"]["succeeded"])
+        self.assertFalse(report["summary"]["wroteStage"])
+        self.assertTrue(report["summary"]["stageUsable"])
+        self.assertTrue(manifest_exists)
+        self.assertTrue(staged_file_exists)
+        self.assertEqual(stdout.getvalue(), "")
+        self.assertEqual(stderr.getvalue(), "")
 
 
 @contextmanager

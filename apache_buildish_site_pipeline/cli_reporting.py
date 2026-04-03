@@ -32,6 +32,8 @@ def build_report_request(
 
     normalized_format = ReportFormat(report_format)
     if normalized_format is ReportFormat.JSON:
+        if schema_version is None:
+            raise InvocationError("JSON report output requires --report-schema-version 1")
         if schema_version != 1:
             raise UnsupportedReportSchemaVersionError(
                 "JSON report output currently supports only --report-schema-version 1",
@@ -46,6 +48,27 @@ def build_report_request(
 
     output_path = _validate_safe_output_path(cwd=cwd, raw_path=Path(report_output), forbidden_roots=forbidden_roots)
     return ReportRequest(report_format=normalized_format, schema_version=schema_version, output_path=output_path)
+
+
+def revalidate_report_request(
+    *,
+    cwd: Path,
+    request: ReportRequest,
+    forbidden_roots: tuple[Path, ...] = (),
+) -> ReportRequest:
+    """Re-run output-path safety checks before rewriting a report file."""
+
+    if request.output_path is None:
+        return request
+    return ReportRequest(
+        report_format=request.report_format,
+        schema_version=request.schema_version,
+        output_path=_validate_safe_output_path(
+            cwd=cwd,
+            raw_path=request.output_path,
+            forbidden_roots=forbidden_roots,
+        ),
+    )
 
 
 def emit_report(*, request: ReportRequest, report: ReportModel, text_output: str, stdout: TextIO) -> None:

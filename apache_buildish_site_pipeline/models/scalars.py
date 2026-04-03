@@ -37,7 +37,7 @@ from .validation.paths import (
 )
 from .validation.regex import validate_regex_string
 from .validation.references import validate_reference_string
-from .validation.urls import validate_provider_base_url, validate_url_string
+from .validation.urls import validate_hostname_string, validate_provider_base_url, validate_url_string
 
 NonEmptyString = Annotated[str, StringConstraints(min_length=1)]
 NonNegativeInteger = Annotated[int, Field(strict=True, ge=0)]
@@ -87,6 +87,11 @@ PublicPath = Annotated[
     str,
     StringConstraints(min_length=1),
     AfterValidator(validate_public_path),
+]
+HostnameString = Annotated[
+    str,
+    StringConstraints(min_length=1),
+    AfterValidator(validate_hostname_string),
 ]
 UrlString = Annotated[str, StringConstraints(min_length=1), AfterValidator(validate_url_string)]
 ProviderBaseUrl = Annotated[

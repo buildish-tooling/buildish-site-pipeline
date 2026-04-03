@@ -19,6 +19,7 @@ from __future__ import annotations
 import unittest
 
 from apache_buildish_site_pipeline.models.validation.urls import (
+    validate_hostname_string,
     validate_provider_base_url,
     validate_url_string,
 )
@@ -47,3 +48,12 @@ class UrlValidationTests(unittest.TestCase):
             with self.subTest(value=value):
                 with self.assertRaises(ValueError):
                     validate_provider_base_url(value)
+
+    def test_accepts_bare_hostnames_and_rejects_url_fragments(self) -> None:
+        self.assertEqual(validate_hostname_string("docs.example.org"), "docs.example.org")
+        self.assertEqual(validate_hostname_string("203.0.113.10"), "203.0.113.10")
+
+        for value in ("https://docs.example.org", "docs.example.org/path", "bad host"):
+            with self.subTest(value=value):
+                with self.assertRaises(ValueError):
+                    validate_hostname_string(value)

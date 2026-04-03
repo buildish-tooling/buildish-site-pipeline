@@ -30,6 +30,11 @@ communication, output ownership, private work areas, or finalization safety.
 
 This guide complements:
 
+- `planning-and-input-resolution-implementation-guide.md` for effective config
+  resolution, selected local-input inventory, and immutable build-plan
+  construction
+- `evaluation-and-validation-implementation-guide.md` for contextual validation,
+  diagnostics, and stage-gating before mutation begins
 - `build-architecture.md` for the high-level coordinator/worker shape
 - `watch-incremental-staging-plan.md` for watch-cycle guardrails and publication
   safety

@@ -20,6 +20,10 @@ limitations under the License.
 
 # Validation and `site-pipeline check`
 
+For a prescriptive implementation plan for the shared non-mutating evaluation
+layer, contextual validation modules, diagnostics, and stage-gating behavior, see
+[`evaluation-and-validation-implementation-guide.md`](evaluation-and-validation-implementation-guide.md).
+
 `site-pipeline check` should be the stable non-mutating command for validating a
 workspace before staging.
 
@@ -196,6 +200,10 @@ boundary between validation, materialization, and staging.
 - [api-contract.md](api-contract.md) for the stable CLI boundary
 - [source-resolution-and-materialization.md](source-resolution-and-materialization.md)
   for planning and local-input readiness
+- [planning-and-input-resolution-implementation-guide.md](planning-and-input-resolution-implementation-guide.md)
+  for the internal planning/input-resolution package
+- [evaluation-and-validation-implementation-guide.md](evaluation-and-validation-implementation-guide.md)
+  for the shared contextual validation layer
 - [flexible-component-publication.md](flexible-component-publication.md) for the
   validation rules `check` should enforce
 - [pipeline-model-schema-reference.md](pipeline-model-schema-reference.md) for

@@ -23,6 +23,15 @@ limitations under the License.
 This document describes the recommended internal architecture for the staging
 engine and watch loop.
 
+For a prescriptive implementation plan for effective config resolution,
+publication-selection planning, local-input readiness, and immutable build-plan
+construction, see
+[`planning-and-input-resolution-implementation-guide.md`](planning-and-input-resolution-implementation-guide.md).
+
+For a prescriptive implementation plan for contextual validation, diagnostics,
+route/provider/input-readiness checks, and stage gating, see
+[`evaluation-and-validation-implementation-guide.md`](evaluation-and-validation-implementation-guide.md).
+
 For a prescriptive implementation plan for the staging package, runtime types,
 worker protocol, private work-area layout, and publication preconditions, see
 [`stage-build-implementation-guide.md`](stage-build-implementation-guide.md).
@@ -64,7 +73,8 @@ This document does **not** cover:
 The staging implementation should be separated into four layers.
 
 1. **Resolve effective build inputs**: load already-defined inputs and create one
-   immutable build plan for the current run.
+   immutable planning result for the current run, plus an immutable build-plan
+   candidate when planning prerequisites are sufficient.
 2. **Component staging**: stage one component into its owned subtree.
 3. **Aggregate and finalize**: write shared outputs derived from worker results
    and top-level plan inputs.
@@ -81,7 +91,8 @@ The implementation should keep one shared execution pipeline for:
 
 Recommended phase split:
 
-1. resolve effective inputs and create the immutable build plan
+1. resolve effective inputs and create the immutable planning result, plus the
+   build-plan candidate when available
 2. run validation and collect diagnostics
 3. if staging is enabled, prepare the stage root and execute component and
    aggregate writes
@@ -98,10 +109,11 @@ creating a separate "preflight-only" implementation path.
 
 ```mermaid
 flowchart TD
-    A[load resolved inputs] --> B[create immutable build plan]
-    B --> C[stage components in parallel]
-    C --> D[finalize shared outputs]
-    D --> E[finished stage tree]
+    A[load resolved inputs] --> B[create planning result]
+    B --> C[validate and gate]
+    C --> D[stage components in parallel]
+    D --> E[finalize shared outputs]
+    E --> F[finished stage tree]
 ```
 
 ## Top-level coordinator responsibilities

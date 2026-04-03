@@ -30,7 +30,11 @@ handling, report emission, or watch-mode failure behavior.
 This guide complements:
 
 - `api-contract.md` as the source of truth for the public invocation boundary
+- `planning-and-input-resolution-implementation-guide.md` for the planning,
+  local-input resolution, and build-plan-candidate layer below the CLI
 - `validation-and-check.md` for `check` semantics and diagnostics
+- `evaluation-and-validation-implementation-guide.md` for the shared contextual
+  validation and stage-gating layer
 - `build-architecture.md` for the shared execution path below the CLI
 - `watch-incremental-staging-plan.md` for watch-cycle safety and reporting rules
 - `security-and-trust-model.md` for path, trust, and output-safety requirements

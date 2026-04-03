@@ -25,6 +25,10 @@ for `site-pipeline watch` and future incremental staging.
 
 It complements:
 
+- `planning-and-input-resolution-implementation-guide.md` for watch-target input
+  planning and watch-root derivation
+- `evaluation-and-validation-implementation-guide.md` for per-cycle contextual
+  validation and stage-gating behavior
 - `build-architecture.md` for coordinator/worker structure and concurrency
 - `stage-build-implementation-guide.md` for runtime types, worker boundaries, and
   private stage assembly rules

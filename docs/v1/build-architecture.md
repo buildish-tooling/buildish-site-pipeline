@@ -23,6 +23,10 @@ limitations under the License.
 This document describes the recommended internal architecture for the staging
 engine and watch loop.
 
+For a prescriptive implementation plan for the staging package, runtime types,
+worker protocol, private work-area layout, and publication preconditions, see
+[`stage-build-implementation-guide.md`](stage-build-implementation-guide.md).
+
 It is intentionally about **implementation structure only**. It does not define
 the public CLI, the publication model, the catalog schema, or the staged-output
 contract. Those concerns belong in the other current docs.

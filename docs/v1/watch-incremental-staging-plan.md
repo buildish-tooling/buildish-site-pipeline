@@ -26,6 +26,8 @@ for `site-pipeline watch` and future incremental staging.
 It complements:
 
 - `build-architecture.md` for coordinator/worker structure and concurrency
+- `stage-build-implementation-guide.md` for runtime types, worker boundaries, and
+  private stage assembly rules
 - `staged-output-contract.md` for finalized output integrity rules
 - `source-resolution-and-materialization.md` for watch-target planning inputs
 - `security-and-trust-model.md` for path-safety and trust-boundary rules

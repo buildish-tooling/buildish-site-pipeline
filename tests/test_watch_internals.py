@@ -1,0 +1,83 @@
+# Copyright 2026 The Apache Software Foundation
+
+"""Focused tests for watch-loop coordination helpers."""
+
+from __future__ import annotations
+
+import tempfile
+import unittest
+from pathlib import Path
+
+from apache_buildish_site_pipeline.commands.watch import (
+    _coalesce_dirty_paths,
+    _derive_watch_roots,
+    _is_pipeline_owned_path,
+)
+
+
+class WatchInternalTests(unittest.TestCase):
+    def test_coalesce_dirty_paths_collapses_nested_bursts(self) -> None:
+        repo_root = Path("/workspace")
+        changed_paths = (
+            repo_root / "components/runtime/docs/releases",
+            repo_root / "components/runtime/docs/releases/4.0.0/index.md",
+            repo_root / "site/components.yaml",
+        )
+
+        self.assertEqual(
+            _coalesce_dirty_paths(changed_paths),
+            (
+                repo_root / "site/components.yaml",
+                repo_root / "components/runtime/docs/releases",
+            ),
+        )
+
+    def test_derive_watch_roots_keeps_workspace_root_for_topology_changes(self) -> None:
+        repo_root = Path("/workspace")
+        planning_roots = (
+            repo_root / "components/runtime/docs",
+            repo_root / "site/components.yaml",
+        )
+
+        self.assertEqual(_derive_watch_roots(repo_root=repo_root, planning_roots=planning_roots), (repo_root,))
+
+    def test_pipeline_owned_path_detection_filters_stage_work_and_report_temps(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            stage_root = workspace_root / "site/.stage"
+            work_root = workspace_root / "site/.site-pipeline-work"
+            report_output = workspace_root / "watch-report.json"
+            authored_path = workspace_root / "components/runtime/docs/index.md"
+
+            self.assertTrue(
+                _is_pipeline_owned_path(
+                    path=stage_root / "manifest.json",
+                    stage_root=stage_root,
+                    work_root=work_root,
+                    report_output=report_output,
+                ),
+            )
+            self.assertTrue(
+                _is_pipeline_owned_path(
+                    path=work_root / "watch/cycle-000001/stage/manifest.json",
+                    stage_root=stage_root,
+                    work_root=work_root,
+                    report_output=report_output,
+                ),
+            )
+            self.assertTrue(
+                _is_pipeline_owned_path(
+                    path=workspace_root / ".watch-report.json.123.tmp",
+                    stage_root=stage_root,
+                    work_root=work_root,
+                    report_output=report_output,
+                ),
+            )
+            self.assertFalse(
+                _is_pipeline_owned_path(
+                    path=authored_path,
+                    stage_root=stage_root,
+                    work_root=work_root,
+                    report_output=report_output,
+                ),
+            )

@@ -149,12 +149,19 @@ class CliTests(unittest.TestCase):
             stdout = io.StringIO()
             stderr = io.StringIO()
 
-            def _event_batches(*, watch_roots):
-                del watch_roots
+            def _break_catalog_then_trigger_cycle():
                 (workspace_root / "site/components.yaml").unlink()
-                yield (watched_file,)
+                return (watched_file,)
 
-            with mock.patch("apache_buildish_site_pipeline.commands.watch._iter_watch_events", side_effect=_event_batches):
+            with mock.patch(
+                "apache_buildish_site_pipeline.commands.watch._open_watch_event_stream",
+                new=_fake_watch_event_stream_factory(
+                    responses=[
+                        (True, _break_catalog_then_trigger_cycle),
+                        (False, None),
+                    ],
+                ),
+            ):
                 with _cwd(workspace_root):
                     exit_code = _run(
                         argv=[
@@ -181,6 +188,84 @@ class CliTests(unittest.TestCase):
         self.assertTrue(report["summary"]["stageUsable"])
         self.assertTrue(manifest_exists)
         self.assertTrue(staged_file_exists)
+        self.assertEqual(stdout.getvalue(), "")
+        self.assertEqual(stderr.getvalue(), "")
+
+    def test_watch_orderly_shutdown_after_steady_state_exits_zero(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            report_path = workspace_root / "watch-report.json"
+            captured_watch_roots: list[tuple[Path, ...]] = []
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+
+            with mock.patch(
+                "apache_buildish_site_pipeline.commands.watch._open_watch_event_stream",
+                new=_fake_watch_event_stream_factory(
+                    responses=[(True, None)],
+                    captured_watch_roots=captured_watch_roots,
+                ),
+            ):
+                with _cwd(workspace_root):
+                    exit_code = _run(
+                        argv=[
+                            "watch",
+                            "--report-format",
+                            "json",
+                            "--report-schema-version",
+                            "1",
+                            "--report-output",
+                            str(report_path),
+                        ],
+                        stdout=stdout,
+                        stderr=stderr,
+                    )
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(report["cycle"], 1)
+        self.assertTrue(report["summary"]["succeeded"])
+        self.assertEqual(captured_watch_roots, [(workspace_root.resolve(strict=False),)])
+        self.assertEqual(stdout.getvalue(), "")
+        self.assertEqual(stderr.getvalue(), "")
+
+    def test_watch_runs_immediate_follow_up_cycle_for_pending_dirty_set(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            report_path = workspace_root / "watch-report.json"
+            watched_file = workspace_root / "components/runtime/docs/releases/4.0.0/index.md"
+            watched_directory = watched_file.parent
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+
+            with mock.patch(
+                "apache_buildish_site_pipeline.commands.watch._open_watch_event_stream",
+                new=_fake_watch_event_stream_factory(
+                    responses=[
+                        (True, (watched_file,)),
+                        (False, (watched_directory, watched_file)),
+                        (False, ()),
+                        (True, None),
+                    ],
+                ),
+            ):
+                with _cwd(workspace_root):
+                    exit_code = _run(
+                        argv=[
+                            "watch",
+                            "--report-format",
+                            "json",
+                            "--report-schema-version",
+                            "1",
+                            "--report-output",
+                            str(report_path),
+                        ],
+                        stdout=stdout,
+                        stderr=stderr,
+                    )
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(report["cycle"], 3)
+        self.assertTrue(report["summary"]["succeeded"])
         self.assertEqual(stdout.getvalue(), "")
         self.assertEqual(stderr.getvalue(), "")
 
@@ -289,3 +374,30 @@ def _cwd(path: Path):
         yield
     finally:
         os.chdir(previous)
+
+
+class _FakeWatchEventStream:
+    def __init__(self, responses: list[tuple[bool, object]]) -> None:
+        self._responses = list(responses)
+
+    def collect_dirty_paths(self, *, wait_for_first: bool):
+        if not self._responses:
+            raise AssertionError("watch test exhausted fake event-stream responses")
+        expected_wait_for_first, response = self._responses.pop(0)
+        if expected_wait_for_first is not wait_for_first:
+            raise AssertionError(f"expected wait_for_first={expected_wait_for_first}, got {wait_for_first}")
+        return response() if callable(response) else response
+
+    def close(self) -> None:
+        return None
+
+
+def _fake_watch_event_stream_factory(*, responses: list[tuple[bool, object]], captured_watch_roots: list[tuple[Path, ...]] | None = None):
+    @contextmanager
+    def _factory(*, watch_roots: tuple[Path, ...], stage_root: Path, work_root: Path, report_output: Path | None, stop_event):
+        del stage_root, work_root, report_output, stop_event
+        if captured_watch_roots is not None:
+            captured_watch_roots.append(watch_roots)
+        yield _FakeWatchEventStream(list(responses))
+
+    return _factory

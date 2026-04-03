@@ -7,15 +7,76 @@ from __future__ import annotations
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from apache_buildish_site_pipeline.commands.watch import (
     _coalesce_dirty_paths,
     _derive_watch_roots,
     _is_pipeline_owned_path,
+    _load_trusted_stage,
 )
 
 
 class WatchInternalTests(unittest.TestCase):
+    def test_load_trusted_stage_accepts_normal_visible_stage(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            stage_root = workspace_root / "site/.stage"
+            stage_root.mkdir(parents=True, exist_ok=True)
+            _write_stage_manifest(stage_root)
+
+            trusted_stage = _load_trusted_stage(stage_root)
+
+        self.assertIsNotNone(trusted_stage)
+        assert trusted_stage is not None
+        self.assertEqual(trusted_stage.stage_root, stage_root.resolve(strict=False))
+
+    def test_load_trusted_stage_rejects_stage_root_with_symlinked_parent(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            real_site_root = workspace_root / "real-site"
+            stage_root = real_site_root / ".stage"
+            stage_root.mkdir(parents=True, exist_ok=True)
+            _write_stage_manifest(stage_root)
+            (workspace_root / "site").symlink_to(real_site_root, target_is_directory=True)
+
+            trusted_stage = _load_trusted_stage(workspace_root / "site/.stage")
+
+        self.assertIsNone(trusted_stage)
+
+    def test_load_trusted_stage_rejects_symlinked_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            stage_root = workspace_root / "site/.stage"
+            stage_root.mkdir(parents=True, exist_ok=True)
+            real_manifest = workspace_root / "manifest.json"
+            _write_stage_manifest(real_manifest.parent, manifest_path=real_manifest)
+            (stage_root / "manifest.json").symlink_to(real_manifest)
+
+            trusted_stage = _load_trusted_stage(stage_root)
+
+        self.assertIsNone(trusted_stage)
+
+    def test_load_trusted_stage_rejects_unreadable_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            stage_root = workspace_root / "site/.stage"
+            manifest_path = stage_root / "manifest.json"
+            stage_root.mkdir(parents=True, exist_ok=True)
+            _write_stage_manifest(stage_root)
+
+            original_read_text = Path.read_text
+
+            def _read_text(path: Path, *args, **kwargs):
+                if path == manifest_path:
+                    raise PermissionError("blocked")
+                return original_read_text(path, *args, **kwargs)
+
+            with mock.patch("pathlib.Path.read_text", autospec=True, side_effect=_read_text):
+                trusted_stage = _load_trusted_stage(stage_root)
+
+        self.assertIsNone(trusted_stage)
+
     def test_coalesce_dirty_paths_collapses_nested_bursts(self) -> None:
         repo_root = Path("/workspace")
         changed_paths = (
@@ -81,3 +142,15 @@ class WatchInternalTests(unittest.TestCase):
                     report_output=report_output,
                 ),
             )
+
+
+def _write_stage_manifest(stage_root: Path, *, manifest_path: Path | None = None) -> None:
+    target_path = manifest_path if manifest_path is not None else stage_root / "manifest.json"
+    target_path.write_text(
+        '{"schemaVersion":1,"stageLayoutVersion":1,"generatedAt":"2026-04-03T18:00:00Z",'
+        '"command":"build","frontMatterFormat":"yaml","aggregateFormat":"json",'
+        '"roots":{"content":"content","static":"static","data":"data"},'
+        '"dataFiles":{"components":"data/components.json","artifacts":"data/artifacts.json",'
+        '"routes":"data/routes.json","redirects":"data/redirects.json"}}\n',
+        encoding="utf-8",
+    )

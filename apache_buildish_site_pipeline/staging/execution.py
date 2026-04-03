@@ -58,7 +58,7 @@ def publish_stage(
 ) -> StagePublicationResult:
     """Materialize and publish one finalized stage tree."""
 
-    _validate_final_stage_target_path(stage_root)
+    validate_visible_stage_target_path(stage_root)
     normalized_stage_root = stage_root.resolve(strict=False)
     parent_path = normalized_stage_root.parent
     parent_path.mkdir(parents=True, exist_ok=True)
@@ -119,7 +119,7 @@ def finalize_stage_publication(
 ) -> StagePublicationResult:
     """Publish a previously materialized candidate stage tree atomically."""
 
-    _validate_final_stage_target_path(stage_root)
+    validate_visible_stage_target_path(stage_root)
     normalized_candidate_root = candidate_stage_root.resolve(strict=False)
     normalized_stage_root = stage_root.resolve(strict=False)
     _validate_candidate_stage_root(normalized_candidate_root)
@@ -172,7 +172,7 @@ def _validate_candidate_stage_root(stage_root: Path) -> None:
         raise StageIntegrityError(f"Candidate stage root is missing manifest.json: {stage_root}")
 
 
-def _validate_final_stage_target_path(stage_root: Path) -> None:
+def validate_visible_stage_target_path(stage_root: Path) -> None:
     """Reject visible stage targets that resolve through symlinked parents."""
 
     absolute_stage_root = stage_root if stage_root.is_absolute() else stage_root.absolute()

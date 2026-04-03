@@ -20,7 +20,11 @@ from apache_buildish_site_pipeline.models import DocumentFormat, PipelineDiagnos
 from apache_buildish_site_pipeline.models.enums import DiagnosticSeverity, PlanningTarget, StageCommand
 from apache_buildish_site_pipeline.models.planning_stage_contract import StageRunReportV1
 from apache_buildish_site_pipeline.planning import evaluate_planning
-from apache_buildish_site_pipeline.staging.execution import finalize_stage_publication, materialize_stage_tree
+from apache_buildish_site_pipeline.staging.execution import (
+    finalize_stage_publication,
+    materialize_stage_tree,
+    validate_visible_stage_target_path,
+)
 
 from ..cli_contract import ApplicationExitCode, CommandResult, WatchInvocation
 from ..cli_errors import InvocationError, RetainedStageError, SitePipelineCliError, StageIntegrityError
@@ -464,18 +468,25 @@ def _is_pipeline_owned_path(
 
 
 def _load_trusted_stage(stage_root: Path) -> TrustedStageState | None:
-    normalized_stage_root = stage_root.resolve(strict=False)
-    if normalized_stage_root.is_symlink() or (normalized_stage_root.exists() and not normalized_stage_root.is_dir()):
-        return None
-    manifest_path = normalized_stage_root / "manifest.json"
-    if not manifest_path.exists() or not manifest_path.is_file():
-        return None
     try:
+        validate_visible_stage_target_path(stage_root)
+    except StageIntegrityError:
+        return None
+
+    normalized_stage_root = stage_root.resolve(strict=False)
+    try:
+        if not normalized_stage_root.exists() or not normalized_stage_root.is_dir():
+            return None
+        manifest_path = normalized_stage_root / "manifest.json"
+        if not manifest_path.exists() or not manifest_path.is_file() or manifest_path.is_symlink():
+            return None
         load_stage_manifest(
             manifest_path.read_text(encoding="utf-8"),
             document_format=DocumentFormat.JSON,
             source_name=str(manifest_path),
         )
+    except OSError:
+        return None
     except Exception:
         return None
     return TrustedStageState(stage_root=normalized_stage_root, manifest_path=manifest_path)

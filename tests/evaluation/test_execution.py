@@ -65,9 +65,113 @@ class EvaluationExecutionTests(unittest.TestCase):
         self.assertFalse(result.stage_gate.allowed)
         self.assertTrue(any(diagnostic.code == "publication-route-collision" for diagnostic in result.diagnostics))
 
+    def test_alias_collision_blocks_stage(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            planning = _planning_eval(
+                Path(tempdir),
+                catalog=_catalog(
+                    shared_mount_path=False,
+                    spark_publication={"aliases": [{"path": "/flink/"}]},
+                ),
+            )
+            result = run_evaluation(
+                request=EvaluationRequest(mode=EvaluationMode.BUILD),
+                planning=planning,
+            )
 
-def _planning_eval(workspace_root: Path, *, stale_release: bool = False):
-    catalog = _catalog(shared_mount_path=False)
+        self.assertFalse(result.stage_gate.allowed)
+        self.assertTrue(any(diagnostic.code == "publication-route-collision" for diagnostic in result.diagnostics))
+
+    def test_unknown_internal_redirect_target_blocks_stage(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            planning = _planning_eval(
+                Path(tempdir),
+                catalog=_catalog(
+                    shared_mount_path=False,
+                    spark_publication={
+                        "redirects": [{"fromPath": "/spark/latest/", "target": "route:/spark/missing/"}],
+                    },
+                ),
+            )
+            result = run_evaluation(
+                request=EvaluationRequest(mode=EvaluationMode.BUILD),
+                planning=planning,
+            )
+
+        self.assertFalse(result.stage_gate.allowed)
+        self.assertTrue(any(diagnostic.code == "redirect-target-unknown" for diagnostic in result.diagnostics))
+
+    def test_redirect_loop_blocks_stage(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            planning = _planning_eval(
+                Path(tempdir),
+                catalog=_catalog(
+                    shared_mount_path=False,
+                    spark_publication={
+                        "redirects": [
+                            {"fromPath": "/spark/latest/", "target": "route:/spark/archive/"},
+                            {"fromPath": "/spark/archive/", "target": "route:/spark/latest/"},
+                        ],
+                    },
+                ),
+            )
+            result = run_evaluation(
+                request=EvaluationRequest(mode=EvaluationMode.BUILD),
+                planning=planning,
+            )
+
+        self.assertFalse(result.stage_gate.allowed)
+        self.assertTrue(any(diagnostic.code == "redirect-loop" for diagnostic in result.diagnostics))
+
+    def test_invalid_canonical_path_blocks_stage(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            planning = _planning_eval(
+                Path(tempdir),
+                catalog=_catalog(
+                    shared_mount_path=False,
+                    spark_publication={"canonicalPath": "/spark/missing/"},
+                ),
+            )
+            result = run_evaluation(
+                request=EvaluationRequest(mode=EvaluationMode.BUILD),
+                planning=planning,
+            )
+
+        self.assertFalse(result.stage_gate.allowed)
+        self.assertTrue(any(diagnostic.code == "publication-canonical-invalid" for diagnostic in result.diagnostics))
+
+    def test_release_redirect_target_resolves_and_allows_stage(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            planning = _planning_eval(
+                Path(tempdir),
+                catalog=_catalog(
+                    shared_mount_path=False,
+                    spark_publication={
+                        "redirects": [
+                            {
+                                "fromPath": "/spark/latest/",
+                                "target": "release:spark/runtime@4.0.0",
+                            }
+                        ],
+                    },
+                ),
+            )
+            result = run_evaluation(
+                request=EvaluationRequest(mode=EvaluationMode.BUILD),
+                planning=planning,
+            )
+
+        self.assertTrue(result.stage_gate.allowed)
+        self.assertFalse(any(diagnostic.code.startswith("redirect-") for diagnostic in result.diagnostics))
+
+
+def _planning_eval(
+    workspace_root: Path,
+    *,
+    stale_release: bool = False,
+    catalog: CatalogDocumentV1 | None = None,
+):
+    catalog = _catalog(shared_mount_path=False) if catalog is None else catalog
     provider_snapshot = _provider_snapshot()
     _prepare_workspace(workspace_root)
     if stale_release:
@@ -81,7 +185,12 @@ def _planning_eval(workspace_root: Path, *, stale_release: bool = False):
     )
 
 
-def _catalog(*, shared_mount_path: bool) -> CatalogDocumentV1:
+def _catalog(
+    *,
+    shared_mount_path: bool,
+    spark_publication: dict[str, object] | None = None,
+    flink_publication: dict[str, object] | None = None,
+) -> CatalogDocumentV1:
     runtime_two_mount_path = "/spark/" if shared_mount_path else "/flink/"
     return CatalogDocumentV1.model_validate(
         {
@@ -100,7 +209,7 @@ def _catalog(*, shared_mount_path: bool) -> CatalogDocumentV1:
                 {
                     "slug": "spark",
                     "content": {"source": "runtime"},
-                    "publication": {"mountPath": "/spark/"},
+                    "publication": {"mountPath": "/spark/", **(spark_publication or {})},
                     "artifacts": [
                         {
                             "key": "runtime",
@@ -121,7 +230,7 @@ def _catalog(*, shared_mount_path: bool) -> CatalogDocumentV1:
                 {
                     "slug": "flink",
                     "content": {"source": "runtime-two"},
-                    "publication": {"mountPath": runtime_two_mount_path},
+                    "publication": {"mountPath": runtime_two_mount_path, **(flink_publication or {})},
                     "artifacts": [
                         {
                             "key": "runtime",

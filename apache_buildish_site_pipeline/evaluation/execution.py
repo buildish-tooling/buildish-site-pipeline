@@ -11,6 +11,7 @@ from .collector import DiagnosticCollector
 from .inputs import validate_inputs
 from .providers import validate_providers
 from .publication import validate_publication
+from .routes import validate_routes
 from .summary import build_check_summary, build_run_status
 from .types import (
     BlockingCondition,
@@ -28,6 +29,7 @@ def run_evaluation(*, request: EvaluationRequest, planning: PlanningEvaluation) 
 
     collector = DiagnosticCollector()
     publication_index = validate_publication(planning, collector)
+    validate_routes(planning, publication_index, collector)
     validate_providers(planning, collector)
     validate_inputs(planning, collector)
     if planning.build_plan_candidate is None:

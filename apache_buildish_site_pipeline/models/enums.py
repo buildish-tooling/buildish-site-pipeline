@@ -86,6 +86,7 @@ class CheckFailureThreshold(StrEnum):
 class RecordKind(StrEnum):
     """Normalized provider record lifecycle kind."""
 
+    DEVELOPMENT = "development"
     RELEASED = "released"
     CANDIDATE = "candidate"
     NAMED_REF = "namedRef"
@@ -98,46 +99,59 @@ class PublicationState(StrEnum):
     PUBLISHED = "published"
     HIDDEN = "hidden"
     WITHDRAWN = "withdrawn"
+    TOMBSTONED = "tombstoned"
 
 
 class WithdrawalBehavior(StrEnum):
     """Author-directed behavior for a withdrawn release."""
 
-    HIDE = "hide"
-    BADGE = "badge"
+    NOTICE = "notice"
     REDIRECT = "redirect"
+    OMIT = "omit"
 
 
 class IndexBehavior(StrEnum):
     """Renderer hint for version/ref index visibility."""
 
-    INCLUDE = "include"
-    OMIT = "omit"
+    FULL = "full"
+    METADATA_ONLY = "metadataOnly"
+    NONE = "none"
 
 
 class LineHeadSelectionMode(StrEnum):
     """Strategy used to derive a release-line head record."""
 
-    PROVIDER = "provider"
-    VERSION = "version"
-    TAG = "tag"
-    CREATED_AT = "createdAt"
-    PUBLISHED_AT = "publishedAt"
+    NONE = "none"
+    ALL_AUTHORED = "allAuthored"
+    EXPLICIT = "explicit"
 
 
 class ReleaseSelectionMode(StrEnum):
     """Strategy used to select a released version."""
 
-    EXACT = "exact"
-    HIGHEST_SEMVER = "highestSemver"
-    PROVIDER = "provider"
-    PUBLISHED_AT = "publishedAt"
+    LATEST_PER_LINE = "latestPerLine"
+    LATEST_N = "latestN"
+    ALL_KNOWN = "allKnown"
+    EXPLICIT = "explicit"
 
 
 class CandidateSelectionMode(StrEnum):
     """Strategy used to select a candidate version."""
 
-    HIGHEST_SEQUENCE = "highestSequence"
-    PROVIDER = "provider"
-    CREATED_AT = "createdAt"
-    PUBLISHED_AT = "publishedAt"
+    NONE = "none"
+    LATEST = "latest"
+    EXPLICIT = "explicit"
+
+
+class TrustClass(StrEnum):
+    """Trust posture of a mounted content subtree."""
+
+    PASSIVE = "passive"
+    ACTIVE = "active"
+
+
+class RouteMode(StrEnum):
+    """Locale routing strategy for one publication surface."""
+
+    NONE = "none"
+    PREFIX_ALL = "prefixAll"

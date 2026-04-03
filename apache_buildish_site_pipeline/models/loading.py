@@ -27,6 +27,7 @@ from .base import SitePipelineBaseModel
 from .enums import DocumentFormat
 
 if TYPE_CHECKING:
+    from .catalog import CatalogDocumentV1
     from .component_repository import ComponentRepositoryDocumentV1
     from .planning_stage_contract import (
         CheckReportV1,
@@ -282,6 +283,23 @@ def load_stage_manifest(
         document,
         document_format=document_format,
         schema_version_models={1: StageManifestV1},
+        source_name=source_name,
+    )
+
+
+def load_catalog_document(
+    document: str | bytes,
+    *,
+    document_format: DocumentFormat,
+    source_name: str = "<memory>",
+) -> CatalogDocumentV1:
+    """Load one consumer catalog document."""
+    from .catalog import CatalogDocumentV1
+
+    return load_versioned_document(
+        document,
+        document_format=document_format,
+        schema_version_models={1: CatalogDocumentV1},
         source_name=source_name,
     )
 

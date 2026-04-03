@@ -19,10 +19,21 @@ from __future__ import annotations
 import json
 
 
-def validate_extensions_object(value: dict[str, object]) -> dict[str, object]:
-    """Ensure a details/extensions object is JSON-safe and bounded to object shape."""
+def serialize_extensions_object(value: dict[str, object]) -> str:
+    """Serialize one extension object deterministically for validation and sizing."""
     try:
-        json.dumps(value, allow_nan=False, sort_keys=True)
+        return json.dumps(
+            value,
+            allow_nan=False,
+            ensure_ascii=False,
+            separators=(",", ":"),
+            sort_keys=True,
+        )
     except (TypeError, ValueError) as exc:
         raise ValueError("Extensions objects must be JSON-serializable") from exc
+
+
+def validate_extensions_object(value: dict[str, object]) -> dict[str, object]:
+    """Ensure a details/extensions object is JSON-safe and bounded to object shape."""
+    serialize_extensions_object(value)
     return value

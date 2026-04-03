@@ -35,6 +35,7 @@ from .validation.paths import (
     validate_repo_relative_path,
     validate_stage_relative_path,
 )
+from .validation.regex import validate_regex_string
 from .validation.references import validate_reference_string
 from .validation.urls import validate_provider_base_url, validate_url_string
 
@@ -54,6 +55,7 @@ VersionString = Annotated[
     AfterValidator(validate_version_string),
 ]
 RefString = Annotated[str, StringConstraints(min_length=1), AfterValidator(validate_ref_string)]
+RegexString = Annotated[str, StringConstraints(min_length=1), AfterValidator(validate_regex_string)]
 ReferenceString = Annotated[
     str,
     StringConstraints(min_length=1),

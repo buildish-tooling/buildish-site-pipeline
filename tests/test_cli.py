@@ -240,6 +240,58 @@ class CliTests(unittest.TestCase):
         self.assertEqual(stdout.getvalue(), "")
         self.assertEqual(stderr.getvalue(), "")
 
+    def test_watch_retains_last_trusted_stage_when_replacement_would_delete_unknown_path(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            report_path = workspace_root / "watch-report.json"
+            watched_file = workspace_root / "components/runtime/docs/releases/4.0.0/index.md"
+            manifest_path = workspace_root / "site/.stage/manifest.json"
+            unknown_stage_path = workspace_root / "site/.stage/operator-note.txt"
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+
+            def _inject_unknown_stage_path_then_trigger_cycle():
+                unknown_stage_path.write_text("keep me\n", encoding="utf-8")
+                return (watched_file,)
+
+            with mock.patch(
+                "apache_buildish_site_pipeline.commands.watch._open_watch_event_stream",
+                new=_fake_watch_event_stream_factory(
+                    responses=[
+                        (True, _inject_unknown_stage_path_then_trigger_cycle),
+                        (False, None),
+                    ],
+                ),
+            ):
+                with _cwd(workspace_root):
+                    exit_code = _run(
+                        argv=[
+                            "watch",
+                            "--report-format",
+                            "json",
+                            "--report-schema-version",
+                            "1",
+                            "--report-output",
+                            str(report_path),
+                        ],
+                        stdout=stdout,
+                        stderr=stderr,
+                    )
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+            manifest_exists = manifest_path.exists()
+            unknown_stage_path_exists = unknown_stage_path.exists()
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(report["command"], "watch")
+        self.assertEqual(report["cycle"], 2)
+        self.assertFalse(report["summary"]["succeeded"])
+        self.assertFalse(report["summary"]["wroteStage"])
+        self.assertTrue(report["summary"]["stageUsable"])
+        self.assertTrue(manifest_exists)
+        self.assertTrue(unknown_stage_path_exists)
+        self.assertIn("ambiguous ownership", report["diagnostics"][-1]["message"])
+        self.assertEqual(stdout.getvalue(), "")
+        self.assertEqual(stderr.getvalue(), "")
+
     def test_watch_orderly_shutdown_after_steady_state_exits_zero(self) -> None:
         with _workspace(with_content_file=True) as workspace_root:
             report_path = workspace_root / "watch-report.json"

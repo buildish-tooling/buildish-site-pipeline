@@ -128,7 +128,10 @@ def finalize_stage_publication(
         stage_root=normalized_stage_root,
     )
     if allow_replace_existing:
-        _validate_replaceable_stage_root(normalized_stage_root)
+        _validate_replaceable_stage_root(
+            stage_root=normalized_stage_root,
+            candidate_stage_root=normalized_candidate_root,
+        )
         return _replace_stage_root(
             candidate_stage_root=normalized_candidate_root,
             stage_root=normalized_stage_root,
@@ -157,11 +160,20 @@ def _validate_initial_stage_root(stage_root: Path) -> None:
         )
 
 
-def _validate_replaceable_stage_root(stage_root: Path) -> None:
+def _validate_replaceable_stage_root(*, stage_root: Path, candidate_stage_root: Path) -> None:
     if stage_root.exists() and stage_root.is_symlink():
         raise StageIntegrityError(f"Stage root must not be a symlink: {stage_root}")
     if stage_root.exists() and not stage_root.is_dir():
         raise StageIntegrityError(f"Stage root must be a directory: {stage_root}")
+    if not stage_root.exists():
+        return
+
+    manifest_path = stage_root / "manifest.json"
+    if not manifest_path.exists() or not manifest_path.is_file() or manifest_path.is_symlink():
+        raise StageIntegrityError(f"Existing visible stage is not a trustworthy stage tree: {stage_root}")
+
+    validate_materialized_stage_tree(stage_root)
+    _validate_replacement_cleanup_scope(stage_root=stage_root, candidate_stage_root=candidate_stage_root)
 
 
 def _validate_candidate_stage_root(stage_root: Path) -> None:
@@ -185,6 +197,48 @@ def validate_materialized_stage_tree(stage_root: Path) -> None:
                     raise StageIntegrityError(f"Stage tree must not contain symlinks: {entry_path}")
     except OSError as exc:
         raise StageIntegrityError(f"Could not validate stage tree integrity for {stage_root}: {exc}") from exc
+
+
+def _validate_replacement_cleanup_scope(*, stage_root: Path, candidate_stage_root: Path) -> None:
+    existing_entries = _collect_stage_tree_entries(stage_root)
+    candidate_entries = _collect_stage_tree_entries(candidate_stage_root)
+
+    extra_existing_paths = sorted(existing_entries.keys() - candidate_entries.keys())
+    if extra_existing_paths:
+        raise StageIntegrityError(
+            "Visible stage replacement would delete paths with ambiguous ownership: "
+            + ", ".join(extra_existing_paths[:5]),
+        )
+
+    changed_entry_types = sorted(
+        path
+        for path in existing_entries.keys() & candidate_entries.keys()
+        if existing_entries[path] != candidate_entries[path]
+    )
+    if changed_entry_types:
+        raise StageIntegrityError(
+            "Visible stage replacement would change existing path types ambiguously: "
+            + ", ".join(changed_entry_types[:5]),
+        )
+
+
+def _collect_stage_tree_entries(stage_root: Path) -> dict[str, str]:
+    entries: dict[str, str] = {}
+    try:
+        for root, dir_names, file_names in os.walk(stage_root, topdown=True, followlinks=False):
+            root_path = Path(root)
+            relative_root = root_path.relative_to(stage_root)
+            if relative_root != Path("."):
+                entries[str(relative_root)] = "directory"
+            for directory_name in dir_names:
+                relative_path = (root_path / directory_name).relative_to(stage_root)
+                entries[str(relative_path)] = "directory"
+            for file_name in file_names:
+                relative_path = (root_path / file_name).relative_to(stage_root)
+                entries[str(relative_path)] = "file"
+    except OSError as exc:
+        raise StageIntegrityError(f"Could not inspect stage tree entries for {stage_root}: {exc}") from exc
+    return entries
 
 
 def validate_visible_stage_target_path(stage_root: Path) -> None:

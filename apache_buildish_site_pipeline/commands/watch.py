@@ -300,7 +300,7 @@ def _run_watch_cycle(
             stage_root=invocation.layout.stage_root,
             allow_replace_existing=invocation.layout.stage_root.exists(),
         )
-    except RetainedStageError as exc:
+    except (RetainedStageError, StageIntegrityError) as exc:
         return _failed_cycle_outcome(
             cycle_number=cycle_number,
             trusted_stage=trusted_stage,

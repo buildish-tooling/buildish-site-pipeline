@@ -80,6 +80,48 @@ class StagingExecutionTests(unittest.TestCase):
             self.assertTrue(candidate_stage_root.exists())
             self.assertFalse(stage_root.exists())
 
+    def test_replacement_rejects_existing_stage_with_unknown_extra_path(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            candidate_stage_root = _create_candidate_stage(workspace_root / "candidate-stage")
+            stage_root = _create_candidate_stage(workspace_root / "site/.stage")
+            extra_path = stage_root / "notes.txt"
+            extra_path.write_text("keep me\n", encoding="utf-8")
+
+            with self.assertRaises(StageIntegrityError) as raised:
+                finalize_stage_publication(
+                    candidate_stage_root=candidate_stage_root,
+                    stage_root=stage_root,
+                    allow_replace_existing=True,
+                )
+
+            self.assertIn("ambiguous ownership", str(raised.exception))
+            self.assertEqual(extra_path.read_text(encoding="utf-8"), "keep me\n")
+            self.assertTrue(candidate_stage_root.exists())
+
+    def test_replacement_rejects_existing_stage_with_path_type_change(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            candidate_stage_root = _create_candidate_stage(workspace_root / "candidate-stage")
+            stage_root = _create_candidate_stage(workspace_root / "site/.stage")
+            existing_file = stage_root / "data/routes"
+            existing_file.parent.mkdir(parents=True, exist_ok=True)
+            existing_file.write_text("legacy\n", encoding="utf-8")
+            candidate_directory = candidate_stage_root / "data/routes"
+            candidate_directory.mkdir(parents=True, exist_ok=True)
+            (candidate_directory / "index.json").write_text("[]\n", encoding="utf-8")
+
+            with self.assertRaises(StageIntegrityError) as raised:
+                finalize_stage_publication(
+                    candidate_stage_root=candidate_stage_root,
+                    stage_root=stage_root,
+                    allow_replace_existing=True,
+                )
+
+            self.assertIn("change existing path types ambiguously", str(raised.exception))
+            self.assertEqual(existing_file.read_text(encoding="utf-8"), "legacy\n")
+            self.assertTrue(candidate_stage_root.exists())
+
     def test_initial_publication_rejects_cross_filesystem_candidate(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             workspace_root = Path(tempdir)

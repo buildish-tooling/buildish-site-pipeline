@@ -18,9 +18,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-# v2 design review
+# Design review
 
-This document reviews the current v2 docs as a design set.
+This document reviews the current docs as a design set.
 
 The goal is not to restate every schema field. The goal is to answer whether the
 current design is coherent and whether the greenfield contract set is now
@@ -28,7 +28,7 @@ sufficiently explicit to build against.
 
 ## Executive summary
 
-The current v2 design is strong.
+The current design is strong.
 
 The most important decisions look correct:
 
@@ -102,8 +102,9 @@ That keeps the API:
 
 The API model stays appropriately small.
 
-`build` and `watch` remain the compatibility-sensitive commands, while planning
-helpers can exist without becoming the main public boundary.
+`plan`, `check`, `build`, and `watch` remain the compatibility-sensitive public
+CLI surface, without expanding the boundary into SCM orchestration or renderer-
+specific behavior.
 
 ## Input model assessment
 
@@ -307,10 +308,11 @@ Potential DoS inputs include:
 - thousands of historical versions
 - pathological regexes in tag patterns
 - very broad watch roots
-- oversized `extensions` payloads
+- oversized mount metadata or diagnostic-detail payloads
 
-The design should continue toward practical limit values and explicit failure
-behavior.
+The design now distinguishes between hard non-overridable security ceilings and
+safe operational defaults. Future work should validate and tune the defaults
+with real consumer usage rather than leave them implicit.
 
 #### Data leakage through staged metadata
 
@@ -342,8 +344,10 @@ careful renderer and deployment implementation.
 
 The routing and collision validation story is already fairly good.
 
-The remaining work is mostly operational detail such as concrete limit values,
-deployment profiles, and consumer-specific isolation policy.
+The remaining work is mostly operational tuning, deployment profiles, and
+consumer-specific isolation policy. The key open design choice is the local
+override surface for safe defaults, not whether the public contract should
+expose those knobs.
 
 ## Recommended security hardening directions
 
@@ -353,7 +357,8 @@ The design should continue to make room for the following:
 2. explicit URL-scheme validation policy
 3. explicit metadata escaping policy
 4. explicit mount trust classes, especially for imported HTML/JS trees
-5. size and count limits for snapshots, extensions, redirects, and content index
+5. keep hard security ceilings small and explicit, while treating large-scale
+   count thresholds as safe defaults that can later be tuned locally
 6. safe handling of archive extraction and imported bundles
 7. continued preference for stable IDs over raw local paths in public outputs
 
@@ -400,7 +405,7 @@ overloaded status field.
 
 ## Final verdict
 
-The v2 docs describe a strong design.
+The current docs describe a strong design.
 
 The architecture is sound. The API boundary is sound. The input and output models
 are broad enough for the intended problem space and mostly fit the recommended

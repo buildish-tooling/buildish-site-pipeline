@@ -33,6 +33,10 @@ The contract is the stage root itself:
 Consumers should integrate against that staged contract rather than reading
 arbitrary repositories or internal Python objects.
 
+Machine-readable command reports for `build` or `watch` may reference the stage
+root or manifest location, but they do not replace the staged-tree contract.
+`manifest.json` remains the authoritative entry point for downstream consumers.
+
 ## Top-level stage layout
 
 The recommended top-level layout is:
@@ -57,6 +61,19 @@ The serialization contract is:
 
 Optional YAML mirrors for aggregate metadata are outside the core contract. When
 they exist, `manifest.json` and `data/*.json` remain authoritative.
+
+## Front matter rules
+
+Authored page front matter remains authored metadata.
+
+Pipeline-owned staged fields should live under a reserved top-level `pipeline`
+namespace. In practice that means:
+
+- `pipeline.component` carries pipeline-owned component context when relevant
+- `pipeline.page` carries pipeline-owned page-local context when relevant
+- authored content must not define the reserved `pipeline` namespace
+
+Collisions with the reserved namespace are validation errors.
 
 ## `manifest.json`
 
@@ -100,9 +117,30 @@ The manifest records which of those files are present for a given stage root.
 
 Fatal validation errors stop the build instead of producing a partial stage.
 
-Non-fatal warnings, skipped optional inputs, and stale-provider notices belong in
-`data/diagnostics.json` when the pipeline decides they are worth preserving for
-downstream tools or operator review.
+The same trust rule should apply to watch-triggered rebuilds. If a failed cycle
+cannot preserve the previously finalized stage as a coherent contract surface,
+the watch process should exit instead of continuing with a corrupt or ambiguous
+stage root.
+
+Non-fatal warnings, skipped optional inputs, and stale-provider notices must be
+written to `data/diagnostics.json` when they are present in a finalized stage.
+The file may be omitted only when the finalized stage has no preserved non-fatal
+diagnostics.
+
+When diagnostic detail payloads need size reduction, `data/diagnostics.json`
+must still remain complete, valid JSON. Implementations must preserve the
+diagnostic entry and replace only the oversized `details` payload with a bounded
+summary object, informally called `ReducedDiagnosticDetailsSummary`, rather than
+writing a partial or malformed file. The recommended summary fields are
+`omitted`, `reason`, `actualBytes`, `limitBytes`, optional short `summary`, and
+optional `fingerprint`.
+
+`site-pipeline check` may emit the same machine-readable diagnostic entry shape
+directly without producing a stage tree.
+
+`site-pipeline build` and `site-pipeline watch` may also emit machine-readable
+run reports when requested, but those reports are operator/automation aids on
+top of the stage contract rather than substitutes for it.
 
 ## Consumer integration patterns
 
@@ -121,7 +159,17 @@ The stage contract follows these rules:
 - omitted aggregate files mean the corresponding dataset is absent for that stage
 - aggregate files must use stable identifiers and public metadata, not machine-
   local implementation details
-- builds should write `manifest.json` after aggregate output paths are finalized
+- if a finalized stage contains preserved non-fatal diagnostics,
+  `data/diagnostics.json` must be present
+- finalized aggregate files and machine-readable report files must be written
+  via same-directory temporary files followed by atomic replace
+- implementations must reject output targets that escape the owned stage or
+  report root, or whose final write path resolves through a symlink
+- builds must write `manifest.json` last and replace it atomically only after
+  referenced output paths are finalized
+- watch rebuilds should either preserve the last trustworthy finalized stage or
+  exit; they should not knowingly continue with a stage root whose integrity is
+  uncertain
 
 ## Schema reference
 
@@ -131,7 +179,7 @@ The typed definitions for this contract live in:
   - `StageManifest`
   - `StageRoots`
   - `StageDataFiles`
-  - `StageDiagnosticEntry`
+  - `PipelineDiagnosticEntry`
 
 ## Read next
 

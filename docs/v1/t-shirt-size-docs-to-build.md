@@ -230,7 +230,7 @@ If these docs were actually built, the most useful minimal set would likely be:
 
 - one landing page that helps consumers choose a size band
 - one short page per size band
-- one shared reference trail into the core v2 docs for deeper detail
+- one shared reference trail into the core design docs for deeper detail
 
 That would give small consumers a short path in, while still letting large
 consumers discover the full model without oversimplifying it.

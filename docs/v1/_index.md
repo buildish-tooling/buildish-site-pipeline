@@ -1,6 +1,6 @@
 ---
 title: Site Pipeline Documentation v1
-weight: 10
+weight: 20
 ---
 
 <!--
@@ -19,12 +19,4 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-The Site Pipeline turns component-owned pages, docs, assets, and metadata into a
-predictable staged site contract.
-
-Use these docs to understand the split between pipeline-owned staging behavior
-and consumer-owned rendering, navigation, and publishing.
-
-This section contains the original tracked documentation set.
-
-## Guide map
+This section contains the newer design, schema, and architecture documents.

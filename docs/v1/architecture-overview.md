@@ -18,9 +18,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-# Site Pipeline v2 architecture overview
+# Site Pipeline architecture overview
 
-This document is the entry point for the v2 docs.
+This document is the entry point for the current design docs.
 
 The core idea is simple: the pipeline gathers authored content and metadata,
 optionally enriches that with release-provider data, resolves publication and
@@ -202,6 +202,8 @@ After this overview, the most useful next docs are usually:
   layout and manifest contract
 - [source-resolution-and-materialization.md](source-resolution-and-materialization.md)
   for version selection and local materialization strategy
+- [validation-and-check.md](validation-and-check.md) for validation semantics,
+  diagnostics, and `site-pipeline check`
 - [build-architecture.md](build-architecture.md) for build/watch execution shape
 - [security-and-trust-model.md](security-and-trust-model.md) for trust,
   validation, and content-safety boundaries

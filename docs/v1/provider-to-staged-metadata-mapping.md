@@ -33,8 +33,8 @@ just what a provider may supply, but what the pipeline should emit for renderers
   context
 - aggregate files in `data/` should contain cross-page and cross-component query
   data
-- provider-specific details should be preserved under `extensions` rather than
-  flattened into the shared staged contract
+- provider-specific details outside the normalized contract should stay out of
+  the public staged outputs for now rather than being copied through wholesale
 
 ## Staged outputs overview
 
@@ -71,6 +71,10 @@ Recommended rule:
 Page front matter should expose only what is needed to render the current page
 and closely related navigation affordances.
 
+Pipeline-owned staged values should live under the reserved top-level
+`pipeline.page` namespace so authored page metadata and pipeline metadata do not
+collide silently.
+
 Recommended provider-derived fields in page front matter:
 
 - `provider`
@@ -93,19 +97,20 @@ release, candidate, or named ref context.
 Example page-level shape:
 
 ```yaml
-sitePipelineComponentPage:
-  artifactKey: runtime
-  version:
-    kind: candidate
-    label: 4.1.0-rc2
-    maturity: rc
-    releaseLine: 4.x
-    candidateSequence: 2
-    voteStatus: open
-  provider:
-    key: atr
-    externalId: atr:candidate:spark-runtime:4.1.0:2
-    externalUrl: https://release-test.apache.org/candidates/spark-runtime/4.1.0/2
+pipeline:
+  page:
+    artifactKey: runtime
+    version:
+      kind: candidate
+      label: 4.1.0-rc2
+      maturity: rc
+      releaseLine: 4.x
+      candidateSequence: 2
+      voteStatus: open
+    provider:
+      key: atr
+      externalId: atr:candidate:spark-runtime:4.1.0:2
+      externalUrl: https://release-test.apache.org/candidates/spark-runtime/4.1.0/2
 ```
 
 ## What belongs in aggregate metadata
@@ -126,7 +131,7 @@ Recommended fields:
 - `key`
 - `type`
 - optional `displayName`
-- optional `baseUrl`
+- optional public `baseUrl` when safe to disclose
 - `fetchedAt`
 
 ### `data/components.json`
@@ -154,7 +159,6 @@ Recommended provider-derived fields:
 - `latestCandidate`
 - `releaseLines[]`
 - `namedRefs[]`
-- optional `extensions`
 
 Each `releaseLines[]` entry may include:
 
@@ -268,14 +272,14 @@ Recommended mapping behavior:
   - emit entry in `data/candidates.json`
   - enrich `data/artifacts.json` latest candidate summary
   - copy page-local candidate context into front matter for candidate pages
-- `named-ref`
+- `namedRef`
   - emit entry in `data/refs.json`
-  - carry the authored named-ref key when the ref matches one
+  - carry the authored `namedRefKey` when the ref matches one
   - copy ref context into front matter for pages staged from that ref
-- `line-head`
+- `lineHead`
   - emit entry in `data/refs.json`
   - enrich matching release-line summaries in `data/artifacts.json`
-  - copy line-head context into front matter when applicable
+  - copy `lineHead` context into front matter when applicable
 - `development`
   - emit entry in `data/refs.json`
   - mark artifact development context in `data/artifacts.json`
@@ -289,21 +293,22 @@ To keep front matter compact, the pipeline should avoid embedding:
 - full candidate histories
 - every downloadable asset for unrelated versions
 - complete provider payloads
-- large provider-specific `extensions`
+- large provider-specific passthrough payloads
 
-Those belong in aggregate files.
+Only the normalized subset of those inventories belongs in aggregate files. Raw
+provider payloads and passthrough-only fields should stay out of the public
+staged contract.
 
-## Provider-specific extensions
+## Provider-specific passthrough data
 
 When provider data includes extra fields that do not fit the normalized staged
-contract, the pipeline should preserve them in aggregate metadata under
-`extensions`.
+contract, the pipeline should not copy them into public staged metadata in v1.
 
 Recommended rule:
 
-- allow `extensions` in `data/releases.json`, `data/candidates.json`,
-  `data/refs.json`, and `data/artifacts.json`
-- do not copy `extensions` into page front matter by default
+- normalize only the documented shared fields into `data/*.json`
+- do not copy provider-specific passthrough payloads into page front matter
+- do not expose private or API-only provider endpoints via public staged outputs
 
 ## Validation expectations
 
@@ -312,6 +317,7 @@ The pipeline should reject or warn on at least:
 - provider-backed pages that refer to no matching normalized record
 - multiple normalized records competing for the same staged page context
 - provider records mapped to the wrong artifact or component
+- provider-specific passthrough fields copied into public staged outputs
 - large provider payloads copied wholesale into front matter
 
 ## Worked example

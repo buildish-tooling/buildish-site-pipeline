@@ -20,7 +20,7 @@ limitations under the License.
 
 # Security and trust model
 
-This document defines the baseline security posture for the v2 model.
+This document defines the baseline security posture for the current model.
 
 The Site Pipeline stages and normalizes content. It does not make untrusted
 content safe by accident. Safety depends on explicit validation, careful staged
@@ -42,13 +42,16 @@ The baseline rules are:
 Path-bearing inputs include authored content roots, metadata files, local source
 roots, mount sources, and materialized local trees.
 
-The pipeline should:
+The pipeline must:
 
 - normalize every path before use
 - resolve symlinks before trust decisions are made
 - reject any path that escapes its declared root after normalization
 - reject archive extraction or bundle expansion that would write outside an owned
   destination
+- validate report-output and stage-finalization destinations before writing
+- reject output targets whose final write path resolves through a symlink or
+  escapes the owned output root
 - avoid publishing symlink escapes into the staged tree
 
 This protects against accidental workspace leakage and straightforward path
@@ -57,7 +60,7 @@ traversal mistakes.
 ## Metadata and XSS safety
 
 The model intentionally allows many human-facing string fields, including titles,
-labels, descriptions, notes, and provider extensions.
+labels, descriptions, notes, and provider metadata.
 
 The safety rule is simple:
 
@@ -75,15 +78,16 @@ That means:
 Redirects and other URL-bearing fields need validation in addition to schema
 shape checks.
 
-The pipeline should:
+The pipeline must:
 
 - require internal redirect targets to resolve to known internal routes
 - reject unsupported URL schemes such as `javascript:` and `data:`
 - treat external redirect destinations as explicit policy decisions
 - prefer `https` for public external destinations
 
-Local development tooling may allow additional schemes by consumer-owned policy,
-but that is outside the default pipeline contract.
+Local development tooling may allow additional schemes only by local
+operator-controlled development policy that stays outside the default pipeline
+contract and outside repo-authored or provider-authored inputs.
 
 ## Mounted content trust classes
 
@@ -95,6 +99,11 @@ Mounted content falls into three broad classes:
 
 The first two are normal publication inputs.
 
+Every mounted subtree should declare a machine-readable `trustClass`:
+
+- `passive` for pipeline-rendered content and inert static assets
+- `active` for imported browser-executable HTML/JS/CSS trees
+
 Imported active site trees are different. They are trusted code with the ability
 to execute in the browser and influence same-origin behavior.
 
@@ -105,7 +114,8 @@ Consumers publishing imported active site trees should decide deliberately:
 - which CSP, cookie, and storage policies apply at deployment time
 
 The pipeline can stage and describe those mounts, but it should not pretend they
-are inert.
+are inert. `trustClass: active` is the signal deployment adapters should use to
+apply isolation and stricter policy.
 
 ## Aggregate-output minimization
 
@@ -116,22 +126,82 @@ Aggregate metadata should avoid exposing:
 
 - absolute local filesystem paths
 - cache-internal directory layout
+- internal-only provider endpoints or non-public provider base URLs
 - other machine-local implementation details
 
 ## Resource-exhaustion and abuse resistance
 
 The pipeline should remain defensive against oversized or abusive inputs.
 
-That includes practical limits for:
+The model should distinguish between hard non-overridable security ceilings and
+safe operational defaults.
 
-- provider snapshot size and record count
-- redirect and route inventory size
-- mounted metadata payload size
-- extension payload size
-- watched directory scope
-- number of staged version contexts in one pass
+### Hard non-overridable security ceilings
 
-Failure behavior should be explicit and fail fast when limits are exceeded.
+These ceilings are part of the abuse-resistance posture itself. Implementations
+must reject rather than silently truncate when they are exceeded, except for the
+special `PipelineDiagnosticEntry.details` reduction rule documented below.
+
+- mounted metadata payload size: at most 16 KiB per `metadata` object after JSON
+  serialization
+- diagnostic detail payload size: at most 8 KiB per
+  `PipelineDiagnosticEntry.details` object after JSON serialization
+
+Oversized diagnostic details need special handling because operators still need
+to understand the failure. Implementations must therefore keep the diagnostic
+entry itself, including its `severity`, `code`, `message`, and any available
+`componentSlug`, `artifactKey`, or `targetId`, and replace only the oversized
+`details` payload with a bounded summary object, informally called
+`ReducedDiagnosticDetailsSummary`. The recommended replacement shape is:
+
+- `omitted: true`
+- `reason: sizeLimitExceeded`
+- `actualBytes`
+- `limitBytes`
+- optional short `summary`
+- optional `fingerprint`
+
+That `ReducedDiagnosticDetailsSummary` should say that details were reduced
+because of the ceiling, include the measured and allowed sizes, and may include
+a compact summary or fingerprint. Implementations must never respond by
+emitting malformed or partial JSON diagnostic files.
+
+### Safe operational defaults
+
+These values are conservative initial defaults for ordinary installations. They
+are execution-policy settings rather than public staged-output contract shape.
+Implementations may allow local operator override of these defaults. The
+override mechanism is intentionally not fixed here and may later be an explicit
+number, a t-shirt-size profile, or another local policy surface.
+
+That override surface must remain local operator-controlled execution policy. It
+must not come from provider data, and it must not be driven by repo-authored
+publication metadata.
+
+- provider snapshot input default: 16 MiB of JSON and 50,000 normalized
+  `records[]` entries in one loaded snapshot
+- route inventory default: 100,000 entries in `data/routes.json`
+- redirect inventory default: 100,000 entries in `data/redirects.json`
+- content index default: 100,000 entries in `data/content-index.json`
+- watched directory scope default: 32 watch roots and 100,000 filesystem
+  entries beneath those roots at watch startup
+- staged version-context count default: 512 in one run
+
+When an implementation exposes local overrides for those defaults, they must not
+change the staged output schema or other public contract surfaces.
+
+Failure behavior should be explicit and fail fast when a hard ceiling other than
+the `PipelineDiagnosticEntry.details` ceiling is exceeded. Exceeding a safe
+operational default should also produce a clear error diagnostic unless the
+local operator configuration has intentionally raised that default. Where
+practical, limit-hit diagnostics should report the measured and allowed values
+and indicate whether the effective threshold came from the documented default or
+a local operator override.
+
+For avoidance of doubt: exceeding the `PipelineDiagnosticEntry.details` ceiling
+does not justify dropping the whole diagnostic entry or writing incomplete JSON.
+The reduction applies only to the oversized `details` payload, not to the
+operator-essential diagnostic identity.
 
 ## Responsibility split
 

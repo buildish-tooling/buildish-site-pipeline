@@ -92,10 +92,17 @@ Recommended top-level fields in `site/components.yaml`:
 
 - `schemaVersion`
 - `defaults`
+- `site`
 - `origins`
 - `sources`
 - `groups`
 - `components`
+
+Recommended `site` section fields:
+
+- `pagesRoot`
+- `assetsRoot`
+- `vendorAssets`
 
 Recommended `defaults` additions:
 
@@ -152,6 +159,13 @@ defaults:
     developmentSegment: development
     docsSegment: docs
     assetsSegment: assets
+site:
+  pagesRoot: site/root-pages
+  assetsRoot: site/root-assets
+  vendorAssets:
+    - source: vendor/asf-brand
+      mountPath: /assets/vendor/asf-brand/
+      kind: vendorStatic
 origins:
   main:
     baseUrl: https://www.example.org
@@ -279,7 +293,7 @@ components:
 		  publicationSelection:
 			namedRefs: [preview]
 			releases:
-				mode: latest-per-line
+				mode: latestPerLine
 		- key: kubernetes-operator
 		  displayName: Spark Kubernetes Operator
 		  source: operator-repo
@@ -298,6 +312,14 @@ Publication visibility should stay separate from lifecycle meaning.
 That means an artifact may also carry a `publicationSelection` policy used during
 planning and staging. When both component and artifact policy are present, the
 artifact policy should win.
+
+Effective authored configuration should resolve predictably:
+
+- `defaults` < `group` < `component` < `artifact`
+- scalar values use the nearest defined value
+- maps merge by key, with the nearer level winning per key
+- arrays replace rather than concatenate
+- absent values inherit; explicitly empty arrays or maps clear inherited values
 
 To avoid terminology confusion, `artifact` in this document should mean an
 independently versioned release unit or documentation stream, not every
@@ -339,7 +361,8 @@ Examples include:
 
 The important distinction is that mounted subtrees share the same publication
 system as authored pages without pretending they are identical in provenance or
-indexing behavior.
+indexing behavior. They should therefore carry an explicit `trustClass` that
+distinguishes passive mounts from imported active browser content.
 
 ## Release lines and support phases
 
@@ -487,9 +510,9 @@ Example:
 		  publicationSelection:
 			development: true
 			lineHeads:
-				mode: all-authored
+				mode: allAuthored
 			releases:
-				mode: latest-per-line
+				mode: latestPerLine
 			namedRefs: [preview]
 			candidates:
 				mode: none
@@ -647,14 +670,20 @@ component, artifact, and version context.
 
 The model should support:
 
-- locale-prefixed paths such as `/fr/docs/`
-- host-based locale publication
+- no locale path transform (`none`)
+- locale-prefixed paths such as `/fr/docs/` (`prefixAll`)
 - default-locale behavior
 - translation linkage between equivalent pages
 - partial translation coverage when some pages exist in only one locale
 
+Host-based locale publication is a later extension rather than part of the
+initial implementation contract.
+
 Renderers should receive locale and translation data directly rather than trying
 to infer them from path prefixes alone.
+
+Only one locale routing mode should be active for one effective publication. In
+the initial implementation that means either `none` or `prefixAll`.
 
 Translation linkage itself should be page-authored rather than catalog-authored.
 
@@ -732,7 +761,7 @@ Recommended `providers[]` fields:
 - `key`
 - `type`
 - optional `displayName`
-- optional `baseUrl`
+- optional public `baseUrl`
 - `fetchedAt`
 
 Recommended normalized `records[]` core fields:
@@ -740,8 +769,8 @@ Recommended normalized `records[]` core fields:
 - `provider`
 - `kind`
   - `development`
-  - `named-ref`
-  - `line-head`
+  - `namedRef`
+  - `lineHead`
   - `candidate`
   - `released`
 - `componentSlug`
@@ -767,7 +796,6 @@ Recommended normalized `records[]` core fields:
 - optional `updatedAt`
 - optional `urls`
 - optional `assets`
-- optional `extensions`
 
 ### Minimal normalized `records[]` schema
 
@@ -794,8 +822,8 @@ Kind-specific expectations should remain simple:
 - `released`: should normally provide `version` and usually `tag`
 - `candidate`: should normally provide `version`; `candidateSequence` is
   recommended when the provider has one
-- `named-ref`: should provide `ref`
-- `line-head`: should provide `releaseLine` and usually `ref`
+- `namedRef`: should provide `ref`
+- `lineHead`: should provide `releaseLine` and usually `ref`
 - `development`: should usually provide `ref`
 
 Recommended normalization rules:
@@ -808,7 +836,8 @@ Recommended normalization rules:
   required classification keys
 - `namedRefKey` should be present when a provider record enriches an authored
   named ref rather than introducing an ad hoc discovered ref
-- unknown provider-specific details should go under `extensions`
+- provider-specific details outside the normalized contract should stay out of
+  the v1 public schema for now
 
 This keeps the snapshot useful for indexing and rendering while also allowing a
 provider such as ATR to expose richer state over time.
@@ -827,8 +856,9 @@ records:
 ```
 
 This is intentionally a normalized core rather than an exhaustive universal
-release schema. A provider may add richer data under `extensions`, but renderers
-and pipeline logic should rely first on the stable core fields.
+release schema. Providers may have richer source data, but renderers and
+pipeline logic should rely first on the stable core fields and keep unmatched
+detail out of the v1 public contract for now.
 
 Example:
 
@@ -854,7 +884,7 @@ records:
     voteStatus: open
     releaseLine: 4.x
   - provider: atr
-    kind: named-ref
+    kind: namedRef
     componentSlug: spark
     artifactKey: runtime
     ref: feature/docs-reorg
@@ -948,7 +978,6 @@ Recommended optional fields:
 - `signatureUrl`
 - `sbomUrl`
 - `provenanceUrl`
-- `extensions`
 
 `kind` should remain advisory rather than exhaustive. Useful values might be:
 
@@ -986,8 +1015,8 @@ pipeline to understand every archive, signature, checksum, attestation, or
 registry object as its own top-level domain entity.
 
 If a provider exposes richer package or distribution metadata, the pipeline
-should preserve it under provider-specific `extensions` rather than inflate the
-core contract prematurely.
+should leave it out of the v1 public contract rather than inflate the core
+schema prematurely.
 
 ## Renderer contract
 
@@ -1007,76 +1036,55 @@ or template often needs:
 
 The front matter should therefore expose both route parts and resolved URLs.
 
+Pipeline-owned staged front matter should live under a reserved top-level
+`pipeline` namespace. Authored page metadata remains outside that namespace, and
+authored pages should fail validation if they attempt to define `pipeline`.
+
 Front matter should also expose artifact context when a page belongs to one
 specific release stream.
 
 Recommended component-level front matter shape:
 
 ```yaml
-sitePipelineComponent:
-  slug: spark
-  displayName: Apache Spark
-  publication:
-    origin:
-      key: spark
-      baseUrl: https://spark.example.org
-      hostname: spark.example.org
-    paths:
-      component: /
-      development: /development/
-      docs: /development/docs/
-      assets: /development/assets/
-    urls:
-      component: https://spark.example.org/
-      development: https://spark.example.org/development/
-      docs: https://spark.example.org/development/docs/
-      assets: https://spark.example.org/development/assets/
-  artifacts:
-    - key: runtime
-      displayName: Spark Runtime
-      latestStable: 4.0.0
-      releaseLines:
-        - key: 4.x
-          latest: 4.0.0
-          supportStatus: active
-    - key: kubernetes-operator
-      displayName: Spark Kubernetes Operator
-      latestStable: 1.3.0
+pipeline:
+  component:
+    slug: spark
+    displayName: Apache Spark
+    publication:
+      origin: { key: spark, baseUrl: https://spark.example.org, hostname: spark.example.org }
+      paths: { component: /, development: /development/, docs: /development/docs/, assets: /development/assets/ }
+      urls: { component: https://spark.example.org/, development: https://spark.example.org/development/, docs: https://spark.example.org/development/docs/, assets: https://spark.example.org/development/assets/ }
+    artifacts:
+      - { key: runtime, displayName: Spark Runtime, latestStable: 4.0.0, releaseLines: [{ key: 4.x, latest: 4.0.0, supportStatus: active }] }
+      - { key: kubernetes-operator, displayName: Spark Kubernetes Operator, latestStable: 1.3.0 }
 ```
 
 Recommended page-level front matter shape:
 
 ```yaml
-sitePipelineComponentPage:
-  kind: docs-page
-  section: docs
-  artifactKey: runtime
-  path: /development/docs/sql/
-  url: https://spark.example.org/development/docs/sql/
-  canonicalUrl: https://spark.example.org/development/docs/sql/
-  locale: en
-  defaultLocale: true
-  translationKey: runtime-sql-overview
-  componentPath: /
-  componentUrl: https://spark.example.org/
-  version:
-    kind: released
-    label: 4.0.0
-    path: /releases/4.0.0/
-    url: https://spark.example.org/releases/4.0.0/
-    docsPath: /releases/4.0.0/docs/
-    docsUrl: https://spark.example.org/releases/4.0.0/docs/
-    publicationState: published
-    releaseLine:
-      key: 4.x
-      supportStatus: active
-      ancestors: []
-      supportWindow:
-        maintenancePhase: active
-        endOfSupportDate: 2027-06-30T00:00:00Z
-  translations:
-    - locale: fr
-      url: https://spark.example.org/fr/releases/4.0.0/docs/sql/
+pipeline:
+  page:
+    kind: docsPage
+    section: docs
+    artifactKey: runtime
+    path: /development/docs/sql/
+    url: https://spark.example.org/development/docs/sql/
+    canonicalUrl: https://spark.example.org/development/docs/sql/
+    locale: en
+    defaultLocale: true
+    translationKey: runtime-sql-overview
+    componentPath: /
+    componentUrl: https://spark.example.org/
+    version:
+      kind: released
+      label: 4.0.0
+      path: /releases/4.0.0/
+      url: https://spark.example.org/releases/4.0.0/
+      docsPath: /releases/4.0.0/docs/
+      docsUrl: https://spark.example.org/releases/4.0.0/docs/
+      publicationState: published
+      releaseLine: { key: 4.x, supportStatus: active, ancestors: [], supportWindow: { maintenancePhase: active, endOfSupportDate: 2027-06-30T00:00:00Z } }
+    translations: [{ locale: fr, url: https://spark.example.org/fr/releases/4.0.0/docs/sql/ }]
 ```
 
 ### Front matter attribute guidance
@@ -1135,7 +1143,7 @@ Recommended staged metadata outputs:
   releases
 - `data/candidates.json` for in-flight release candidates and vote-related state
 - `data/refs.json` for development, maintenance, feature, and preview refs when
-  they are intentionally exposed, including authored named-ref keys when present
+  they are intentionally exposed, including authored named ref keys when present
 - `data/routes.json` for resolved origin/path/url mappings and canonical route
   inventory
 - `data/redirects.json` for resolved redirect inventory derived from route
@@ -1190,6 +1198,9 @@ The important distinction is:
 
 If publication becomes explicit, validation should also become explicit.
 
+These are natural `site-pipeline check` failures and should be aggregated in one
+validation pass where practical.
+
 The pipeline should reject:
 
 - undefined publication origins,
@@ -1204,8 +1215,9 @@ The pipeline should reject:
 - ambiguous artifact-to-route mappings,
 - duplicate locale entries within one translation set,
 - incompatible locale route-mode and origin configuration,
-- duplicate authored named-ref keys within one artifact,
-- publication-selection policies that reference unknown release lines, named-ref
+- duplicate authored named ref keys within one artifact,
+- authored pages that define the reserved `pipeline` front matter namespace,
+- publication-selection policies that reference unknown release lines, named ref
   keys, or exact versions,
 - compatibility assertions that reference unknown subjects or targets,
 - conflicting tag patterns within one artifact definition,

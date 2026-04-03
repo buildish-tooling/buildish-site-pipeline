@@ -20,5 +20,5 @@ limitations under the License.
 
 This documentation is split into two tracks:
 
-- [v1](v1/) for the original tracked documentation set
-- [v2](v2/) for the newer proposal and architecture documents
+- [v0](v0/) for the original tracked documentation set
+- [v1](v1/) for the current design, schema, and architecture documents

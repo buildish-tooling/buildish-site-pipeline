@@ -46,7 +46,7 @@ Recommended `providers[]` fields:
 - `key`
 - `type`
 - optional `displayName`
-- optional `baseUrl`
+- optional public `baseUrl`
 - `fetchedAt`
 
 ## Minimal normalized `records[]` schema
@@ -82,23 +82,22 @@ Recommended shared optional fields:
 - `updatedAt`
 - `urls`
 - `assets`
-- `extensions`
 
 ## Record kinds
 
 Recommended shared `kind` values:
 
 - `development`
-- `named-ref`
-- `line-head`
+- `namedRef`
+- `lineHead`
 - `candidate`
 - `released`
 
 Kind-specific expectations:
 
 - `development`: usually carries `ref`
-- `named-ref`: should carry `ref`
-- `line-head`: should carry `releaseLine` and usually `ref`
+- `namedRef`: should carry `ref`
+- `lineHead`: should carry `releaseLine` and usually `ref`
 - `candidate`: should normally carry `version`; `candidateSequence` is recommended
 - `released`: should normally carry `version` and usually `tag`
 
@@ -121,7 +120,8 @@ Recommended precedence rules:
 2. provider snapshots own externally observed release state:
    - discovered releases
    - candidates and vote state
-   - named refs and preview refs
+   - development refs and release-line heads
+   - provider-observed details for authored named refs when they can be matched
    - provider URLs and timestamps
    - downloadable assets
 3. explicit local override files, if introduced later, should override provider
@@ -129,6 +129,10 @@ Recommended precedence rules:
 
 Provider data must not silently redefine consumer-owned URLs or artifact
 identity.
+
+Intentional publication of named refs remains authored in the catalog or artifact
+metadata. Provider data may enrich those refs, but it does not define which named
+refs exist as public version contexts.
 
 ## Minimal optional `assets[]` schema
 
@@ -149,7 +153,6 @@ Recommended optional fields:
 - `signatureUrl`
 - `sbomUrl`
 - `provenanceUrl`
-- `extensions`
 
 Useful advisory `kind` values include:
 
@@ -204,7 +207,7 @@ providers:
   - key: github
     type: github-releases
     displayName: GitHub Releases
-    baseUrl: https://api.github.com
+    baseUrl: https://github.com
     fetchedAt: 2026-04-02T12:05:00Z
 records:
   - provider: github
@@ -237,6 +240,6 @@ The pipeline should reject at least:
 - duplicate records for the same `(provider, externalId)` pair when `externalId`
   exists,
 - records that provide none of `externalId`, `version`, `tag`, or `ref`, and
-- records whose `kind` is outside the shared normalized vocabulary.
-
-Unknown fields under `extensions` should be preserved rather than rejected.
+- records whose `kind` is outside the shared normalized vocabulary, and
+- unknown extra fields outside the documented provider, record, and asset
+  schemas.

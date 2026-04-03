@@ -146,17 +146,25 @@ publish.
 
 The result should be a resolved list of local inputs to stage.
 
-In practical terms, that planning step is a report-only CLI interaction such as
-`site-pipeline report-missing` or similar. Its job is to say which version
-contexts are required, which local inputs are already present, and which pieces
-are missing or stale. It does not itself perform network fetches or cache
-mutation.
+That local-input universe should match what `build` and `watch` actually
+consume: consumer-owned top-level site pages, site assets, and vendor asset
+trees as well as component/version-context trees.
+
+In practical terms, that planning step is a report-only CLI interaction. Its job
+is to say which version contexts are required, which local inputs are already
+present, and which pieces are missing or stale. It does not itself perform
+network fetches or cache mutation.
+
+The stable command for that interaction should be `site-pipeline plan`.
+Automation should be able to request a specific report schema version
+explicitly. JSON report output without an explicit requested schema version is an
+invalid invocation. Unsupported requested versions should fail fast.
 
 ## Recommended interaction model
 
 The clean interaction model is that the consumer implementation asks
 `site-pipeline` what is needed, then uses SCM and cache-specific machinery to
-materialize any missing inputs before invoking `build` or `watch`.
+materialize any missing inputs before invoking `check`, `build`, or `watch`.
 
 ```mermaid
 sequenceDiagram
@@ -165,7 +173,7 @@ sequenceDiagram
     participant Cache as materialization cache
     participant SCM as SCM systems
 
-    Consumer->>Pipeline: report missing inputs
+    Consumer->>Pipeline: plan --for build
     Pipeline-->>Consumer: required contexts + present/missing/stale status
     Consumer->>Cache: inspect cached local trees
     alt missing or stale inputs exist
@@ -173,8 +181,12 @@ sequenceDiagram
         SCM-->>Consumer: source snapshots or ref content
         Consumer->>Cache: update materialized local trees
     end
+    Consumer->>Pipeline: check
+    Pipeline-->>Consumer: validation report
+    opt no error diagnostics
     Consumer->>Pipeline: build or watch
     Pipeline-->>Consumer: staged tree + aggregate metadata
+    end
 ```
 
 In that model, `site-pipeline` remains responsible for planning and staging,
@@ -188,12 +200,46 @@ mechanisms without turning `build` into an SCM orchestration command.
 The machine-readable planning result is a JSON `ResolvedMaterializationReport`.
 It can be emitted to stdout or written to a caller-selected path.
 
+The recommended CLI shape is:
+
+- `site-pipeline plan --for build`
+- `site-pipeline plan --for watch`
+- `site-pipeline plan --for build --report-format json --report-schema-version 1`
+- `site-pipeline plan --for build --report-format json --report-schema-version 1 --report-output -`
+- `site-pipeline plan --for build --report-format json --report-schema-version 1 --report-output .site-pipeline/materialization-report.json`
+
+Recommended flag meanings are:
+
+- `--for` accepts `build` or `watch` and selects the planning target
+- `--report-format` accepts `text` or `json`; default is `text`
+- `--report-schema-version` selects the requested report `schemaVersion` and is
+  required when `--report-format json` is selected
+- `--report-output` selects the report destination; `-` means stdout and is the
+  default
+
+For automation, callers should request the desired report `schemaVersion`
+explicitly. Successful planning should still return a report when inputs are
+missing or stale; those states belong in the payload rather than in ad hoc exit
+codes.
+The report header should identify the requested planning `target` rather than
+repeat the literal `plan` command name.
+
+Recommended planning exit codes are:
+
+- `0`: planning completed and produced a report, even if some entries are
+  `missing`, `stale`, or `unresolved`
+- `1`: planning completed but found error diagnostics that prevent a usable plan
+- `2`: invalid invocation, invalid option combination, or unsupported requested
+  report schema version
+- `3`: internal failure while attempting to evaluate the workspace
+
 Recommended entry fields include:
 
 - `sourceKey`
-- `componentSlug`
-- `artifactKey`
-- `kind` such as `development`, `line-head`, `released`, or `named-ref`
+- `inputKind` such as `sitePages`, `siteAssets`, `vendorAssets`,
+  `development`, `lineHead`, `released`, or `namedRef`
+- optional `componentSlug`
+- optional `artifactKey`
 - optional `releaseLine`
 - optional `version`
 - optional `ref`
@@ -201,21 +247,49 @@ Recommended entry fields include:
 - optional `commitSha`
 - `expectedLocalPath`
 - `status` such as `present`, `missing`, `stale`, or `unresolved`
-- `provenance` such as `git-checkout`, `cache-branch`, `snapshot`, or `generated`
-- optional `watchEligible`
+- `provenance` such as `gitCheckout`, `cacheBranch`, `snapshot`, `workspace`,
+  or `generated`
+- optional `watchEligible` for `plan --for build`; required for every entry in
+  `plan --for watch`
 - optional `reason`
+
+For planning targeted at `watch`, every entry should carry an explicit
+`watchEligible` value. Mutable workspace-backed inputs should
+normally be marked `watchEligible: true`. That usually includes top-level site
+pages, top-level site assets, and other actively edited local content trees.
+Inputs backed by immutable snapshots, cached historical releases, or other
+non-live materializations should normally be `watchEligible: false`.
+`vendorAssets` may fall into either category depending on whether they come from
+mutable workspace paths or immutable generated/imported trees.
 
 That report lets the build engine say:
 
-- these are the version contexts to stage,
+- these are the local inputs to stage,
 - here is where each local tree lives, and
 - here is how each one was materialized.
+
+## Planning versus `check`
+
+The planning report and `site-pipeline check` solve related but different
+problems.
+
+- planning says what local inputs are required and whether they are present,
+  missing, stale, or unresolved
+- `check` says whether the current workspace and currently available inputs are
+  valid and ready for staging
+
+In practice, `check` should reuse planning information when local inputs are
+missing, but it should surface that state as validation diagnostics rather than
+as a materialization inventory.
 
 ## What `build` and `watch` should assume
 
 The stable `build` and `watch` commands should assume that the required local
-inputs already exist or are described by a resolved materialization report or an
-equivalent in-memory plan.
+inputs already exist and have either passed `check` or are represented by a
+resolved materialization report and equivalent in-memory validation state.
+
+Those required local inputs include consumer-owned top-level site pages, site
+assets, and vendor asset trees in addition to component/version-context trees.
 
 In particular:
 
@@ -223,6 +297,8 @@ In particular:
 - `build` should not require a full clone of every historical tag
 - `watch` should focus mainly on mutable inputs such as development refs and
   local authored content
+- `watch` should derive its watch roots from planning entries marked
+  `watchEligible: true`
 - immutable historical release snapshots should usually be treated as cached
   inputs rather than watch targets
 

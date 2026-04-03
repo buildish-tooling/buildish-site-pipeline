@@ -93,7 +93,7 @@ records:
     releaseLine: 4.x
     voteStatus: open
   - provider: atr
-    kind: line-head
+    kind: lineHead
     componentSlug: spark
     artifactKey: runtime
     ref: releases/4.x
@@ -110,19 +110,20 @@ records:
 For a page staged from the candidate docs:
 
 ```yaml
-sitePipelineComponentPage:
-  kind: docs-page
-  artifactKey: runtime
-  version:
-    kind: candidate
-    label: 4.1.0-rc2
-    maturity: rc
-    releaseLine: 4.x
-    candidateSequence: 2
-    voteStatus: open
-  provider:
-    key: atr
-    externalId: atr:candidate:spark-runtime:4.1.0:2
+pipeline:
+  page:
+    kind: docsPage
+    artifactKey: runtime
+    version:
+      kind: candidate
+      label: 4.1.0-rc2
+      maturity: rc
+      releaseLine: 4.x
+      candidateSequence: 2
+      voteStatus: open
+    provider:
+      key: atr
+      externalId: atr:candidate:spark-runtime:4.1.0:2
 ```
 
 ## Example staged aggregate metadata
@@ -197,7 +198,7 @@ sitePipelineComponentPage:
     "provider": "atr",
     "componentSlug": "spark",
     "artifactKey": "runtime",
-    "kind": "line-head",
+    "kind": "lineHead",
     "ref": "releases/4.x",
     "releaseLine": "4.x"
   },
@@ -213,7 +214,7 @@ sitePipelineComponentPage:
 
 ## Why the example uses JSON for aggregate files
 
-The v2 examples often use YAML for readability, but JSON is the safer
+The current examples often use YAML for readability, but JSON is the safer
 baseline for aggregate staged metadata because renderer support for arbitrary YAML
 files is inconsistent. YAML remains a good default for front matter.
 

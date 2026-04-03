@@ -51,7 +51,6 @@ check: lint typecheck test rat ## Run lint, type checks, tests, and RAT.
 publish-snapshot-local: ## Build and publish a local wheel snapshot under dist/snapshots.
 	$(UV_RUN) python -m apache_buildish_site_pipeline.snapshot_publish --out-dir $(SNAPSHOT_OUT_DIR)
 
-
 container-image: ## Build the generic Site Pipeline container image locally.
 	tools/site-pipeline-image/build-image.sh --image $(CONTAINER_IMAGE) --platforms $(CONTAINER_IMAGE_PLATFORMS)
 

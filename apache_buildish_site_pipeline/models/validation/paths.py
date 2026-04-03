@@ -14,6 +14,44 @@
 
 """Validation helpers for path-bearing wire fields."""
 
+from __future__ import annotations
+
+from .common import _validate_no_structural_whitespace_or_controls
+
+
+def _validate_normalized_posix_path(
+    value: str,
+    *,
+    type_name: str,
+    require_absolute: bool,
+    allow_root: bool = False,
+    allow_trailing_slash: bool = False,
+) -> str:
+    value = _validate_no_structural_whitespace_or_controls(value, type_name=type_name)
+    if "\\" in value:
+        raise ValueError(f"{type_name} must use forward slashes")
+
+    normalized_value = value
+    if allow_trailing_slash and value not in {"", "/"} and value.endswith("/"):
+        normalized_value = value[:-1]
+
+    if require_absolute:
+        if not normalized_value.startswith("/"):
+            raise ValueError(f"{type_name} must start with /")
+        if normalized_value == "/":
+            if allow_root:
+                return value
+            raise ValueError(f"{type_name} must not be the root path")
+        segments = normalized_value[1:].split("/")
+    else:
+        if normalized_value.startswith("/"):
+            raise ValueError(f"{type_name} must be relative rather than absolute")
+        segments = normalized_value.split("/")
+
+    if any(segment in {"", ".", ".."} for segment in segments):
+        raise ValueError(f"{type_name} must be normalized and traversal-free")
+    return value
+
 
 def validate_local_path_string(value: str) -> str:
     """Reject obviously malformed machine-local path strings."""
@@ -22,14 +60,38 @@ def validate_local_path_string(value: str) -> str:
     return value
 
 
+def validate_repo_relative_path(value: str) -> str:
+    """Validate a repository-relative POSIX path."""
+    return _validate_normalized_posix_path(
+        value,
+        type_name="RepoRelativePath",
+        require_absolute=False,
+    )
+
+
 def validate_stage_relative_path(value: str) -> str:
     """Require a normalized stage-relative POSIX path with no traversal syntax."""
-    if value.startswith("/"):
-        raise ValueError("Stage-relative paths must not be absolute")
-    if "\\" in value:
-        raise ValueError("Stage-relative paths must use forward slashes")
+    return _validate_normalized_posix_path(
+        value,
+        type_name="StageRelativePath",
+        require_absolute=False,
+    )
 
-    segments = value.split("/")
-    if any(segment in {"", ".", ".."} for segment in segments):
-        raise ValueError("Stage-relative paths must be normalized and traversal-free")
+
+def validate_public_path(value: str) -> str:
+    """Validate a normalized public path rooted at the site origin."""
+    value = _validate_normalized_posix_path(
+        value,
+        type_name="PublicPath",
+        require_absolute=True,
+        allow_root=True,
+        allow_trailing_slash=True,
+    )
+    if "?" in value or "#" in value:
+        raise ValueError("PublicPath must not include query or fragment components")
     return value
+
+
+def validate_mount_source_ref(value: str) -> str:
+    """Validate a stable mount-source reference token."""
+    return _validate_no_structural_whitespace_or_controls(value, type_name="MountSourceRef")

@@ -81,3 +81,63 @@ class CheckFailureThreshold(StrEnum):
 
     ERROR = "error"
     WARNING = "warning"
+
+
+class RecordKind(StrEnum):
+    """Normalized provider record lifecycle kind."""
+
+    RELEASED = "released"
+    CANDIDATE = "candidate"
+    NAMED_REF = "namedRef"
+    LINE_HEAD = "lineHead"
+
+
+class PublicationState(StrEnum):
+    """Observed provider-side publication state."""
+
+    PUBLISHED = "published"
+    HIDDEN = "hidden"
+    WITHDRAWN = "withdrawn"
+
+
+class WithdrawalBehavior(StrEnum):
+    """Author-directed behavior for a withdrawn release."""
+
+    HIDE = "hide"
+    BADGE = "badge"
+    REDIRECT = "redirect"
+
+
+class IndexBehavior(StrEnum):
+    """Renderer hint for version/ref index visibility."""
+
+    INCLUDE = "include"
+    OMIT = "omit"
+
+
+class LineHeadSelectionMode(StrEnum):
+    """Strategy used to derive a release-line head record."""
+
+    PROVIDER = "provider"
+    VERSION = "version"
+    TAG = "tag"
+    CREATED_AT = "createdAt"
+    PUBLISHED_AT = "publishedAt"
+
+
+class ReleaseSelectionMode(StrEnum):
+    """Strategy used to select a released version."""
+
+    EXACT = "exact"
+    HIGHEST_SEMVER = "highestSemver"
+    PROVIDER = "provider"
+    PUBLISHED_AT = "publishedAt"
+
+
+class CandidateSelectionMode(StrEnum):
+    """Strategy used to select a candidate version."""
+
+    HIGHEST_SEQUENCE = "highestSequence"
+    PROVIDER = "provider"
+    CREATED_AT = "createdAt"
+    PUBLISHED_AT = "publishedAt"

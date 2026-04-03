@@ -27,12 +27,14 @@ from .base import SitePipelineBaseModel
 from .enums import DocumentFormat
 
 if TYPE_CHECKING:
+    from .component_repository import ComponentRepositoryDocumentV1
     from .planning_stage_contract import (
         CheckReportV1,
         ResolvedMaterializationReportV1,
         StageManifestV1,
         StageRunReportV1,
     )
+    from .provider_snapshot import ProviderSnapshotV1
 
 
 class LoadingError(Exception):
@@ -280,5 +282,39 @@ def load_stage_manifest(
         document,
         document_format=document_format,
         schema_version_models={1: StageManifestV1},
+        source_name=source_name,
+    )
+
+
+def load_component_repository_document(
+    document: str | bytes,
+    *,
+    document_format: DocumentFormat,
+    source_name: str = "<memory>",
+) -> ComponentRepositoryDocumentV1:
+    """Load one component-repository metadata document."""
+    from .component_repository import ComponentRepositoryDocumentV1
+
+    return load_versioned_document(
+        document,
+        document_format=document_format,
+        schema_version_models={1: ComponentRepositoryDocumentV1},
+        source_name=source_name,
+    )
+
+
+def load_provider_snapshot(
+    document: str | bytes,
+    *,
+    document_format: DocumentFormat,
+    source_name: str = "<memory>",
+) -> ProviderSnapshotV1:
+    """Load one normalized provider snapshot document."""
+    from .provider_snapshot import ProviderSnapshotV1
+
+    return load_versioned_document(
+        document,
+        document_format=document_format,
+        schema_version_models={1: ProviderSnapshotV1},
         source_name=source_name,
     )

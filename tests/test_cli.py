@@ -86,6 +86,19 @@ class CliTests(unittest.TestCase):
         self.assertEqual(exit_code, 3)
         self.assertIn("Stage root must be absent or empty", stderr.getvalue())
 
+    def test_build_rejects_stage_root_with_symlinked_parent(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            real_site_root = workspace_root / "real-site"
+            (workspace_root / "site").rename(real_site_root)
+            (workspace_root / "site").symlink_to(real_site_root, target_is_directory=True)
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            with _cwd(workspace_root):
+                exit_code = _run(argv=["build"], stdout=stdout, stderr=stderr)
+
+        self.assertEqual(exit_code, 3)
+        self.assertIn("resolves through a symlink", stderr.getvalue())
+
     def test_watch_json_stdout_is_rejected(self) -> None:
         with _workspace() as workspace_root:
             stdout = io.StringIO()

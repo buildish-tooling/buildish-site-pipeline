@@ -58,6 +58,7 @@ def publish_stage(
 ) -> StagePublicationResult:
     """Materialize and publish one finalized stage tree."""
 
+    _validate_final_stage_target_path(stage_root)
     normalized_stage_root = stage_root.resolve(strict=False)
     parent_path = normalized_stage_root.parent
     parent_path.mkdir(parents=True, exist_ok=True)
@@ -118,9 +119,14 @@ def finalize_stage_publication(
 ) -> StagePublicationResult:
     """Publish a previously materialized candidate stage tree atomically."""
 
+    _validate_final_stage_target_path(stage_root)
     normalized_candidate_root = candidate_stage_root.resolve(strict=False)
     normalized_stage_root = stage_root.resolve(strict=False)
     _validate_candidate_stage_root(normalized_candidate_root)
+    _validate_publication_filesystems(
+        candidate_stage_root=normalized_candidate_root,
+        stage_root=normalized_stage_root,
+    )
     if allow_replace_existing:
         _validate_replaceable_stage_root(normalized_stage_root)
         return _replace_stage_root(
@@ -164,6 +170,58 @@ def _validate_candidate_stage_root(stage_root: Path) -> None:
     manifest_path = stage_root / "manifest.json"
     if not manifest_path.exists() or not manifest_path.is_file():
         raise StageIntegrityError(f"Candidate stage root is missing manifest.json: {stage_root}")
+
+
+def _validate_final_stage_target_path(stage_root: Path) -> None:
+    """Reject visible stage targets that resolve through symlinked parents."""
+
+    absolute_stage_root = stage_root if stage_root.is_absolute() else stage_root.absolute()
+    parent_path = absolute_stage_root.parent
+    if _contains_symlink(parent_path):
+        raise StageIntegrityError(f"Stage root parent directory resolves through a symlink: {parent_path}")
+    if absolute_stage_root.exists() and absolute_stage_root.is_symlink():
+        raise StageIntegrityError(f"Stage root must not be a symlink: {absolute_stage_root}")
+
+
+def _validate_publication_filesystems(*, candidate_stage_root: Path, stage_root: Path) -> None:
+    """Reject publication paths that would require cross-filesystem finalization."""
+
+    stage_parent = stage_root.parent
+    if not stage_parent.exists() or not stage_parent.is_dir():
+        raise StageIntegrityError(f"Stage root parent directory does not exist: {stage_parent}")
+
+    target_device = _stat_device_id(stage_parent)
+    candidate_device = _stat_device_id(candidate_stage_root)
+    if candidate_device != target_device:
+        raise StageIntegrityError(
+            "Candidate stage root and visible stage root must live on the same filesystem "
+            f"for atomic publication: {candidate_stage_root} -> {stage_root}",
+        )
+
+    if stage_root.exists() and _stat_device_id(stage_root) != target_device:
+        raise StageIntegrityError(
+            "Existing stage root and its parent must live on the same filesystem "
+            f"for safe replacement publication: {stage_root}",
+        )
+
+
+def _stat_device_id(path: Path) -> int:
+    """Return one filesystem device id for publication precondition checks."""
+
+    return path.stat().st_dev
+
+
+def _contains_symlink(path: Path) -> bool:
+    """Return whether any existing path segment resolves through a symlink."""
+
+    current = Path(path.anchor) if path.is_absolute() else Path()
+    for part in path.parts:
+        if current == Path(path.anchor) and part == path.anchor:
+            continue
+        current = current / part if current != Path() else Path(part)
+        if current.exists() and current.is_symlink():
+            return True
+    return False
 
 
 def _replace_stage_root(*, candidate_stage_root: Path, stage_root: Path) -> StagePublicationResult:

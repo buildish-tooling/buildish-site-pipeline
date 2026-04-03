@@ -90,8 +90,8 @@ def parse_invocation(argv: Sequence[str] | None = None) -> CommandInvocation:
     repo_root = Path.cwd().resolve()
     layout = RepositoryLayout(
         repo_root=repo_root,
-        stage_root=(repo_root / "site/.stage").resolve(strict=False),
-        work_root=(repo_root / "site/.site-pipeline-work").resolve(strict=False),
+        stage_root=repo_root / "site/.stage",
+        work_root=repo_root / "site/.site-pipeline-work",
     )
     report_request = build_report_request(
         cwd=repo_root,

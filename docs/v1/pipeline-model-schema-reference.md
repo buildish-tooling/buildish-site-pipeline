@@ -27,6 +27,10 @@ a short description.
 
 It remains a design reference rather than an implementation-locked schema.
 
+For a prescriptive implementation plan for the Pydantic model layer, module
+layout, validation boundaries, and required test coverage, see
+[`model-implementation-guide.md`](model-implementation-guide.md).
+
 ## Scope and conventions
 
 - examples elsewhere may use YAML for readability, but aggregate staged metadata

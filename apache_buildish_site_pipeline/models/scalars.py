@@ -13,9 +13,30 @@
 # limitations under the License.
 
 """Reusable scalar aliases for external schema models."""
-
 from typing import Annotated
 
-from pydantic import Field
+from pydantic import AwareDatetime, AfterValidator, Field, StringConstraints
+
+from .validation.extensions import validate_extensions_object
+from .validation.paths import validate_local_path_string, validate_stage_relative_path
+
+NonEmptyString = Annotated[str, StringConstraints(min_length=1)]
+NonNegativeInteger = Annotated[int, Field(strict=True, ge=0)]
+PositiveInteger = Annotated[int, Field(strict=True, gt=0)]
 
 SchemaVersion = Annotated[int, Field(strict=True, ge=1)]
+TimestampString = AwareDatetime
+LocalPathString = Annotated[
+    str,
+    StringConstraints(min_length=1),
+    AfterValidator(validate_local_path_string),
+]
+StageRelativePath = Annotated[
+    str,
+    StringConstraints(min_length=1),
+    AfterValidator(validate_stage_relative_path),
+]
+ExtensionsObject = Annotated[
+    dict[str, object],
+    AfterValidator(validate_extensions_object),
+]

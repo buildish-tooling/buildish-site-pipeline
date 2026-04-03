@@ -15,7 +15,16 @@
 """Typed external models for the site pipeline."""
 
 from .base import SitePipelineBaseModel
-from .enums import DocumentFormat
+from .enums import (
+    CheckFailureThreshold,
+    DiagnosticSeverity,
+    DocumentFormat,
+    MaterializationInputKind,
+    MaterializationStatus,
+    PlanningTarget,
+    RunStatus,
+    StageCommand,
+)
 from .loading import (
     DocumentDecodingError,
     DocumentRootTypeError,
@@ -25,25 +34,68 @@ from .loading import (
     LoadingError,
     MissingSchemaVersionError,
     UnsupportedSchemaVersionError,
+    load_check_report,
     load_json_mapping,
+    load_resolved_materialization_report,
+    load_stage_manifest,
+    load_stage_run_report,
     load_versioned_document,
     load_yaml_mapping,
 )
-from .scalars import SchemaVersion
+from .planning_stage_contract import (
+    CheckReportV1,
+    CheckSummary,
+    PipelineDiagnosticEntry,
+    ReducedDiagnosticDetailsSummary,
+    ResolvedMaterializationEntry,
+    ResolvedMaterializationReportV1,
+    StageDataFiles,
+    StageManifestV1,
+    StageRoots,
+    StageRunReportV1,
+    StageRunSummary,
+)
+from .scalars import ExtensionsObject, LocalPathString, SchemaVersion, StageRelativePath, TimestampString
 
 __all__ = [
+    "CheckFailureThreshold",
+    "CheckReportV1",
+    "CheckSummary",
+    "DiagnosticSeverity",
     "DocumentDecodingError",
     "DocumentFormat",
     "DocumentRootTypeError",
     "DocumentSyntaxError",
     "DocumentValidationFailure",
     "DuplicateKeyError",
+    "ExtensionsObject",
+    "LocalPathString",
     "LoadingError",
+    "MaterializationInputKind",
+    "MaterializationStatus",
     "MissingSchemaVersionError",
+    "PipelineDiagnosticEntry",
+    "PlanningTarget",
+    "ReducedDiagnosticDetailsSummary",
+    "ResolvedMaterializationEntry",
+    "ResolvedMaterializationReportV1",
+    "RunStatus",
     "SchemaVersion",
     "SitePipelineBaseModel",
+    "StageCommand",
+    "StageDataFiles",
+    "StageManifestV1",
+    "StageRelativePath",
+    "StageRoots",
+    "StageRunReportV1",
+    "StageRunSummary",
+    "TimestampString",
     "UnsupportedSchemaVersionError",
+    "load_check_report",
     "load_json_mapping",
+    "load_resolved_materialization_report",
+    "load_stage_manifest",
+    "load_stage_run_report",
     "load_versioned_document",
     "load_yaml_mapping",
 ]

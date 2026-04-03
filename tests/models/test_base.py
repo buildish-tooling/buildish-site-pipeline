@@ -38,9 +38,18 @@ class SitePipelineBaseModelTests(unittest.TestCase):
         self.assertEqual(model.schema_version, 1)
         self.assertEqual(model.display_name, "Docs")
 
-    def test_rejects_python_field_names_from_external_input(self) -> None:
+    def test_allows_python_field_names_for_internal_construction(self) -> None:
+        model = ExampleModel(schema_version=1, display_name="Docs")
+        self.assertEqual(model.schema_version, 1)
+        self.assertEqual(model.display_name, "Docs")
+
+    def test_rejects_python_field_names_when_alias_only_validation_is_requested(self) -> None:
         with self.assertRaises(ValidationError):
-            ExampleModel.model_validate({"schema_version": 1, "display_name": "Docs"})
+            ExampleModel.model_validate(
+                {"schema_version": 1, "display_name": "Docs"},
+                by_alias=True,
+                by_name=False,
+            )
 
     def test_rejects_unknown_fields(self) -> None:
         with self.assertRaises(ValidationError):

@@ -30,6 +30,6 @@ class SitePipelineBaseModel(BaseModel):
         alias_generator=to_camel_case,
         extra="forbid",
         frozen=True,
-        populate_by_name=False,
+        populate_by_name=True,
         serialize_by_alias=True,
     )

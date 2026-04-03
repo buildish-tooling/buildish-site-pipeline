@@ -18,13 +18,21 @@ from __future__ import annotations
 
 import json
 from collections.abc import Mapping
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import yaml
 from pydantic import ValidationError
 
 from .base import SitePipelineBaseModel
 from .enums import DocumentFormat
+
+if TYPE_CHECKING:
+    from .planning_stage_contract import (
+        CheckReportV1,
+        ResolvedMaterializationReportV1,
+        StageManifestV1,
+        StageRunReportV1,
+    )
 
 
 class LoadingError(Exception):
@@ -199,10 +207,78 @@ def load_versioned_document[DocumentModelT: SitePipelineBaseModel](
             source_name=source_name,
         )
     try:
-        return model_type.model_validate(raw_document)
+        return model_type.model_validate(raw_document, by_alias=True, by_name=False)
     except ValidationError as exc:
         raise DocumentValidationFailure(
             f"Document validation failed for {source_name}",
             source_name=source_name,
             validation_error=exc,
         ) from exc
+
+
+def load_resolved_materialization_report(
+    document: str | bytes,
+    *,
+    document_format: DocumentFormat,
+    source_name: str = "<memory>",
+) -> ResolvedMaterializationReportV1:
+    """Load one resolved-materialization report document."""
+    from .planning_stage_contract import ResolvedMaterializationReportV1
+
+    return load_versioned_document(
+        document,
+        document_format=document_format,
+        schema_version_models={1: ResolvedMaterializationReportV1},
+        source_name=source_name,
+    )
+
+
+def load_check_report(
+    document: str | bytes,
+    *,
+    document_format: DocumentFormat,
+    source_name: str = "<memory>",
+) -> CheckReportV1:
+    """Load one check-report document."""
+    from .planning_stage_contract import CheckReportV1
+
+    return load_versioned_document(
+        document,
+        document_format=document_format,
+        schema_version_models={1: CheckReportV1},
+        source_name=source_name,
+    )
+
+
+def load_stage_run_report(
+    document: str | bytes,
+    *,
+    document_format: DocumentFormat,
+    source_name: str = "<memory>",
+) -> StageRunReportV1:
+    """Load one stage-run report document."""
+    from .planning_stage_contract import StageRunReportV1
+
+    return load_versioned_document(
+        document,
+        document_format=document_format,
+        schema_version_models={1: StageRunReportV1},
+        source_name=source_name,
+    )
+
+
+def load_stage_manifest(
+    document: str | bytes,
+    *,
+    document_format: DocumentFormat,
+    source_name: str = "<memory>",
+) -> StageManifestV1:
+    """Load one stage-manifest document."""
+    from .planning_stage_contract import StageManifestV1
+
+    return load_versioned_document(
+        document,
+        document_format=document_format,
+        schema_version_models={1: StageManifestV1},
+        source_name=source_name,
+    )

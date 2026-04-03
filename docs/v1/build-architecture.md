@@ -285,3 +285,7 @@ The safest scaling path is:
 That sequence lets the implementation scale from today's full-rebuild model
 toward larger multi-component and multi-version workspaces without forking the
 core execution path.
+
+For concrete watch-mode guardrails, private-work-area recommendations,
+container/macOS considerations, and milestone-by-milestone success criteria, see
+[`watch-incremental-staging-plan.md`](watch-incremental-staging-plan.md).

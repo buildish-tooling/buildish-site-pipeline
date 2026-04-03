@@ -459,3 +459,7 @@ explicit planning inputs rather than left to incidental implementation choice.
 
 If they remain unresolved, different workstreams may otherwise make incompatible
 assumptions about the same design boundary.
+
+For the detailed watch-mode guardrails and phased implementation plan that build
+on those recommendations, see
+[`watch-incremental-staging-plan.md`](watch-incremental-staging-plan.md).

@@ -405,6 +405,8 @@ contracts, not as reasons to widen the core API boundary.
   diagnostics, and `site-pipeline check`
 - [build-architecture.md](build-architecture.md) for the recommended execution
   shape of `build` and `watch`
+- [watch-incremental-staging-plan.md](watch-incremental-staging-plan.md) for
+  watch guardrails, incremental-staging planning, and implementation milestones
 - [security-and-trust-model.md](security-and-trust-model.md) for path-safety,
   trust-boundary, and XSS-defense expectations
 - [flexible-component-publication.md](flexible-component-publication.md) for the

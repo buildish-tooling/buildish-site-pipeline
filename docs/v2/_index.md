@@ -1,5 +1,6 @@
 ---
-title: Site Pipeline Documentation
+title: Site Pipeline Documentation v2
+weight: 20
 ---
 
 <!--
@@ -18,7 +19,4 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-This documentation is split into two tracks:
-
-- [v1](v1/) for the original tracked documentation set
-- [v2](v2/) for the newer proposal and architecture documents
+This section contains the newer design, schema, and architecture documents.

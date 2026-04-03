@@ -59,10 +59,11 @@ but it is far away from a real rendered website.
 
 ## Documentation
 
-- [Site Pipeline overview](docs/site-pipeline.md)
-- [Site component contract](docs/site-component-contract.md)
-- [Adoption guide](docs/adoption-guide.md)
-- [Workspace examples](docs/examples.md)
+- [Documentation index](docs/_index.md)
+- [Site Pipeline overview](docs/v1/site-pipeline.md)
+- [Site component contract](docs/v1/site-component-contract.md)
+- [Adoption guide](docs/v1/adoption-guide.md)
+- [Workspace examples](docs/v1/examples.md)
 
 ## Local development
 

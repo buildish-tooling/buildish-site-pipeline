@@ -1,5 +1,6 @@
 ---
-title: Site Pipeline Documentation
+title: Site Pipeline Documentation v1
+weight: 10
 ---
 
 <!--
@@ -18,7 +19,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-This documentation is split into two tracks:
+The Site Pipeline turns component-owned pages, docs, assets, and metadata into a
+predictable staged site contract.
 
-- [v1](v1/) for the original tracked documentation set
-- [v2](v2/) for the newer proposal and architecture documents
+Use these docs to understand the split between pipeline-owned staging behavior
+and consumer-owned rendering, navigation, and publishing.
+
+This section contains the original tracked documentation set.
+
+## Guide map

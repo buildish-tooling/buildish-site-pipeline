@@ -1,0 +1,335 @@
+---
+weight: 27
+---
+
+<!--
+Copyright 2026 The Apache Software Foundation
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+# Provider snapshot to staged metadata mapping
+
+This document describes how normalized provider snapshot data should flow into
+staged metadata. It complements `provider-snapshot-schema.md` by answering not
+just what a provider may supply, but what the pipeline should emit for renderers.
+
+## Mapping principles
+
+- authored metadata remains authoritative for identity, routing, and content roots
+- provider metadata enriches lifecycle, release, candidate, ref, and asset state
+- page front matter should contain only page-local and immediately relevant
+  context
+- aggregate files in `data/` should contain cross-page and cross-component query
+  data
+- provider-specific details should be preserved under `extensions` rather than
+  flattened into the shared staged contract
+
+## Staged outputs overview
+
+Recommended staged outputs that may receive provider-derived data:
+
+- page front matter
+- `data/providers.yaml`
+- `data/components.yaml`
+- `data/artifacts.yaml`
+- `data/releases.yaml`
+- `data/candidates.yaml`
+- `data/refs.yaml`
+- `data/content-index.yaml`
+
+## Serialization format recommendation
+
+Examples in these v2 docs use YAML because it is compact and readable, but
+the pipeline should not assume every renderer can natively consume arbitrary YAML
+data files.
+
+In practice:
+
+- Markdown front matter is commonly YAML across mainstream documentation tools
+- aggregate data-file support varies more across renderers and site generators
+- JSON is the safest baseline format for machine-consumed staged metadata
+
+Recommended rule:
+
+- keep page front matter YAML
+- emit aggregate staged metadata in JSON as the interoperability baseline
+- optionally emit YAML mirrors for humans, debugging, and renderer stacks that
+  prefer YAML
+
+If the pipeline emits both formats, they should be byte-for-byte equivalent at
+the data-model level and differ only in serialization.
+
+## What goes into page front matter
+
+Page front matter should expose only what is needed to render the current page
+and closely related navigation affordances.
+
+Recommended provider-derived fields in page front matter:
+
+- `provider`
+- `externalId`
+- `externalUrl`
+- `version.kind`
+- `version.label`
+- optional `version.tag`
+- optional `version.ref`
+- optional `version.maturity`
+- optional `version.releaseLine`
+- optional `version.releaseLineAncestors`
+- optional `version.supportStatus`
+- optional `version.candidateSequence`
+- optional `version.voteStatus`
+
+These values should be present only when the page belongs to a provider-backed
+release, candidate, or named ref context.
+
+Example page-level shape:
+
+```yaml
+sitePipelineComponentPage:
+  artifactKey: runtime
+  version:
+    kind: candidate
+    label: 4.1.0-rc2
+    maturity: rc
+    releaseLine: 4.x
+    candidateSequence: 2
+    voteStatus: open
+  provider:
+    key: atr
+    externalId: atr:candidate:spark-runtime:4.1.0:2
+    externalUrl: https://release-test.apache.org/candidates/spark-runtime/4.1.0/2
+```
+
+## What belongs in aggregate metadata
+
+Anything that must be queried across pages, components, or artifacts should be
+written to `data/` files instead of repeated into front matter.
+
+### `data/providers.yaml`
+
+Purpose:
+
+- inventory of loaded providers
+- fetch timestamps and provenance
+- diagnostics for stale or missing provider data
+
+Recommended fields:
+
+- `key`
+- `type`
+- optional `displayName`
+- optional `baseUrl`
+- `fetchedAt`
+
+### `data/components.yaml`
+
+Provider data should influence component summaries only when it is useful to show
+derived lifecycle state at component level.
+
+Recommended provider-derived additions:
+
+- latest published release per artifact
+- latest candidate per artifact
+- available provider keys for the component
+
+The full release inventory should not be duplicated here.
+
+### `data/artifacts.yaml`
+
+This should be the main aggregate view for artifact-level lifecycle and version
+state.
+
+Recommended provider-derived fields:
+
+- `providerKeys`
+- `latestRelease`
+- `latestCandidate`
+- `releaseLines[]`
+- `namedRefs[]`
+- optional `extensions`
+
+Each `releaseLines[]` entry may include:
+
+- `key`
+- optional `parent`
+- optional `latest`
+- optional `supportStatus`
+- optional `headRef`
+
+### `data/releases.yaml`
+
+Purpose:
+
+- one normalized entry per exact released version
+- source for release listings, version selectors, and download pages
+
+Recommended fields:
+
+- `provider`
+- `externalId`
+- `externalUrl`
+- `componentSlug`
+- `artifactKey`
+- `version`
+- optional `displayVersion`
+- optional `tag`
+- optional `releaseLine`
+- optional `releaseLineAncestors`
+- optional `supportStatus`
+- optional `maturity`
+- optional `publishedAt`
+- optional `assets`
+- optional `urls`
+
+### `data/candidates.yaml`
+
+Purpose:
+
+- one normalized entry per in-flight or historical release candidate
+- source for vote pages, candidate listings, and release-vote UIs
+
+Recommended fields:
+
+- `provider`
+- `externalId`
+- `externalUrl`
+- `componentSlug`
+- `artifactKey`
+- `version`
+- optional `displayVersion`
+- optional `candidateSequence`
+- optional `releaseLine`
+- optional `maturity`
+- optional `voteStatus`
+- optional `createdAt`
+- optional `publishedAt`
+- optional `assets`
+
+### `data/refs.yaml`
+
+Purpose:
+
+- moving refs intentionally exposed to renderers
+- development, maintenance, feature, and preview refs
+
+Recommended fields:
+
+- `provider`
+- `componentSlug`
+- `artifactKey`
+- `kind`
+- `ref`
+- optional `displayVersion`
+- optional `releaseLine`
+- optional `maturity`
+- optional `externalUrl`
+
+### `data/content-index.yaml`
+
+The content index should denormalize the most useful provider context for each
+page so renderers can query page collections without joining multiple files.
+
+Recommended provider-derived additions:
+
+- `provider`
+- optional `externalId`
+- optional `versionKind`
+- optional `versionLabel`
+- optional `releaseLine`
+- optional `supportStatus`
+- optional `maturity`
+- optional `candidateSequence`
+- optional `voteStatus`
+
+## Mapping by record kind
+
+Recommended mapping behavior:
+
+- `released`
+  - emit entry in `data/releases.yaml`
+  - enrich `data/artifacts.yaml` latest release and line summaries
+  - copy page-local release context into front matter for pages staged from that
+    release
+- `candidate`
+  - emit entry in `data/candidates.yaml`
+  - enrich `data/artifacts.yaml` latest candidate summary
+  - copy page-local candidate context into front matter for candidate pages
+- `named-ref`
+  - emit entry in `data/refs.yaml`
+  - copy ref context into front matter for pages staged from that ref
+- `line-head`
+  - emit entry in `data/refs.yaml`
+  - enrich matching release-line summaries in `data/artifacts.yaml`
+  - copy line-head context into front matter when applicable
+- `development`
+  - emit entry in `data/refs.yaml`
+  - mark artifact development context in `data/artifacts.yaml`
+  - copy development ref context into front matter for development pages
+
+## What should not be copied into front matter
+
+To keep front matter compact, the pipeline should avoid embedding:
+
+- full release inventories
+- full candidate histories
+- every downloadable asset for unrelated versions
+- complete provider payloads
+- large provider-specific `extensions`
+
+Those belong in aggregate files.
+
+## Provider-specific extensions
+
+When provider data includes extra fields that do not fit the normalized staged
+contract, the pipeline should preserve them in aggregate metadata under
+`extensions`.
+
+Recommended rule:
+
+- allow `extensions` in `data/releases.yaml`, `data/candidates.yaml`,
+  `data/refs.yaml`, and `data/artifacts.yaml`
+- do not copy `extensions` into page front matter by default
+
+## Validation expectations
+
+The pipeline should reject or warn on at least:
+
+- provider-backed pages that refer to no matching normalized record
+- multiple normalized records competing for the same staged page context
+- provider records mapped to the wrong artifact or component
+- large provider payloads copied wholesale into front matter
+
+## Worked example
+
+Given this provider record:
+
+```yaml
+- provider: atr
+  kind: candidate
+  componentSlug: spark
+  artifactKey: runtime
+  version: 4.1.0
+  displayVersion: 4.1.0-rc2
+  releaseLine: 4.x
+  candidateSequence: 2
+  voteStatus: open
+```
+
+The pipeline should typically emit:
+
+- one entry in `data/candidates.yaml`
+- an updated candidate summary in `data/artifacts.yaml`
+- candidate/version context in front matter for pages staged from that candidate
+- denormalized candidate fields in `data/content-index.yaml` for those pages

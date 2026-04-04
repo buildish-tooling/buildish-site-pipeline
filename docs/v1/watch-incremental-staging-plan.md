@@ -1064,12 +1064,12 @@ This checklist is intended for implementation tracking and later doc reuse.
 ### Phase 0 checklist
 
 - [x] owned-unit catalog exists and names every first-wave unit
-- [ ] output-ownership map exists with one owner per finalized path
-- [ ] aggregate dependency map exists for first-wave shared outputs
-- [ ] watch-cycle state machine is written down and reviewed
-- [ ] publication preconditions are written down
-- [ ] case-collision and path-normalization rules are written down
-- [ ] stop rules for broaden-vs-fail are agreed
+- [x] output-ownership map exists with one owner per finalized path
+- [x] aggregate dependency map exists for first-wave shared outputs
+- [x] watch-cycle state machine is written down and reviewed
+- [x] publication preconditions are written down
+- [x] case-collision and path-normalization rules are written down
+- [x] stop rules for broaden-vs-fail are agreed
 
 ### Phase 1 checklist
 
@@ -1090,37 +1090,37 @@ This checklist is intended for implementation tracking and later doc reuse.
 - [x] last-known-good retention works on ordinary cycle failure
 - [x] initial-cycle failure uses exit-required behavior
 - [x] watch reports update after initial and later cycles
-- [ ] synthetic renderer-probe tests pass
+- [x] synthetic renderer-probe tests pass
 
 ### Phase 3 checklist
 
-- [ ] dirty planned inputs map deterministically to owned units
-- [ ] affected owned units recompute in parallel safely
-- [ ] dependent aggregates recompute in the coordinator
-- [ ] `manifest.json` is still written last
-- [ ] incremental results match fresh clean builds for first-wave content cases
+- [x] dirty planned inputs map deterministically to owned units
+- [x] affected owned units recompute in parallel safely
+- [x] dependent aggregates recompute in the coordinator
+- [x] `manifest.json` is still written last
+- [x] incremental results match fresh clean builds for first-wave content cases
 
 ### Phase 4 checklist
 
-- [ ] metadata-only edits are covered by invalidation rules
-- [ ] route, redirect, canonical, and origin changes are covered
-- [ ] provider snapshot changes are covered
-- [ ] trust-class and mount changes are covered
-- [ ] high-blast-radius metadata tests pass or fail safely with retained stage
+- [x] metadata-only edits are covered by invalidation rules
+- [x] route, redirect, canonical, and origin changes are covered
+- [x] provider snapshot changes are covered
+- [x] trust-class and mount changes are covered
+- [x] high-blast-radius metadata tests pass or fail safely with retained stage
 
 ### Phase 5 checklist
 
-- [ ] polling mode is exercised with `WATCHFILES_FORCE_POLLING=1`
-- [ ] same-filesystem finalization assumptions are tested
-- [ ] noisy bind-mount event streams converge correctly
-- [ ] case-collision rejection is tested in CI
-- [ ] watch-root/default-limit failures are clear and safe
+- [x] polling mode is exercised with `WATCHFILES_FORCE_POLLING=1`
+- [x] same-filesystem finalization assumptions are tested
+- [x] noisy bind-mount event streams converge correctly
+- [x] case-collision rejection is tested in CI
+- [x] watch-root/default-limit failures are clear and safe
 
 ### Phase 6 checklist
 
-- [ ] performance work starts only after prior correctness suites are green
+- [x] performance work starts only after prior correctness suites are green
 - [x] pool-size tuning preserves normalized outputs
-- [ ] any extra concurrency still preserves one-writer publication
+- [x] any extra concurrency still preserves one-writer publication
 - [ ] optional renderer smoke tests remain stable during burst changes
 
 ## Practical stop rules

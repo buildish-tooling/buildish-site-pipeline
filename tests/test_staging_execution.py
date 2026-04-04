@@ -16,16 +16,24 @@
 
 from __future__ import annotations
 
+import json
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 from unittest import mock
 
 from apache_buildish_site_pipeline.cli_errors import StageIntegrityError
-from apache_buildish_site_pipeline.staging.aggregates import _load_page_contributions, _write_json_file
+from apache_buildish_site_pipeline.commands.shared import load_workspace_inputs
+from apache_buildish_site_pipeline.evaluation import EvaluationMode, EvaluationRequest, run_evaluation
+from apache_buildish_site_pipeline.models.enums import PlanningTarget, StageCommand
+from apache_buildish_site_pipeline.planning import evaluate_planning
+from apache_buildish_site_pipeline.staging.aggregates import _load_unit_contribution_manifests, _write_json_file
+from apache_buildish_site_pipeline.staging.coordinator import publish_stage
 from apache_buildish_site_pipeline.staging.publication import finalize_stage_publication
 from apache_buildish_site_pipeline.staging.types import WorkRootLayout
 from apache_buildish_site_pipeline.staging.worker_protocol import ContributionFileRefs, UnitContributionManifestWire, WorkerResultWire, write_unit_manifest
+from tests.test_cli import _workspace
 
 
 class StagingExecutionTests(unittest.TestCase):
@@ -99,14 +107,15 @@ class StagingExecutionTests(unittest.TestCase):
             write_unit_manifest(outside_manifest, UnitContributionManifestWire(unit_id="component:spark"))
 
             with self.assertRaises(StageIntegrityError) as raised:
-                _load_page_contributions(
-                    layout,
-                    (
+                _load_unit_contribution_manifests(
+                    layout=layout,
+                    worker_results=(
                         WorkerResultWire(
                             unit_id="component:spark",
                             contribution_files=ContributionFileRefs(unit_manifest=str(outside_manifest)),
                         ),
                     ),
+                    retained_unit_manifests=(),
                 )
 
             self.assertIn("coordinator-owned location", str(raised.exception))
@@ -122,14 +131,15 @@ class StagingExecutionTests(unittest.TestCase):
             manifest_path.symlink_to(real_manifest)
 
             with self.assertRaises(StageIntegrityError) as raised:
-                _load_page_contributions(
-                    layout,
-                    (
+                _load_unit_contribution_manifests(
+                    layout=layout,
+                    worker_results=(
                         WorkerResultWire(
                             unit_id="component:spark",
                             contribution_files=ContributionFileRefs(unit_manifest=str(manifest_path)),
                         ),
                     ),
+                    retained_unit_manifests=(),
                 )
 
             self.assertIn("normal file", str(raised.exception))
@@ -264,6 +274,49 @@ class StagingExecutionTests(unittest.TestCase):
             self.assertTrue(candidate_stage_root.exists())
             self.assertEqual(keep_path.read_text(encoding="utf-8"), "trusted\n")
 
+    def test_renderer_probe_never_observes_manifest_pointing_to_missing_data_files(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            stage_root = workspace_root / "site/.stage"
+            watched_file = workspace_root / "components/runtime/docs/releases/4.0.0/index.md"
+            failures: list[str] = []
+            stop_event = threading.Event()
+
+            def _probe() -> None:
+                while not stop_event.is_set():
+                    manifest_path = stage_root / "manifest.json"
+                    if not manifest_path.exists():
+                        continue
+                    try:
+                        manifest_text = manifest_path.read_text(encoding="utf-8")
+                        manifest = json.loads(manifest_text)
+                        for relative_path in manifest.get("dataFiles", {}).values():
+                            if relative_path is None:
+                                continue
+                            if not (stage_root / relative_path).is_file():
+                                try:
+                                    if manifest_path.read_text(encoding="utf-8") != manifest_text:
+                                        break
+                                except FileNotFoundError:
+                                    break
+                                failures.append(str(relative_path))
+                                stop_event.set()
+                                return
+                    except FileNotFoundError:
+                        continue
+
+            probe_thread = threading.Thread(target=_probe)
+            probe_thread.start()
+            try:
+                for index in range(3):
+                    watched_file.write_text(f"probe cycle {index}\n", encoding="utf-8")
+                    publication = _publish_workspace_stage(workspace_root)
+                    self.assertTrue(publication.manifest_path.is_file())
+            finally:
+                stop_event.set()
+                probe_thread.join(timeout=5)
+
+        self.assertEqual(failures, [])
+
 
 def _create_candidate_stage(path: Path) -> Path:
     path.mkdir(parents=True, exist_ok=True)
@@ -289,6 +342,33 @@ def _work_layout(workspace_root: Path) -> WorkRootLayout:
         data_root=data_root,
         fragments_root=fragments_root,
         units_root=units_root,
+    )
+
+
+def _publish_workspace_stage(workspace_root: Path):
+    loaded_inputs = load_workspace_inputs(workspace_root)
+    planning = evaluate_planning(
+        target=PlanningTarget.BUILD,
+        catalog=loaded_inputs.catalog,
+        provider_snapshot=loaded_inputs.provider_snapshot,
+        workspace_root=workspace_root,
+        component_documents=loaded_inputs.component_documents,
+        stage_root=workspace_root / "site/.stage",
+        work_root=workspace_root / ".buildish/work",
+    )
+    evaluation = run_evaluation(
+        request=EvaluationRequest(mode=EvaluationMode.BUILD),
+        planning=planning,
+    )
+    if evaluation.build_plan is None:
+        raise AssertionError("expected build plan for publication probe")
+    return publish_stage(
+        build_plan=evaluation.build_plan,
+        diagnostics=evaluation.diagnostics,
+        provider_snapshot=loaded_inputs.provider_snapshot,
+        stage_root=workspace_root / "site/.stage",
+        allow_replace_existing=(workspace_root / "site/.stage").exists(),
+        command=StageCommand.BUILD,
     )
 
 

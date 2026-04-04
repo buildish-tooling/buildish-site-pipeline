@@ -149,16 +149,29 @@ def build_owned_units(build_plan: EffectiveBuildPlan) -> tuple[OwnedUnit, ...]:
 
 
 def _validate_output_ownership(units: tuple[OwnedUnit, ...]) -> None:
-    claims: list[tuple[str, str, str]] = []
+    claims: list[tuple[str, str, str, str]] = []
     for unit in units:
         for root in (*unit.content_stage_roots, *unit.static_stage_roots):
-            claims.append((str(root), unit.owner_id, unit.unit_id))
+            path = str(root)
+            claims.append((path, path.casefold(), unit.owner_id, unit.unit_id))
     sorted_claims = sorted(claims, key=lambda claim: claim[0])
-    for index, (path, owner_id, unit_id) in enumerate(sorted_claims):
-        for other_path, other_owner_id, other_unit_id in sorted_claims[index + 1 :]:
-            if other_path == path or other_path.startswith(f"{path}/") or path.startswith(f"{other_path}/"):
-                if owner_id != other_owner_id:
-                    raise StageIntegrityError(
-                        "Ambiguous stage output ownership between "
-                        f"{unit_id!r} and {other_unit_id!r}: {path!r} vs {other_path!r}",
-                    )
+    for index, (path, casefold_path, owner_id, unit_id) in enumerate(sorted_claims):
+        for other_path, other_casefold_path, other_owner_id, other_unit_id in sorted_claims[index + 1 :]:
+            overlapping_paths = (
+                other_path == path or other_path.startswith(f"{path}/") or path.startswith(f"{other_path}/")
+            )
+            casefold_collision = (
+                other_casefold_path == casefold_path
+                or other_casefold_path.startswith(f"{casefold_path}/")
+                or casefold_path.startswith(f"{other_casefold_path}/")
+            )
+            if not overlapping_paths and not casefold_collision:
+                continue
+            if unit_id == other_unit_id and owner_id == other_owner_id and path == other_path:
+                continue
+            if owner_id == other_owner_id and overlapping_paths:
+                continue
+            detail = "case-insensitive path collision" if casefold_collision and not overlapping_paths else "ambiguous stage output ownership"
+            raise StageIntegrityError(
+                f"{detail} between {unit_id!r} and {other_unit_id!r}: {path!r} vs {other_path!r}",
+            )

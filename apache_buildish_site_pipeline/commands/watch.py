@@ -30,14 +30,18 @@ from watchfiles import DefaultFilter, watch
 from apache_buildish_site_pipeline.evaluation import EvaluationMode, EvaluationRequest, run_evaluation
 from apache_buildish_site_pipeline.models import DocumentFormat, PipelineDiagnosticEntry, load_stage_manifest
 from apache_buildish_site_pipeline.models.enums import DiagnosticSeverity, PlanningTarget, StageCommand
-from apache_buildish_site_pipeline.models.planning_stage_contract import StageRunReportV1
+from apache_buildish_site_pipeline.models.planning_stage_contract import StageManifestV1, StageRunReportV1
 from apache_buildish_site_pipeline.planning import evaluate_planning
-from apache_buildish_site_pipeline.staging.coordinator import materialize_stage_tree
+from apache_buildish_site_pipeline.staging.coordinator import cleanup_after_publication, run_build
+from apache_buildish_site_pipeline.staging.incremental_metadata import COORDINATOR_OWNER_ID, RetainedStageIncrementalState, load_retained_stage_incremental_state
+from apache_buildish_site_pipeline.staging.ownership import OwnedUnit, build_owned_units
 from apache_buildish_site_pipeline.staging.publication import (
     finalize_stage_publication,
     validate_materialized_stage_tree,
     validate_visible_stage_target_path,
 )
+from apache_buildish_site_pipeline.staging.types import BuildRequest, StageDestination
+from apache_buildish_site_pipeline.staging.worker_protocol import UnitContributionManifestWire
 
 from ..cli_contract import ApplicationExitCode, CommandResult, WatchInvocation
 from ..cli_errors import InvocationError, RetainedStageError, SitePipelineCliError, StageIntegrityError
@@ -58,6 +62,18 @@ class TrustedStageState:
 
     stage_root: Path
     manifest_path: Path
+    manifest: StageManifestV1
+    incremental_state: RetainedStageIncrementalState | None
+
+
+@dataclass(frozen=True, slots=True)
+class IncrementalBuildSelection:
+    """Minimal rebuild decision derived from the trusted stage and dirty paths."""
+
+    included_unit_ids: frozenset[str] | None = None
+    seed_stage_root: Path | None = None
+    seed_stage_removals: tuple[str, ...] = ()
+    retained_unit_manifests: tuple[UnitContributionManifestWire, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -154,6 +170,7 @@ def run_watch(invocation: WatchInvocation, *, stdout) -> CommandResult:
         cycle_number=cycle_number,
         trusted_stage=trusted_stage,
         prior_watch_roots=_derive_watch_roots(repo_root=invocation.layout.repo_root, planning_roots=()),
+        dirty_paths=(),
     )
     _emit_cycle_report(invocation=invocation, report=outcome.report, stdout=stdout)
 
@@ -181,6 +198,7 @@ def run_watch(invocation: WatchInvocation, *, stdout) -> CommandResult:
                     cycle_number=cycle_number,
                     trusted_stage=trusted_stage,
                     last_watch_roots=current_watch_roots,
+                    dirty_paths=pending_dirty_paths,
                     stdout=stdout,
                 )
                 if shutdown_controller.shutdown_requested:
@@ -197,6 +215,7 @@ def run_watch(invocation: WatchInvocation, *, stdout) -> CommandResult:
                         cycle_number=cycle_number,
                         trusted_stage=trusted_stage,
                         last_watch_roots=current_watch_roots,
+                        dirty_paths=pending_dirty_paths,
                         stdout=stdout,
                     )
 
@@ -207,6 +226,7 @@ def _run_follow_up_cycle(
     cycle_number: int,
     trusted_stage: TrustedStageState | None,
     last_watch_roots: tuple[Path, ...],
+    dirty_paths: tuple[Path, ...],
     stdout,
 ) -> tuple[int, TrustedStageState | None, tuple[Path, ...], StageRunReportV1]:
     """Run one later watch cycle and enforce stage-integrity rules."""
@@ -217,6 +237,7 @@ def _run_follow_up_cycle(
         cycle_number=next_cycle_number,
         trusted_stage=trusted_stage,
         prior_watch_roots=last_watch_roots,
+        dirty_paths=dirty_paths,
     )
     _emit_cycle_report(invocation=invocation, report=outcome.report, stdout=stdout)
 
@@ -241,6 +262,7 @@ def _run_watch_cycle(
     cycle_number: int,
     trusted_stage: TrustedStageState | None,
     prior_watch_roots: tuple[Path, ...],
+    dirty_paths: tuple[Path, ...],
 ) -> WatchCycleOutcome:
     try:
         loaded_inputs = load_workspace_inputs(invocation.layout.repo_root)
@@ -294,12 +316,26 @@ def _run_watch_cycle(
 
     cycle_root = invocation.layout.work_root / "watch" / f"cycle-{cycle_number:06d}"
     candidate_stage_root = cycle_root / "stage"
+    build_selection = _select_incremental_build(
+        trusted_stage=trusted_stage,
+        build_plan=evaluation.build_plan,
+        dirty_paths=dirty_paths,
+        repo_root=invocation.layout.repo_root,
+    )
+    build_outcome = None
     try:
-        materialize_stage_tree(
-            stage_root=candidate_stage_root,
-            build_plan=evaluation.build_plan,
-            diagnostics=tuple(evaluation.diagnostics),
-            provider_snapshot=loaded_inputs.provider_snapshot,
+        build_outcome = run_build(
+            BuildRequest(
+                command=StageCommand.WATCH,
+                build_plan=evaluation.build_plan,
+                diagnostics=tuple(evaluation.diagnostics),
+                provider_snapshot=loaded_inputs.provider_snapshot,
+                destination=StageDestination(stage_root=candidate_stage_root),
+                included_unit_ids=build_selection.included_unit_ids,
+                seed_stage_root=build_selection.seed_stage_root,
+                seed_stage_removals=build_selection.seed_stage_removals,
+                retained_unit_manifests=build_selection.retained_unit_manifests,
+            ),
         )
     except StageIntegrityError as exc:
         return _failed_cycle_outcome(
@@ -314,7 +350,7 @@ def _run_watch_cycle(
 
     try:
         publication = finalize_stage_publication(
-            candidate_stage_root=candidate_stage_root,
+            candidate_stage_root=build_outcome.layout.next_stage_root,
             stage_root=invocation.layout.stage_root,
             allow_replace_existing=invocation.layout.stage_root.exists(),
         )
@@ -329,12 +365,22 @@ def _run_watch_cycle(
             private_roots=(invocation.layout.work_root, invocation.layout.stage_root),
         )
     finally:
+        if build_outcome is not None:
+            cleanup_after_publication(build_outcome)
         shutil.rmtree(cycle_root, ignore_errors=True)
 
-    next_trusted_stage = TrustedStageState(
-        stage_root=publication.stage_root,
-        manifest_path=publication.manifest_path,
-    )
+    next_trusted_stage = _load_trusted_stage(publication.stage_root)
+    if next_trusted_stage is None:
+        return _failed_cycle_outcome(
+            cycle_number=cycle_number,
+            trusted_stage=trusted_stage,
+            prior_watch_roots=watch_roots,
+            evaluation=evaluation,
+            diagnostics=tuple(evaluation.diagnostics)
+            + (_build_cycle_failure_diagnostic("Published watch stage did not remain incrementally trusted"),),
+            workspace_root=invocation.layout.repo_root,
+            private_roots=(invocation.layout.work_root, invocation.layout.stage_root),
+        )
     return WatchCycleOutcome(
         report=build_stage_run_report(
             command=StageCommand.WATCH,
@@ -342,14 +388,133 @@ def _run_watch_cycle(
             succeeded=True,
             wrote_stage=True,
             stage_usable=True,
-            stage_root_path=publication.stage_root,
-            manifest_path=publication.manifest_path,
+            stage_root_path=next_trusted_stage.stage_root,
+            manifest_path=next_trusted_stage.manifest_path,
             cycle=cycle_number,
             workspace_root=invocation.layout.repo_root,
             private_roots=(invocation.layout.work_root, invocation.layout.stage_root),
         ),
         trusted_stage=next_trusted_stage,
         watch_roots=watch_roots,
+    )
+
+
+def _select_incremental_build(
+    *,
+    trusted_stage: TrustedStageState | None,
+    build_plan,
+    dirty_paths: tuple[Path, ...],
+    repo_root: Path,
+) -> IncrementalBuildSelection:
+    units = build_owned_units(build_plan)
+    current_unit_ids = frozenset(unit.unit_id for unit in units)
+    if trusted_stage is None or trusted_stage.incremental_state is None or not current_unit_ids:
+        return IncrementalBuildSelection()
+
+    dirty_unit_ids = _dirty_unit_ids_for_paths(
+        build_plan=build_plan,
+        units=units,
+        dirty_paths=dirty_paths,
+        repo_root=repo_root,
+    )
+    retained_manifests = tuple(
+        manifest
+        for manifest in trusted_stage.incremental_state.unit_contributions.units
+        if manifest.unit_id in current_unit_ids and manifest.unit_id not in dirty_unit_ids
+    )
+    seed_stage_removals = {
+        str(claim.stage_relative_path)
+        for claim in trusted_stage.incremental_state.output_ownership.claims
+        if claim.owner_id == COORDINATOR_OWNER_ID
+        or claim.unit_id not in current_unit_ids
+        or claim.unit_id in dirty_unit_ids
+    }
+    seed_stage_removals.update(_unclaimed_seed_paths(trusted_stage))
+    return IncrementalBuildSelection(
+        included_unit_ids=dirty_unit_ids,
+        seed_stage_root=trusted_stage.stage_root,
+        seed_stage_removals=tuple(sorted(seed_stage_removals)),
+        retained_unit_manifests=retained_manifests,
+    )
+
+
+def _dirty_unit_ids_for_paths(*, build_plan, units: tuple[OwnedUnit, ...], dirty_paths: tuple[Path, ...], repo_root: Path) -> frozenset[str]:
+    current_unit_ids = frozenset(unit.unit_id for unit in units)
+    if not dirty_paths:
+        return current_unit_ids
+
+    normalized_repo_root = repo_root.resolve(strict=False)
+    site_root = normalized_repo_root / "site"
+    catalog_path = site_root / "components.yaml"
+    provider_snapshot_path = site_root / "provider-snapshot.json"
+    dirty_unit_ids: set[str] = set()
+    for dirty_path in dirty_paths:
+        normalized_dirty_path = dirty_path.resolve(strict=False)
+        if normalized_dirty_path == catalog_path or normalized_dirty_path == provider_snapshot_path:
+            return current_unit_ids
+        if _matches_stage_input(normalized_dirty_path, build_plan.site.site_pages_root) and "site-pages" in current_unit_ids:
+            dirty_unit_ids.add("site-pages")
+            continue
+        if _matches_stage_input(normalized_dirty_path, build_plan.site.site_assets_root) and "site-assets" in current_unit_ids:
+            dirty_unit_ids.add("site-assets")
+            continue
+        if any(_matches_stage_input(normalized_dirty_path, asset.source_path) for asset in build_plan.site.vendor_assets):
+            if "vendor-assets" in current_unit_ids:
+                dirty_unit_ids.add("vendor-assets")
+            continue
+        component_unit_id = _dirty_component_unit_id(build_plan=build_plan, dirty_path=normalized_dirty_path)
+        if component_unit_id is not None and component_unit_id in current_unit_ids:
+            dirty_unit_ids.add(component_unit_id)
+            continue
+        if normalized_dirty_path == site_root or normalized_dirty_path.is_relative_to(site_root):
+            return current_unit_ids
+        if normalized_dirty_path == normalized_repo_root or normalized_dirty_path.is_relative_to(normalized_repo_root):
+            return current_unit_ids
+    return frozenset(dirty_unit_ids)
+
+
+def _dirty_component_unit_id(*, build_plan, dirty_path: Path) -> str | None:
+    for component in build_plan.site.components:
+        if any(
+            _matches_stage_input(dirty_path, candidate)
+            for candidate in (
+                component.metadata_file,
+                component.pages_root,
+                component.assets_root,
+                component.content_source.local_dir,
+            )
+        ):
+            return f"component:{component.slug}"
+    return None
+
+
+def _matches_stage_input(path: Path, candidate_root: Path | None) -> bool:
+    if candidate_root is None:
+        return False
+    normalized_candidate_root = candidate_root.resolve(strict=False)
+    return path == normalized_candidate_root or path.is_relative_to(normalized_candidate_root)
+
+
+def _unclaimed_seed_paths(trusted_stage: TrustedStageState) -> set[str]:
+    claims = trusted_stage.incremental_state.output_ownership.claims if trusted_stage.incremental_state is not None else ()
+    claimed_directories = {str(claim.stage_relative_path) for claim in claims if claim.path_kind == "directory"}
+    claimed_files = {str(claim.stage_relative_path) for claim in claims if claim.path_kind == "file"}
+    unknown_paths: set[str] = set()
+    for path in sorted(trusted_stage.stage_root.rglob("*"), key=lambda item: (len(item.relative_to(trusted_stage.stage_root).parts), str(item))):
+        stage_relative_path = str(path.relative_to(trusted_stage.stage_root))
+        if _stage_path_is_claimed(stage_relative_path, claimed_directories, claimed_files):
+            continue
+        unknown_paths.add(stage_relative_path)
+    return unknown_paths
+
+
+def _stage_path_is_claimed(stage_relative_path: str, claimed_directories: set[str], claimed_files: set[str]) -> bool:
+    if stage_relative_path in claimed_files or stage_relative_path in claimed_directories:
+        return True
+    return any(
+        stage_relative_path.startswith(f"{claim}/")
+        or claim.startswith(f"{stage_relative_path}/")
+        for claim in (*claimed_directories, *claimed_files)
     )
 
 
@@ -508,7 +673,7 @@ def _load_trusted_stage(stage_root: Path) -> TrustedStageState | None:
         manifest_path = normalized_stage_root / "manifest.json"
         if not manifest_path.exists() or not manifest_path.is_file() or manifest_path.is_symlink():
             return None
-        load_stage_manifest(
+        manifest = load_stage_manifest(
             manifest_path.read_text(encoding="utf-8"),
             document_format=DocumentFormat.JSON,
             source_name=str(manifest_path),
@@ -517,7 +682,12 @@ def _load_trusted_stage(stage_root: Path) -> TrustedStageState | None:
         return None
     except Exception:
         return None
-    return TrustedStageState(stage_root=normalized_stage_root, manifest_path=manifest_path)
+    return TrustedStageState(
+        stage_root=normalized_stage_root,
+        manifest_path=manifest_path,
+        manifest=manifest,
+        incremental_state=load_retained_stage_incremental_state(stage_root=normalized_stage_root, manifest=manifest),
+    )
 
 
 def _build_cycle_failure_diagnostic(message: str) -> PipelineDiagnosticEntry:

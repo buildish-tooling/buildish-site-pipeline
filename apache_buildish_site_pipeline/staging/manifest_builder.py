@@ -22,8 +22,9 @@ from apache_buildish_site_pipeline.models.planning_stage_contract import StageCo
 from apache_buildish_site_pipeline.models.provider_snapshot import ProviderSnapshotV1
 
 from .aggregates import finalize_pages_and_write_aggregates
+from .ownership import OwnedUnit
 from .types import EffectiveBuildPlan, WorkRootLayout
-from .worker_protocol import WorkerResultWire
+from .worker_protocol import UnitContributionManifestWire, WorkerResultWire
 
 
 def build_stage_manifest(
@@ -34,6 +35,8 @@ def build_stage_manifest(
     diagnostics: tuple[Any, ...],
     provider_snapshot: ProviderSnapshotV1,
     worker_results: tuple[WorkerResultWire, ...],
+    retained_unit_manifests: tuple[UnitContributionManifestWire, ...] = (),
+    owned_units: tuple[OwnedUnit, ...] | None = None,
 ) -> StageManifestV1:
     """Write all aggregate data files and emit the stage manifest last."""
 
@@ -44,4 +47,6 @@ def build_stage_manifest(
         diagnostics=diagnostics,
         provider_snapshot=provider_snapshot,
         worker_results=worker_results,
+        retained_unit_manifests=retained_unit_manifests,
+        owned_units=owned_units,
     )

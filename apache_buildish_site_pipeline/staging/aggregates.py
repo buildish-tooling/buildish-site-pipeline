@@ -50,10 +50,16 @@ from apache_buildish_site_pipeline.models.staged_front_matter import PipelineCom
 from apache_buildish_site_pipeline.planning.types import IndexedProviderRecord, ResolvedArtifactConfig, ResolvedComponentConfig, SelectedVersionContext
 
 from .front_matter import build_component_front_matter, build_page_front_matter, build_translation_link, finalize_staged_page
+from .incremental_metadata import (
+    PersistedUnitContributionsV1,
+    build_aggregate_dependency_map,
+    build_output_ownership_map,
+)
+from .ownership import OwnedUnit, build_owned_units
 from .public_safety import public_source_path, sanitize_public_diagnostics
 from .publication_paths import public_path_for_context, target_id_for_context
 from .types import EffectiveBuildPlan, WorkRootLayout
-from .worker_protocol import StagedPageContributionWire, WorkerResultWire, read_unit_manifest
+from .worker_protocol import StagedPageContributionWire, UnitContributionManifestWire, WorkerResultWire, read_unit_manifest
 
 
 def finalize_pages_and_write_aggregates(
@@ -64,10 +70,17 @@ def finalize_pages_and_write_aggregates(
     diagnostics: tuple[Any, ...],
     provider_snapshot: ProviderSnapshotV1,
     worker_results: tuple[WorkerResultWire, ...],
+    retained_unit_manifests: tuple[UnitContributionManifestWire, ...] = (),
+    owned_units: tuple[OwnedUnit, ...] | None = None,
 ) -> StageManifestV1:
     """Finalize page metadata, write aggregate files, and emit the stage manifest."""
 
-    page_contributions = _load_page_contributions(layout=layout, worker_results=worker_results)
+    unit_contribution_manifests = _load_unit_contribution_manifests(
+        layout=layout,
+        worker_results=worker_results,
+        retained_unit_manifests=retained_unit_manifests,
+    )
+    page_contributions = tuple(page for manifest in unit_contribution_manifests for page in manifest.pages)
     component_front_matter_by_slug = {
         component.slug: build_component_front_matter(component, build_plan.selected_versions)
         for component in build_plan.site.components
@@ -83,6 +96,8 @@ def finalize_pages_and_write_aggregates(
         diagnostics=diagnostics,
         provider_snapshot=provider_snapshot,
         page_contributions=page_contributions,
+        unit_contribution_manifests=unit_contribution_manifests,
+        owned_units=owned_units or build_owned_units(build_plan),
     )
     manifest = StageManifestV1(
         schema_version=1,
@@ -141,6 +156,8 @@ def _write_aggregate_files(
     diagnostics: tuple[PipelineDiagnosticEntry, ...],
     provider_snapshot: ProviderSnapshotV1,
     page_contributions: tuple[StagedPageContributionWire, ...],
+    unit_contribution_manifests: tuple[UnitContributionManifestWire, ...],
+    owned_units: tuple[OwnedUnit, ...],
 ) -> StageDataFiles:
     data_root = layout.data_root
     components_path = _write_items_file(data_root / "components.json", _build_components_entries(build_plan))
@@ -180,7 +197,12 @@ def _write_aggregate_files(
         diagnostics_path = data_root / "diagnostics.json"
         _write_json_file(diagnostics_path, list(public_diagnostics))
 
-    return StageDataFiles(
+    internal_data_root = data_root / "_pipeline"
+    unit_contributions_path = internal_data_root / "unit-contributions.json"
+    output_ownership_path = internal_data_root / "output-ownership.json"
+    aggregate_dependencies_path = internal_data_root / "aggregate-dependencies.json"
+
+    data_files = StageDataFiles(
         components=components_path,
         artifacts=artifacts_path,
         routes=routes_path,
@@ -194,7 +216,14 @@ def _write_aggregate_files(
         mounts=mounts_path,
         content_index=content_index_path,
         diagnostics=str(diagnostics_path.relative_to(layout.next_stage_root)) if diagnostics_path is not None else None,
+        unit_contributions=str(unit_contributions_path.relative_to(layout.next_stage_root)),
+        output_ownership=str(output_ownership_path.relative_to(layout.next_stage_root)),
+        aggregate_dependencies=str(aggregate_dependencies_path.relative_to(layout.next_stage_root)),
     )
+    _write_json_file(unit_contributions_path, PersistedUnitContributionsV1(units=unit_contribution_manifests))
+    _write_json_file(output_ownership_path, build_output_ownership_map(units=owned_units, data_files=data_files))
+    _write_json_file(aggregate_dependencies_path, build_aggregate_dependency_map(units=owned_units, data_files=data_files))
+    return data_files
 
 
 def _build_components_entries(build_plan: EffectiveBuildPlan) -> list[ComponentsDataEntry]:
@@ -651,23 +680,42 @@ def _parse_timestamp(value: datetime | str | None) -> datetime | None:
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
 
 
-def _load_page_contributions(layout: WorkRootLayout, worker_results: tuple[WorkerResultWire, ...]) -> tuple[StagedPageContributionWire, ...]:
-    contributions: list[StagedPageContributionWire] = []
+def _load_unit_contribution_manifests(
+    *,
+    layout: WorkRootLayout,
+    worker_results: tuple[WorkerResultWire, ...],
+    retained_unit_manifests: tuple[UnitContributionManifestWire, ...],
+) -> tuple[UnitContributionManifestWire, ...]:
+    manifests: list[UnitContributionManifestWire] = [*retained_unit_manifests]
     for result in worker_results:
         manifest_path = _validated_unit_manifest_path(layout=layout, result=result)
         if manifest_path is None:
             continue
         manifest = read_unit_manifest(manifest_path)
-        for page in manifest.pages:
-            contribution = page
-            if Path(contribution.stage_relative_path).is_absolute():
-                contribution = contribution.model_copy(
-                    update={
-                        "stage_relative_path": str(Path(contribution.stage_relative_path).relative_to(layout.next_stage_root)),
-                    },
-                )
-            contributions.append(contribution)
-    return tuple(contributions)
+        manifests.append(
+            manifest.model_copy(
+                update={
+                    "pages": tuple(
+                        _normalize_page_contribution(layout=layout, contribution=contribution) for contribution in manifest.pages
+                    ),
+                },
+            ),
+        )
+    return tuple(manifests)
+
+
+def _normalize_page_contribution(
+    *,
+    layout: WorkRootLayout,
+    contribution: StagedPageContributionWire,
+) -> StagedPageContributionWire:
+    if not Path(contribution.stage_relative_path).is_absolute():
+        return contribution
+    return contribution.model_copy(
+        update={
+            "stage_relative_path": str(Path(contribution.stage_relative_path).relative_to(layout.next_stage_root)),
+        },
+    )
 
 
 def _validated_unit_manifest_path(layout: WorkRootLayout, result: WorkerResultWire) -> Path | None:

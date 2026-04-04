@@ -21,9 +21,12 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from apache_buildish_site_pipeline.cli_errors import CommandExecutionError
 from apache_buildish_site_pipeline.models import CatalogDocumentV1, PlanningTarget, ProviderSnapshotV1
-from apache_buildish_site_pipeline.models.enums import MaterializationStatus
+from apache_buildish_site_pipeline.models.enums import MaterializationInputKind, MaterializationStatus
 from apache_buildish_site_pipeline.planning import build_resolved_materialization_report, evaluate_planning
+from apache_buildish_site_pipeline.planning.types import InputReadiness, LocalInputIdentity, ResolvedLocalInput
+from apache_buildish_site_pipeline.planning.watch_roots import derive_watch_plan
 
 
 class PlanningEvaluationTests(unittest.TestCase):
@@ -109,6 +112,36 @@ class PlanningEvaluationTests(unittest.TestCase):
         self.assertIsNotNone(evaluation.watch_plan)
         self.assertEqual(evaluation.watch_plan.roots, (workspace_root / "site/root-assets", workspace_root / "site/root-pages", workspace_root / "vendor/brand"))
         self.assertEqual(len(evaluation.watch_plan.diagnostics), 2)
+
+    def test_watch_target_rejects_more_than_32_watch_roots_with_clear_limit_error(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            local_inputs: list[ResolvedLocalInput] = []
+            for root_number in range(33):
+                watched_root = workspace_root / "watched" / f"root-{root_number:02d}"
+                _mkdir(watched_root)
+                local_inputs.append(
+                    ResolvedLocalInput(
+                        identity=LocalInputIdentity(
+                            source_key=f"source-{root_number:02d}",
+                            input_kind=MaterializationInputKind.DEVELOPMENT,
+                            component_slug=f"component-{root_number:02d}",
+                            artifact_key="runtime",
+                            ref="main",
+                        ),
+                        declared_root=watched_root,
+                        expected_local_path=watched_root,
+                        provenance=None,
+                        readiness=InputReadiness(status=MaterializationStatus.PRESENT),
+                    )
+                )
+
+            with self.assertRaisesRegex(CommandExecutionError, "32 watch-root ceiling"):
+                derive_watch_plan(
+                    target=PlanningTarget.WATCH,
+                    workspace_root=workspace_root,
+                    local_inputs=tuple(local_inputs),
+                )
 
 
 def _sample_catalog() -> CatalogDocumentV1:

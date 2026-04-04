@@ -29,7 +29,7 @@ from apache_buildish_site_pipeline.models.planning_stage_contract import Pipelin
 from apache_buildish_site_pipeline.planning import evaluate_planning
 from apache_buildish_site_pipeline.staging.aggregates import _build_content_index_entries, _write_aggregate_files
 from apache_buildish_site_pipeline.staging.coordinator import cleanup_after_publication, run_build
-from apache_buildish_site_pipeline.staging.ownership import OwnedUnit, OwnedUnitKind
+from apache_buildish_site_pipeline.staging.ownership import OwnedUnit, OwnedUnitKind, build_owned_units
 from apache_buildish_site_pipeline.staging.public_safety import REDACTED_LOCAL_PATH
 from apache_buildish_site_pipeline.staging.types import BuildRequest, OperatorPolicy, StageDestination, WorkRootLayout
 from apache_buildish_site_pipeline.staging.worker_entrypoint import execute_worker_spec
@@ -149,6 +149,8 @@ class StagingWorkerTests(unittest.TestCase):
                 ),
                 provider_snapshot=request.provider_snapshot,
                 page_contributions=(),
+                unit_contribution_manifests=(),
+                owned_units=build_owned_units(request.build_plan),
             )
             diagnostics_payload = json.loads((layout.data_root / "diagnostics.json").read_text(encoding="utf-8"))
 

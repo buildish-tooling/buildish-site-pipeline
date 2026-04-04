@@ -24,6 +24,7 @@ from apache_buildish_site_pipeline.models.enums import PlanningTarget
 from apache_buildish_site_pipeline.models.planning_stage_contract import PipelineDiagnosticEntry, StageManifestV1, StageCommand
 
 from apache_buildish_site_pipeline.planning.types import ResolvedLocalInput, ResolvedSiteConfig, SelectedVersionContext
+from apache_buildish_site_pipeline.staging.worker_protocol import UnitContributionManifestWire
 
 
 @dataclass(frozen=True, slots=True)
@@ -69,6 +70,10 @@ class BuildRequest:
     provider_snapshot: ProviderSnapshotV1
     destination: StageDestination
     operator_policy: OperatorPolicy = field(default_factory=OperatorPolicy)
+    included_unit_ids: frozenset[str] | None = None
+    seed_stage_root: Path | None = None
+    seed_stage_removals: tuple[str, ...] = ()
+    retained_unit_manifests: tuple[UnitContributionManifestWire, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -92,3 +97,4 @@ class BuildRunOutcome:
     layout: WorkRootLayout
     manifest: StageManifestV1
     worker_count: int
+    built_unit_ids: tuple[str, ...]

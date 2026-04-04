@@ -19,6 +19,7 @@ from __future__ import annotations
 from dataclasses import replace
 from pathlib import Path
 
+from apache_buildish_site_pipeline.cli_errors import CommandExecutionError
 from apache_buildish_site_pipeline.models.enums import MaterializationInputKind, PlanningTarget
 from apache_buildish_site_pipeline.models.enums import DiagnosticSeverity
 from apache_buildish_site_pipeline.models.planning_stage_contract import PipelineDiagnosticEntry
@@ -70,7 +71,7 @@ def derive_watch_plan(
 
     distinct_roots = tuple(sorted(set(root_candidates)))
     if len(distinct_roots) > _MAX_WATCH_ROOTS:
-        raise ValueError("Planning derived more than the 32 watch-root ceiling")
+        raise CommandExecutionError("Planning derived more than the 32 watch-root ceiling")
     watch_plan = WatchInputPlan(roots=distinct_roots, diagnostics=tuple(diagnostics)) if target is PlanningTarget.WATCH else None
     return tuple(updated_inputs), watch_plan
 

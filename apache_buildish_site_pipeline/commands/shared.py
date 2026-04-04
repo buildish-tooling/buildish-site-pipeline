@@ -24,6 +24,7 @@ from apache_buildish_site_pipeline.models.catalog import CatalogDocumentV1
 from apache_buildish_site_pipeline.models.component_repository import ComponentRepositoryDocumentV1
 from apache_buildish_site_pipeline.models.enums import DocumentFormat
 from apache_buildish_site_pipeline.models.loading import (
+    LoadingError,
     load_catalog_document,
     load_component_repository_document,
     load_provider_snapshot,
@@ -55,13 +56,16 @@ def load_workspace_inputs(repo_root: Path) -> LoadedWorkspaceInputs:
     if not catalog_path.exists():
         raise InvocationError(f"Missing catalog document: {catalog_path}")
 
-    catalog = load_catalog_document(
-        _read_utf8(catalog_path),
-        document_format=_infer_document_format(catalog_path),
-        source_name=str(catalog_path),
-    )
-    provider_snapshot = _load_provider_snapshot(repo_root)
-    component_documents = _load_component_documents(repo_root, catalog)
+    try:
+        catalog = load_catalog_document(
+            _read_utf8(catalog_path),
+            document_format=_infer_document_format(catalog_path),
+            source_name=str(catalog_path),
+        )
+        provider_snapshot = _load_provider_snapshot(repo_root)
+        component_documents = _load_component_documents(repo_root, catalog)
+    except LoadingError as exc:
+        raise InvocationError(str(exc)) from exc
     return LoadedWorkspaceInputs(
         catalog=catalog,
         provider_snapshot=provider_snapshot,

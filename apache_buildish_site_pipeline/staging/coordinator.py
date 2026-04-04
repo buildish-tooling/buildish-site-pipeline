@@ -59,7 +59,14 @@ def run_build(request: BuildRequest) -> BuildRunOutcome:
     stage_root = prepare_next_stage_root(request.destination.stage_root)
     layout = create_work_root_layout(next_stage_root=stage_root)
     try:
-        worker_results = _run_owned_units(request=request, layout=layout)
+        if request.seed_stage_root is not None:
+            _seed_next_stage_root(
+                candidate_stage_root=layout.next_stage_root,
+                seed_stage_root=request.seed_stage_root,
+                removals=request.seed_stage_removals,
+            )
+        units = build_owned_units(request.build_plan)
+        worker_results, built_unit_ids = _run_owned_units(request=request, layout=layout, units=units)
         manifest = build_stage_manifest(
             layout=layout,
             command=request.command,
@@ -67,12 +74,15 @@ def run_build(request: BuildRequest) -> BuildRunOutcome:
             diagnostics=request.diagnostics,
             provider_snapshot=request.provider_snapshot,
             worker_results=worker_results,
+            retained_unit_manifests=request.retained_unit_manifests,
+            owned_units=units,
         )
         return BuildRunOutcome(
             command=request.command,
             layout=layout,
             manifest=manifest,
             worker_count=request.operator_policy.normalized_pool_size(),
+            built_unit_ids=built_unit_ids,
         )
     except Exception:
         remove_work_root(layout)
@@ -147,12 +157,18 @@ def publish_stage(
         raise
 
 
-def _run_owned_units(*, request: BuildRequest, layout: WorkRootLayout) -> tuple[WorkerResultWire, ...]:
-    units = build_owned_units(request.build_plan)
+def _run_owned_units(
+    *,
+    request: BuildRequest,
+    layout: WorkRootLayout,
+    units: tuple[OwnedUnit, ...],
+) -> tuple[tuple[WorkerResultWire, ...], tuple[str, ...]]:
+    if request.included_unit_ids is not None:
+        units = tuple(unit for unit in units if unit.unit_id in request.included_unit_ids)
     run_workspace = RunWorkspace(workspace_root=request.build_plan.workspace_root, layout=layout)
     specs = tuple(_worker_spec_for_unit(unit=unit, request=request, run_workspace=run_workspace) for unit in units)
     if not specs:
-        return ()
+        return (), ()
 
     worker_count = min(request.operator_policy.normalized_pool_size(), len(specs))
     results = (
@@ -160,7 +176,22 @@ def _run_owned_units(*, request: BuildRequest, layout: WorkRootLayout) -> tuple[
         if worker_count == 1
         else _run_worker_specs_in_pool(specs=specs, worker_count=worker_count)
     )
-    return tuple(result.require_success() for result in results)
+    return tuple(result.require_success() for result in results), tuple(spec.unit_id for spec in specs)
+
+
+def _seed_next_stage_root(*, candidate_stage_root: Path, seed_stage_root: Path, removals: tuple[str, ...]) -> None:
+    shutil.copytree(seed_stage_root, candidate_stage_root, dirs_exist_ok=True)
+    normalized_candidate_root = candidate_stage_root.resolve(strict=False)
+    for stage_relative_path in removals:
+        target_path = (candidate_stage_root / Path(stage_relative_path)).resolve(strict=False)
+        if not target_path.is_relative_to(normalized_candidate_root):
+            raise StageIntegrityError(f"Seed-stage removal escapes candidate root: {stage_relative_path}")
+        if not target_path.exists():
+            continue
+        if target_path.is_dir():
+            shutil.rmtree(target_path)
+        else:
+            target_path.unlink()
 
 
 def _worker_spec_for_unit(*, unit: OwnedUnit, request: BuildRequest, run_workspace: RunWorkspace) -> WorkerSpecWire:

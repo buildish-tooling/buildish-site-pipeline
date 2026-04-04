@@ -17,14 +17,16 @@ from __future__ import annotations
 import io
 import json
 import unittest
+from pathlib import Path
 
 import frontmatter
 
+from apache_buildish_site_pipeline.cli_errors import StageIntegrityError
 from apache_buildish_site_pipeline.cli import _run
 from apache_buildish_site_pipeline.commands.shared import load_workspace_inputs
 from apache_buildish_site_pipeline.models.enums import PlanningTarget
 from apache_buildish_site_pipeline.planning import evaluate_planning
-from apache_buildish_site_pipeline.staging.ownership import OwnedUnitKind, build_owned_units
+from apache_buildish_site_pipeline.staging.ownership import OwnedUnit, OwnedUnitKind, _validate_output_ownership, build_owned_units
 from tests.test_cli import _cwd, _workspace
 
 
@@ -69,10 +71,43 @@ class StagingPipelineTests(unittest.TestCase):
             self.assertEqual(exit_code, 0)
             self.assertEqual(stderr.getvalue(), "")
             self.assertEqual(manifest["command"], "build")
-            for key in ["components", "artifacts", "routes", "redirects", "providers", "releases", "refs", "contentIndex"]:
+            for key in [
+                "components",
+                "artifacts",
+                "routes",
+                "redirects",
+                "providers",
+                "releases",
+                "refs",
+                "contentIndex",
+                "unitContributions",
+                "outputOwnership",
+                "aggregateDependencies",
+            ]:
                 relative_path = manifest["dataFiles"][key]
                 self.assertIsNotNone(relative_path)
                 self.assertTrue((stage_root / relative_path).is_file(), key)
+
+    def test_output_ownership_rejects_case_only_stage_path_collisions(self) -> None:
+        with self.assertRaises(StageIntegrityError) as raised:
+            _validate_output_ownership(
+                (
+                    OwnedUnit(
+                        unit_id="component:upper",
+                        owner_id="component:upper",
+                        kind=OwnedUnitKind.COMPONENT,
+                        content_stage_roots=(Path("content/Docs"),),
+                    ),
+                    OwnedUnit(
+                        unit_id="component:lower",
+                        owner_id="component:lower",
+                        kind=OwnedUnitKind.COMPONENT,
+                        content_stage_roots=(Path("content/docs"),),
+                    ),
+                ),
+            )
+
+        self.assertIn("case-insensitive path collision", str(raised.exception))
 
     def test_build_emits_pipeline_front_matter_and_content_index(self) -> None:
         with _workspace(with_content_file=True) as workspace_root:

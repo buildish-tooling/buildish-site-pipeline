@@ -27,6 +27,7 @@ from pathlib import Path
 
 from apache_buildish_site_pipeline.cli import _run
 from apache_buildish_site_pipeline.cli_dispatch import dispatch_command as _dispatch_command
+from apache_buildish_site_pipeline.cli_errors import CommandExecutionError
 
 
 class CliTests(unittest.TestCase):
@@ -197,6 +198,39 @@ class CliTests(unittest.TestCase):
         self.assertFalse(report["summary"]["stageUsable"])
         self.assertIn("Initial watch cycle failed", stderr.getvalue())
 
+    def test_watch_initial_watch_root_limit_failure_is_reported_clearly(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            report_path = workspace_root / "watch-report.json"
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            with mock.patch(
+                "apache_buildish_site_pipeline.commands.watch.evaluate_planning",
+                side_effect=CommandExecutionError("Planning derived more than the 32 watch-root ceiling"),
+            ):
+                with _cwd(workspace_root):
+                    exit_code = _run(
+                        argv=[
+                            "watch",
+                            "--report-format",
+                            "json",
+                            "--report-schema-version",
+                            "1",
+                            "--report-output",
+                            str(report_path),
+                        ],
+                        stdout=stdout,
+                        stderr=stderr,
+                    )
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(exit_code, 3)
+        self.assertEqual(report["command"], "watch")
+        self.assertEqual(report["cycle"], 1)
+        self.assertFalse(report["summary"]["stageUsable"])
+        self.assertFalse(report["summary"]["wroteStage"])
+        self.assertIn("32 watch-root ceiling", report["diagnostics"][-1]["message"])
+        self.assertIn("Initial watch cycle failed", stderr.getvalue())
+
     def test_watch_retains_last_trusted_stage_on_later_cycle_failure(self) -> None:
         with _workspace(with_content_file=True) as workspace_root:
             report_path = workspace_root / "watch-report.json"
@@ -245,6 +279,58 @@ class CliTests(unittest.TestCase):
         self.assertTrue(report["summary"]["stageUsable"])
         self.assertTrue(manifest_exists)
         self.assertTrue(staged_file_exists)
+        self.assertEqual(stdout.getvalue(), "")
+        self.assertEqual(stderr.getvalue(), "")
+
+    def test_watch_retains_last_trusted_stage_on_catalog_dirty_path_failure(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            report_path = workspace_root / "watch-report.json"
+            catalog_path = workspace_root / "site/components.yaml"
+            manifest_path = workspace_root / "site/.stage/manifest.json"
+            staged_file = workspace_root / "site/.stage/content/components/spark/contexts/releases/4.0.0/index.md"
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+
+            def _break_catalog_then_trigger_catalog_cycle():
+                catalog_path.write_text("schemaVersion: 1\ncomponents: [\n", encoding="utf-8")
+                return (catalog_path,)
+
+            with mock.patch(
+                "apache_buildish_site_pipeline.commands.watch._open_watch_event_stream",
+                new=_fake_watch_event_stream_factory(
+                    responses=[
+                        (True, _break_catalog_then_trigger_catalog_cycle),
+                        (False, None),
+                    ],
+                ),
+            ):
+                with _cwd(workspace_root):
+                    exit_code = _run(
+                        argv=[
+                            "watch",
+                            "--report-format",
+                            "json",
+                            "--report-schema-version",
+                            "1",
+                            "--report-output",
+                            str(report_path),
+                        ],
+                        stdout=stdout,
+                        stderr=stderr,
+                    )
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+            manifest_exists = manifest_path.exists()
+            staged_file_exists = staged_file.exists()
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(report["command"], "watch")
+        self.assertEqual(report["cycle"], 2)
+        self.assertFalse(report["summary"]["succeeded"])
+        self.assertFalse(report["summary"]["wroteStage"])
+        self.assertTrue(report["summary"]["stageUsable"])
+        self.assertTrue(manifest_exists)
+        self.assertTrue(staged_file_exists)
+        self.assertIn("site/components.yaml", report["diagnostics"][-1]["message"])
         self.assertEqual(stdout.getvalue(), "")
         self.assertEqual(stderr.getvalue(), "")
 

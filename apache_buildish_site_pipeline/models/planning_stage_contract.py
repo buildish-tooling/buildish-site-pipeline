@@ -240,6 +240,9 @@ class StageDataFiles(SitePipelineBaseModel):
     providers: StageRelativePath | None = None
     content_index: StageRelativePath | None = None
     diagnostics: StageRelativePath | None = None
+    unit_contributions: StageRelativePath | None = None
+    output_ownership: StageRelativePath | None = None
+    aggregate_dependencies: StageRelativePath | None = None
 
 
 class StageManifestV1(SitePipelineBaseModel):

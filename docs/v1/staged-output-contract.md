@@ -147,7 +147,9 @@ top of the stage contract rather than substitutes for it.
 Different downstream consumers can stay focused on the parts they need:
 
 - renderers read staged content, page front matter, and aggregate metadata
-- deployment adapters read route and redirect metadata
+- deployment adapters read route and redirect metadata and can turn them into
+  concrete HTTP server or CDN config as described in
+  [../how-to/http-server-config-how-to.md](../how-to/http-server-config-how-to.md)
 - search and indexing tools read `data/content-index.json`
 - diagnostic or audit tools read `manifest.json` and `data/diagnostics.json`
 

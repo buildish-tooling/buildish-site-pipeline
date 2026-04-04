@@ -180,7 +180,8 @@ metadata. They are poor places to express deployment policy.
 
 That is why the pipeline should emit server-neutral route and redirect metadata,
 while deployment adapters remain responsible for concrete outputs such as Apache
-`httpd`, Nginx, CDN, or static-host configuration.
+`httpd`, Nginx, CDN, or static-host configuration. For the practical adapter
+workflow, see [../how-to/http-server-config-how-to.md](../how-to/http-server-config-how-to.md).
 
 ## Main staged outputs
 

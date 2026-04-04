@@ -26,6 +26,10 @@ different consumer size bands.
 The point is not to define real user-facing docs. The point is to test whether
 the model can be explained simply to the intended audience at each size.
 
+Practical deployment-adapter guidance belongs in the stable docs instead. For
+the current how-to on generating HTTP server config from staged metadata, see
+[../how-to/http-server-config-how-to.md](../how-to/http-server-config-how-to.md).
+
 The size bands match [model-fit-cross-check.md](model-fit-cross-check.md).
 
 ## What this sketch optimizes for
@@ -234,3 +238,7 @@ If these docs were actually built, the most useful minimal set would likely be:
 
 That would give small consumers a short path in, while still letting large
 consumers discover the full model without oversimplifying it.
+
+If this sketch turns into a real docs set, one stable companion page should also
+exist outside this planning sketch: a deployment-adapter how-to for generating
+HTTP server config from `routes.json` and `redirects.json`.

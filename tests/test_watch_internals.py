@@ -28,7 +28,8 @@ class WatchInternalTests(unittest.TestCase):
             trusted_stage = _load_trusted_stage(stage_root)
 
         self.assertIsNotNone(trusted_stage)
-        assert trusted_stage is not None
+        if trusted_stage is None:
+            self.fail("expected trusted stage metadata")
         self.assertEqual(trusted_stage.stage_root, stage_root.resolve(strict=False))
 
     def test_load_trusted_stage_rejects_stage_root_with_symlinked_parent(self) -> None:

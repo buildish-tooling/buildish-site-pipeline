@@ -895,15 +895,15 @@ Test at least:
 
 - [x] runtime types live under `apache_buildish_site_pipeline.staging`, not
       `models`
-- [ ] coordinator-owned logic and worker-owned logic are separated clearly
-- [ ] one explicit worker protocol exists
-- [ ] large contributions use fragment files rather than message payloads
+- [x] coordinator-owned logic and worker-owned logic are separated clearly
+- [x] one explicit worker protocol exists
+- [x] large contributions use fragment files rather than message payloads
 
 ### Correctness
 
 - [x] one immutable `EffectiveBuildPlan` feeds the staging engine
-- [ ] ownership is explicit before workers start
-- [ ] aggregates are coordinator-owned only
+- [x] ownership is explicit before workers start
+- [x] aggregates are coordinator-owned only
 - [x] `manifest.json` is built from the finalized private next stage
 - [x] `manifest.json` is the last visible finalized write
 - [ ] pool size changes do not change normalized outputs

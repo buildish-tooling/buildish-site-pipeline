@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from apache_buildish_site_pipeline.models.planning_stage_contract import CheckReportV1
 
@@ -17,7 +17,7 @@ def build_check_report(result: EvaluationResult) -> CheckReportV1:
 
     return CheckReportV1(
         schema_version=1,
-        generated_at=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        generated_at=datetime.now(UTC),
         command="check",
         summary=result.check_summary,
         diagnostics=list(result.diagnostics),

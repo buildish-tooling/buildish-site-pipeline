@@ -12,7 +12,6 @@ from typing import TextIO
 from apache_buildish_site_pipeline.models.planning_stage_contract import (
     CheckReportV1,
     ResolvedMaterializationReportV1,
-    StageRunReportV1,
 )
 
 from .cli_contract import ReportFormat, ReportModel, ReportRequest
@@ -99,16 +98,17 @@ def render_text_report(report: ReportModel) -> str:
             f"diagnostics={len(report.diagnostics)}"
         )
     if isinstance(report, CheckReportV1):
-        summary = report.summary
+        check_summary = report.summary
         return (
-            f"check {summary.status.value}: passed={'yes' if summary.passed else 'no'}, "
-            f"errors={summary.error_count}, warnings={summary.warning_count}, infos={summary.info_count}"
+            f"check {check_summary.status.value}: passed={'yes' if check_summary.passed else 'no'}, "
+            f"errors={check_summary.error_count}, warnings={check_summary.warning_count}, infos={check_summary.info_count}"
         )
-    summary = report.summary
+    stage_report = report
+    stage_summary = stage_report.summary
     return (
-        f"{report.command.value} {summary.status.value}: succeeded={'yes' if summary.succeeded else 'no'}, "
-        f"stage={'usable' if summary.stage_usable else 'unusable'}, "
-        f"errors={summary.error_count}, warnings={summary.warning_count}, infos={summary.info_count}"
+        f"{stage_report.command.value} {stage_summary.status.value}: succeeded={'yes' if stage_summary.succeeded else 'no'}, "
+        f"stage={'usable' if stage_summary.stage_usable else 'unusable'}, "
+        f"errors={stage_summary.error_count}, warnings={stage_summary.warning_count}, infos={stage_summary.info_count}"
     )
 
 

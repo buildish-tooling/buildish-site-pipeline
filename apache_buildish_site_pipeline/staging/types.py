@@ -16,10 +16,12 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
+from apache_buildish_site_pipeline.models import ProviderSnapshotV1
 from apache_buildish_site_pipeline.models.enums import PlanningTarget
+from apache_buildish_site_pipeline.models.planning_stage_contract import PipelineDiagnosticEntry, StageManifestV1, StageCommand
 
 from apache_buildish_site_pipeline.planning.types import ResolvedLocalInput, ResolvedSiteConfig, SelectedVersionContext
 
@@ -34,3 +36,59 @@ class EffectiveBuildPlan:
     selected_versions: tuple[SelectedVersionContext, ...]
     planned_inputs: tuple[ResolvedLocalInput, ...]
     watch_roots: tuple[Path, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class OperatorPolicy:
+    """Operator-controlled runtime policy for staging execution."""
+
+    pool_size: int = 1
+
+    def normalized_pool_size(self) -> int:
+        """Return a safe worker count for the first-wave serial coordinator."""
+
+        return max(1, self.pool_size)
+
+
+@dataclass(frozen=True, slots=True)
+class StageDestination:
+    """Publication target and private assembly options for one stage build."""
+
+    stage_root: Path
+    assembly_root: Path | None = None
+    allow_replace_existing: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class BuildRequest:
+    """All runtime inputs required to materialize one build/watch stage tree."""
+
+    command: StageCommand
+    build_plan: EffectiveBuildPlan
+    diagnostics: tuple[PipelineDiagnosticEntry, ...]
+    provider_snapshot: ProviderSnapshotV1
+    destination: StageDestination
+    operator_policy: OperatorPolicy = field(default_factory=OperatorPolicy)
+
+
+@dataclass(frozen=True, slots=True)
+class WorkRootLayout:
+    """Directory layout for a single private staging run."""
+
+    work_root: Path
+    next_stage_root: Path
+    content_root: Path
+    static_root: Path
+    data_root: Path
+    fragments_root: Path
+    units_root: Path
+
+
+@dataclass(frozen=True, slots=True)
+class BuildRunOutcome:
+    """Coordinator result returned before optional visible-stage publication."""
+
+    command: StageCommand
+    layout: WorkRootLayout
+    manifest: StageManifestV1
+    worker_count: int

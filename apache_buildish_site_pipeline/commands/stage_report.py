@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from apache_buildish_site_pipeline.evaluation.summary import build_run_status
@@ -31,7 +31,7 @@ def build_stage_run_report(
     counts = _count_diagnostics(effective_diagnostics)
     return StageRunReportV1(
         schema_version=1,
-        generated_at=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        generated_at=datetime.now(UTC),
         command=command,
         summary=StageRunSummary(
             status=build_run_status(counts),

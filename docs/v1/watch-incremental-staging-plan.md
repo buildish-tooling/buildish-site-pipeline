@@ -1063,7 +1063,7 @@ This checklist is intended for implementation tracking and later doc reuse.
 
 ### Phase 0 checklist
 
-- [ ] owned-unit catalog exists and names every first-wave unit
+- [x] owned-unit catalog exists and names every first-wave unit
 - [ ] output-ownership map exists with one owner per finalized path
 - [ ] aggregate dependency map exists for first-wave shared outputs
 - [ ] watch-cycle state machine is written down and reviewed
@@ -1073,10 +1073,10 @@ This checklist is intended for implementation tracking and later doc reuse.
 
 ### Phase 1 checklist
 
-- [ ] one-off `build` uses the intended coordinator/worker shape
-- [ ] worker specifications are immutable and serialization-friendly
-- [ ] workers write only into private output areas
-- [ ] shared aggregates are coordinator-owned only
+- [x] one-off `build` uses the intended coordinator/worker shape
+- [x] worker specifications are immutable and serialization-friendly
+- [x] workers write only into private output areas
+- [x] shared aggregates are coordinator-owned only
 - [ ] pool size can be forced to `1` in tests
 - [ ] clean-build determinism tests pass
 

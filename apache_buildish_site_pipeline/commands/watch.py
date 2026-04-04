@@ -7,11 +7,11 @@ from __future__ import annotations
 import signal
 import shutil
 import threading
+from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from types import FrameType
-from typing import Iterator
 
 from watchfiles import DefaultFilter, watch
 
@@ -20,9 +20,9 @@ from apache_buildish_site_pipeline.models import DocumentFormat, PipelineDiagnos
 from apache_buildish_site_pipeline.models.enums import DiagnosticSeverity, PlanningTarget, StageCommand
 from apache_buildish_site_pipeline.models.planning_stage_contract import StageRunReportV1
 from apache_buildish_site_pipeline.planning import evaluate_planning
-from apache_buildish_site_pipeline.staging.execution import (
+from apache_buildish_site_pipeline.staging.coordinator import materialize_stage_tree
+from apache_buildish_site_pipeline.staging.publication import (
     finalize_stage_publication,
-    materialize_stage_tree,
     validate_materialized_stage_tree,
     validate_visible_stage_target_path,
 )

@@ -14,6 +14,19 @@
 
 """Internal staging package."""
 
+from .coordinator import materialize_stage_tree, publish_stage
+from .publication import (
+    StagePublicationResult,
+    finalize_stage_publication,
+    validate_visible_stage_target_path,
+)
 from .types import EffectiveBuildPlan
 
-__all__ = ["EffectiveBuildPlan"]
+__all__ = [
+    "EffectiveBuildPlan",
+    "StagePublicationResult",
+    "finalize_stage_publication",
+    "materialize_stage_tree",
+    "publish_stage",
+    "validate_visible_stage_target_path",
+]

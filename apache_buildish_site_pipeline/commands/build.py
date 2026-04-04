@@ -7,7 +7,7 @@ from __future__ import annotations
 from apache_buildish_site_pipeline.evaluation import EvaluationMode, EvaluationRequest, run_evaluation
 from apache_buildish_site_pipeline.models.enums import PlanningTarget, StageCommand
 from apache_buildish_site_pipeline.planning import evaluate_planning
-from apache_buildish_site_pipeline.staging.execution import publish_stage
+from apache_buildish_site_pipeline.staging.coordinator import publish_stage
 
 from ..cli_contract import ApplicationExitCode, BuildInvocation, CommandResult
 from ..cli_reporting import render_text_report

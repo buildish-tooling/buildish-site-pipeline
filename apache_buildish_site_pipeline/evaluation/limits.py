@@ -111,7 +111,8 @@ def _check_limit(
 
 
 def _count_watch_entries(planning: PlanningEvaluation) -> int:
-    assert planning.watch_plan is not None
+    if planning.watch_plan is None:
+        raise ValueError("Watch-entry counting requires one watch plan")
     total = 0
     seen_dirs: set[Path] = set()
     for root in planning.watch_plan.roots:

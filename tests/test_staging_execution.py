@@ -10,7 +10,8 @@ from pathlib import Path
 from unittest import mock
 
 from apache_buildish_site_pipeline.cli_errors import StageIntegrityError
-from apache_buildish_site_pipeline.staging.execution import _write_json_file, finalize_stage_publication
+from apache_buildish_site_pipeline.staging.aggregates import _write_json_file
+from apache_buildish_site_pipeline.staging.publication import finalize_stage_publication
 
 
 class StagingExecutionTests(unittest.TestCase):
@@ -37,7 +38,7 @@ class StagingExecutionTests(unittest.TestCase):
                 del src, dst
                 raise OSError("replace blocked")
 
-            with mock.patch("apache_buildish_site_pipeline.staging.execution.os.replace", side_effect=_fail_replace):
+            with mock.patch("apache_buildish_site_pipeline.staging.aggregates.os.replace", side_effect=_fail_replace):
                 with self.assertRaises(StageIntegrityError) as raised:
                     _write_json_file(json_path, [_JsonStub('{"componentId":"runtime"}')])
 
@@ -130,7 +131,7 @@ class StagingExecutionTests(unittest.TestCase):
             stage_root.parent.mkdir(parents=True, exist_ok=True)
 
             with mock.patch(
-                "apache_buildish_site_pipeline.staging.execution._stat_device_id",
+                "apache_buildish_site_pipeline.staging.publication._stat_device_id",
                 side_effect=_device_id_map(
                     {
                         candidate_stage_root.resolve(strict=False): 101,
@@ -155,7 +156,7 @@ class StagingExecutionTests(unittest.TestCase):
             keep_path.write_text("trusted\n", encoding="utf-8")
 
             with mock.patch(
-                "apache_buildish_site_pipeline.staging.execution._stat_device_id",
+                "apache_buildish_site_pipeline.staging.publication._stat_device_id",
                 side_effect=_device_id_map(
                     {
                         candidate_stage_root.resolve(strict=False): 101,

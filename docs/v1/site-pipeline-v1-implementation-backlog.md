@@ -130,13 +130,13 @@ Merge gate:
 
 ## Phase 4: staging/build engine
 
-- [ ] implement the internal staging runtime types and work-area model
-- [ ] implement coordinator and worker boundaries
-- [ ] implement owned-unit staging for site pages, site assets, vendor assets,
+- [x] implement the internal staging runtime types and work-area model
+- [x] implement coordinator and worker boundaries
+- [x] implement owned-unit staging for site pages, site assets, vendor assets,
       and components
-- [ ] implement aggregate assembly, ownership validation, and manifest building
-- [ ] implement private-stage assembly and safe visible publication
-- [ ] add correctness, ownership, collision, publication, and failure-path tests
+- [x] implement aggregate assembly, ownership validation, and manifest building
+- [x] implement private-stage assembly and safe visible publication
+- [x] add correctness, ownership, collision, publication, and failure-path tests
 
 Primary reference:
 

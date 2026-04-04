@@ -10,7 +10,7 @@ from . import diagnostic_codes
 from .collector import DiagnosticCollector
 from .publication import public_path_for_context, target_id_for_context
 from .reference_index import KnownRoute, build_reference_index, resolve_internal_reference, route_from_published_target
-from .types import PublicationIndex, PublishedTarget, RouteInventory
+from .types import PublicationIndex, RouteInventory
 
 from apache_buildish_site_pipeline.planning.types import PlanningEvaluation, ResolvedComponentConfig, SelectedVersionContext
 
@@ -210,7 +210,6 @@ def _validate_component_redirect_targets(
 ) -> None:
     for index, redirect in enumerate(component.publication.redirects):
         source_origin_key = redirect.from_origin or component.publication.origin.key
-        source_key = _route_lookup_key(source_origin_key, redirect.from_path)
         _validate_redirect_target(
             reference=str(redirect.target),
             source_origin_key=source_origin_key,

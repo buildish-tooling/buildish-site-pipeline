@@ -17,9 +17,10 @@
 from __future__ import annotations
 
 import argparse
+from collections.abc import Sequence
 import sys
 from pathlib import Path
-from typing import Sequence, TextIO
+from typing import Never, TextIO
 
 from apache_buildish_site_pipeline.models.enums import CheckFailureThreshold, PlanningTarget
 
@@ -39,7 +40,7 @@ from .commands.watch import run_watch
 
 
 class _ArgumentParser(argparse.ArgumentParser):
-    def error(self, message: str) -> None:
+    def error(self, message: str) -> Never:
         raise InvocationError(message)
 
 

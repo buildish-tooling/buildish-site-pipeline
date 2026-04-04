@@ -16,7 +16,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from apache_buildish_site_pipeline.models.planning_stage_contract import (
     ResolvedMaterializationEntry,
@@ -31,7 +31,7 @@ def build_resolved_materialization_report(evaluation: PlanningEvaluation) -> Res
 
     return ResolvedMaterializationReportV1(
         schema_version=1,
-        generated_at=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        generated_at=datetime.now(UTC),
         target=evaluation.target,
         entries=[
             ResolvedMaterializationEntry(

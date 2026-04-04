@@ -64,9 +64,7 @@ class CliTests(unittest.TestCase):
 
             report = json.loads(stdout.getvalue())
             manifest_path = workspace_root / "site/.stage/manifest.json"
-            staged_file = (
-                workspace_root / "site/.stage/content/components/spark/contexts/releases/4.0.0/releases/4.0.0/index.md"
-            )
+            staged_file = workspace_root / "site/.stage/content/components/spark/contexts/releases/4.0.0/index.md"
 
             self.assertEqual(exit_code, 0)
             self.assertTrue(report["summary"]["succeeded"])
@@ -192,9 +190,7 @@ class CliTests(unittest.TestCase):
             report_path = workspace_root / "watch-report.json"
             watched_file = workspace_root / "components/runtime/docs/releases/4.0.0/index.md"
             manifest_path = workspace_root / "site/.stage/manifest.json"
-            staged_file = (
-                workspace_root / "site/.stage/content/components/spark/contexts/releases/4.0.0/releases/4.0.0/index.md"
-            )
+            staged_file = workspace_root / "site/.stage/content/components/spark/contexts/releases/4.0.0/index.md"
             stdout = io.StringIO()
             stderr = io.StringIO()
 

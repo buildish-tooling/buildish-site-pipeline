@@ -30,6 +30,9 @@ Practical deployment-adapter guidance belongs in the stable docs instead. For
 the current how-to on generating HTTP server config from staged metadata, see
 [../how-to/http-server-config-how-to.md](../how-to/http-server-config-how-to.md).
 
+The stable onboarding pages that grew out of this sketch now live in
+[../getting-started/](../getting-started/).
+
 The size bands match [model-fit-cross-check.md](model-fit-cross-check.md).
 
 ## What this sketch optimizes for

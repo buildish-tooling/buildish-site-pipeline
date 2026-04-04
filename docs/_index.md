@@ -18,8 +18,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-This documentation is split into two tracks:
+This documentation is split into four tracks:
 
+- [getting-started](getting-started/) for onboarding and size-band selection
 - [v0](v0/) for the original tracked documentation set
 - [how-to](how-to/) for task-oriented guides
 - [v1](v1/) for the current design, schema, and architecture documents

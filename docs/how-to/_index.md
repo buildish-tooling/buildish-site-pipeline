@@ -20,3 +20,6 @@ limitations under the License.
 -->
 
 This section contains task-oriented guides for common site-pipeline workflows.
+
+Start with [../getting-started/](../getting-started/) if you first need help
+deciding which publication shape best matches your site.

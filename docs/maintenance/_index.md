@@ -25,5 +25,7 @@ expectations.
 
 - [code-maintenance.md](code-maintenance.md) records durable implementation
   boundaries and refactoring guardrails
+- [todos.md](todos.md) records intentionally deferred maintenance follow-ups that
+  should stay visible during nearby implementation work
 - [user-facing-docs-strategy.md](user-facing-docs-strategy.md) defines the
   target shape of the public documentation site

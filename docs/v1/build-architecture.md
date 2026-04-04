@@ -23,18 +23,9 @@ limitations under the License.
 This document describes the recommended internal architecture for the staging
 engine and watch loop.
 
-For a prescriptive implementation plan for effective config resolution,
-publication-selection planning, local-input readiness, and immutable build-plan
-construction, see
-[`planning-and-input-resolution-implementation-guide.md`](planning-and-input-resolution-implementation-guide.md).
-
-For a prescriptive implementation plan for contextual validation, diagnostics,
-route/provider/input-readiness checks, and stage gating, see
-[`evaluation-and-validation-implementation-guide.md`](evaluation-and-validation-implementation-guide.md).
-
-For a prescriptive implementation plan for the staging package, runtime types,
-worker protocol, private work-area layout, and publication preconditions, see
-[`stage-build-implementation-guide.md`](stage-build-implementation-guide.md).
+For maintainers who need the internal package boundaries, shared execution-path
+rules, and watch/publication guardrails that support this architecture, see
+[`code-maintenance.md`](code-maintenance.md).
 
 It is intentionally about **implementation structure only**. It does not define
 the public CLI, the publication model, the catalog schema, or the staged-output
@@ -302,6 +293,6 @@ That sequence lets the implementation scale from today's full-rebuild model
 toward larger multi-component and multi-version workspaces without forking the
 core execution path.
 
-For concrete watch-mode guardrails, private-work-area recommendations,
-container/macOS considerations, and milestone-by-milestone success criteria, see
-[`watch-incremental-staging-plan.md`](watch-incremental-staging-plan.md).
+For the maintainer-facing watch and publication guardrails that should remain
+true as the implementation evolves, see
+[`code-maintenance.md`](code-maintenance.md).

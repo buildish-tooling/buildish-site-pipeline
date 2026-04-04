@@ -27,9 +27,9 @@ a short description.
 
 It remains a design reference rather than an implementation-locked schema.
 
-For a prescriptive implementation plan for the Pydantic model layer, module
-layout, validation boundaries, and required test coverage, see
-[`model-implementation-guide.md`](model-implementation-guide.md).
+For maintainer-facing notes about model-layer ownership, validation boundaries,
+and how the schema layer relates to planning, evaluation, and staging, see
+[`code-maintenance.md`](code-maintenance.md).
 
 ## Scope and conventions
 

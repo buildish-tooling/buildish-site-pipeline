@@ -22,9 +22,9 @@ limitations under the License.
 
 This document defines the public contract boundaries for the Site Pipeline.
 
-For a prescriptive implementation plan for the CLI layer, command parsing,
-report emission, and exit-code handling, see
-[`cli-api-implementation-guide.md`](cli-api-implementation-guide.md).
+For maintainer-facing notes about CLI-layer ownership, shared lower execution
+paths, and internal report/publication guardrails, see
+[`code-maintenance.md`](code-maintenance.md).
 
 The intended principle is:
 
@@ -409,8 +409,8 @@ contracts, not as reasons to widen the core API boundary.
   diagnostics, and `site-pipeline check`
 - [build-architecture.md](build-architecture.md) for the recommended execution
   shape of `build` and `watch`
-- [watch-incremental-staging-plan.md](watch-incremental-staging-plan.md) for
-  watch guardrails, incremental-staging planning, and implementation milestones
+- [code-maintenance.md](code-maintenance.md) for maintainer-facing internal
+  boundaries and watch/publication guardrails
 - [security-and-trust-model.md](security-and-trust-model.md) for path-safety,
   trust-boundary, and XSS-defense expectations
 - [flexible-component-publication.md](flexible-component-publication.md) for the

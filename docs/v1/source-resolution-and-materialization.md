@@ -20,10 +20,9 @@ limitations under the License.
 
 # Source resolution and materialization
 
-For a prescriptive implementation plan for effective config resolution, provider
-indexing, version-context selection, local-input readiness, watch eligibility,
-and immutable build-plan construction, see
-[`planning-and-input-resolution-implementation-guide.md`](planning-and-input-resolution-implementation-guide.md).
+For maintainer-facing notes about planning-layer ownership, effective input
+resolution, watch-root derivation, and shared execution boundaries, see
+[`code-maintenance.md`](code-maintenance.md).
 
 This document separates three concerns that are easy to mix together when
 discussing versioned documentation:
@@ -344,8 +343,8 @@ Both cases fit the same architecture.
 - [api-contract.md](api-contract.md) for stable invocation and output boundaries
 - [staged-output-contract.md](staged-output-contract.md) for the staged-tree
   contract consumed by renderers and deployment adapters
-- [planning-and-input-resolution-implementation-guide.md](planning-and-input-resolution-implementation-guide.md)
-  for the internal planning and input-resolution package
+- [code-maintenance.md](code-maintenance.md) for maintainer-facing planning and
+  execution-path boundaries
 - [build-architecture.md](build-architecture.md) for the build/watch execution
   model
 - [flexible-component-publication.md](flexible-component-publication.md) for the

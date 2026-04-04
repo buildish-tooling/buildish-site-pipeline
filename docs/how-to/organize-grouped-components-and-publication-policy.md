@@ -48,6 +48,6 @@ to mirror repository layout or organization charts.
 
 ## Read this next
 
-- [../v1/flexible-component-publication.md](../v1/flexible-component-publication.md)
+- [../reference/flexible-component-publication.md](../reference/flexible-component-publication.md)
 - [plan-publication-and-materialization.md](plan-publication-and-materialization.md)
-- [../v1/pipeline-model-schema-reference.md](../v1/pipeline-model-schema-reference.md)
+- [../reference/pipeline-model-schema-reference.md](../reference/pipeline-model-schema-reference.md)

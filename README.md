@@ -60,10 +60,11 @@ but it is far away from a real rendered website.
 ## Documentation
 
 - [Documentation index](docs/_index.md)
-- [Site Pipeline overview](docs/v1/site-pipeline.md)
-- [Site component contract](docs/v1/site-component-contract.md)
-- [Adoption guide](docs/v1/adoption-guide.md)
-- [Workspace examples](docs/v1/examples.md)
+- [Getting started](docs/getting-started/_index.md)
+- [How-to guides](docs/how-to/_index.md)
+- [Architecture docs](docs/architecture/_index.md)
+- [Reference docs](docs/reference/_index.md)
+- [Maintenance notes](docs/maintenance/_index.md)
 
 ## Local development
 

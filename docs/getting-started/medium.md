@@ -44,7 +44,7 @@ You will usually need to think about:
 
 1. [../how-to/plan-publication-and-materialization.md](../how-to/plan-publication-and-materialization.md)
 2. [../how-to/model-versioning-and-redirects.md](../how-to/model-versioning-and-redirects.md)
-3. [../v1/source-resolution-and-materialization.md](../v1/source-resolution-and-materialization.md)
+3. [../architecture/source-resolution-and-materialization.md](../architecture/source-resolution-and-materialization.md)
 
 ## Ignore for now
 
@@ -62,6 +62,6 @@ larger ecosystem.
 
 ## Deeper reference trail
 
-- [../v1/flexible-component-publication.md](../v1/flexible-component-publication.md)
-- [../v1/validation-and-check.md](../v1/validation-and-check.md)
-- [../v1/pipeline-model-schema-reference.md](../v1/pipeline-model-schema-reference.md)
+- [../reference/flexible-component-publication.md](../reference/flexible-component-publication.md)
+- [../reference/validation-and-check.md](../reference/validation-and-check.md)
+- [../reference/pipeline-model-schema-reference.md](../reference/pipeline-model-schema-reference.md)

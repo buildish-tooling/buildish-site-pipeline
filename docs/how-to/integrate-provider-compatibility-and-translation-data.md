@@ -48,7 +48,7 @@ consumer-owned publication policy.
 
 ## Read this next
 
-- [../v1/provider-snapshot-schema.md](../v1/provider-snapshot-schema.md)
-- [../v1/provider-to-staged-metadata-mapping.md](../v1/provider-to-staged-metadata-mapping.md)
-- [../v1/security-and-trust-model.md](../v1/security-and-trust-model.md)
-- [../v1/pipeline-model-schema-reference.md](../v1/pipeline-model-schema-reference.md)
+- [../reference/provider-snapshot-schema.md](../reference/provider-snapshot-schema.md)
+- [../reference/provider-to-staged-metadata-mapping.md](../reference/provider-to-staged-metadata-mapping.md)
+- [../reference/security-and-trust-model.md](../reference/security-and-trust-model.md)
+- [../reference/pipeline-model-schema-reference.md](../reference/pipeline-model-schema-reference.md)

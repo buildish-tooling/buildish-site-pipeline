@@ -154,6 +154,6 @@ remains portable across hosting targets.
 
 For the underlying contract details, see:
 
-- [../v1/staged-output-contract.md](../v1/staged-output-contract.md)
-- [../v1/pipeline-model-schema-reference.md](../v1/pipeline-model-schema-reference.md)
-- [../v1/security-and-trust-model.md](../v1/security-and-trust-model.md)
+- [../reference/staged-output-contract.md](../reference/staged-output-contract.md)
+- [../reference/pipeline-model-schema-reference.md](../reference/pipeline-model-schema-reference.md)
+- [../reference/security-and-trust-model.md](../reference/security-and-trust-model.md)

@@ -25,7 +25,7 @@ engine and watch loop.
 
 For maintainers who need the internal package boundaries, shared execution-path
 rules, and watch/publication guardrails that support this architecture, see
-[`code-maintenance.md`](code-maintenance.md).
+[`../maintenance/code-maintenance.md`](../maintenance/code-maintenance.md).
 
 It is intentionally about **implementation structure only**. It does not define
 the public CLI, the publication model, the catalog schema, or the staged-output
@@ -295,4 +295,4 @@ core execution path.
 
 For the maintainer-facing watch and publication guardrails that should remain
 true as the implementation evolves, see
-[`code-maintenance.md`](code-maintenance.md).
+[`../maintenance/code-maintenance.md`](../maintenance/code-maintenance.md).

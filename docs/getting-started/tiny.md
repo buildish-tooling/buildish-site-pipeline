@@ -44,7 +44,7 @@ The smallest useful mental model is:
 
 1. [../how-to/create-a-tiny-site.md](../how-to/create-a-tiny-site.md)
 2. [../how-to/inspect-staged-output-and-routes.md](../how-to/inspect-staged-output-and-routes.md)
-3. [../v1/staged-output-contract.md](../v1/staged-output-contract.md)
+3. [../reference/staged-output-contract.md](../reference/staged-output-contract.md)
 
 ## Ignore for now
 
@@ -63,5 +63,5 @@ redirects, or one mounted imported/generated docs subtree.
 
 ## Deeper reference trail
 
-- [../v1/flexible-component-publication.md](../v1/flexible-component-publication.md)
-- [../v1/pipeline-model-schema-reference.md](../v1/pipeline-model-schema-reference.md)
+- [../reference/flexible-component-publication.md](../reference/flexible-component-publication.md)
+- [../reference/pipeline-model-schema-reference.md](../reference/pipeline-model-schema-reference.md)

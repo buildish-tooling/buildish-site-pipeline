@@ -54,7 +54,7 @@ reference pass through the contracts and security model.
 
 ## Deeper reference trail
 
-- [../v1/architecture-overview.md](../v1/architecture-overview.md)
-- [../v1/staged-output-contract.md](../v1/staged-output-contract.md)
-- [../v1/security-and-trust-model.md](../v1/security-and-trust-model.md)
-- [../v1/pipeline-model-schema-reference.md](../v1/pipeline-model-schema-reference.md)
+- [../architecture/architecture-overview.md](../architecture/architecture-overview.md)
+- [../reference/staged-output-contract.md](../reference/staged-output-contract.md)
+- [../reference/security-and-trust-model.md](../reference/security-and-trust-model.md)
+- [../reference/pipeline-model-schema-reference.md](../reference/pipeline-model-schema-reference.md)

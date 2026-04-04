@@ -1,5 +1,5 @@
 ---
-title: Site Pipeline Documentation v1
+title: Site Pipeline Architecture and Design
 weight: 20
 ---
 
@@ -19,4 +19,5 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-This section contains the newer design, schema, and architecture documents.
+This section explains the overall system shape, design rationale, model fit, and
+example-driven architecture guidance.

@@ -69,6 +69,7 @@ that audience.
 ## Shared follow-on trails
 
 - [../how-to/](../how-to/) for task-oriented guides
-- [../v1/](../v1/) for contracts, architecture, and reference details
-- [../v1/model-fit-cross-check.md](../v1/model-fit-cross-check.md) for the
+- [../architecture/](../architecture/) for system shape, rationale, and examples
+- [../reference/](../reference/) for contracts, schemas, and trust-model details
+- [../architecture/model-fit-cross-check.md](../architecture/model-fit-cross-check.md) for the
   rationale behind the size bands

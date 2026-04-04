@@ -24,9 +24,9 @@ This document cross-checks the current Site Pipeline publication model against
 public documentation and release topologies used by prominent OSS projects.
 
 The goal is not to propose migrations. The goal is to test whether the model
-described in [flexible-component-publication.md](flexible-component-publication.md),
-[provider-snapshot-schema.md](provider-snapshot-schema.md), and
-[pipeline-model-schema-reference.md](pipeline-model-schema-reference.md) can, in
+described in [../reference/flexible-component-publication.md](../reference/flexible-component-publication.md),
+[../reference/provider-snapshot-schema.md](../reference/provider-snapshot-schema.md), and
+[../reference/pipeline-model-schema-reference.md](../reference/pipeline-model-schema-reference.md) can, in
 theory, represent those sites without forcing projects to change their current
 permalinks.
 

@@ -1,5 +1,6 @@
 ---
-title: Site Pipeline Documentation
+title: Site Pipeline Maintenance Notes
+weight: 30
 ---
 
 <!--
@@ -18,11 +19,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-This documentation is split into six tracks:
-
-- [getting-started](getting-started/) for onboarding and size-band selection
-- [how-to](how-to/) for task-oriented guides
-- [architecture](architecture/) for system shape, rationale, and design examples
-- [reference](reference/) for contracts, schemas, glossary, and trust-model docs
-- [maintenance](maintenance/) for maintainer-facing internal guidance
-- [v0](v0/) for the original tracked documentation set
+This section is for maintainers of the Site Pipeline implementation. It records
+durable internal boundaries, refactoring guardrails, and documentation-maintainer
+expectations.

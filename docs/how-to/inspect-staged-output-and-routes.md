@@ -59,5 +59,5 @@ Python objects or arbitrary source repositories.
 ## Read this next
 
 - [http-server-config-how-to.md](http-server-config-how-to.md)
-- [../v1/staged-output-contract.md](../v1/staged-output-contract.md)
-- [../v1/pipeline-model-schema-reference.md](../v1/pipeline-model-schema-reference.md)
+- [../reference/staged-output-contract.md](../reference/staged-output-contract.md)
+- [../reference/pipeline-model-schema-reference.md](../reference/pipeline-model-schema-reference.md)

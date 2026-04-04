@@ -62,5 +62,5 @@ You are in a good starting state when:
 ## Read this next
 
 - [inspect-staged-output-and-routes.md](inspect-staged-output-and-routes.md)
-- [../v1/flexible-component-publication.md](../v1/flexible-component-publication.md)
-- [../v1/staged-output-contract.md](../v1/staged-output-contract.md)
+- [../reference/flexible-component-publication.md](../reference/flexible-component-publication.md)
+- [../reference/staged-output-contract.md](../reference/staged-output-contract.md)

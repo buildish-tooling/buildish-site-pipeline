@@ -187,6 +187,6 @@ The typed definitions for this contract live in:
 
 - [api-contract.md](api-contract.md) for the stable invocation and output
   boundary
-- [build-architecture.md](build-architecture.md) for build/watch execution shape
+- [../architecture/build-architecture.md](../architecture/build-architecture.md) for build/watch execution shape
 - [security-and-trust-model.md](security-and-trust-model.md) for content-safety,
   path-safety, and trust-boundary rules

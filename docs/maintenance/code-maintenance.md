@@ -22,9 +22,10 @@ limitations under the License.
 
 This document is for maintainers of the Site Pipeline implementation.
 
-The other v1 docs define the public contract, staged-output contract, schema
-shape, security model, and architecture. This document records the durable
-internal boundaries and guardrails that future refactors should preserve.
+The public reference and architecture docs define the public contract,
+staged-output contract, schema shape, security model, and system shape. This
+document records the durable internal boundaries and guardrails that future
+refactors should preserve.
 
 ## Scope of this document
 
@@ -175,8 +176,10 @@ procedural guidance, and reference material into the same layer.
   identify their site shape and the smallest model they need
 - `docs/how-to/` is for task-oriented workflows such as building a tiny site,
   inspecting staged output, or generating HTTP server config
-- `docs/v1/` is for stable architecture, contract, schema, and trust/reference
-  documentation
+- `docs/architecture/` explains the system shape, rationale, and examples
+- `docs/reference/` defines contracts, schemas, glossary material, and trust
+  boundaries
+- `docs/maintenance/` records maintainer-facing internal guidance
 
 When maintaining the onboarding docs, optimize for these outcomes:
 
@@ -205,14 +208,14 @@ set is not yet consumable enough.
 
 ## Read next
 
-- [api-contract.md](api-contract.md) for the public CLI boundary
-- [source-resolution-and-materialization.md](source-resolution-and-materialization.md)
+- [../reference/api-contract.md](../reference/api-contract.md) for the public CLI boundary
+- [../architecture/source-resolution-and-materialization.md](../architecture/source-resolution-and-materialization.md)
   for planning inputs and materialized-source boundaries
-- [validation-and-check.md](validation-and-check.md) for shared validation
+- [../reference/validation-and-check.md](../reference/validation-and-check.md) for shared validation
   semantics and `site-pipeline check`
-- [build-architecture.md](build-architecture.md) for coordinator/worker execution
+- [../architecture/build-architecture.md](../architecture/build-architecture.md) for coordinator/worker execution
   structure and scaling shape
-- [staged-output-contract.md](staged-output-contract.md) for the renderer-visible
+- [../reference/staged-output-contract.md](../reference/staged-output-contract.md) for the renderer-visible
   stage contract
-- [security-and-trust-model.md](security-and-trust-model.md) for path, URL, and
+- [../reference/security-and-trust-model.md](../reference/security-and-trust-model.md) for path, URL, and
   trust-boundary requirements

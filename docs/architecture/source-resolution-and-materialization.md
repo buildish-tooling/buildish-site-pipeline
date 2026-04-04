@@ -22,7 +22,7 @@ limitations under the License.
 
 For maintainer-facing notes about planning-layer ownership, effective input
 resolution, watch-root derivation, and shared execution boundaries, see
-[`code-maintenance.md`](code-maintenance.md).
+[`../maintenance/code-maintenance.md`](../maintenance/code-maintenance.md).
 
 This document separates three concerns that are easy to mix together when
 discussing versioned documentation:
@@ -340,12 +340,12 @@ Both cases fit the same architecture.
 
 - [architecture-overview.md](architecture-overview.md) for the top-level system
   model
-- [api-contract.md](api-contract.md) for stable invocation and output boundaries
-- [staged-output-contract.md](staged-output-contract.md) for the staged-tree
+- [../reference/api-contract.md](../reference/api-contract.md) for stable invocation and output boundaries
+- [../reference/staged-output-contract.md](../reference/staged-output-contract.md) for the staged-tree
   contract consumed by renderers and deployment adapters
-- [code-maintenance.md](code-maintenance.md) for maintainer-facing planning and
+- [../maintenance/code-maintenance.md](../maintenance/code-maintenance.md) for maintainer-facing planning and
   execution-path boundaries
 - [build-architecture.md](build-architecture.md) for the build/watch execution
   model
-- [flexible-component-publication.md](flexible-component-publication.md) for the
+- [../reference/flexible-component-publication.md](../reference/flexible-component-publication.md) for the
   publication and lifecycle model

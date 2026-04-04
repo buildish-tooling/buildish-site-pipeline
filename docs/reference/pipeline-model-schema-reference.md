@@ -29,7 +29,7 @@ It remains a design reference rather than an implementation-locked schema.
 
 For maintainer-facing notes about model-layer ownership, validation boundaries,
 and how the schema layer relates to planning, evaluation, and staging, see
-[`code-maintenance.md`](code-maintenance.md).
+[`../maintenance/code-maintenance.md`](../maintenance/code-maintenance.md).
 
 ## Scope and conventions
 

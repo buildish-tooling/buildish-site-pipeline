@@ -63,6 +63,6 @@ real step in the workflow.
 
 ## Deeper reference trail
 
-- [../v1/flexible-component-publication.md](../v1/flexible-component-publication.md)
-- [../v1/staged-output-contract.md](../v1/staged-output-contract.md)
-- [../v1/security-and-trust-model.md](../v1/security-and-trust-model.md)
+- [../reference/flexible-component-publication.md](../reference/flexible-component-publication.md)
+- [../reference/staged-output-contract.md](../reference/staged-output-contract.md)
+- [../reference/security-and-trust-model.md](../reference/security-and-trust-model.md)

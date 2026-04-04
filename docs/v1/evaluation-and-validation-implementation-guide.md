@@ -648,7 +648,7 @@ Test at least:
 ### Security
 
 - [x] evaluation performs no hidden mutation or fetches
-- [ ] rooted path and symlink checks are applied before trust decisions
+- [x] rooted path and symlink checks are applied before trust decisions
 - [x] oversized diagnostic details are reduced safely
 - [x] operator policy is not repo/provider driven
 - [x] machine-local details are kept out of public outputs by default

@@ -70,6 +70,7 @@ def _select_development_context(component_slug: str, artifact: object, provider_
     if not policy.development:
         return []
     provider_record = None
+    deterministic = True
     if provider_context is not None:
         matching_records = [
             record
@@ -78,6 +79,7 @@ def _select_development_context(component_slug: str, artifact: object, provider_
         ]
         if matching_records:
             provider_record = _choose_best_record(matching_records)
+            deterministic = len(matching_records) == 1
     return [
         SelectedVersionContext(
             component_slug=component_slug,
@@ -90,6 +92,7 @@ def _select_development_context(component_slug: str, artifact: object, provider_
             ref=artifact.versioning.development_ref,
             commit_sha=provider_record.commit_sha if provider_record else None,
             provider_record=provider_record,
+            deterministic=deterministic,
         )
     ]
 
@@ -187,10 +190,12 @@ def _select_named_ref_contexts(component_slug: str, artifact: object, provider_c
     for named_ref_key in selected_keys:
         authored_named_ref = authored_named_refs[named_ref_key]
         provider_record = None
+        deterministic = True
         if provider_context is not None:
             provider_records = list(provider_context.named_refs_by_key.get(named_ref_key, ())) or list(provider_context.refs_by_ref.get(authored_named_ref.ref, ()))
             if provider_records:
                 provider_record = _choose_best_record(provider_records)
+                deterministic = len(provider_records) == 1
         selected_contexts.append(
             SelectedVersionContext(
                 component_slug=component_slug,
@@ -205,6 +210,7 @@ def _select_named_ref_contexts(component_slug: str, artifact: object, provider_c
                 named_ref_key=named_ref_key,
                 maturity=authored_named_ref.maturity,
                 provider_record=provider_record,
+                deterministic=deterministic,
             )
         )
     return selected_contexts

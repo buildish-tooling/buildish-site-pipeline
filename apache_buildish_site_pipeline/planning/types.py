@@ -40,6 +40,7 @@ from apache_buildish_site_pipeline.models.enums import (
     PlanningTarget,
     PublicationState,
     RecordKind,
+    RouteMode,
     WithdrawalBehavior,
 )
 from apache_buildish_site_pipeline.models.planning_stage_contract import PipelineDiagnosticEntry
@@ -125,6 +126,16 @@ class ResolvedArtifactConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class ResolvedLocalizationPolicy:
+    """Resolved per-component localization facts derived from authored config."""
+
+    default_locale: str | None
+    supported_locales: tuple[str, ...] | None
+    fallback_locale: str | None
+    route_mode: RouteMode | None
+
+
+@dataclass(frozen=True, slots=True)
 class ResolvedComponentConfig:
     """Resolved component runtime view for planning."""
 
@@ -138,6 +149,7 @@ class ResolvedComponentConfig:
     docs_root: Path | None
     assets_root: Path | None
     publication: ResolvedPublicationPolicy
+    localization: ResolvedLocalizationPolicy
     publication_selection: PublicationSelectionPolicy | None
     artifacts: tuple[ResolvedArtifactConfig, ...]
 
@@ -204,6 +216,8 @@ class ProviderSnapshotIndex:
     providers: dict[str, ProviderDescriptor]
     contexts_by_artifact: dict[tuple[str, str], ProviderContextIndex]
     by_external_id: dict[tuple[str, str], IndexedProviderRecord]
+    snapshot_bytes: int
+    record_count: int
 
 
 @dataclass(frozen=True, slots=True)

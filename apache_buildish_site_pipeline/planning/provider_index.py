@@ -109,6 +109,8 @@ def build_provider_snapshot_index(
             for key, value in contexts_by_artifact.items()
         },
         by_external_id=by_external_id,
+        snapshot_bytes=encoded_size,
+        record_count=len(provider_snapshot.records),
     )
 
 

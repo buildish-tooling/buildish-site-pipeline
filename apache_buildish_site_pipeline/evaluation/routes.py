@@ -10,7 +10,7 @@ from . import diagnostic_codes
 from .collector import DiagnosticCollector
 from .publication import public_path_for_context, target_id_for_context
 from .reference_index import KnownRoute, build_reference_index, resolve_internal_reference, route_from_published_target
-from .types import PublicationIndex, PublishedTarget
+from .types import PublicationIndex, PublishedTarget, RouteInventory
 
 from apache_buildish_site_pipeline.planning.types import PlanningEvaluation, ResolvedComponentConfig, SelectedVersionContext
 
@@ -19,7 +19,7 @@ def validate_routes(
     planning: PlanningEvaluation,
     publication_index: PublicationIndex,
     collector: DiagnosticCollector,
-) -> None:
+) -> RouteInventory:
     """Validate shared route occupancy and redirect targets for the resolved plan."""
 
     component_by_slug = {component.slug: component for component in planning.site.components}
@@ -90,6 +90,21 @@ def validate_routes(
         redirect_edges=redirect_edges,
         routes_by_lookup_key=routes_by_lookup_key,
         collector=collector,
+    )
+    return RouteInventory(
+        route_count=(
+            len(publication_index.targets)
+            + len(planning.selected_versions.contexts)
+            + sum(len(component.publication.aliases) for component in planning.site.components)
+        ),
+        redirect_count=(
+            sum(len(component.publication.redirects) for component in planning.site.components)
+            + sum(
+                1
+                for context in planning.selected_versions.contexts
+                if context.withdrawal_behavior is WithdrawalBehavior.REDIRECT and context.redirect_target is not None
+            )
+        ),
     )
 
 

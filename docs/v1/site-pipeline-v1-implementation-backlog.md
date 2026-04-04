@@ -114,10 +114,10 @@ Merge gate:
 - [x] implement the shared evaluation package used by `check`, `build`, and
       `watch`
 - [x] implement the central diagnostic collector and code registry
-- [ ] implement contextual reference, route, redirect, localization, provider,
+- [x] implement contextual reference, route, redirect, localization, provider,
       readiness, and page-scan validation modules
 - [x] implement summary construction and explicit stage-gating decisions
-- [ ] add deterministic, non-happy-path, and security-sensitive evaluation tests
+- [x] add deterministic, non-happy-path, and security-sensitive evaluation tests
 
 Primary reference:
 

@@ -109,3 +109,42 @@ class EffectiveConfigResolutionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tempdir:
             with self.assertRaises(ValueError):
                 resolve_site_config(catalog=catalog, workspace_root=Path(tempdir))
+
+    def test_resolves_component_localization_from_defaults_and_overrides(self) -> None:
+        catalog = CatalogDocumentV1.model_validate(
+            {
+                "schemaVersion": 1,
+                "defaults": {
+                    "publication": {"origin": "docs"},
+                    "localization": {
+                        "supportedLocales": ["en", "de"],
+                        "defaultLocale": "en",
+                        "fallbackLocale": "de",
+                        "routeMode": "prefixAll",
+                    },
+                },
+                "site": {},
+                "origins": {"docs": {"baseUrl": "https://docs.example.org"}},
+                "sources": {"runtime": {"localDir": "components/runtime"}},
+                "components": [
+                    {
+                        "slug": "spark",
+                        "content": {"source": "runtime"},
+                        "localization": {"supportedLocales": ["de", "fr"], "defaultLocale": "fr"},
+                        "publication": {"mountPath": "/spark/"},
+                        "artifacts": [],
+                    }
+                ],
+            },
+            by_alias=True,
+            by_name=False,
+        )
+
+        with tempfile.TemporaryDirectory() as tempdir:
+            site = resolve_site_config(catalog=catalog, workspace_root=Path(tempdir))
+
+        localization = site.components[0].localization
+        self.assertEqual(("de", "fr"), localization.supported_locales)
+        self.assertEqual("fr", localization.default_locale)
+        self.assertEqual("de", localization.fallback_locale)
+        self.assertEqual("prefixAll", localization.route_mode.value)

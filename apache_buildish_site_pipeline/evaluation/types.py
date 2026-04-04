@@ -80,10 +80,38 @@ class PublicationIndex:
 
 
 @dataclass(frozen=True, slots=True)
+class RouteInventory:
+    """Derived route and redirect inventory counts for safety checks."""
+
+    route_count: int
+    redirect_count: int
+
+
+@dataclass(frozen=True, slots=True)
+class ScannedPage:
+    """One page-like file discovered beneath a selected input root."""
+
+    input_id: str
+    component_slug: str | None
+    artifact_key: str | None
+    relative_path: str
+    translation_key: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class PageScanResult:
+    """Summary of read-only page scanning over selected local inputs."""
+
+    pages: tuple[ScannedPage, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class EvaluationArtifacts:
     """Derived contextual indexes that later phases may reuse."""
 
     publication_index: PublicationIndex
+    route_inventory: RouteInventory
+    page_scan: PageScanResult
 
 
 @dataclass(frozen=True, slots=True)

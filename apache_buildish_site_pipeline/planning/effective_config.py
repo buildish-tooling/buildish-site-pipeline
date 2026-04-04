@@ -25,6 +25,7 @@ from apache_buildish_site_pipeline.models.validation.urls import extract_hostnam
 from .types import (
     ResolvedArtifactConfig,
     ResolvedComponentConfig,
+    ResolvedLocalizationPolicy,
     ResolvedOrigin,
     ResolvedPublicationPolicy,
     ResolvedSiteConfig,
@@ -128,6 +129,7 @@ def _resolve_component(
         group_path_prefix=group.path_prefix if group is not None else None,
         origins=origins,
     )
+    localization = _resolve_localization(catalog=catalog, component=component)
 
     metadata_file = content_source.metadata_file if content_source is not None else None
     pages_root = _resolve_component_content_path(content_source, component_document, "pages_root", catalog.defaults.pages_root)
@@ -168,6 +170,7 @@ def _resolve_component(
         docs_root=docs_root,
         assets_root=assets_root,
         publication=publication,
+        localization=localization,
         publication_selection=component.publication_selection,
         artifacts=tuple(artifacts),
     )
@@ -263,6 +266,48 @@ def _resolve_component_content_path(
     if effective_relpath is None:
         return None
     return _resolve_repo_path(source_binding.local_dir, effective_relpath)
+
+
+def _resolve_localization(
+    *,
+    catalog: CatalogDocumentV1,
+    component: ComponentCatalogEntry,
+) -> ResolvedLocalizationPolicy:
+    defaults = catalog.defaults.localization
+    authored = component.localization
+    if defaults is None and authored is None:
+        return ResolvedLocalizationPolicy(
+            default_locale=None,
+            supported_locales=None,
+            fallback_locale=None,
+            route_mode=None,
+        )
+    return ResolvedLocalizationPolicy(
+        default_locale=(
+            authored.default_locale
+            if authored and authored.default_locale is not None
+            else (defaults.default_locale if defaults is not None else None)
+        ),
+        supported_locales=(
+            tuple(authored.supported_locales)
+            if authored and authored.supported_locales is not None
+            else (
+                tuple(defaults.supported_locales)
+                if defaults is not None and defaults.supported_locales is not None
+                else None
+            )
+        ),
+        fallback_locale=(
+            authored.fallback_locale
+            if authored and authored.fallback_locale is not None
+            else (defaults.fallback_locale if defaults is not None else None)
+        ),
+        route_mode=(
+            authored.route_mode
+            if authored and authored.route_mode is not None
+            else (defaults.route_mode if defaults is not None else None)
+        ),
+    )
 
 
 def _join_public_path(base_path: str, segment: str) -> str:

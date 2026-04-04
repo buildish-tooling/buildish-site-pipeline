@@ -20,7 +20,7 @@ def target_id_for_context(context: SelectedVersionContext) -> str:
     if context.kind is RecordKind.DEVELOPMENT:
         return f"development:{context.component_slug}:{context.artifact_key}"
     if context.kind is RecordKind.NAMED_REF:
-        return f"named-ref:{context.component_slug}:{context.artifact_key}:{context.reference_key}"
+        return f"named-ref:{context.component_slug}:{context.artifact_key}:{context.named_ref_key}"
     if context.kind is RecordKind.LINE_HEAD:
         return f"line-head:{context.component_slug}:{context.artifact_key}:{context.release_line}"
     if context.kind is RecordKind.CANDIDATE:
@@ -34,7 +34,7 @@ def public_path_for_context(publication: ResolvedPublicationPolicy, context: Sel
     if context.kind is RecordKind.DEVELOPMENT:
         return publication.development_path
     if context.kind is RecordKind.NAMED_REF:
-        return f"{publication.docs_path}refs/{context.reference_key}/"
+        return f"{publication.docs_path}refs/{context.named_ref_key}/"
     if context.kind is RecordKind.LINE_HEAD:
         return f"{publication.docs_path}{context.release_line}/"
     if context.kind is RecordKind.CANDIDATE:

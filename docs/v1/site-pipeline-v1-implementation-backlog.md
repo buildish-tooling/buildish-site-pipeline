@@ -173,7 +173,7 @@ Merge gate:
 - [x] implement retained last-known-good behavior for ordinary cycle failure
 - [x] implement exit-required behavior for integrity ambiguity
 - [x] implement repeated watch-report rewriting without self-trigger loops
-- [ ] add state-machine, invalidation, filesystem-transition, and safety tests
+- [x] add state-machine, invalidation, filesystem-transition, and safety tests
 
 Primary reference:
 
@@ -193,6 +193,8 @@ Merge gate:
       and watch behavior
 - [ ] verify whole-system behavior is deterministic enough for stable tests and
       safe operator use
+- [ ] optionally verify renderer smoke tests remain stable during burst changes
+      when a stable environment is available; this is a non-blocking follow-up
 - [ ] resolve any remaining ambiguity between guides, code, and tests before v1
       completion
 

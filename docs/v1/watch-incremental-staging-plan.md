@@ -1121,6 +1121,11 @@ This checklist is intended for implementation tracking and later doc reuse.
 - [x] performance work starts only after prior correctness suites are green
 - [x] pool-size tuning preserves normalized outputs
 - [x] any extra concurrency still preserves one-writer publication
+- [x] optional renderer smoke stability is tracked outside Phase 6 as a
+      non-blocking Phase 7 follow-up
+
+### Phase 7 optional follow-up checklist
+
 - [ ] optional renderer smoke tests remain stable during burst changes
 
 ## Practical stop rules

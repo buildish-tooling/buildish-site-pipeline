@@ -464,6 +464,94 @@ class CliTests(unittest.TestCase):
         self.assertEqual(stdout.getvalue(), "")
         self.assertEqual(stderr.getvalue(), "")
 
+    def test_check_build_and_watch_reuse_shared_planning_layers(self) -> None:
+        import apache_buildish_site_pipeline.commands.build as build_command
+        import apache_buildish_site_pipeline.commands.check as check_command
+        import apache_buildish_site_pipeline.commands.watch as watch_command
+
+        with _workspace(with_content_file=True) as workspace_root:
+            observed_calls: list[tuple[str, str, str]] = []
+            expected_repo_root = str(workspace_root)
+            expected_stage_root = str(workspace_root / "site/.stage")
+            expected_work_root = str(workspace_root / "site/.site-pipeline-work")
+
+            def _record_loader(command_name: str, real_loader):
+                def _wrapper(*args, **kwargs):
+                    repo_root = args[0] if args else kwargs["repo_root"]
+                    loaded_inputs = real_loader(*args, **kwargs)
+                    observed_calls.append(("load", command_name, str(repo_root)))
+                    return loaded_inputs
+
+                return _wrapper
+
+            def _record_planning(command_name: str, real_planning):
+                def _wrapper(*args, **kwargs):
+                    planning = real_planning(*args, **kwargs)
+                    workspace_root = kwargs["workspace_root"]
+                    stage_root = kwargs["stage_root"]
+                    work_root = kwargs["work_root"]
+                    target = kwargs["target"]
+                    observed_calls.append(
+                        (
+                            "planning",
+                            command_name,
+                            ":".join(
+                                (
+                                    target.value,
+                                    str(workspace_root),
+                                    str(stage_root),
+                                    str(work_root),
+                                ),
+                            ),
+                        ),
+                    )
+                    return planning
+
+                return _wrapper
+
+            def _record_evaluation(command_name: str, real_evaluation):
+                def _wrapper(*args, **kwargs):
+                    request = kwargs["request"]
+                    observed_calls.append(("evaluation", command_name, request.mode.value))
+                    return real_evaluation(*args, **kwargs)
+
+                return _wrapper
+
+            with _cwd(workspace_root):
+                with (
+                    mock.patch.object(build_command, "load_workspace_inputs", new=_record_loader("build", build_command.load_workspace_inputs)),
+                    mock.patch.object(check_command, "load_workspace_inputs", new=_record_loader("check", check_command.load_workspace_inputs)),
+                    mock.patch.object(watch_command, "load_workspace_inputs", new=_record_loader("watch", watch_command.load_workspace_inputs)),
+                    mock.patch.object(build_command, "evaluate_planning", new=_record_planning("build", build_command.evaluate_planning)),
+                    mock.patch.object(check_command, "evaluate_planning", new=_record_planning("check", check_command.evaluate_planning)),
+                    mock.patch.object(watch_command, "evaluate_planning", new=_record_planning("watch", watch_command.evaluate_planning)),
+                    mock.patch.object(build_command, "run_evaluation", new=_record_evaluation("build", build_command.run_evaluation)),
+                    mock.patch.object(check_command, "run_evaluation", new=_record_evaluation("check", check_command.run_evaluation)),
+                    mock.patch.object(watch_command, "run_evaluation", new=_record_evaluation("watch", watch_command.run_evaluation)),
+                    mock.patch(
+                        "apache_buildish_site_pipeline.commands.watch._open_watch_event_stream",
+                        new=_fake_watch_event_stream_factory(responses=[(True, None)]),
+                    ),
+                ):
+                    self.assertEqual(_run(argv=["check"], stdout=io.StringIO(), stderr=io.StringIO()), 0)
+                    self.assertEqual(_run(argv=["build"], stdout=io.StringIO(), stderr=io.StringIO()), 0)
+                    self.assertEqual(_run(argv=["watch"], stdout=io.StringIO(), stderr=io.StringIO()), 0)
+
+        self.assertEqual(
+            observed_calls,
+            [
+                ("load", "check", expected_repo_root),
+                ("planning", "check", f"build:{expected_repo_root}:{expected_stage_root}:{expected_work_root}"),
+                ("evaluation", "check", "check"),
+                ("load", "build", expected_repo_root),
+                ("planning", "build", f"build:{expected_repo_root}:{expected_stage_root}:{expected_work_root}"),
+                ("evaluation", "build", "build"),
+                ("load", "watch", expected_repo_root),
+                ("planning", "watch", f"watch:{expected_repo_root}:{expected_stage_root}:{expected_work_root}"),
+                ("evaluation", "watch", "watch"),
+            ],
+        )
+
 
 @contextmanager
 def _workspace(*, with_content_file: bool = False):

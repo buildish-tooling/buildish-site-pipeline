@@ -18,7 +18,9 @@ from __future__ import annotations
 
 import io
 import json
+import threading
 import unittest
+import unittest.mock
 
 from apache_buildish_site_pipeline.cli import _run
 from apache_buildish_site_pipeline.commands.shared import load_workspace_inputs
@@ -237,6 +239,85 @@ class WatchIncrementalTests(unittest.TestCase):
 
         self.assertEqual(build_exit_code, 0)
         self.assertEqual(watch_snapshot, build_snapshot)
+
+    def test_renderer_probe_stays_consistent_during_noisy_watch_burst(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            _expand_workspace_for_multiple_owned_units(workspace_root)
+            stage_root = workspace_root / "site/.stage"
+            watched_file = workspace_root / "components/runtime/docs/releases/4.0.0/index.md"
+            release_page = stage_root / "content/components/spark/contexts/releases/4.0.0/index.md"
+            failures: list[str] = []
+            stop_event = threading.Event()
+            raw_batches = (
+                {(None, str(watched_file))},
+                {(None, str(watched_file.parent))},
+                {(None, str(watched_file.parent.parent)), (None, str(watched_file))},
+                set(),
+            )
+
+            class _MutatingRawEventBatches:
+                def __init__(self) -> None:
+                    self._batch_index = 0
+
+                def __iter__(self):
+                    return self
+
+                def __next__(self):
+                    if self._batch_index >= len(raw_batches):
+                        raise StopIteration
+                    watched_file.write_text(f"renderer burst {self._batch_index}\n", encoding="utf-8")
+                    batch = raw_batches[self._batch_index]
+                    self._batch_index += 1
+                    return batch
+
+            def _manifest_changed(manifest_path, manifest_text: str) -> bool:
+                try:
+                    return manifest_path.read_text(encoding="utf-8") != manifest_text
+                except FileNotFoundError:
+                    return True
+
+            def _probe() -> None:
+                while not stop_event.is_set():
+                    manifest_path = stage_root / "manifest.json"
+                    if not manifest_path.exists():
+                        continue
+                    try:
+                        manifest_text = manifest_path.read_text(encoding="utf-8")
+                        manifest = json.loads(manifest_text)
+                        for relative_path in manifest.get("dataFiles", {}).values():
+                            if relative_path is None:
+                                continue
+                            if not (stage_root / relative_path).is_file():
+                                if _manifest_changed(manifest_path, manifest_text):
+                                    break
+                                failures.append(f"missing data file: {relative_path}")
+                                stop_event.set()
+                                return
+                        if not release_page.is_file():
+                            if _manifest_changed(manifest_path, manifest_text):
+                                continue
+                            failures.append(str(release_page.relative_to(stage_root)))
+                            stop_event.set()
+                            return
+                        release_page.read_text(encoding="utf-8")
+                    except FileNotFoundError:
+                        continue
+
+            probe_thread = threading.Thread(target=_probe)
+            probe_thread.start()
+            try:
+                with _cwd(workspace_root):
+                    with unittest.mock.patch(
+                        "apache_buildish_site_pipeline.commands.watch.watch",
+                        return_value=_MutatingRawEventBatches(),
+                    ):
+                        exit_code = _run(argv=["watch"], stdout=io.StringIO(), stderr=io.StringIO())
+            finally:
+                stop_event.set()
+                probe_thread.join(timeout=5)
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(failures, [])
 
 
 def _run_watch_then_snapshot(*, workspace_root, responses: list[tuple[bool, object]]) -> dict[str, object]:

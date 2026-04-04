@@ -1126,7 +1126,7 @@ This checklist is intended for implementation tracking and later doc reuse.
 
 ### Phase 7 optional follow-up checklist
 
-- [ ] optional renderer smoke tests remain stable during burst changes
+- [x] optional renderer smoke tests remain stable during burst changes
 
 ## Practical stop rules
 

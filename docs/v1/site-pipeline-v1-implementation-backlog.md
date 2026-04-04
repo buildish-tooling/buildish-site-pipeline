@@ -186,16 +186,16 @@ Merge gate:
 
 ## Phase 7: final hardening and whole-system verification
 
-- [ ] verify all v1 in-scope functionality is implemented across all phases
-- [ ] verify all documented security ceilings and safe defaults are enforced
-- [ ] verify all report contracts and staged-output contracts are honored
-- [ ] verify non-happy-path coverage across planning, validation, staging, CLI,
+- [x] verify all v1 in-scope functionality is implemented across all phases
+- [x] verify all documented security ceilings and safe defaults are enforced
+- [x] verify all report contracts and staged-output contracts are honored
+- [x] verify non-happy-path coverage across planning, validation, staging, CLI,
       and watch behavior
-- [ ] verify whole-system behavior is deterministic enough for stable tests and
+- [x] verify whole-system behavior is deterministic enough for stable tests and
       safe operator use
-- [ ] optionally verify renderer smoke tests remain stable during burst changes
+- [x] optionally verify renderer smoke tests remain stable during burst changes
       when a stable environment is available; this is a non-blocking follow-up
-- [ ] resolve any remaining ambiguity between guides, code, and tests before v1
+- [x] resolve any remaining ambiguity between guides, code, and tests before v1
       completion
 
 Primary references:
@@ -212,15 +212,15 @@ Merge gate:
 
 Do not consider v1 complete until all of the following are true:
 
-- [ ] all v1 in-scope behavior has an implementation
-- [ ] all implementation-guide domain checklists are satisfied
-- [ ] all relevant unhappy-path and security-sensitive tests exist and pass
-- [ ] no phase relies on hidden fetches, hidden mutation, or undocumented side
+- [x] all v1 in-scope behavior has an implementation
+- [x] all implementation-guide domain checklists are satisfied
+- [x] all relevant unhappy-path and security-sensitive tests exist and pass
+- [x] no phase relies on hidden fetches, hidden mutation, or undocumented side
       paths
-- [ ] no public report or staged output leaks machine-local implementation detail
+- [x] no public report or staged output leaks machine-local implementation detail
       beyond the documented contract
-- [ ] watch, build, and check all reuse the intended shared lower execution path
-- [ ] stage publication remains integrity-first, with `manifest.json` as commit
+- [x] watch, build, and check all reuse the intended shared lower execution path
+- [x] stage publication remains integrity-first, with `manifest.json` as commit
       point
 
 ## Out-of-scope guardrail

@@ -12,20 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tiny command-line entry point for the site pipeline package."""
-
-from __future__ import annotations
-
-import sys
-from pathlib import Path
-
-_REPO_ROOT = Path(__file__).resolve().parent
-_SRC_ROOT = _REPO_ROOT / "src"
-if str(_SRC_ROOT) not in sys.path:
-    sys.path.insert(0, str(_SRC_ROOT))
-
-from apache_buildish_site_pipeline import main
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+"""CLI-focused test modules."""

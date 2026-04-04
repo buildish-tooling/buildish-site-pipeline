@@ -38,7 +38,11 @@ requires = [
 ]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.package-dir]
+"" = "src"
+
 [tool.setuptools.packages.find]
+where = ["src"]
 include = ["apache_buildish_site_pipeline*"]
 
 [dependency-groups]
@@ -56,11 +60,12 @@ extend-exclude = ["tests"]
 select = ["F", "B", "UP", "S"]
 
 [tool.ruff.lint.per-file-ignores]
-"apache_buildish_site_pipeline/models/__init__.py" = ["F401"]
+"src/apache_buildish_site_pipeline/models/__init__.py" = ["F401"]
 
 [tool.mypy]
 python_version = "3.13"
-files = ["main.py", "apache_buildish_site_pipeline"]
+files = ["main.py", "src/apache_buildish_site_pipeline"]
+mypy_path = ["src"]
 explicit_package_bases = true
 disable_error_code = ["import-untyped"]
 warn_redundant_casts = true

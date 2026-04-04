@@ -21,7 +21,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from apache_buildish_site_pipeline.cli_errors import CommandExecutionError
+from apache_buildish_site_pipeline.cli.errors import CommandExecutionError
 from apache_buildish_site_pipeline.models import CatalogDocumentV1, PlanningTarget, ProviderSnapshotV1
 from apache_buildish_site_pipeline.models.enums import MaterializationInputKind, MaterializationStatus
 from apache_buildish_site_pipeline.planning import build_resolved_materialization_report, evaluate_planning

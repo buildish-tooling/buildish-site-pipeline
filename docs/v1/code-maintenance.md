@@ -166,6 +166,43 @@ When changing these internals, update tests in the same area.
 - when behavior is supposed to be shared across `check`, `build`, and `watch`,
   tests should make that reuse explicit
 
+## Documentation structure and onboarding maintenance
+
+Keep the documentation set split by reader need instead of mixing onboarding,
+procedural guidance, and reference material into the same layer.
+
+- `docs/getting-started/` is the onboarding layer for readers who first need to
+  identify their site shape and the smallest model they need
+- `docs/how-to/` is for task-oriented workflows such as building a tiny site,
+  inspecting staged output, or generating HTTP server config
+- `docs/v1/` is for stable architecture, contract, schema, and trust/reference
+  documentation
+
+When maintaining the onboarding docs, optimize for these outcomes:
+
+- fast self-identification: "which kind of site am I?"
+- a minimal mental model for the current audience
+- explicit permission to ignore irrelevant complexity for now
+- a clear path to the next size band when a site grows
+
+The getting-started pages should keep a consistent shape:
+
+- who this is for
+- the smallest useful or smallest working model
+- what can be ignored for now
+- what to read next when the site grows
+
+Use this consumability check when changing the onboarding docs. A reader should
+be able to answer:
+
+1. is this my size band?
+2. what is the smallest model I need?
+3. which advanced features can I safely ignore?
+4. what should I read next if my site grows?
+
+If those answers are hard to find, the model may still be sound, but the docs
+set is not yet consumable enough.
+
 ## Read next
 
 - [api-contract.md](api-contract.md) for the public CLI boundary

@@ -267,6 +267,8 @@ def _run_watch_cycle(
             trusted_stage=trusted_stage,
             prior_watch_roots=prior_watch_roots,
             diagnostics=(_build_cycle_failure_diagnostic(str(exc)),),
+            workspace_root=invocation.layout.repo_root,
+            private_roots=(invocation.layout.work_root, invocation.layout.stage_root),
         )
 
     planning_roots = planning.watch_plan.roots if planning.watch_plan is not None else prior_watch_roots
@@ -283,6 +285,8 @@ def _run_watch_cycle(
                 stage_root_path=trusted_stage.stage_root if trusted_stage is not None else None,
                 manifest_path=trusted_stage.manifest_path if trusted_stage is not None else None,
                 cycle=cycle_number,
+                workspace_root=invocation.layout.repo_root,
+                private_roots=(invocation.layout.work_root, invocation.layout.stage_root),
             ),
             trusted_stage=trusted_stage,
             watch_roots=watch_roots,
@@ -304,6 +308,8 @@ def _run_watch_cycle(
             prior_watch_roots=watch_roots,
             evaluation=evaluation,
             diagnostics=tuple(evaluation.diagnostics) + (_build_cycle_failure_diagnostic(str(exc)),),
+            workspace_root=invocation.layout.repo_root,
+            private_roots=(invocation.layout.work_root, invocation.layout.stage_root),
         )
 
     try:
@@ -319,6 +325,8 @@ def _run_watch_cycle(
             prior_watch_roots=watch_roots,
             evaluation=evaluation,
             diagnostics=tuple(evaluation.diagnostics) + (_build_cycle_failure_diagnostic(str(exc)),),
+            workspace_root=invocation.layout.repo_root,
+            private_roots=(invocation.layout.work_root, invocation.layout.stage_root),
         )
     finally:
         shutil.rmtree(cycle_root, ignore_errors=True)
@@ -337,6 +345,8 @@ def _run_watch_cycle(
             stage_root_path=publication.stage_root,
             manifest_path=publication.manifest_path,
             cycle=cycle_number,
+            workspace_root=invocation.layout.repo_root,
+            private_roots=(invocation.layout.work_root, invocation.layout.stage_root),
         ),
         trusted_stage=next_trusted_stage,
         watch_roots=watch_roots,
@@ -350,6 +360,8 @@ def _failed_cycle_outcome(
     prior_watch_roots: tuple[Path, ...],
     diagnostics: tuple[PipelineDiagnosticEntry, ...],
     evaluation=None,
+    workspace_root: Path | None = None,
+    private_roots: tuple[Path, ...] = (),
 ) -> WatchCycleOutcome:
     return WatchCycleOutcome(
         report=build_stage_run_report(
@@ -362,6 +374,8 @@ def _failed_cycle_outcome(
             stage_root_path=trusted_stage.stage_root if trusted_stage is not None else None,
             manifest_path=trusted_stage.manifest_path if trusted_stage is not None else None,
             cycle=cycle_number,
+            workspace_root=workspace_root,
+            private_roots=private_roots,
         ),
         trusted_stage=trusted_stage,
         watch_roots=prior_watch_roots,

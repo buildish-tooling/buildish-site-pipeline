@@ -37,15 +37,57 @@ class ContributionFileRefs(SitePipelineBaseModel):
     unit_manifest: str | None = None
 
 
+class WorkerOutputStats(SitePipelineBaseModel):
+    """Small bounded counters summarizing one worker's staged outputs."""
+
+    files_written: int = 0
+    page_files_written: int = 0
+    asset_files_written: int = 0
+
+
+class WorkerFailureWire(SitePipelineBaseModel):
+    """Compact failure payload returned when a worker cannot complete safely."""
+
+    category: str
+    message: str
+
+
 class WorkerResultWire(SitePipelineBaseModel):
     """Coordinator-visible result of one worker run."""
 
     unit_id: str
+    succeeded: bool = True
     files_written: int = 0
     page_files_written: int = 0
     asset_files_written: int = 0
+    output_stats: WorkerOutputStats = WorkerOutputStats()
+    failure: WorkerFailureWire | None = None
     contribution_files: ContributionFileRefs = ContributionFileRefs()
     stage_meta: WorkerStageMetaWire = WorkerStageMetaWire()
+
+    def normalized(self) -> WorkerResultWire:
+        """Return a copy with nested counters populated from the legacy fields."""
+
+        if self.output_stats == WorkerOutputStats():
+            return self.model_copy(
+                update={
+                    "output_stats": WorkerOutputStats(
+                        files_written=self.files_written,
+                        page_files_written=self.page_files_written,
+                        asset_files_written=self.asset_files_written,
+                    ),
+                },
+            )
+        return self
+
+    def require_success(self) -> WorkerResultWire:
+        """Raise a staging integrity error when the worker reported failure."""
+
+        normalized = self.normalized()
+        if normalized.succeeded:
+            return normalized
+        failure = normalized.failure.message if normalized.failure is not None else "unknown worker failure"
+        raise StageIntegrityError(f"Worker {normalized.unit_id!r} failed: {failure}")
 
 
 class LocalizationWire(SitePipelineBaseModel):
@@ -91,6 +133,7 @@ class WorkerSpecWire(SitePipelineBaseModel):
     unit_kind: str
     owner_id: str
     workspace_root: str
+    unit_root: str | None = None
     fragment_path: str
     site_pages_source: str | None = None
     site_assets_source: str | None = None
@@ -167,3 +210,15 @@ def read_unit_manifest(path: Path) -> UnitContributionManifestWire:
     """Load one worker contribution manifest from JSON."""
 
     return UnitContributionManifestWire.model_validate_json(path.read_text(encoding="utf-8"))
+
+
+def worker_failure_result(*, unit_id: str, category: str, message: str, stage_meta: WorkerStageMetaWire) -> WorkerResultWire:
+    """Build one normalized failure result for the explicit worker boundary."""
+
+    return WorkerResultWire(
+        unit_id=unit_id,
+        succeeded=False,
+        output_stats=WorkerOutputStats(),
+        failure=WorkerFailureWire(category=category, message=message),
+        stage_meta=stage_meta,
+    )

@@ -906,7 +906,7 @@ Test at least:
 - [x] aggregates are coordinator-owned only
 - [x] `manifest.json` is built from the finalized private next stage
 - [x] `manifest.json` is the last visible finalized write
-- [ ] pool size changes do not change normalized outputs
+- [x] pool size changes do not change normalized outputs
 
 ### Security
 
@@ -914,8 +914,8 @@ Test at least:
 - [x] symlinks are resolved before trust decisions
 - [x] final write targets do not resolve through symlinks
 - [x] cross-filesystem publication is rejected
-- [ ] worker fragment references are revalidated by the coordinator
-- [ ] machine-local details do not leak into public outputs
+- [x] worker fragment references are revalidated by the coordinator
+- [x] machine-local details do not leak into public outputs
 - [x] unknown files are not deleted blindly from the stage root
 
 ### Watch reuse

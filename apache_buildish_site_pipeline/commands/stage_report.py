@@ -23,6 +23,7 @@ from apache_buildish_site_pipeline.evaluation.summary import build_run_status
 from apache_buildish_site_pipeline.evaluation.types import DiagnosticCounts, EvaluationResult
 from apache_buildish_site_pipeline.models.enums import DiagnosticSeverity, StageCommand
 from apache_buildish_site_pipeline.models.planning_stage_contract import PipelineDiagnosticEntry, StageRunReportV1, StageRunSummary
+from apache_buildish_site_pipeline.staging.public_safety import sanitize_public_diagnostics
 
 
 def build_stage_run_report(
@@ -36,10 +37,19 @@ def build_stage_run_report(
     manifest_path: Path | None,
     diagnostics: tuple[PipelineDiagnosticEntry, ...] | None = None,
     cycle: int | None = None,
+    workspace_root: Path | None = None,
+    private_roots: tuple[Path, ...] = (),
 ) -> StageRunReportV1:
     """Build a typed stage-run report from evaluation data and final stage state."""
 
     effective_diagnostics = tuple(diagnostics if diagnostics is not None else (evaluation.diagnostics if evaluation is not None else ()))
+    report_workspace_root = workspace_root or _report_workspace_root(evaluation)
+    if report_workspace_root is not None:
+        effective_diagnostics = sanitize_public_diagnostics(
+            effective_diagnostics,
+            workspace_root=report_workspace_root,
+            private_roots=private_roots,
+        )
     counts = _count_diagnostics(effective_diagnostics)
     return StageRunReportV1(
         schema_version=1,
@@ -67,3 +77,11 @@ def _count_diagnostics(diagnostics: tuple[PipelineDiagnosticEntry, ...]) -> Diag
         warning_count=sum(1 for entry in diagnostics if entry.severity is DiagnosticSeverity.WARNING),
         info_count=sum(1 for entry in diagnostics if entry.severity is DiagnosticSeverity.INFO),
     )
+
+
+def _report_workspace_root(evaluation: EvaluationResult | None) -> Path | None:
+    if evaluation is None:
+        return None
+    if evaluation.build_plan is not None:
+        return evaluation.build_plan.workspace_root
+    return evaluation.planning.site.workspace_root

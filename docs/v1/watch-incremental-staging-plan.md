@@ -1077,8 +1077,8 @@ This checklist is intended for implementation tracking and later doc reuse.
 - [x] worker specifications are immutable and serialization-friendly
 - [x] workers write only into private output areas
 - [x] shared aggregates are coordinator-owned only
-- [ ] pool size can be forced to `1` in tests
-- [ ] clean-build determinism tests pass
+- [x] pool size can be forced to `1` in tests
+- [x] clean-build determinism tests pass
 
 ### Phase 2 checklist
 
@@ -1119,7 +1119,7 @@ This checklist is intended for implementation tracking and later doc reuse.
 ### Phase 6 checklist
 
 - [ ] performance work starts only after prior correctness suites are green
-- [ ] pool-size tuning preserves normalized outputs
+- [x] pool-size tuning preserves normalized outputs
 - [ ] any extra concurrency still preserves one-writer publication
 - [ ] optional renderer smoke tests remain stable during burst changes
 

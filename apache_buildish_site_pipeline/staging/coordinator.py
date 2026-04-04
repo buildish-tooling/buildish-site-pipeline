@@ -12,15 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Serial first-wave staging coordinator with owned-unit boundaries."""
+"""Deterministic first-wave staging coordinator with owned-unit boundaries."""
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import os
 import shutil
+import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
-from apache_buildish_site_pipeline.cli_errors import RetainedStageError
+from pydantic import ValidationError
+
+from apache_buildish_site_pipeline.cli_errors import RetainedStageError, StageIntegrityError
 from apache_buildish_site_pipeline.models import ProviderSnapshotV1
 from apache_buildish_site_pipeline.models.enums import RecordKind
 from apache_buildish_site_pipeline.models.planning_stage_contract import PipelineDiagnosticEntry, StageCommand, StageManifestV1
@@ -32,7 +38,7 @@ from .ownership import OwnedContextInput, OwnedUnit, OwnedUnitKind, build_owned_
 from .publication import StagePublicationResult, finalize_stage_publication, validate_visible_stage_target_path
 from .publication_paths import public_path_for_context
 from .types import BuildRequest, BuildRunOutcome, EffectiveBuildPlan, StageDestination, WorkRootLayout
-from .units import run_component_unit, run_site_assets_unit, run_site_pages_unit, run_vendor_assets_unit
+from .worker_entrypoint import execute_worker_spec
 from .worker_protocol import (
     ComponentContextWire,
     LocalizationWire,
@@ -41,7 +47,10 @@ from .worker_protocol import (
     WorkerSpecWire,
     WorkerStageMetaWire,
 )
-from .workdirs import create_work_root_layout, prepare_next_stage_root, remove_work_root
+from .workdirs import RunWorkspace, create_work_root_layout, prepare_next_stage_root, remove_work_root
+
+
+_WORKER_PROCESS_TIMEOUT_SECONDS = 120.0
 
 
 def run_build(request: BuildRequest) -> BuildRunOutcome:
@@ -140,33 +149,34 @@ def publish_stage(
 
 def _run_owned_units(*, request: BuildRequest, layout: WorkRootLayout) -> tuple[WorkerResultWire, ...]:
     units = build_owned_units(request.build_plan)
-    results: list[WorkerResultWire] = []
-    for unit in units:
-        spec = _worker_spec_for_unit(unit=unit, request=request, layout=layout)
-        if unit.kind is OwnedUnitKind.SITE_PAGES:
-            results.append(run_site_pages_unit(spec))
-        elif unit.kind is OwnedUnitKind.SITE_ASSETS:
-            results.append(run_site_assets_unit(spec))
-        elif unit.kind is OwnedUnitKind.VENDOR_ASSETS:
-            results.append(run_vendor_assets_unit(spec))
-        else:
-            results.append(run_component_unit(spec))
-    return tuple(results)
+    run_workspace = RunWorkspace(workspace_root=request.build_plan.workspace_root, layout=layout)
+    specs = tuple(_worker_spec_for_unit(unit=unit, request=request, run_workspace=run_workspace) for unit in units)
+    if not specs:
+        return ()
 
-
-def _worker_spec_for_unit(*, unit: OwnedUnit, request: BuildRequest, layout: WorkRootLayout) -> WorkerSpecWire:
-    stage_meta = WorkerStageMetaWire(
-        content_roots=tuple(str(layout.next_stage_root / root) for root in unit.content_stage_roots),
-        static_roots=tuple(str(layout.next_stage_root / root) for root in unit.static_stage_roots),
+    worker_count = min(request.operator_policy.normalized_pool_size(), len(specs))
+    results = (
+        tuple(execute_worker_spec(spec) for spec in specs)
+        if worker_count == 1
+        else _run_worker_specs_in_pool(specs=specs, worker_count=worker_count)
     )
-    fragment_path = str(layout.fragments_root / f"{unit.unit_id.replace(':', '_')}.json")
+    return tuple(result.require_success() for result in results)
+
+
+def _worker_spec_for_unit(*, unit: OwnedUnit, request: BuildRequest, run_workspace: RunWorkspace) -> WorkerSpecWire:
+    unit_workspace = run_workspace.workspace_for_unit(unit)
+    stage_meta = WorkerStageMetaWire(
+        content_roots=tuple(str(root) for root in unit_workspace.content_roots),
+        static_roots=tuple(str(root) for root in unit_workspace.static_roots),
+    )
     if unit.kind is OwnedUnitKind.SITE_PAGES:
         return WorkerSpecWire(
             unit_id=unit.unit_id,
             unit_kind=unit.kind.value,
             owner_id=unit.owner_id,
             workspace_root=str(request.build_plan.workspace_root),
-            fragment_path=fragment_path,
+            unit_root=str(unit_workspace.unit_root),
+            fragment_path=str(unit_workspace.fragment_path),
             site_pages_source=str(unit.site_pages_source),
             stage_meta=stage_meta,
         )
@@ -176,7 +186,8 @@ def _worker_spec_for_unit(*, unit: OwnedUnit, request: BuildRequest, layout: Wor
             unit_kind=unit.kind.value,
             owner_id=unit.owner_id,
             workspace_root=str(request.build_plan.workspace_root),
-            fragment_path=fragment_path,
+            unit_root=str(unit_workspace.unit_root),
+            fragment_path=str(unit_workspace.fragment_path),
             site_assets_source=str(unit.site_assets_source),
             stage_meta=stage_meta,
         )
@@ -186,7 +197,8 @@ def _worker_spec_for_unit(*, unit: OwnedUnit, request: BuildRequest, layout: Wor
             unit_kind=unit.kind.value,
             owner_id=unit.owner_id,
             workspace_root=str(request.build_plan.workspace_root),
-            fragment_path=fragment_path,
+            unit_root=str(unit_workspace.unit_root),
+            fragment_path=str(unit_workspace.fragment_path),
             vendor_assets=tuple(
                 {"key": asset.key, "source_path": str(asset.source_path)}
                 for asset in unit.vendor_assets
@@ -218,18 +230,61 @@ def _worker_spec_for_unit(*, unit: OwnedUnit, request: BuildRequest, layout: Wor
         unit_kind=unit.kind.value,
         owner_id=unit.owner_id,
         workspace_root=str(request.build_plan.workspace_root),
-        fragment_path=fragment_path,
+        unit_root=str(unit_workspace.unit_root),
+        fragment_path=str(unit_workspace.fragment_path),
         component_slug=component.slug,
         component_pages_source=str(unit.component_pages_source) if unit.component_pages_source is not None else None,
-        component_pages_stage_root=str(layout.next_stage_root / "content" / "components" / component.slug / "pages"),
+        component_pages_stage_root=str(run_workspace.layout.next_stage_root / "content" / "components" / component.slug / "pages"),
         component_assets_source=str(unit.component_assets_source) if unit.component_assets_source is not None else None,
-        component_assets_stage_root=str(layout.next_stage_root / "static" / "components" / component.slug / "assets"),
+        component_assets_stage_root=str(run_workspace.layout.next_stage_root / "static" / "components" / component.slug / "assets"),
         component_front_matter=component_front_matter,
         component_publication=component_publication,
         localization=localization,
-        contexts=tuple(_context_wire(component=component, owned_context=context, layout=layout) for context in unit.contexts),
+        contexts=tuple(_context_wire(component=component, owned_context=context, layout=run_workspace.layout) for context in unit.contexts),
         stage_meta=stage_meta,
     )
+
+
+def _run_worker_specs_in_pool(*, specs: tuple[WorkerSpecWire, ...], worker_count: int) -> tuple[WorkerResultWire, ...]:
+    ordered_results: list[WorkerResultWire | None] = [None] * len(specs)
+    with ThreadPoolExecutor(max_workers=worker_count) as executor:
+        future_to_index = {
+            executor.submit(_run_worker_subprocess, spec): index
+            for index, spec in enumerate(specs)
+        }
+        for future in as_completed(future_to_index):
+            ordered_results[future_to_index[future]] = future.result()
+    return tuple(result for result in ordered_results if result is not None)
+
+
+def _run_worker_subprocess(spec: WorkerSpecWire) -> WorkerResultWire:
+    completed = subprocess.run(
+        [sys.executable, "-m", "apache_buildish_site_pipeline.staging.worker_entrypoint"],
+        input=spec.model_dump_json(by_alias=True),
+        capture_output=True,
+        env=_worker_process_env(),
+        text=True,
+        timeout=_WORKER_PROCESS_TIMEOUT_SECONDS,
+        check=False,
+    )
+    if completed.returncode != 0:
+        stderr = completed.stderr.strip()
+        raise StageIntegrityError(
+            f"Worker {spec.unit_id!r} exited with status {completed.returncode}: {stderr or 'no stderr output'}",
+        )
+    try:
+        return WorkerResultWire.model_validate_json(completed.stdout).normalized()
+    except ValidationError as exc:
+        raise StageIntegrityError(f"Worker {spec.unit_id!r} returned malformed JSON") from exc
+
+
+def _worker_process_env() -> dict[str, str]:
+    env = dict(os.environ)
+    python_path = os.pathsep.join(path for path in sys.path if path)
+    if python_path:
+        existing = env.get("PYTHONPATH")
+        env["PYTHONPATH"] = python_path if not existing else f"{python_path}{os.pathsep}{existing}"
+    return env
 
 
 def _context_wire(

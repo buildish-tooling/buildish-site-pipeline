@@ -43,13 +43,14 @@ from apache_buildish_site_pipeline.models.aggregates import (
 )
 from apache_buildish_site_pipeline.models.catalog import CompatibilityAssertionConfig, MountConfig
 from apache_buildish_site_pipeline.models.enums import RecordKind
-from apache_buildish_site_pipeline.models.planning_stage_contract import StageDataFiles, StageManifestV1, StageRoots
+from apache_buildish_site_pipeline.models.planning_stage_contract import PipelineDiagnosticEntry, StageDataFiles, StageManifestV1, StageRoots
 from apache_buildish_site_pipeline.models.planning_stage_contract import StageCommand
 from apache_buildish_site_pipeline.models.provider_snapshot import ProviderSnapshotV1
 from apache_buildish_site_pipeline.models.staged_front_matter import PipelineComponentFrontMatter, TranslationLinkSummary
 from apache_buildish_site_pipeline.planning.types import IndexedProviderRecord, ResolvedArtifactConfig, ResolvedComponentConfig, SelectedVersionContext
 
 from .front_matter import build_component_front_matter, build_page_front_matter, build_translation_link, finalize_staged_page
+from .public_safety import public_source_path, sanitize_public_diagnostics
 from .publication_paths import public_path_for_context, target_id_for_context
 from .types import EffectiveBuildPlan, WorkRootLayout
 from .worker_protocol import StagedPageContributionWire, WorkerResultWire, read_unit_manifest
@@ -137,7 +138,7 @@ def _write_aggregate_files(
     *,
     layout: WorkRootLayout,
     build_plan: EffectiveBuildPlan,
-    diagnostics: tuple[Any, ...],
+    diagnostics: tuple[PipelineDiagnosticEntry, ...],
     provider_snapshot: ProviderSnapshotV1,
     page_contributions: tuple[StagedPageContributionWire, ...],
 ) -> StageDataFiles:
@@ -168,10 +169,16 @@ def _write_aggregate_files(
     mounts_path = _write_items_file(data_root / "mounts.json", mounts) if mounts else None
     content_index_path = _write_items_file(data_root / "content-index.json", content_index) if content_index else None
 
+    public_diagnostics = sanitize_public_diagnostics(
+        diagnostics,
+        workspace_root=build_plan.workspace_root,
+        private_roots=(layout.work_root, layout.fragments_root, layout.units_root, layout.next_stage_root),
+    )
+
     diagnostics_path = None
-    if diagnostics:
+    if public_diagnostics:
         diagnostics_path = data_root / "diagnostics.json"
-        _write_json_file(diagnostics_path, list(diagnostics))
+        _write_json_file(diagnostics_path, list(public_diagnostics))
 
     return StageDataFiles(
         components=components_path,
@@ -464,12 +471,6 @@ def _build_content_index_entries(
         if page_url is None:
             raise StageIntegrityError(f"Content index entry is missing a public URL: {contribution.stage_relative_path}")
         provider_context = _provider_mapping(contribution.version_context)
-        source_path = Path(contribution.source_path)
-        repo_relative_source = source_path
-        try:
-            repo_relative_source = source_path.relative_to(workspace_root)
-        except ValueError:
-            repo_relative_source = source_path
         entries.append(
             ContentIndexEntry(
                 id=f"{contribution.component_slug}:{contribution.artifact_key or 'component'}:{contribution.public_path}",
@@ -482,7 +483,7 @@ def _build_content_index_entries(
                 path=contribution.public_path,
                 url=page_url,
                 canonical_url=contribution.canonical_url,
-                source_path=repo_relative_source.as_posix(),
+                source_path=public_source_path(source_path=contribution.source_path, workspace_root=workspace_root),
                 origin_key=contribution.origin_key,
                 provider=(provider_context.get("key") if provider_context is not None else None),
                 external_id=(provider_context.get("externalId") if provider_context is not None else None),

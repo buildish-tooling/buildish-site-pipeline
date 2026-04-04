@@ -16,12 +16,47 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 import shutil
 import tempfile
 from pathlib import Path
 
 from ..cli_errors import StageIntegrityError
+from .ownership import OwnedUnit
 from .types import WorkRootLayout
+
+
+@dataclass(frozen=True, slots=True)
+class UnitWorkspace:
+    """Private filesystem roots reserved for one owned unit run."""
+
+    unit_id: str
+    unit_root: Path
+    fragment_path: Path
+    content_roots: tuple[Path, ...]
+    static_roots: tuple[Path, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class RunWorkspace:
+    """Resolved private workspace layout for one staging run."""
+
+    workspace_root: Path
+    layout: WorkRootLayout
+
+    def workspace_for_unit(self, unit: OwnedUnit) -> UnitWorkspace:
+        """Return the dedicated private workspace reserved for one owned unit."""
+
+        normalized_unit_id = unit.unit_id.replace(":", "_")
+        unit_root = self.layout.units_root / normalized_unit_id
+        unit_root.mkdir(parents=True, exist_ok=True)
+        return UnitWorkspace(
+            unit_id=unit.unit_id,
+            unit_root=unit_root,
+            fragment_path=self.layout.fragments_root / f"{normalized_unit_id}.json",
+            content_roots=tuple(self.layout.next_stage_root / root for root in unit.content_stage_roots),
+            static_roots=tuple(self.layout.next_stage_root / root for root in unit.static_stage_roots),
+        )
 
 
 def prepare_next_stage_root(stage_root: Path) -> Path:

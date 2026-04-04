@@ -30,27 +30,82 @@ amount of lifecycle or routing complexity.
 
 ## Smallest working shape
 
-Start with one consumer-owned catalog, one component metadata file, and one
-staged output produced by `site-pipeline build`.
+Start with one consumer-owned catalog, one component source tree, and one staged
+output produced by `site-pipeline build`.
 
-The smallest useful mental model is:
+The smallest useful concrete shape is:
+
+```text
+site/
+  components.yaml
+  provider-snapshot.json
+components/
+  runtime/
+    docs/
+      releases/
+        4.0.0/
+          index.md
+```
+
+The smallest useful mental model is still simple:
 
 - `site/components.yaml` tells the pipeline which content participates
-- `site/component.yaml` describes component-owned content roots and identity
+- component source trees hold the authored docs that participate
 - the pipeline stages content into a stable output tree for a renderer or other
   downstream consumer
 
+One representative `site/components.yaml` looks like this:
+
+```yaml
+schemaVersion: 1
+defaults:
+  docsRoot: docs
+  publication:
+    origin: docs
+origins:
+  docs:
+    baseUrl: https://docs.example.org
+sources:
+  runtime:
+    localDir: components/runtime
+components:
+  - slug: spark
+    content:
+      source: runtime
+    publication:
+      mountPath: /spark/
+```
+
+The first commands are:
+
+```bash
+site-pipeline check
+site-pipeline build
+```
+
+After `build`, expect at least:
+
+```text
+site/.stage/
+  content/
+  data/
+  manifest.json
+```
+
 ## Read these first
 
-1. [../how-to/create-a-tiny-site.md](../how-to/create-a-tiny-site.md)
-2. [../how-to/inspect-staged-output-and-routes.md](../how-to/inspect-staged-output-and-routes.md)
-3. [../reference/staged-output-contract.md](../reference/staged-output-contract.md)
+1. [../concepts/tiny-site-shape.md](../concepts/tiny-site-shape.md)
+2. [../concepts/staged-output-and-consumers.md](../concepts/staged-output-and-consumers.md)
+3. [../how-to/create-a-tiny-site.md](../how-to/create-a-tiny-site.md)
+4. [../how-to/inspect-staged-output-and-routes.md](../how-to/inspect-staged-output-and-routes.md)
+5. [../reference/staged-output-contract.md](../reference/staged-output-contract.md)
 
 ## Ignore for now
 
 You can usually ignore these until the site grows:
 
-- provider snapshots
+- provider snapshots as a required dependency, even if you later use them as an
+  optional enrichment input
 - grouped components
 - compatibility metadata
 - localization and translation linkage

@@ -68,6 +68,8 @@ that audience.
 
 ## Shared follow-on trails
 
+- [../concepts/](../concepts/) for the plain-language model and concrete example
+  thread used across the docs
 - [../how-to/](../how-to/) for task-oriented guides
 - [../architecture/](../architecture/) for system shape, rationale, and examples
 - [../reference/](../reference/) for contracts, schemas, and trust-model details

@@ -22,23 +22,97 @@ limitations under the License.
 Use this guide when you want the smallest useful Site Pipeline setup: one
 consumer-owned site catalog, one component, and one staged output.
 
-## Recommended shape
+## Create the smallest useful tree
 
-Start with:
+Start with this workspace shape:
 
-- one `site/components.yaml` file in the consumer repository
-- one participating component repository
-- one `site/component.yaml` file in that component repository
-- one main authored docs tree and optional site-owned pages or assets
+```text
+site/
+  components.yaml
+  provider-snapshot.json
+components/
+  runtime/
+    docs/
+      releases/
+        4.0.0/
+          index.md
+```
 
-The README's minimal flow is the right starting point:
+The provider snapshot is optional. Keep it when you want provider-enriched
+metadata in staged page front matter and aggregate files.
 
-1. create the component catalog in `site/components.yaml`
-2. provide per-component `site/component.yaml`, `site/pages/`, `site/docs/`,
-   and optional `site/assets/` inputs
-3. keep local machine remapping in `site/components.local.yaml` only
-4. run `site-pipeline build --repo-root <consumer-repo>`
-5. point the downstream renderer at `site/.stage/`
+## Write the catalog
+
+Create `site/components.yaml`:
+
+```yaml
+schemaVersion: 1
+defaults:
+  docsRoot: docs
+  publication:
+    origin: docs
+site: {}
+origins:
+  docs:
+    baseUrl: https://docs.example.org
+sources:
+  runtime:
+    localDir: components/runtime
+components:
+  - slug: spark
+    content:
+      source: runtime
+    publication:
+      mountPath: /spark/
+    artifacts:
+      - key: runtime
+        source: runtime
+        versioning:
+          developmentRef: main
+          tagPattern: ^v.*$
+```
+
+If you want provider-enriched version metadata in the first build, create
+`site/provider-snapshot.json`:
+
+```json
+{
+  "schemaVersion": 1,
+  "providers": [{"key": "github", "type": "githubReleases", "fetchedAt": "2026-04-03T00:00:00Z"}],
+  "records": [
+    {"provider": "github", "kind": "development", "componentSlug": "spark", "artifactKey": "runtime", "ref": "main"},
+    {"provider": "github", "kind": "lineHead", "componentSlug": "spark", "artifactKey": "runtime", "releaseLine": "4.0", "ref": "maintenance/4.0"},
+    {"provider": "github", "kind": "released", "componentSlug": "spark", "artifactKey": "runtime", "version": "4.0.0", "tag": "v4.0.0"}
+  ]
+}
+```
+
+## Add one authored page
+
+Create `components/runtime/docs/releases/4.0.0/index.md`:
+
+```markdown
+---
+title: Spark 4.0.0 release notes
+---
+
+Hello from the first staged page.
+```
+
+## Validate and build
+
+Run these from the workspace root:
+
+```bash
+site-pipeline check
+site-pipeline build
+```
+
+If you want a machine-readable build report for automation, use:
+
+```bash
+site-pipeline build --report-format json --report-schema-version 1
+```
 
 ## What to decide early
 
@@ -49,6 +123,33 @@ Even for a tiny site, decide these explicitly:
 - which content belongs to the consumer-owned site layer instead
 
 That keeps component identity separate from future publication layout changes.
+
+## Inspect the first successful result
+
+After `build`, inspect these paths first:
+
+```text
+site/.stage/manifest.json
+site/.stage/content/components/spark/contexts/releases/4.0.0/index.md
+site/.stage/data/routes.json
+site/.stage/data/content-index.json
+```
+
+One staged page now carries normalized pipeline metadata in its front matter:
+
+```yaml
+pipeline:
+  component:
+    slug: spark
+  page:
+    kind: release-page
+    path: /spark/development/docs/releases/4.0.0
+    provider:
+      key: github
+    version:
+      kind: released
+      label: 4.0.0
+```
 
 ## What success looks like
 
@@ -61,6 +162,7 @@ You are in a good starting state when:
 
 ## Read this next
 
+- [../concepts/staged-output-and-consumers.md](../concepts/staged-output-and-consumers.md)
 - [inspect-staged-output-and-routes.md](inspect-staged-output-and-routes.md)
 - [../reference/flexible-component-publication.md](../reference/flexible-component-publication.md)
 - [../reference/staged-output-contract.md](../reference/staged-output-contract.md)

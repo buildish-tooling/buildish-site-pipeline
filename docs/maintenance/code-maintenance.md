@@ -219,3 +219,5 @@ set is not yet consumable enough.
   stage contract
 - [../reference/security-and-trust-model.md](../reference/security-and-trust-model.md) for path, URL, and
   trust-boundary requirements
+- [user-facing-docs-strategy.md](user-facing-docs-strategy.md) for the planned
+  user-facing documentation site shape

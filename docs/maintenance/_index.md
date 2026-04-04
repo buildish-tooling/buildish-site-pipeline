@@ -22,3 +22,8 @@ limitations under the License.
 This section is for maintainers of the Site Pipeline implementation. It records
 durable internal boundaries, refactoring guardrails, and documentation-maintainer
 expectations.
+
+- [code-maintenance.md](code-maintenance.md) records durable implementation
+  boundaries and refactoring guardrails
+- [user-facing-docs-strategy.md](user-facing-docs-strategy.md) defines the
+  target shape of the public documentation site

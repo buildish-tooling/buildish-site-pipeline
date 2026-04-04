@@ -23,3 +23,15 @@ This section contains task-oriented guides for common site-pipeline workflows.
 
 Start with [../getting-started/](../getting-started/) if you first need help
 deciding which publication shape best matches your site.
+
+If you need the mental model and concrete example shapes before following a
+procedure, read [../concepts/](../concepts/) first.
+
+## Renderer integration guides
+
+Use these guides when you already understand the staged output and now want to
+wire it into a concrete renderer workflow:
+
+- [integrate with Hugo](integrate-with-hugo.md)
+- [integrate with Jekyll](integrate-with-jekyll.md)
+- [integrate with MkDocs](integrate-with-mkdocs.md)

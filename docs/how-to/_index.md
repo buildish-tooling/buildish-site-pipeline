@@ -27,6 +27,13 @@ deciding which publication shape best matches your site.
 If you need the mental model and concrete example shapes before following a
 procedure, read [../concepts/](../concepts/) first.
 
+## Authoring and editor guides
+
+Use these guides when you want faster feedback while editing catalogs and
+component metadata:
+
+- [use JSON Schema for YAML authoring help](use-json-schema-for-yaml-authoring.md)
+
 ## Renderer integration guides
 
 Use these guides when you already understand the staged output and now want to

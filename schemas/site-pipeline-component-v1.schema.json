@@ -1,0 +1,225 @@
+{
+  "$defs": {
+    "ComponentIdentity": {
+      "additionalProperties": false,
+      "description": "Stable identity for a component repository.",
+      "properties": {
+        "displayName": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-readable component name shown in rendered navigation and listings.",
+          "title": "Displayname"
+        },
+        "slug": {
+          "description": "Stable component identifier used by consumer catalogs and staged metadata.",
+          "minLength": 1,
+          "title": "Slug",
+          "type": "string"
+        }
+      },
+      "required": [
+        "slug"
+      ],
+      "title": "ComponentIdentity",
+      "type": "object"
+    },
+    "ComponentLifecycleHints": {
+      "additionalProperties": false,
+      "description": "Optional high-level lifecycle defaults for a component.",
+      "properties": {
+        "latestStable": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Latest stable version for the component when one overall release line is enough.",
+          "title": "Lateststable"
+        },
+        "supportStatusVocabulary": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "$ref": "#/$defs/SupportStatusDefinition"
+              },
+              "propertyNames": {
+                "minLength": 1
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional support-status vocabulary shared by artifacts in this repository.",
+          "title": "Supportstatusvocabulary"
+        }
+      },
+      "title": "ComponentLifecycleHints",
+      "type": "object"
+    },
+    "ContentRoots": {
+      "additionalProperties": false,
+      "description": "Repository-relative locations of authored component content.",
+      "properties": {
+        "assetsRoot": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Repository-relative root for component-owned static assets.",
+          "title": "Assetsroot"
+        },
+        "docsRoot": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Repository-relative root for versioned or development docs content.",
+          "title": "Docsroot"
+        },
+        "pagesRoot": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Repository-relative root for non-versioned component-owned pages.",
+          "title": "Pagesroot"
+        }
+      },
+      "title": "ContentRoots",
+      "type": "object"
+    },
+    "SupportStatusDefinition": {
+      "additionalProperties": false,
+      "description": "Definition of one support-status vocabulary entry.",
+      "properties": {
+        "defaultMaintenancePhase": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Defaultmaintenancephase"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "displayName": {
+          "minLength": 1,
+          "title": "Displayname",
+          "type": "string"
+        },
+        "order": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Order"
+        }
+      },
+      "required": [
+        "displayName"
+      ],
+      "title": "SupportStatusDefinition",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Component-owned metadata from ``site/component.yaml``.",
+  "properties": {
+    "component": {
+      "$ref": "#/$defs/ComponentIdentity",
+      "description": "Stable identity for the component repository."
+    },
+    "content": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ContentRoots"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Repository-relative authored content roots owned by this component."
+    },
+    "lifecycle": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ComponentLifecycleHints"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional high-level lifecycle hints shared across the component repository."
+    },
+    "schemaVersion": {
+      "const": 1,
+      "description": "Schema version for the component metadata file.",
+      "title": "Schemaversion",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "component"
+  ],
+  "title": "Site Pipeline Component Metadata v1",
+  "type": "object"
+}

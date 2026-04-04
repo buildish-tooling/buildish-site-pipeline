@@ -69,20 +69,20 @@ def _ensure_unique_strings(values: list[str], *, type_name: str) -> None:
 class CatalogDefaults(SitePipelineBaseModel):
     """Shared defaults applied before per-component overrides."""
 
-    metadata_file: RepoRelativePath | None = None
-    pages_root: RepoRelativePath | None = None
-    docs_root: RepoRelativePath | None = None
-    assets_root: RepoRelativePath | None = None
-    publication: PublicationDefaults | None = None
-    localization: LocalizationConfig | None = None
+    metadata_file: RepoRelativePath | None = Field(default=None, description="Default location of `site/component.yaml` within each source tree.")
+    pages_root: RepoRelativePath | None = Field(default=None, description="Default repository-relative root for non-versioned component pages.")
+    docs_root: RepoRelativePath | None = Field(default=None, description="Default repository-relative root for component docs content.")
+    assets_root: RepoRelativePath | None = Field(default=None, description="Default repository-relative root for component static assets.")
+    publication: PublicationDefaults | None = Field(default=None, description="Shared publication defaults inherited by components unless they override them.")
+    localization: LocalizationConfig | None = Field(default=None, description="Shared localization defaults inherited by components unless they override them.")
 
 
 class SiteContentConfig(SitePipelineBaseModel):
     """Consumer-owned top-level site pages, assets, and vendor assets."""
 
-    pages_root: RepoRelativePath | None = None
-    assets_root: RepoRelativePath | None = None
-    vendor_assets: list[TopLevelAssetConfig] | None = None
+    pages_root: RepoRelativePath | None = Field(default=None, description="Repository-relative root for consumer-owned top-level site pages.")
+    assets_root: RepoRelativePath | None = Field(default=None, description="Repository-relative root for consumer-owned top-level static assets.")
+    vendor_assets: list[TopLevelAssetConfig] | None = Field(default=None, description="Additional imported asset trees mounted into the top-level site assets area.")
 
 
 class TopLevelAssetConfig(SitePipelineBaseModel):
@@ -97,19 +97,19 @@ class TopLevelAssetConfig(SitePipelineBaseModel):
 class PublicationDefaults(SitePipelineBaseModel):
     """Default routing segments used to derive publication paths."""
 
-    origin: OriginKey | None = None
-    development_segment: NonEmptyString | None = None
-    docs_segment: NonEmptyString | None = None
-    assets_segment: NonEmptyString | None = None
+    origin: OriginKey | None = Field(default=None, description="Default publication origin used for component routes when no nearer override is present.")
+    development_segment: NonEmptyString | None = Field(default=None, description="Default path segment appended below the component root for development content.")
+    docs_segment: NonEmptyString | None = Field(default=None, description="Default path segment appended below the development root for docs content.")
+    assets_segment: NonEmptyString | None = Field(default=None, description="Default path segment appended below the development root for assets content.")
 
 
 class LocalizationConfig(SitePipelineBaseModel):
     """Locale and translation defaults."""
 
-    default_locale: NonEmptyString | None = None
-    supported_locales: list[NonEmptyString] | None = None
-    route_mode: RouteMode | None = None
-    fallback_locale: NonEmptyString | None = None
+    default_locale: NonEmptyString | None = Field(default=None, description="Default locale used when a page does not declare a more specific locale." )
+    supported_locales: list[NonEmptyString] | None = Field(default=None, description="Supported locale keys for this site or component.")
+    route_mode: RouteMode | None = Field(default=None, description="How localized pages should be routed within the published URL space.")
+    fallback_locale: NonEmptyString | None = Field(default=None, description="Fallback locale used when a requested translation is unavailable.")
 
     @model_validator(mode="after")
     def ensure_locale_membership_and_uniqueness(self) -> Self:
@@ -126,34 +126,34 @@ class LocalizationConfig(SitePipelineBaseModel):
 class OriginConfig(SitePipelineBaseModel):
     """Named publication origin."""
 
-    base_url: UrlString
-    canonical: bool | None = None
-    labels: list[NonEmptyString] | None = None
+    base_url: UrlString = Field(description="Base public URL for this publication origin.")
+    canonical: bool | None = Field(default=None, description="Whether this origin should be treated as canonical when multiple origins publish the same target.")
+    labels: list[NonEmptyString] | None = Field(default=None, description="Optional human-readable labels for renderer or deployment tooling.")
 
 
 class SourceConfig(SitePipelineBaseModel):
     """Repository or checkout definition."""
 
-    local_dir: RepoRelativePath
-    repository: UrlString | None = None
-    default_branch: RefString | None = None
-    metadata_file: RepoRelativePath | None = None
+    local_dir: RepoRelativePath = Field(description="Workspace-relative checkout or source directory.")
+    repository: UrlString | None = Field(default=None, description="Optional remote repository URL associated with this source.")
+    default_branch: RefString | None = Field(default=None, description="Optional default branch or ref for this source.")
+    metadata_file: RepoRelativePath | None = Field(default=None, description="Optional override for the component metadata file inside this source tree.")
 
 
 class GroupConfig(SitePipelineBaseModel):
     """Reusable defaults for a set of components."""
 
-    display_name: NonEmptyString | None = None
-    path_prefix: PublicPath | None = None
-    navigation_section: NonEmptyString | None = None
-    weight: int | None = Field(default=None, strict=True)
-    publication: PublicationConfig | None = None
+    display_name: NonEmptyString | None = Field(default=None, description="Human-readable group name for renderers or generated navigation.")
+    path_prefix: PublicPath | None = Field(default=None, description="Shared public path prefix applied to grouped component publication roots.")
+    navigation_section: NonEmptyString | None = Field(default=None, description="Optional renderer-facing grouping label for navigation or listings.")
+    weight: int | None = Field(default=None, strict=True, description="Optional ordering hint shared by components in this group.")
+    publication: PublicationConfig | None = Field(default=None, description="Publication defaults inherited by grouped components unless they override them.")
 
 
 class ComponentContentSelection(SitePipelineBaseModel):
     """Selection of the source that owns shared component content."""
 
-    source: SourceKey | None = None
+    source: SourceKey | None = Field(default=None, description="Named source that owns shared component pages, docs, and assets roots.")
 
 
 class RouteAliasConfig(SitePipelineBaseModel):
@@ -183,16 +183,16 @@ class RedirectRuleConfig(SitePipelineBaseModel):
 class PublicationConfig(SitePipelineBaseModel):
     """Explicit publication configuration or inherited publication defaults."""
 
-    origin: OriginKey | None = None
-    path_segment: NonEmptyString | None = None
-    mount_path: PublicPath | None = None
-    component_path: PublicPath | None = None
-    development_path: PublicPath | None = None
-    docs_path: PublicPath | None = None
-    assets_path: PublicPath | None = None
-    canonical_path: PublicPath | None = None
-    aliases: list[RouteAliasConfig] | None = None
-    redirects: list[RedirectRuleConfig] | None = None
+    origin: OriginKey | None = Field(default=None, description="Publication origin key to use for this component or artifact.")
+    path_segment: NonEmptyString | None = Field(default=None, description="Path segment appended below an inherited path prefix or mount root.")
+    mount_path: PublicPath | None = Field(default=None, description="Explicit public root path for the component publication surface.")
+    component_path: PublicPath | None = Field(default=None, description="Explicit public path for the component landing page or overview root.")
+    development_path: PublicPath | None = Field(default=None, description="Explicit public path for development-context content.")
+    docs_path: PublicPath | None = Field(default=None, description="Explicit public path for docs content below the component publication surface.")
+    assets_path: PublicPath | None = Field(default=None, description="Explicit public path for static assets below the component publication surface.")
+    canonical_path: PublicPath | None = Field(default=None, description="Optional canonical public path used when aliases or multiple origins are present.")
+    aliases: list[RouteAliasConfig] | None = Field(default=None, description="Additional public aliases that should resolve to the same published target.")
+    redirects: list[RedirectRuleConfig] | None = Field(default=None, description="Redirect rules to emit for legacy or moved routes.")
 
 
 class NamedRefConfig(SitePipelineBaseModel):
@@ -479,22 +479,22 @@ class ArtifactConfig(SitePipelineBaseModel):
 class ComponentCatalogEntry(SitePipelineBaseModel):
     """One component entry in the consumer catalog."""
 
-    slug: Slug
-    display_name: NonEmptyString | None = None
-    local_dir: RepoRelativePath | None = None
+    slug: Slug = Field(description="Stable component identifier.")
+    display_name: NonEmptyString | None = Field(default=None, description="Human-readable component name override or convenience value.")
+    local_dir: RepoRelativePath | None = Field(default=None, description="Simple shorthand for binding the component to one workspace-local checkout directory.")
     weight: int | None = Field(
         default=None,
         strict=True,
         description="Optional ordering hint for component listings, menus, and other consumer-rendered component collections.",
     )
-    group: Identifier | None = None
-    content: ComponentContentSelection | None = None
-    publication: PublicationConfig | None = None
-    publication_selection: PublicationSelectionPolicy | None = None
-    localization: LocalizationConfig | None = None
-    compatibility: list[CompatibilityAssertionConfig] | None = None
-    mounts: list[MountConfig] | None = None
-    artifacts: list[ArtifactConfig] | None = None
+    group: Identifier | None = Field(default=None, description="Optional group key for inherited defaults and renderer grouping.")
+    content: ComponentContentSelection | None = Field(default=None, description="Shared content-source selection for component pages, docs, and assets.")
+    publication: PublicationConfig | None = Field(default=None, description="Explicit publication configuration for this component.")
+    publication_selection: PublicationSelectionPolicy | None = Field(default=None, description="Default version-context selection policy inherited by contained artifacts unless they override it.")
+    localization: LocalizationConfig | None = Field(default=None, description="Component-specific localization overrides.")
+    compatibility: list[CompatibilityAssertionConfig] | None = Field(default=None, description="Component-level compatibility assertions emitted into staged metadata.")
+    mounts: list[MountConfig] | None = Field(default=None, description="Component-level generated or imported documentation mounts.")
+    artifacts: list[ArtifactConfig] | None = Field(default=None, description="Independently versioned artifacts belonging to this component.")
 
     @model_validator(mode="after")
     def ensure_artifact_keys_are_unique(self) -> Self:
@@ -507,13 +507,13 @@ class ComponentCatalogEntry(SitePipelineBaseModel):
 class CatalogDocumentV1(SitePipelineBaseModel):
     """Consumer-authored component catalog document."""
 
-    schema_version: Literal[1]
-    defaults: CatalogDefaults | None = None
-    site: SiteContentConfig | None = None
-    origins: dict[OriginKey, OriginConfig] | None = None
-    sources: dict[SourceKey, SourceConfig] | None = None
-    groups: dict[Identifier, GroupConfig] | None = None
-    components: list[ComponentCatalogEntry]
+    schema_version: Literal[1] = Field(description="Schema version for the catalog format.")
+    defaults: CatalogDefaults | None = Field(default=None, description="Shared default settings applied before per-component overrides.")
+    site: SiteContentConfig | None = Field(default=None, description="Consumer-owned top-level site pages, assets, and vendor-asset declarations.")
+    origins: dict[OriginKey, OriginConfig] | None = Field(default=None, description="Named publication origins that components can target.")
+    sources: dict[SourceKey, SourceConfig] | None = Field(default=None, description="Named repository or checkout bindings used by components and artifacts.")
+    groups: dict[Identifier, GroupConfig] | None = Field(default=None, description="Optional grouping defaults shared by multiple components.")
+    components: list[ComponentCatalogEntry] = Field(description="Participating components in this consumer-authored catalog.")
 
     @model_validator(mode="after")
     def ensure_document_cross_references(self) -> Self:

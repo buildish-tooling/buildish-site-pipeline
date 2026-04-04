@@ -20,11 +20,11 @@ LOCAL_REGISTRY_TEST_PLATFORMS ?= linux/amd64,linux/arm64
 LOCAL_REGISTRY_TEST_TAG ?= integration-test
 LOCAL_REGISTRY_TEST_ARGS ?=
 HELP_TARGETS = $(MAKEFILE_LIST)
-HELP_PUBLIC_CHECK_TARGETS := lint typecheck test rat check
+HELP_PUBLIC_CHECK_TARGETS := lint typecheck test rat check schemas
 HELP_PUBLIC_RELEASE_TARGETS := publish-snapshot-local
 HELP_PUBLIC_CONTAINER_TARGETS := container-image container-image-local-registry-test
 
-.PHONY: help lint typecheck test rat check container-image container-image-local-registry-test publish-snapshot-local
+.PHONY: help lint typecheck test rat check schemas container-image container-image-local-registry-test publish-snapshot-local
 
 help: ## Show the curated Make targets for the site-pipeline repository.
 	@desc_for() { awk -v target="$$1" 'BEGIN {FS = ":.*## "} $$1 == target {print $$2; exit}' $(HELP_TARGETS); }; \
@@ -47,6 +47,9 @@ rat: ## Run Apache RAT license checks.
 	tools/rat/rat-check.sh
 
 check: lint typecheck test rat ## Run lint, type checks, tests, and RAT.
+
+schemas: ## Regenerate checked-in JSON Schema files for authored YAML documents.
+	$(UV_RUN) python -m apache_buildish_site_pipeline.schema_export --output-dir schemas
 
 publish-snapshot-local: ## Build and publish a local wheel snapshot under dist/snapshots.
 	$(UV_RUN) python -m apache_buildish_site_pipeline.snapshot_publish --out-dir $(SNAPSHOT_OUT_DIR)

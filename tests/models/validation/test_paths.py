@@ -41,6 +41,16 @@ class PathValidationTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate_stage_relative_path("../data/routes.json")
 
+    def test_rejects_backslashes_in_contract_paths(self) -> None:
+        for validator, value in (
+            (validate_repo_relative_path, r"docs\site"),
+            (validate_stage_relative_path, r"data\routes.json"),
+            (validate_public_path, "\\docs\\latest\\"),
+        ):
+            with self.subTest(validator=validator.__name__, value=value):
+                with self.assertRaises(ValueError):
+                    validator(value)
+
     def test_accepts_normalized_public_paths_and_rejects_queries_or_relative_forms(self) -> None:
         self.assertEqual(validate_public_path("/docs/latest/"), "/docs/latest/")
         self.assertEqual(validate_public_path("/"), "/")

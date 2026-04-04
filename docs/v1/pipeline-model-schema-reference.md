@@ -146,11 +146,11 @@ and how the schema layer relates to planning, evaluation, and staging, see
 | `RefString` | `String` | Moving ref name such as `main` or `releases/4.x`. |
 | `ReferenceString` | `String` | Typed internal reference string such as `route:/docs/latest/`, `artifact:spark/runtime`, or `release:spark/runtime@4.0.0`. |
 | `RegexString` | `String` | Regex pattern stored as text. |
-| `RepoRelativePath` | `String` | Repository-relative path such as `site/docs` or `docs/runtime`. |
-| `LocalPathString` | `String` | Consumer-local filesystem path used during staging or materialization. |
+| `RepoRelativePath` | `String` | Repository-relative normalized POSIX path such as `site/docs` or `docs/runtime`. Contract values must use forward slashes. |
+| `LocalPathString` | `String` | Consumer-local filesystem path used during staging or materialization. These values are machine-local and follow the host operating system's native path rules rather than the pipeline's POSIX-only contract-path rules. |
 | `MountSourceRef` | `String` | Stable mount source reference such as a path, generator output key, or bundle identifier. |
-| `PublicPath` | `String` | Resolved public path such as `/development/docs/`. |
-| `StageRelativePath` | `String` | Stage-root-relative path such as `data/routes.json`. |
+| `PublicPath` | `String` | Resolved normalized POSIX public path such as `/development/docs/`. Contract values must use forward slashes. |
+| `StageRelativePath` | `String` | Stage-root-relative normalized POSIX path such as `data/routes.json`. Contract values must use forward slashes. |
 | `UrlString` | `String` | Absolute URL such as `https://spark.example.org/`. |
 | `HostnameString` | `String` | Hostname derived from an origin URL. |
 | `TimestampString` | `String` | RFC 3339 / ISO 8601 timestamp string. |

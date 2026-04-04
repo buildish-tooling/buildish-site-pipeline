@@ -145,6 +145,12 @@ report-capable commands:
 When `--report-format json` is selected, `--report-schema-version` is required.
 Omitting it is an invalid invocation and should return exit code `2`.
 
+Path-bearing authored and emitted contract fields such as `RepoRelativePath`,
+`StageRelativePath`, and `PublicPath` remain normalized POSIX strings and must
+use forward slashes. CLI-local filesystem arguments such as `--report-output`
+are different: they are machine-local paths and should be interpreted using the
+host operating system's native path rules.
+
 That shared flag family should apply to:
 
 - `site-pipeline plan`
@@ -294,7 +300,8 @@ Recommended flag meanings are:
   and is required when `--report-format json` is selected
 - `--report-output` selects the report destination; for `build`, `-` means
   stdout and is the default; for `watch`, JSON report output should be a file
-  path that the command rewrites after each completed cycle
+  path that the command rewrites after each completed cycle. That file path is
+  machine-local and follows host-native path semantics.
 
 ## Stable outputs API
 

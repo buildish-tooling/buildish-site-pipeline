@@ -120,7 +120,9 @@ Recommended flag meanings are:
 - `--report-schema-version` selects the requested `CheckReport.schemaVersion`
   and is required when `--report-format json` is selected
 - `--report-output` selects the report destination; `-` means stdout and is the
-  default
+  default. When set to a file path, that path is machine-local and follows the
+  host operating system's native path rules rather than the pipeline's
+  POSIX-only contract path rules.
 - `--fail-on` accepts `error` or `warning`; default is `error`
 
 That gives one clear contract for humans, CI, and wrapper scripts.

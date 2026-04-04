@@ -39,7 +39,12 @@ def build_report_request(
     forbidden_roots: tuple[Path, ...] = (),
     forbid_stdout_json: bool = False,
 ) -> ReportRequest:
-    """Normalize and validate one CLI report request."""
+    """Normalize and validate one CLI report request.
+
+    ``report_output`` is a machine-local filesystem path. It is intentionally
+    interpreted using the host operating system's native path semantics rather
+    than the pipeline's POSIX-only contract path scalars.
+    """
 
     normalized_format = ReportFormat(report_format)
     if normalized_format is ReportFormat.JSON:
@@ -57,7 +62,11 @@ def build_report_request(
             raise InvocationError("watch JSON reports must be written to a file, not stdout")
         return ReportRequest(report_format=normalized_format, schema_version=schema_version, output_path=None)
 
-    output_path = _validate_safe_output_path(cwd=cwd, raw_path=Path(report_output), forbidden_roots=forbidden_roots)
+    output_path = _validate_safe_output_path(
+        cwd=cwd,
+        raw_path=_parse_cli_local_path(report_output),
+        forbidden_roots=forbidden_roots,
+    )
     return ReportRequest(report_format=normalized_format, schema_version=schema_version, output_path=output_path)
 
 
@@ -138,6 +147,12 @@ def _validate_safe_output_path(*, cwd: Path, raw_path: Path, forbidden_roots: tu
         if normalized_path.is_relative_to(forbidden_root.resolve(strict=False)):
             raise InvocationError(f"Report output must live outside {forbidden_root}")
     return absolute_path
+
+
+def _parse_cli_local_path(raw_path: str) -> Path:
+    """Interpret an operator-supplied local filesystem path using host-native semantics."""
+
+    return Path(raw_path)
 
 
 def _absolute_path(*, cwd: Path, raw_path: Path) -> Path:

@@ -80,6 +80,11 @@ class ComponentsDataEntry(SitePipelineBaseModel):
 
     slug: Slug
     display_name: NonEmptyString | None = None
+    weight: int | None = Field(
+        default=None,
+        strict=True,
+        description="Optional ordering hint copied from the authored catalog for consumer-rendered component lists.",
+    )
     group: Identifier | None = None
     origin_key: OriginKey
     publication: ResolvedPublication

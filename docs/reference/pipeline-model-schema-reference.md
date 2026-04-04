@@ -364,6 +364,7 @@ One component entry in the consumer catalog.
 | `slug` | `Slug` | yes | Stable component identifier. |
 | `displayName` | `String` | no | Human-readable component name override or convenience value. |
 | `localDir` | `RepoRelativePath` | no | Simple shorthand for local checkout binding in small setups. |
+| `weight` | `Integer` | no | Optional ordering hint for component listings, menus, and other consumer-rendered component collections. |
 | `group` | `Identifier` | no | Group key for inherited defaults. |
 | `content` | [ComponentContentSelection](#componentcontentselection) | no | Shared content source selection. |
 | `publication` | [PublicationConfig](#publicationconfig) | no | Explicit publication configuration. |

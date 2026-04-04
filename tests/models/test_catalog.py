@@ -63,6 +63,7 @@ def _build_valid_catalog_document() -> dict[str, object]:
             {
                 "slug": "spark",
                 "displayName": "Apache Spark",
+                "weight": 100,
                 "group": "streaming",
                 "content": {"source": "consumer"},
                 "publication": {
@@ -138,6 +139,7 @@ class CatalogDocumentTests(unittest.TestCase):
 
         self.assertIsInstance(document, CatalogDocumentV1)
         self.assertEqual(document.components[0].slug, "spark")
+        self.assertEqual(document.components[0].weight, 100)
         self.assertEqual(document.defaults.localization.route_mode, RouteMode.PREFIX_ALL)
         self.assertEqual(document.components[0].artifacts[0].mounts[0].trust_class, TrustClass.PASSIVE)
 

@@ -49,6 +49,7 @@ sources:
     localDir: components/runtime
 components:
   - slug: spark
+    weight: 100
     content:
       source: runtime
     publication:

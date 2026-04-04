@@ -127,6 +127,17 @@ class StagingPipelineTests(unittest.TestCase):
         self.assertEqual(release_entry["provider"], "github")
         self.assertEqual(release_entry["versionKind"], "released")
 
+    def test_build_emits_component_weights_in_components_aggregate(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            with _cwd(workspace_root):
+                exit_code = _run(argv=["build"], stdout=io.StringIO(), stderr=io.StringIO())
+            stage_root = workspace_root / "site/.stage"
+            components = json.loads((stage_root / "data/components.json").read_text(encoding="utf-8"))["items"]
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(components[0]["slug"], "spark")
+        self.assertEqual(components[0]["weight"], 100)
+
 
 if __name__ == "__main__":
     unittest.main()

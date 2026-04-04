@@ -237,6 +237,7 @@ def _build_components_entries(build_plan: EffectiveBuildPlan) -> list[Components
             ComponentsDataEntry(
                 slug=component.slug,
                 display_name=component.authored.display_name,
+                weight=component.authored.weight,
                 group=component.authored.group,
                 origin_key=component.publication.origin.key,
                 publication=build_component_front_matter(component, build_plan.selected_versions).publication,

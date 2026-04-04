@@ -50,6 +50,7 @@ class AggregateModelTests(unittest.TestCase):
         component = ComponentsDataEntry.model_validate(
             {
                 "slug": "spark",
+                "weight": 100,
                 "originKey": "docs",
                 "publication": {
                     "origin": {
@@ -80,6 +81,7 @@ class AggregateModelTests(unittest.TestCase):
         component_payload = component.model_dump(by_alias=True, exclude_none=True)
         self.assertIn("fetchedAt", provider_payload)
         self.assertIn("providerKeys", component_payload)
+        self.assertEqual(component_payload["weight"], 100)
         self.assertNotIn("provider_keys", json.dumps(component_payload))
 
     def test_rejects_inconsistent_origin_redirect_and_ref_kinds(self) -> None:

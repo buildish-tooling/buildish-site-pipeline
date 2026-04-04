@@ -134,6 +134,7 @@ Recommended `sources` model:
 
 Recommended per-component additions:
 
+- `weight`
 - `group`
 - `content.source`
 - `publication.origin`

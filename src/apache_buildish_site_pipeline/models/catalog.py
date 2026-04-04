@@ -482,6 +482,11 @@ class ComponentCatalogEntry(SitePipelineBaseModel):
     slug: Slug
     display_name: NonEmptyString | None = None
     local_dir: RepoRelativePath | None = None
+    weight: int | None = Field(
+        default=None,
+        strict=True,
+        description="Optional ordering hint for component listings, menus, and other consumer-rendered component collections.",
+    )
     group: Identifier | None = None
     content: ComponentContentSelection | None = None
     publication: PublicationConfig | None = None

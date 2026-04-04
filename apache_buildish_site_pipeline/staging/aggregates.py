@@ -1,4 +1,16 @@
 # Copyright 2026 The Apache Software Foundation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 """Aggregate builders for finalized stage data files and page metadata."""
 
@@ -630,19 +642,21 @@ def _provider_mapping(version_context: dict[str, object] | None) -> dict[str, st
     return normalized or None
 
 
-def _parse_timestamp(value: str | None) -> datetime | None:
+def _parse_timestamp(value: datetime | str | None) -> datetime | None:
     if value is None:
         return None
+    if isinstance(value, datetime):
+        return value
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
 
 
 def _load_page_contributions(layout: WorkRootLayout, worker_results: tuple[WorkerResultWire, ...]) -> tuple[StagedPageContributionWire, ...]:
     contributions: list[StagedPageContributionWire] = []
     for result in worker_results:
-        manifest_path = result.contribution_files.unit_manifest
+        manifest_path = _validated_unit_manifest_path(layout=layout, result=result)
         if manifest_path is None:
             continue
-        manifest = read_unit_manifest(Path(manifest_path))
+        manifest = read_unit_manifest(manifest_path)
         for page in manifest.pages:
             contribution = page
             if Path(contribution.stage_relative_path).is_absolute():
@@ -653,6 +667,30 @@ def _load_page_contributions(layout: WorkRootLayout, worker_results: tuple[Worke
                 )
             contributions.append(contribution)
     return tuple(contributions)
+
+
+def _validated_unit_manifest_path(layout: WorkRootLayout, result: WorkerResultWire) -> Path | None:
+    manifest_path_value = result.contribution_files.unit_manifest
+    if manifest_path_value is None:
+        return None
+
+    raw_manifest_path = Path(manifest_path_value)
+    if raw_manifest_path.is_symlink():
+        raise StageIntegrityError(f"Worker contribution manifest must be one normal file: {raw_manifest_path}")
+
+    fragments_root = layout.fragments_root.resolve(strict=False)
+    expected_path = (layout.fragments_root / f"{result.unit_id.replace(':', '_')}.json").resolve(strict=False)
+    manifest_path = raw_manifest_path.resolve(strict=False)
+    if manifest_path != expected_path:
+        raise StageIntegrityError(
+            "Worker contribution manifest path does not match the coordinator-owned location: "
+            f"{manifest_path}",
+        )
+    if not manifest_path.is_relative_to(fragments_root):
+        raise StageIntegrityError(f"Worker contribution manifest escapes the private fragment root: {manifest_path}")
+    if manifest_path.is_symlink() or not manifest_path.is_file():
+        raise StageIntegrityError(f"Worker contribution manifest must be one normal file: {manifest_path}")
+    return manifest_path
 
 
 def _page_identity(contribution: StagedPageContributionWire) -> tuple[str, str | None, str]:

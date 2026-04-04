@@ -1,4 +1,16 @@
 # Copyright 2026 The Apache Software Foundation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 """Shared workspace loading helpers for CLI commands."""
 
@@ -80,10 +92,11 @@ def _load_component_documents(
 ) -> dict[str, ComponentRepositoryDocumentV1]:
     component_documents: dict[str, ComponentRepositoryDocumentV1] = {}
     default_metadata_file = catalog.defaults.metadata_file if catalog.defaults is not None else None
+    sources = catalog.sources or {}
     for component in catalog.components:
         source_key = component.content.source if component.content is not None else None
         if source_key is not None:
-            source_binding = catalog.sources[source_key]
+            source_binding = sources[source_key]
             repository_root = (repo_root / source_binding.local_dir).resolve(strict=False)
             metadata_file = source_binding.metadata_file or default_metadata_file
         elif component.local_dir is not None:

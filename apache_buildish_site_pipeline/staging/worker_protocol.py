@@ -1,11 +1,26 @@
 # Copyright 2026 The Apache Software Foundation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 """JSON-safe worker protocol models for staging units."""
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
+import tempfile
 
+from apache_buildish_site_pipeline.cli_errors import StageIntegrityError
 from apache_buildish_site_pipeline.models.base import SitePipelineBaseModel
 
 
@@ -126,10 +141,26 @@ class UnitContributionManifestWire(SitePipelineBaseModel):
 
 
 def write_unit_manifest(path: Path, manifest: UnitContributionManifestWire) -> None:
-    """Persist one worker contribution manifest as JSON."""
+    """Persist one worker contribution manifest atomically within the private work area."""
 
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(manifest.model_dump_json(indent=2, by_alias=True), encoding="utf-8")
+    temp_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=path.parent,
+            prefix=f".{path.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as temp_file:
+            temp_file.write(manifest.model_dump_json(indent=2, by_alias=True))
+            temp_path = Path(temp_file.name)
+        os.replace(temp_path, path)
+    except OSError as exc:
+        if temp_path is not None:
+            temp_path.unlink(missing_ok=True)
+        raise StageIntegrityError(f"Could not write worker contribution manifest: {path}") from exc
 
 
 def read_unit_manifest(path: Path) -> UnitContributionManifestWire:

@@ -23,6 +23,7 @@ from .types import (
     LocalInputIdentity,
     ResolvedLocalInput,
     ResolvedSiteConfig,
+    SelectedVersionContext,
     SelectedVersionSet,
 )
 
@@ -85,7 +86,7 @@ def derive_local_inputs(*, site: ResolvedSiteConfig, selected_versions: Selected
     return tuple(inputs)
 
 
-def _expected_context_path(context: object):
+def _expected_context_path(context: SelectedVersionContext):
     if context.input_kind is MaterializationInputKind.DEVELOPMENT:
         return context.docs_root
     if context.input_kind is MaterializationInputKind.LINE_HEAD and context.release_line is not None:

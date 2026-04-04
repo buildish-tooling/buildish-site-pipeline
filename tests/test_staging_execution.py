@@ -1,4 +1,16 @@
 # Copyright 2026 The Apache Software Foundation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 """Publication and private-write safety tests for the staging engine."""
 
@@ -10,8 +22,10 @@ from pathlib import Path
 from unittest import mock
 
 from apache_buildish_site_pipeline.cli_errors import StageIntegrityError
-from apache_buildish_site_pipeline.staging.aggregates import _write_json_file
+from apache_buildish_site_pipeline.staging.aggregates import _load_page_contributions, _write_json_file
 from apache_buildish_site_pipeline.staging.publication import finalize_stage_publication
+from apache_buildish_site_pipeline.staging.types import WorkRootLayout
+from apache_buildish_site_pipeline.staging.worker_protocol import ContributionFileRefs, UnitContributionManifestWire, WorkerResultWire, write_unit_manifest
 
 
 class StagingExecutionTests(unittest.TestCase):
@@ -45,6 +59,80 @@ class StagingExecutionTests(unittest.TestCase):
             self.assertIn("Could not write stage JSON file", str(raised.exception))
             self.assertEqual(json_path.read_text(encoding="utf-8"), "trusted\n")
             self.assertEqual(list(json_path.parent.glob(".components.json.*.tmp")), [])
+
+    def test_worker_manifest_write_replaces_existing_file_atomically(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            manifest_path = workspace_root / "work/fragments/component_spark.json"
+            manifest_path.parent.mkdir(parents=True, exist_ok=True)
+            manifest_path.write_text('{"unitId":"old"}\n', encoding="utf-8")
+
+            write_unit_manifest(manifest_path, UnitContributionManifestWire(unit_id="component:spark"))
+
+            self.assertIn('"unitId": "component:spark"', manifest_path.read_text(encoding="utf-8"))
+            self.assertEqual(list(manifest_path.parent.glob(".component_spark.json.*.tmp")), [])
+
+    def test_worker_manifest_write_cleans_temp_file_and_preserves_existing_content_on_replace_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            manifest_path = workspace_root / "work/fragments/component_spark.json"
+            manifest_path.parent.mkdir(parents=True, exist_ok=True)
+            manifest_path.write_text('{"unitId":"trusted"}\n', encoding="utf-8")
+
+            def _fail_replace(src, dst):
+                del src, dst
+                raise OSError("replace blocked")
+
+            with mock.patch("apache_buildish_site_pipeline.staging.worker_protocol.os.replace", side_effect=_fail_replace):
+                with self.assertRaises(StageIntegrityError) as raised:
+                    write_unit_manifest(manifest_path, UnitContributionManifestWire(unit_id="component:spark"))
+
+            self.assertIn("Could not write worker contribution manifest", str(raised.exception))
+            self.assertEqual(manifest_path.read_text(encoding="utf-8"), '{"unitId":"trusted"}\n')
+            self.assertEqual(list(manifest_path.parent.glob(".component_spark.json.*.tmp")), [])
+
+    def test_page_contribution_loading_rejects_manifest_outside_private_fragment_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            layout = _work_layout(workspace_root)
+            outside_manifest = workspace_root / "escape/component_spark.json"
+            write_unit_manifest(outside_manifest, UnitContributionManifestWire(unit_id="component:spark"))
+
+            with self.assertRaises(StageIntegrityError) as raised:
+                _load_page_contributions(
+                    layout,
+                    (
+                        WorkerResultWire(
+                            unit_id="component:spark",
+                            contribution_files=ContributionFileRefs(unit_manifest=str(outside_manifest)),
+                        ),
+                    ),
+                )
+
+            self.assertIn("coordinator-owned location", str(raised.exception))
+
+    def test_page_contribution_loading_rejects_symlinked_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            layout = _work_layout(workspace_root)
+            real_manifest = workspace_root / "real/component_spark.json"
+            write_unit_manifest(real_manifest, UnitContributionManifestWire(unit_id="component:spark"))
+            manifest_path = layout.fragments_root / "component_spark.json"
+            manifest_path.parent.mkdir(parents=True, exist_ok=True)
+            manifest_path.symlink_to(real_manifest)
+
+            with self.assertRaises(StageIntegrityError) as raised:
+                _load_page_contributions(
+                    layout,
+                    (
+                        WorkerResultWire(
+                            unit_id="component:spark",
+                            contribution_files=ContributionFileRefs(unit_manifest=str(manifest_path)),
+                        ),
+                    ),
+                )
+
+            self.assertIn("normal file", str(raised.exception))
 
     def test_publication_rejects_stage_root_with_symlinked_parent(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
@@ -181,6 +269,27 @@ def _create_candidate_stage(path: Path) -> Path:
     path.mkdir(parents=True, exist_ok=True)
     (path / "manifest.json").write_text('{"schemaVersion":1}\n', encoding="utf-8")
     return path
+
+
+def _work_layout(workspace_root: Path) -> WorkRootLayout:
+    work_root = workspace_root / "work"
+    next_stage_root = workspace_root / "next-stage"
+    content_root = next_stage_root / "content"
+    static_root = next_stage_root / "static"
+    data_root = next_stage_root / "data"
+    fragments_root = work_root / "fragments"
+    units_root = work_root / "units"
+    for path in (work_root, next_stage_root, content_root, static_root, data_root, fragments_root, units_root):
+        path.mkdir(parents=True, exist_ok=True)
+    return WorkRootLayout(
+        work_root=work_root,
+        next_stage_root=next_stage_root,
+        content_root=content_root,
+        static_root=static_root,
+        data_root=data_root,
+        fragments_root=fragments_root,
+        units_root=units_root,
+    )
 
 
 class _JsonStub:

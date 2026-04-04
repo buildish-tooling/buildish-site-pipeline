@@ -34,6 +34,7 @@ from apache_buildish_site_pipeline.models.component_repository import (
     ComponentRepositoryDocumentV1,
     SupportStatusDefinition,
 )
+from apache_buildish_site_pipeline.models.scalars import TimestampString
 from apache_buildish_site_pipeline.models.enums import (
     MaterializationInputKind,
     MaterializationStatus,
@@ -190,9 +191,9 @@ class IndexedProviderRecord:
     maturity: str | None
     candidate_sequence: int | None
     vote_status: str | None
-    created_at: str | None
-    published_at: str | None
-    updated_at: str | None
+    created_at: TimestampString | None
+    published_at: TimestampString | None
+    updated_at: TimestampString | None
     urls: dict[str, str]
     assets: tuple[ProviderAsset, ...]
 

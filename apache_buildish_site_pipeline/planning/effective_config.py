@@ -49,6 +49,9 @@ def resolve_site_config(
     component_documents = component_documents or {}
     normalized_workspace_root = workspace_root.resolve(strict=False)
     defaults = catalog.defaults
+    site_config = catalog.site
+    origin_configs = catalog.origins or {}
+    source_configs = catalog.sources or {}
 
     origins = {
         key: ResolvedOrigin(
@@ -57,13 +60,13 @@ def resolve_site_config(
             hostname=extract_hostname_from_url(str(origin.base_url)),
             canonical=bool(origin.canonical),
         )
-        for key, origin in catalog.origins.items()
+        for key, origin in origin_configs.items()
     }
 
     sources = {}
-    for key, source in catalog.sources.items():
+    for key, source in source_configs.items():
         local_dir = _resolve_repo_path(normalized_workspace_root, source.local_dir)
-        metadata_relpath = source.metadata_file or defaults.metadata_file
+        metadata_relpath = source.metadata_file or (defaults.metadata_file if defaults is not None else None)
         metadata_path = _resolve_repo_path(local_dir, metadata_relpath) if metadata_relpath else None
         sources[key] = ResolvedSourceBinding(
             key=key,
@@ -73,15 +76,16 @@ def resolve_site_config(
             default_branch=str(source.default_branch) if source.default_branch is not None else None,
         )
 
-    site_pages_root = _resolve_repo_path(normalized_workspace_root, catalog.site.pages_root) if catalog.site.pages_root else None
-    site_assets_root = _resolve_repo_path(normalized_workspace_root, catalog.site.assets_root) if catalog.site.assets_root else None
+    site_pages_root = _resolve_repo_path(normalized_workspace_root, site_config.pages_root) if site_config and site_config.pages_root else None
+    site_assets_root = _resolve_repo_path(normalized_workspace_root, site_config.assets_root) if site_config and site_config.assets_root else None
+    site_vendor_assets = site_config.vendor_assets if site_config is not None else None
     vendor_assets = tuple(
         ResolvedVendorAsset(
             key=f"vendorAssets:{index}",
             source_path=_resolve_repo_path(normalized_workspace_root, vendor_asset.source),
             config=vendor_asset,
         )
-        for index, vendor_asset in enumerate(catalog.site.vendor_assets or ())
+        for index, vendor_asset in enumerate(site_vendor_assets or ())
     )
 
     components = tuple(
@@ -116,12 +120,13 @@ def _resolve_component(
     sources: dict[str, ResolvedSourceBinding],
     workspace_root: Path,
 ) -> ResolvedComponentConfig:
-    group = catalog.groups.get(component.group) if component.group is not None else None
+    groups = catalog.groups or {}
+    group = groups.get(component.group) if component.group is not None else None
     content_source = _resolve_component_content_source(
         component=component,
         sources=sources,
         workspace_root=workspace_root,
-        default_metadata_file=catalog.defaults.metadata_file,
+        default_metadata_file=catalog.defaults.metadata_file if catalog.defaults is not None else None,
     )
     publication = _resolve_publication(
         catalog=catalog,
@@ -132,9 +137,24 @@ def _resolve_component(
     localization = _resolve_localization(catalog=catalog, component=component)
 
     metadata_file = content_source.metadata_file if content_source is not None else None
-    pages_root = _resolve_component_content_path(content_source, component_document, "pages_root", catalog.defaults.pages_root)
-    docs_root = _resolve_component_content_path(content_source, component_document, "docs_root", catalog.defaults.docs_root)
-    assets_root = _resolve_component_content_path(content_source, component_document, "assets_root", catalog.defaults.assets_root)
+    pages_root = _resolve_component_content_path(
+        content_source,
+        component_document,
+        "pages_root",
+        catalog.defaults.pages_root if catalog.defaults is not None else None,
+    )
+    docs_root = _resolve_component_content_path(
+        content_source,
+        component_document,
+        "docs_root",
+        catalog.defaults.docs_root if catalog.defaults is not None else None,
+    )
+    assets_root = _resolve_component_content_path(
+        content_source,
+        component_document,
+        "assets_root",
+        catalog.defaults.assets_root if catalog.defaults is not None else None,
+    )
 
     artifacts = []
     for artifact in component.artifacts or ():
@@ -205,15 +225,17 @@ def _resolve_publication(
     group_path_prefix: str | None,
     origins: dict[str, ResolvedOrigin],
 ) -> ResolvedPublicationPolicy:
-    defaults = catalog.defaults.publication
+    defaults = catalog.defaults.publication if catalog.defaults is not None else None
     publication = component.publication
+    groups = catalog.groups or {}
+    group = groups.get(component.group) if component.group is not None else None
+    group_publication = group.publication if group is not None else None
     origin_key = (
         publication.origin if publication and publication.origin is not None else None
     ) or (
-        catalog.groups[component.group].publication.origin
-        if component.group is not None
-        and catalog.groups[component.group].publication is not None
-        and catalog.groups[component.group].publication.origin is not None
+        group_publication.origin
+        if group_publication is not None
+        and group_publication.origin is not None
         else None
     ) or (defaults.origin if defaults is not None else None)
     if origin_key is None:
@@ -273,7 +295,7 @@ def _resolve_localization(
     catalog: CatalogDocumentV1,
     component: ComponentCatalogEntry,
 ) -> ResolvedLocalizationPolicy:
-    defaults = catalog.defaults.localization
+    defaults = catalog.defaults.localization if catalog.defaults is not None else None
     authored = component.localization
     if defaults is None and authored is None:
         return ResolvedLocalizationPolicy(

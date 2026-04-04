@@ -17,8 +17,14 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 
-from apache_buildish_site_pipeline.models.catalog import PublicationSelectionPolicy
+from apache_buildish_site_pipeline.models.catalog import (
+    CandidateSelectionPolicy,
+    LineHeadSelectionPolicy,
+    PublicationSelectionPolicy,
+    ReleaseSelectionPolicy,
+)
 from apache_buildish_site_pipeline.models.enums import (
     CandidateSelectionMode,
     LineHeadSelectionMode,
@@ -26,7 +32,15 @@ from apache_buildish_site_pipeline.models.enums import (
     ReleaseSelectionMode,
 )
 
-from .types import ProviderContextIndex, ProviderSnapshotIndex, ResolvedSiteConfig, SelectedVersionContext, SelectedVersionSet
+from .types import (
+    IndexedProviderRecord,
+    ProviderContextIndex,
+    ProviderSnapshotIndex,
+    ResolvedArtifactConfig,
+    ResolvedSiteConfig,
+    SelectedVersionContext,
+    SelectedVersionSet,
+)
 
 _MAX_SELECTED_CONTEXTS = 512
 _SEMVER_PATTERN = re.compile(r"^[0-9]+(?:\.[0-9]+)*(?:[-+][A-Za-z0-9.-]+)?$")
@@ -59,14 +73,19 @@ def select_version_contexts(*, site: ResolvedSiteConfig, provider_index: Provide
 def _default_publication_selection_policy() -> PublicationSelectionPolicy:
     return PublicationSelectionPolicy(
         development=True,
-        line_heads={"mode": "allAuthored"},
-        releases={"mode": "latestPerLine"},
+        line_heads=LineHeadSelectionPolicy(mode=LineHeadSelectionMode.ALL_AUTHORED),
+        releases=ReleaseSelectionPolicy(mode=ReleaseSelectionMode.LATEST_PER_LINE),
         named_refs=[],
-        candidates={"mode": "none"},
+        candidates=CandidateSelectionPolicy(mode=CandidateSelectionMode.NONE),
     )
 
 
-def _select_development_context(component_slug: str, artifact: object, provider_context: ProviderContextIndex | None, policy: PublicationSelectionPolicy) -> list[SelectedVersionContext]:
+def _select_development_context(
+    component_slug: str,
+    artifact: ResolvedArtifactConfig,
+    provider_context: ProviderContextIndex | None,
+    policy: PublicationSelectionPolicy,
+) -> list[SelectedVersionContext]:
     if not policy.development:
         return []
     provider_record = None
@@ -97,7 +116,12 @@ def _select_development_context(component_slug: str, artifact: object, provider_
     ]
 
 
-def _select_line_head_contexts(component_slug: str, artifact: object, provider_context: ProviderContextIndex | None, policy: PublicationSelectionPolicy) -> list[SelectedVersionContext]:
+def _select_line_head_contexts(
+    component_slug: str,
+    artifact: ResolvedArtifactConfig,
+    provider_context: ProviderContextIndex | None,
+    policy: PublicationSelectionPolicy,
+) -> list[SelectedVersionContext]:
     line_head_policy = policy.line_heads
     if line_head_policy is None or line_head_policy.mode is LineHeadSelectionMode.NONE:
         return []
@@ -137,7 +161,12 @@ def _select_line_head_contexts(component_slug: str, artifact: object, provider_c
     return selected_contexts
 
 
-def _select_release_contexts(component_slug: str, artifact: object, provider_context: ProviderContextIndex | None, policy: PublicationSelectionPolicy) -> list[SelectedVersionContext]:
+def _select_release_contexts(
+    component_slug: str,
+    artifact: ResolvedArtifactConfig,
+    provider_context: ProviderContextIndex | None,
+    policy: PublicationSelectionPolicy,
+) -> list[SelectedVersionContext]:
     release_policy = policy.releases
     if release_policy is None:
         return []
@@ -172,7 +201,7 @@ def _select_release_contexts(component_slug: str, artifact: object, provider_con
                 assets_root=artifact.assets_root,
                 version=version,
                 display_version=provider_record.display_version if provider_record else version,
-                tag=(provider_record.tag if provider_record else None) or (authored_release.tag if authored_release else None),
+                tag=provider_record.tag if provider_record else None,
                 publication_state=provider_record.publication_state if provider_record else (authored_release.publication_state if authored_release else None),
                 withdrawal_behavior=authored_release.withdrawal_behavior if authored_release else None,
                 redirect_target=authored_release.redirect_target if authored_release else None,
@@ -183,7 +212,12 @@ def _select_release_contexts(component_slug: str, artifact: object, provider_con
     return selected_contexts
 
 
-def _select_named_ref_contexts(component_slug: str, artifact: object, provider_context: ProviderContextIndex | None, policy: PublicationSelectionPolicy) -> list[SelectedVersionContext]:
+def _select_named_ref_contexts(
+    component_slug: str,
+    artifact: ResolvedArtifactConfig,
+    provider_context: ProviderContextIndex | None,
+    policy: PublicationSelectionPolicy,
+) -> list[SelectedVersionContext]:
     selected_keys = tuple(policy.named_refs or ())
     authored_named_refs = {named_ref.key: named_ref for named_ref in artifact.versioning.named_refs or ()}
     selected_contexts = []
@@ -216,7 +250,12 @@ def _select_named_ref_contexts(component_slug: str, artifact: object, provider_c
     return selected_contexts
 
 
-def _select_candidate_contexts(component_slug: str, artifact: object, provider_context: ProviderContextIndex | None, policy: PublicationSelectionPolicy) -> list[SelectedVersionContext]:
+def _select_candidate_contexts(
+    component_slug: str,
+    artifact: ResolvedArtifactConfig,
+    provider_context: ProviderContextIndex | None,
+    policy: PublicationSelectionPolicy,
+) -> list[SelectedVersionContext]:
     candidate_policy = policy.candidates
     if candidate_policy is None or candidate_policy.mode is CandidateSelectionMode.NONE or provider_context is None:
         return []
@@ -256,16 +295,16 @@ def _select_candidate_contexts(component_slug: str, artifact: object, provider_c
     return selected_contexts
 
 
-def _choose_best_record(records: list[object]) -> object:
+def _choose_best_record(records: Sequence[IndexedProviderRecord]) -> IndexedProviderRecord:
     return sorted(records, key=_provider_record_sort_key, reverse=True)[0]
 
 
-def _provider_record_sort_key(record: object) -> tuple[tuple[object, ...], ...]:
+def _provider_record_sort_key(record: IndexedProviderRecord) -> tuple[tuple[object, ...], ...]:
     return (
         (_version_sort_key(record.version) if record.version else ()),
         ((record.candidate_sequence or 0),),
-        ((record.updated_at or ""),),
-        ((record.published_at or ""),),
+        (((record.updated_at.isoformat()) if record.updated_at is not None else ""),),
+        (((record.published_at.isoformat()) if record.published_at is not None else ""),),
         ((record.external_id or ""),),
         ((record.ref or ""),),
     )

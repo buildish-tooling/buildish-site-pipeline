@@ -1,4 +1,16 @@
 # Copyright 2026 The Apache Software Foundation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 """Diagnostic collection and bounded-detail reduction."""
 
@@ -6,9 +18,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+from typing import cast
 
 from apache_buildish_site_pipeline.models.enums import DiagnosticSeverity
 from apache_buildish_site_pipeline.models.planning_stage_contract import (
+    ExtensionsObject,
     PipelineDiagnosticEntry,
     ReducedDiagnosticDetailsSummary,
 )
@@ -68,12 +82,14 @@ class DiagnosticCollector:
         )
 
 
-def _reduce_details_if_needed(details: object | None) -> object | None:
+def _reduce_details_if_needed(details: object | None) -> ReducedDiagnosticDetailsSummary | ExtensionsObject | None:
     if details is None:
         return None
+    if not isinstance(details, dict):
+        raise TypeError("Diagnostic details must be a JSON object when present")
     encoded = json.dumps(details, sort_keys=True, separators=(",", ":")).encode("utf-8")
     if len(encoded) <= _DETAILS_LIMIT_BYTES:
-        return details
+        return cast(ExtensionsObject, details)
     digest = hashlib.sha256(encoded).hexdigest()[:16]
     summary = json.dumps(details, sort_keys=True)[:120]
     return ReducedDiagnosticDetailsSummary(

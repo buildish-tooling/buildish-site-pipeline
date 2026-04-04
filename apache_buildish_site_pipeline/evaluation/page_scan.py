@@ -199,7 +199,7 @@ def _extract_front_matter(
     if raw_front_matter.strip() == "":
         return {}
     try:
-        return load_yaml_mapping(raw_front_matter)
+        return dict(load_yaml_mapping(raw_front_matter))
     except ValueError as exc:
         collector.add(
             severity=DiagnosticSeverity.ERROR,

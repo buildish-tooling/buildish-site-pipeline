@@ -26,12 +26,12 @@ from .shared import load_workspace_inputs
 def run_plan(invocation: PlanInvocation) -> CommandResult:
     """Execute one `plan` command."""
 
-    loaded_inputs = load_workspace_inputs(invocation.layout.repo_root)
+    loaded_inputs = load_workspace_inputs(invocation.layout.workspace_root, invocation.layout.catalog_path)
     planning = evaluate_planning(
         target=invocation.planning_target,
         catalog=loaded_inputs.catalog,
         provider_snapshot=loaded_inputs.provider_snapshot,
-        workspace_root=invocation.layout.repo_root,
+        workspace_root=invocation.layout.workspace_root,
         component_documents=loaded_inputs.component_documents,
         stage_root=invocation.layout.stage_root,
         work_root=invocation.layout.work_root,

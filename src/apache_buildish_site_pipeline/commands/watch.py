@@ -169,7 +169,11 @@ def run_watch(invocation: WatchInvocation, *, stdout) -> CommandResult:
         invocation=invocation,
         cycle_number=cycle_number,
         trusted_stage=trusted_stage,
-        prior_watch_roots=_derive_watch_roots(repo_root=invocation.layout.repo_root, planning_roots=()),
+        prior_watch_roots=_derive_watch_roots(
+            workspace_root=invocation.layout.workspace_root,
+            site_root=invocation.layout.site_root,
+            planning_roots=(),
+        ),
         dirty_paths=(),
     )
     _emit_cycle_report(invocation=invocation, report=outcome.report, stdout=stdout)
@@ -265,12 +269,12 @@ def _run_watch_cycle(
     dirty_paths: tuple[Path, ...],
 ) -> WatchCycleOutcome:
     try:
-        loaded_inputs = load_workspace_inputs(invocation.layout.repo_root)
+        loaded_inputs = load_workspace_inputs(invocation.layout.workspace_root, invocation.layout.catalog_path)
         planning = evaluate_planning(
             target=PlanningTarget.WATCH,
             catalog=loaded_inputs.catalog,
             provider_snapshot=loaded_inputs.provider_snapshot,
-            workspace_root=invocation.layout.repo_root,
+            workspace_root=invocation.layout.workspace_root,
             component_documents=loaded_inputs.component_documents,
             stage_root=invocation.layout.stage_root,
             work_root=invocation.layout.work_root,
@@ -289,12 +293,16 @@ def _run_watch_cycle(
             trusted_stage=trusted_stage,
             prior_watch_roots=prior_watch_roots,
             diagnostics=(_build_cycle_failure_diagnostic(str(exc)),),
-            workspace_root=invocation.layout.repo_root,
+            workspace_root=invocation.layout.workspace_root,
             private_roots=(invocation.layout.work_root, invocation.layout.stage_root),
         )
 
     planning_roots = planning.watch_plan.roots if planning.watch_plan is not None else prior_watch_roots
-    watch_roots = _derive_watch_roots(repo_root=invocation.layout.repo_root, planning_roots=planning_roots)
+    watch_roots = _derive_watch_roots(
+        workspace_root=invocation.layout.workspace_root,
+        site_root=invocation.layout.site_root,
+        planning_roots=planning_roots,
+    )
     if not evaluation.stage_gate.allowed or evaluation.build_plan is None:
         return WatchCycleOutcome(
             report=build_stage_run_report(
@@ -307,7 +315,7 @@ def _run_watch_cycle(
                 stage_root_path=trusted_stage.stage_root if trusted_stage is not None else None,
                 manifest_path=trusted_stage.manifest_path if trusted_stage is not None else None,
                 cycle=cycle_number,
-                workspace_root=invocation.layout.repo_root,
+                workspace_root=invocation.layout.workspace_root,
                 private_roots=(invocation.layout.work_root, invocation.layout.stage_root),
             ),
             trusted_stage=trusted_stage,
@@ -320,7 +328,10 @@ def _run_watch_cycle(
         trusted_stage=trusted_stage,
         build_plan=evaluation.build_plan,
         dirty_paths=dirty_paths,
-        repo_root=invocation.layout.repo_root,
+        workspace_root=invocation.layout.workspace_root,
+        site_root=invocation.layout.site_root,
+        catalog_path=loaded_inputs.catalog_path,
+        provider_snapshot_path=loaded_inputs.provider_snapshot_path,
     )
     build_outcome = None
     try:
@@ -344,7 +355,7 @@ def _run_watch_cycle(
             prior_watch_roots=watch_roots,
             evaluation=evaluation,
             diagnostics=tuple(evaluation.diagnostics) + (_build_cycle_failure_diagnostic(str(exc)),),
-            workspace_root=invocation.layout.repo_root,
+            workspace_root=invocation.layout.workspace_root,
             private_roots=(invocation.layout.work_root, invocation.layout.stage_root),
         )
 
@@ -361,7 +372,7 @@ def _run_watch_cycle(
             prior_watch_roots=watch_roots,
             evaluation=evaluation,
             diagnostics=tuple(evaluation.diagnostics) + (_build_cycle_failure_diagnostic(str(exc)),),
-            workspace_root=invocation.layout.repo_root,
+            workspace_root=invocation.layout.workspace_root,
             private_roots=(invocation.layout.work_root, invocation.layout.stage_root),
         )
     finally:
@@ -378,7 +389,7 @@ def _run_watch_cycle(
             evaluation=evaluation,
             diagnostics=tuple(evaluation.diagnostics)
             + (_build_cycle_failure_diagnostic("Published watch stage did not remain incrementally trusted"),),
-            workspace_root=invocation.layout.repo_root,
+            workspace_root=invocation.layout.workspace_root,
             private_roots=(invocation.layout.work_root, invocation.layout.stage_root),
         )
     return WatchCycleOutcome(
@@ -391,7 +402,7 @@ def _run_watch_cycle(
             stage_root_path=next_trusted_stage.stage_root,
             manifest_path=next_trusted_stage.manifest_path,
             cycle=cycle_number,
-            workspace_root=invocation.layout.repo_root,
+            workspace_root=invocation.layout.workspace_root,
             private_roots=(invocation.layout.work_root, invocation.layout.stage_root),
         ),
         trusted_stage=next_trusted_stage,
@@ -404,7 +415,10 @@ def _select_incremental_build(
     trusted_stage: TrustedStageState | None,
     build_plan,
     dirty_paths: tuple[Path, ...],
-    repo_root: Path,
+    workspace_root: Path,
+    site_root: Path,
+    catalog_path: Path,
+    provider_snapshot_path: Path | None,
 ) -> IncrementalBuildSelection:
     units = build_owned_units(build_plan)
     current_unit_ids = frozenset(unit.unit_id for unit in units)
@@ -415,7 +429,10 @@ def _select_incremental_build(
         build_plan=build_plan,
         units=units,
         dirty_paths=dirty_paths,
-        repo_root=repo_root,
+        workspace_root=workspace_root,
+        site_root=site_root,
+        catalog_path=catalog_path,
+        provider_snapshot_path=provider_snapshot_path,
     )
     retained_manifests = tuple(
         manifest
@@ -438,19 +455,28 @@ def _select_incremental_build(
     )
 
 
-def _dirty_unit_ids_for_paths(*, build_plan, units: tuple[OwnedUnit, ...], dirty_paths: tuple[Path, ...], repo_root: Path) -> frozenset[str]:
+def _dirty_unit_ids_for_paths(
+    *,
+    build_plan,
+    units: tuple[OwnedUnit, ...],
+    dirty_paths: tuple[Path, ...],
+    workspace_root: Path,
+    site_root: Path,
+    catalog_path: Path,
+    provider_snapshot_path: Path | None,
+) -> frozenset[str]:
     current_unit_ids = frozenset(unit.unit_id for unit in units)
     if not dirty_paths:
         return current_unit_ids
 
-    normalized_repo_root = repo_root.resolve(strict=False)
-    site_root = normalized_repo_root / "site"
-    catalog_path = site_root / "components.yaml"
-    provider_snapshot_path = site_root / "provider-snapshot.json"
+    normalized_workspace_root = workspace_root.resolve(strict=False)
+    normalized_site_root = site_root.resolve(strict=False)
+    normalized_catalog_path = catalog_path.resolve(strict=False)
+    normalized_provider_snapshot_path = provider_snapshot_path.resolve(strict=False) if provider_snapshot_path is not None else None
     dirty_unit_ids: set[str] = set()
     for dirty_path in dirty_paths:
         normalized_dirty_path = dirty_path.resolve(strict=False)
-        if normalized_dirty_path == catalog_path or normalized_dirty_path == provider_snapshot_path:
+        if normalized_dirty_path == normalized_catalog_path or normalized_dirty_path == normalized_provider_snapshot_path:
             return current_unit_ids
         if _matches_stage_input(normalized_dirty_path, build_plan.site.site_pages_root) and "site-pages" in current_unit_ids:
             dirty_unit_ids.add("site-pages")
@@ -466,9 +492,9 @@ def _dirty_unit_ids_for_paths(*, build_plan, units: tuple[OwnedUnit, ...], dirty
         if component_unit_id is not None and component_unit_id in current_unit_ids:
             dirty_unit_ids.add(component_unit_id)
             continue
-        if normalized_dirty_path == site_root or normalized_dirty_path.is_relative_to(site_root):
+        if normalized_dirty_path == normalized_site_root or normalized_dirty_path.is_relative_to(normalized_site_root):
             return current_unit_ids
-        if normalized_dirty_path == normalized_repo_root or normalized_dirty_path.is_relative_to(normalized_repo_root):
+        if normalized_dirty_path == normalized_workspace_root or normalized_dirty_path.is_relative_to(normalized_workspace_root):
             return current_unit_ids
     return frozenset(dirty_unit_ids)
 
@@ -551,7 +577,7 @@ def _emit_cycle_report(*, invocation: WatchInvocation, report, stdout) -> None:
     if invocation.report_request.output_path is None:
         return
     request = revalidate_report_request(
-        cwd=invocation.layout.repo_root,
+        cwd=invocation.layout.cwd,
         request=invocation.report_request,
         forbidden_roots=(invocation.layout.stage_root, invocation.layout.work_root),
     )
@@ -607,10 +633,16 @@ def _graceful_watch_shutdown() -> Iterator[_WatchShutdownController]:
             signal.signal(signum, previous_handler)
 
 
-def _derive_watch_roots(*, repo_root: Path, planning_roots: tuple[Path, ...]) -> tuple[Path, ...]:
+def _derive_watch_roots(*, workspace_root: Path, site_root: Path, planning_roots: tuple[Path, ...]) -> tuple[Path, ...]:
     """Keep a stable workspace-level watch root so topology changes remain visible."""
 
-    return _coalesce_dirty_paths((repo_root.resolve(strict=False), *(root.resolve(strict=False) for root in planning_roots)))
+    return _coalesce_dirty_paths(
+        (
+            workspace_root.resolve(strict=False),
+            site_root.resolve(strict=False),
+            *(root.resolve(strict=False) for root in planning_roots),
+        ),
+    )
 
 
 def _coalesce_dirty_paths(paths: tuple[Path, ...] | list[Path]) -> tuple[Path, ...]:

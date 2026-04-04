@@ -46,11 +46,20 @@ class ApplicationExitCode(IntEnum):
 
 @dataclass(frozen=True, slots=True)
 class RepositoryLayout:
-    """Resolved repository-local runtime paths."""
+    """Resolved filesystem layout for one command invocation."""
 
-    repo_root: Path
+    cwd: Path
+    workspace_root: Path
+    catalog_path: Path
+    site_root: Path
     stage_root: Path
     work_root: Path
+
+    @property
+    def repo_root(self) -> Path:
+        """Backward-compatible alias for the authored workspace root."""
+
+        return self.workspace_root
 
 
 @dataclass(frozen=True, slots=True)

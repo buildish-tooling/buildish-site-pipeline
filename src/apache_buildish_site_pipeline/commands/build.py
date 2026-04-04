@@ -30,12 +30,12 @@ from .stage_report import build_stage_run_report
 def run_build(invocation: BuildInvocation) -> CommandResult:
     """Execute one `build` command."""
 
-    loaded_inputs = load_workspace_inputs(invocation.layout.repo_root)
+    loaded_inputs = load_workspace_inputs(invocation.layout.workspace_root, invocation.layout.catalog_path)
     planning = evaluate_planning(
         target=PlanningTarget.BUILD,
         catalog=loaded_inputs.catalog,
         provider_snapshot=loaded_inputs.provider_snapshot,
-        workspace_root=invocation.layout.repo_root,
+        workspace_root=invocation.layout.workspace_root,
         component_documents=loaded_inputs.component_documents,
         stage_root=invocation.layout.stage_root,
         work_root=invocation.layout.work_root,
@@ -54,7 +54,7 @@ def run_build(invocation: BuildInvocation) -> CommandResult:
             stage_usable=False,
             stage_root_path=None,
             manifest_path=None,
-            workspace_root=invocation.layout.repo_root,
+            workspace_root=invocation.layout.workspace_root,
             private_roots=(invocation.layout.work_root, invocation.layout.stage_root),
         )
         return CommandResult(
@@ -77,7 +77,7 @@ def run_build(invocation: BuildInvocation) -> CommandResult:
         stage_usable=True,
         stage_root_path=publication.stage_root,
         manifest_path=publication.manifest_path,
-        workspace_root=invocation.layout.repo_root,
+        workspace_root=invocation.layout.workspace_root,
         private_roots=(invocation.layout.work_root, invocation.layout.stage_root),
     )
     return CommandResult(exit_code=ApplicationExitCode.SUCCESS, report=report, text_output=render_text_report(report))

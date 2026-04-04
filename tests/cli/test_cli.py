@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import io
 import json
+import tempfile
 import unittest
 from unittest import mock
 from pathlib import Path
@@ -81,6 +82,48 @@ class CliTests(unittest.TestCase):
             self.assertTrue(report["summary"]["succeeded"])
             self.assertTrue(manifest_path.exists())
             self.assertTrue(staged_file.exists())
+            self.assertEqual(stderr.getvalue(), "")
+
+    def test_build_supports_explicit_workspace_root_and_catalog(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root, tempfile.TemporaryDirectory() as runner_dir, tempfile.TemporaryDirectory() as catalog_dir:
+            runner_root = Path(runner_dir)
+            catalog_site_root = Path(catalog_dir)
+            authored_site_root = workspace_root / "site"
+            (catalog_site_root / "components.yaml").write_text(
+                (authored_site_root / "components.yaml").read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+            (catalog_site_root / "provider-snapshot.json").write_text(
+                (authored_site_root / "provider-snapshot.json").read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            with _cwd(runner_root):
+                exit_code = _run(
+                    argv=[
+                        "build",
+                        "--workspace-root",
+                        str(workspace_root),
+                        "--catalog",
+                        str(catalog_site_root / "components.yaml"),
+                        "--report-format",
+                        "json",
+                        "--report-schema-version",
+                        "1",
+                        "--report-output",
+                        "build-report.json",
+                    ],
+                    stdout=stdout,
+                    stderr=stderr,
+                )
+
+            report = json.loads((runner_root / "build-report.json").read_text(encoding="utf-8"))
+            manifest_path = catalog_site_root / ".stage/manifest.json"
+
+            self.assertEqual(exit_code, 0)
+            self.assertTrue(report["summary"]["succeeded"])
+            self.assertTrue(manifest_path.exists())
             self.assertEqual(stderr.getvalue(), "")
 
     def test_build_rejects_non_empty_stage_root(self) -> None:
@@ -469,15 +512,17 @@ class CliTests(unittest.TestCase):
 
         with _workspace(with_content_file=True) as workspace_root:
             observed_calls: list[tuple[str, str, str]] = []
-            expected_repo_root = str(workspace_root)
+            expected_workspace_root = str(workspace_root)
+            expected_catalog_path = str(workspace_root / "site/components.yaml")
             expected_stage_root = str(workspace_root / "site/.stage")
             expected_work_root = str(workspace_root / "site/.site-pipeline-work")
 
             def _record_loader(command_name: str, real_loader):
                 def _wrapper(*args, **kwargs):
-                    repo_root = args[0] if args else kwargs["repo_root"]
+                    workspace_root = args[0] if args else kwargs["workspace_root"]
+                    catalog_path = args[1] if len(args) > 1 else kwargs.get("catalog_path")
                     loaded_inputs = real_loader(*args, **kwargs)
-                    observed_calls.append(("load", command_name, str(repo_root)))
+                    observed_calls.append(("load", command_name, f"{workspace_root}:{catalog_path}"))
                     return loaded_inputs
 
                 return _wrapper
@@ -538,14 +583,14 @@ class CliTests(unittest.TestCase):
         self.assertEqual(
             observed_calls,
             [
-                ("load", "check", expected_repo_root),
-                ("planning", "check", f"build:{expected_repo_root}:{expected_stage_root}:{expected_work_root}"),
+                ("load", "check", f"{expected_workspace_root}:{expected_catalog_path}"),
+                ("planning", "check", f"build:{expected_workspace_root}:{expected_stage_root}:{expected_work_root}"),
                 ("evaluation", "check", "check"),
-                ("load", "build", expected_repo_root),
-                ("planning", "build", f"build:{expected_repo_root}:{expected_stage_root}:{expected_work_root}"),
+                ("load", "build", f"{expected_workspace_root}:{expected_catalog_path}"),
+                ("planning", "build", f"build:{expected_workspace_root}:{expected_stage_root}:{expected_work_root}"),
                 ("evaluation", "build", "build"),
-                ("load", "watch", expected_repo_root),
-                ("planning", "watch", f"watch:{expected_repo_root}:{expected_stage_root}:{expected_work_root}"),
+                ("load", "watch", f"{expected_workspace_root}:{expected_catalog_path}"),
+                ("planning", "watch", f"watch:{expected_workspace_root}:{expected_stage_root}:{expected_work_root}"),
                 ("evaluation", "watch", "watch"),
             ],
         )

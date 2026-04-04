@@ -33,10 +33,10 @@ from apache_buildish_site_pipeline.models.loading import (
 from ..cli.errors import InvocationError
 
 _DEFAULT_CATALOG_PATH = Path("site/components.yaml")
-_PROVIDER_SNAPSHOT_CANDIDATES = (
-    Path("site/provider-snapshot.yaml"),
-    Path("site/provider-snapshot.yml"),
-    Path("site/provider-snapshot.json"),
+_PROVIDER_SNAPSHOT_CANDIDATE_NAMES = (
+    "provider-snapshot.yaml",
+    "provider-snapshot.yml",
+    "provider-snapshot.json",
 )
 
 
@@ -47,46 +47,63 @@ class LoadedWorkspaceInputs:
     catalog: CatalogDocumentV1
     provider_snapshot: ProviderSnapshotV1
     component_documents: dict[str, ComponentRepositoryDocumentV1]
+    catalog_path: Path
+    provider_snapshot_path: Path | None
 
 
-def load_workspace_inputs(repo_root: Path) -> LoadedWorkspaceInputs:
+def load_workspace_inputs(workspace_root: Path, catalog_path: Path | None = None) -> LoadedWorkspaceInputs:
     """Load default catalog, provider snapshot, and component metadata inputs."""
 
-    catalog_path = (repo_root / _DEFAULT_CATALOG_PATH).resolve(strict=False)
-    if not catalog_path.exists():
-        raise InvocationError(f"Missing catalog document: {catalog_path}")
+    resolved_workspace_root = workspace_root.resolve(strict=False)
+    resolved_catalog_path = (
+        catalog_path.resolve(strict=False)
+        if catalog_path is not None
+        else (resolved_workspace_root / _DEFAULT_CATALOG_PATH).resolve(strict=False)
+    )
+    if not resolved_catalog_path.exists():
+        raise InvocationError(f"Missing catalog document: {resolved_catalog_path}")
+    site_root = resolved_catalog_path.parent
 
     try:
         catalog = load_catalog_document(
-            _read_utf8(catalog_path),
-            document_format=_infer_document_format(catalog_path),
-            source_name=str(catalog_path),
+            _read_utf8(resolved_catalog_path),
+            document_format=_infer_document_format(resolved_catalog_path),
+            source_name=str(resolved_catalog_path),
         )
-        provider_snapshot = _load_provider_snapshot(repo_root)
-        component_documents = _load_component_documents(repo_root, catalog)
+        provider_snapshot, provider_snapshot_path = _load_provider_snapshot(site_root)
+        component_documents = _load_component_documents(resolved_workspace_root, catalog)
     except LoadingError as exc:
         raise InvocationError(str(exc)) from exc
     return LoadedWorkspaceInputs(
         catalog=catalog,
         provider_snapshot=provider_snapshot,
         component_documents=component_documents,
+        catalog_path=resolved_catalog_path,
+        provider_snapshot_path=provider_snapshot_path,
     )
 
 
-def _load_provider_snapshot(repo_root: Path) -> ProviderSnapshotV1:
-    found_paths = [(repo_root / candidate).resolve(strict=False) for candidate in _PROVIDER_SNAPSHOT_CANDIDATES if (repo_root / candidate).exists()]
+def _load_provider_snapshot(site_root: Path) -> tuple[ProviderSnapshotV1, Path | None]:
+    found_paths = [
+        (site_root / candidate_name).resolve(strict=False)
+        for candidate_name in _PROVIDER_SNAPSHOT_CANDIDATE_NAMES
+        if (site_root / candidate_name).exists()
+    ]
     if len(found_paths) > 1:
         raise InvocationError(
             "Found multiple default provider snapshot files; keep only one of "
             f"{', '.join(str(path) for path in found_paths)}",
         )
     if not found_paths:
-        return ProviderSnapshotV1(schema_version=1, providers=[], records=[])
+        return ProviderSnapshotV1(schema_version=1, providers=[], records=[]), None
     provider_snapshot_path = found_paths[0]
-    return load_provider_snapshot(
-        _read_utf8(provider_snapshot_path),
-        document_format=_infer_document_format(provider_snapshot_path),
-        source_name=str(provider_snapshot_path),
+    return (
+        load_provider_snapshot(
+            _read_utf8(provider_snapshot_path),
+            document_format=_infer_document_format(provider_snapshot_path),
+            source_name=str(provider_snapshot_path),
+        ),
+        provider_snapshot_path,
     )
 
 

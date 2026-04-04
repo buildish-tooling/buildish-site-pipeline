@@ -108,6 +108,19 @@ site-pipeline check
 site-pipeline build
 ```
 
+Those defaults assume the catalog lives at `site/components.yaml`. If your site
+catalog is in a different repository or you invoke the CLI from outside the
+workspace root, pass both paths explicitly:
+
+```bash
+site-pipeline check --workspace-root /workspace --catalog /workspace/buildish/site/components.yaml
+site-pipeline build --workspace-root /workspace --catalog /workspace/buildish/site/components.yaml
+```
+
+With that split, authored relative paths from the catalog still resolve from
+`--workspace-root`, while `.stage`, `.site-pipeline-work`, and the default
+provider snapshot stay next to the selected catalog file.
+
 If you want a machine-readable build report for automation, use:
 
 ```bash

@@ -68,7 +68,7 @@ def _run(*, argv: Sequence[str] | None, stdout: TextIO, stderr: TextIO) -> int:
         report_request = invocation.report_request
         if report_request.output_path is not None:
             report_request = revalidate_report_request(
-                cwd=invocation.layout.repo_root,
+                cwd=invocation.layout.cwd,
                 request=report_request,
                 forbidden_roots=(invocation.layout.stage_root, invocation.layout.work_root),
             )
@@ -95,14 +95,24 @@ def parse_invocation(argv: Sequence[str] | None = None) -> CommandInvocation:
 
     parser = _build_parser()
     namespace = parser.parse_args(argv)
-    repo_root = Path.cwd().resolve()
+    cwd = Path.cwd().resolve()
+    workspace_root = _resolve_cli_path(cwd=cwd, raw_path=namespace.workspace_root) if namespace.workspace_root else cwd
+    catalog_path = (
+        _resolve_cli_path(cwd=cwd, raw_path=namespace.catalog)
+        if namespace.catalog
+        else workspace_root / "site/components.yaml"
+    )
+    site_root = catalog_path.parent
     layout = RepositoryLayout(
-        repo_root=repo_root,
-        stage_root=repo_root / "site/.stage",
-        work_root=repo_root / "site/.site-pipeline-work",
+        cwd=cwd,
+        workspace_root=workspace_root,
+        catalog_path=catalog_path,
+        site_root=site_root,
+        stage_root=site_root / ".stage",
+        work_root=site_root / ".site-pipeline-work",
     )
     report_request = build_report_request(
-        cwd=repo_root,
+        cwd=cwd,
         report_format=namespace.report_format,
         schema_version=namespace.report_schema_version,
         report_output=namespace.report_output,
@@ -136,10 +146,12 @@ def _build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     plan_parser = subparsers.add_parser("plan", allow_abbrev=False)
+    _add_workspace_arguments(plan_parser)
     plan_parser.add_argument("--for", dest="planning_target", choices=[value.value for value in PlanningTarget], default=PlanningTarget.BUILD.value)
     _add_report_arguments(plan_parser)
 
     check_parser = subparsers.add_parser("check", allow_abbrev=False)
+    _add_workspace_arguments(check_parser)
     check_parser.add_argument(
         "--fail-on",
         dest="fail_on_severity",
@@ -149,9 +161,11 @@ def _build_parser() -> argparse.ArgumentParser:
     _add_report_arguments(check_parser)
 
     build_parser = subparsers.add_parser("build", allow_abbrev=False)
+    _add_workspace_arguments(build_parser)
     _add_report_arguments(build_parser)
 
     watch_parser = subparsers.add_parser("watch", allow_abbrev=False)
+    _add_workspace_arguments(watch_parser)
     watch_parser.add_argument(
         "--fail-on",
         dest="fail_on_severity",
@@ -162,10 +176,22 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _add_workspace_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--workspace-root", default=None)
+    parser.add_argument("--catalog", default=None)
+
+
 def _add_report_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--report-format", choices=["text", "json"], default="text")
     parser.add_argument("--report-schema-version", type=int, default=None)
     parser.add_argument("--report-output", default="-")
+
+
+def _resolve_cli_path(*, cwd: Path, raw_path: str) -> Path:
+    candidate = Path(raw_path)
+    if not candidate.is_absolute():
+        candidate = cwd / candidate
+    return candidate.absolute()
 
 
 def _write_error(stderr: TextIO, message: str) -> None:

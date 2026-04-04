@@ -83,6 +83,18 @@ site-pipeline check
 site-pipeline build
 ```
 
+Those examples assume you run from the workspace root and keep the catalog at
+`site/components.yaml`. If you run from somewhere else or keep the catalog in a
+different repository, pass both selection flags explicitly, for example:
+
+```bash
+site-pipeline build --workspace-root /workspace --catalog /workspace/buildish/site/components.yaml
+```
+
+In that split layout, authored relative paths still resolve from
+`--workspace-root`, while `.stage`, `.site-pipeline-work`, and the default
+provider snapshot stay next to the selected catalog.
+
 After `build`, expect at least:
 
 ```text

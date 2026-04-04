@@ -151,12 +151,29 @@ class WatchInternalTests(unittest.TestCase):
 
     def test_derive_watch_roots_keeps_workspace_root_for_topology_changes(self) -> None:
         repo_root = Path("/workspace")
+        site_root = repo_root / "site"
         planning_roots = (
             repo_root / "components/runtime/docs",
-            repo_root / "site/components.yaml",
+            site_root / "components.yaml",
         )
 
-        self.assertEqual(_derive_watch_roots(repo_root=repo_root, planning_roots=planning_roots), (repo_root,))
+        self.assertEqual(
+            _derive_watch_roots(workspace_root=repo_root, site_root=site_root, planning_roots=planning_roots),
+            (repo_root,),
+        )
+
+    def test_derive_watch_roots_keeps_external_site_root_visible(self) -> None:
+        workspace_root = Path("/workspace")
+        site_root = Path("/catalog-repo/site")
+
+        self.assertEqual(
+            _derive_watch_roots(
+                workspace_root=workspace_root,
+                site_root=site_root,
+                planning_roots=(workspace_root / "components/runtime/docs",),
+            ),
+            (workspace_root, site_root),
+        )
 
     def test_pipeline_owned_path_detection_filters_stage_work_and_report_temps(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
@@ -211,11 +228,15 @@ class WatchInternalTests(unittest.TestCase):
             if build_plan is None:
                 self.fail("expected watch build plan")
             units = build_owned_units(build_plan)
+            site_root = workspace_root / "site"
             dirty_unit_ids = _dirty_unit_ids_for_paths(
                 build_plan=build_plan,
                 units=units,
                 dirty_paths=(dirty_path,),
-                repo_root=workspace_root,
+                workspace_root=workspace_root,
+                site_root=site_root,
+                catalog_path=site_root / "components.yaml",
+                provider_snapshot_path=site_root / "provider-snapshot.json",
             )
             if trusted_stage is None:
                 self.fail("expected trusted stage")
@@ -223,7 +244,10 @@ class WatchInternalTests(unittest.TestCase):
                 trusted_stage=trusted_stage,
                 build_plan=build_plan,
                 dirty_paths=(dirty_path,),
-                repo_root=workspace_root,
+                workspace_root=workspace_root,
+                site_root=site_root,
+                catalog_path=site_root / "components.yaml",
+                provider_snapshot_path=site_root / "provider-snapshot.json",
             )
 
         self.assertEqual(exit_code, 0)
@@ -240,11 +264,15 @@ class WatchInternalTests(unittest.TestCase):
         if build_plan is None:
             self.fail("expected watch build plan")
         units = build_owned_units(build_plan)
+        site_root = workspace_root / "site"
         dirty_unit_ids = _dirty_unit_ids_for_paths(
             build_plan=build_plan,
             units=units,
             dirty_paths=(workspace_root / "site/provider-snapshot.json",),
-            repo_root=workspace_root,
+            workspace_root=workspace_root,
+            site_root=site_root,
+            catalog_path=site_root / "components.yaml",
+            provider_snapshot_path=site_root / "provider-snapshot.json",
         )
 
         self.assertEqual(dirty_unit_ids, frozenset(unit.unit_id for unit in units))
@@ -257,11 +285,15 @@ class WatchInternalTests(unittest.TestCase):
         if build_plan is None:
             self.fail("expected watch build plan")
         units = build_owned_units(build_plan)
+        site_root = workspace_root / "site"
         dirty_unit_ids = _dirty_unit_ids_for_paths(
             build_plan=build_plan,
             units=units,
             dirty_paths=(workspace_root / "site/components.yaml",),
-            repo_root=workspace_root,
+            workspace_root=workspace_root,
+            site_root=site_root,
+            catalog_path=site_root / "components.yaml",
+            provider_snapshot_path=site_root / "provider-snapshot.json",
         )
 
         self.assertEqual(dirty_unit_ids, frozenset(unit.unit_id for unit in units))

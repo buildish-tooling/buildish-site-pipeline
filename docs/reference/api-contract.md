@@ -120,6 +120,7 @@ Recommended forms are:
 - `site-pipeline check`
 - `site-pipeline check --fail-on error`
 - `site-pipeline check --fail-on warning`
+- `site-pipeline check --workspace-root /workspace --catalog /workspace/buildish/site/components.yaml`
 - `site-pipeline check --report-format json --report-schema-version 1`
 - `site-pipeline check --report-format json --report-schema-version 1 --report-output -`
 - `site-pipeline check --report-format json --report-schema-version 1 --report-output .site-pipeline/check-report.json`
@@ -149,7 +150,8 @@ Path-bearing authored and emitted contract fields such as `RepoRelativePath`,
 `StageRelativePath`, and `PublicPath` remain normalized POSIX strings and must
 use forward slashes. CLI-local filesystem arguments such as `--report-output`
 are different: they are machine-local paths and should be interpreted using the
-host operating system's native path rules.
+host operating system's native path rules. Relative CLI-local filesystem
+arguments are interpreted relative to the process working directory.
 
 That shared flag family should apply to:
 
@@ -159,6 +161,38 @@ That shared flag family should apply to:
 - `site-pipeline watch`
 
 Command-specific flags such as `--fail-on` may extend that shared base.
+
+## Shared workspace selection flags
+
+The stable commands also share a workspace-selection flag family:
+
+- `--workspace-root <path>`
+- `--catalog <path>`
+
+Recommended meanings are:
+
+- `--workspace-root` selects the authored workspace root used to resolve
+  consumer-owned relative inputs such as `localDir`, top-level site content
+  roots, and other repo-relative authored paths
+- `--catalog` selects the authored catalog document to load
+- when `--catalog` is omitted, the default catalog is
+  `<workspace-root>/site/components.yaml`
+- the default provider snapshot path and the pipeline-owned `.stage` and
+  `.site-pipeline-work` directories are derived from the selected catalog's
+  parent directory
+
+That split keeps the authored workspace and the catalog location separate. It is
+meant to support CI and local multi-repository layouts where the shared local
+checkout root is larger than the repository that holds the site catalog.
+
+For example, this is a supported stable form:
+
+- `site-pipeline build --workspace-root /workspace --catalog /workspace/buildish/site/components.yaml`
+
+Future operator-local path mapping is intentionally separate from the shared
+catalog contract. `--local-overrides <path>` is reserved for that future work
+but is not implemented yet; see
+[../maintenance/todos.md](../maintenance/todos.md).
 
 ## Stable planning command
 
@@ -208,6 +242,7 @@ Recommended forms are:
 
 - `site-pipeline plan --for build`
 - `site-pipeline plan --for watch`
+- `site-pipeline plan --for build --workspace-root /workspace --catalog /workspace/buildish/site/components.yaml`
 - `site-pipeline plan --for build --report-format json --report-schema-version 1`
 - `site-pipeline plan --for build --report-format json --report-schema-version 1 --report-output -`
 - `site-pipeline plan --for build --report-format json --report-schema-version 1 --report-output .site-pipeline/materialization-report.json`
@@ -287,10 +322,12 @@ shell exit status is outside the application-owned `0`-through-`3` contract.
 Recommended forms are:
 
 - `site-pipeline build`
+- `site-pipeline build --workspace-root /workspace --catalog /workspace/buildish/site/components.yaml`
 - `site-pipeline build --report-format json --report-schema-version 1`
 - `site-pipeline build --report-format json --report-schema-version 1 --report-output -`
 - `site-pipeline build --report-format json --report-schema-version 1 --report-output .site-pipeline/build-report.json`
 - `site-pipeline watch`
+- `site-pipeline watch --workspace-root /workspace --catalog /workspace/buildish/site/components.yaml`
 - `site-pipeline watch --report-format json --report-schema-version 1 --report-output .site-pipeline/watch-report.json`
 
 Recommended flag meanings are:

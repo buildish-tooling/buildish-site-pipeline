@@ -53,7 +53,6 @@ jobs:
   check:
     name: Check
     needs: changes
-    if: needs.changes.outputs.check == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository

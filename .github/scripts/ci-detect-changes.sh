@@ -22,14 +22,11 @@ push_before_sha="${PUSH_BEFORE_SHA:-}"
 head_sha="${HEAD_SHA:-$(git rev-parse HEAD)}"
 github_output="${GITHUB_OUTPUT:?GITHUB_OUTPUT must be set}"
 
-check=false
 container_image=false
 
-check_pattern='^(\.github/workflows/ci\.yml|\.github/scripts/ci-detect-changes\.sh|Makefile|main\.py|pyproject\.toml|uv\.lock|apache_buildish_site_pipeline/|tests/)'
 container_image_pattern='^(\.github/workflows/ci\.yml|\.github/scripts/ci-detect-changes\.sh|\.dockerignore|README\.md|main\.py|pyproject\.toml|uv\.lock|apache_buildish_site_pipeline/|tools/site-pipeline-image/)'
 
 enable_all() {
-  check=true
   container_image=true
 }
 
@@ -57,19 +54,13 @@ else
       echo "(none)"
     fi
 
-    if printf '%s\n' "$changed_files" | grep -E -q "$check_pattern"; then
-      check=true
-    fi
-
     if printf '%s\n' "$changed_files" | grep -E -q "$container_image_pattern"; then
       container_image=true
     fi
   fi
 fi
 
-echo "check=$check" >>"$github_output"
 echo "container_image=$container_image" >>"$github_output"
 
 echo "Computed job gates:"
-echo "  check=$check"
 echo "  container_image=$container_image"

@@ -133,7 +133,7 @@ class PlanningEvaluationTests(unittest.TestCase):
                         expected_local_path=watched_root,
                         provenance=None,
                         readiness=InputReadiness(status=MaterializationStatus.PRESENT),
-                    )
+                    ),
                 )
 
             with self.assertRaisesRegex(CommandExecutionError, "32 watch-root ceiling"):
@@ -188,13 +188,13 @@ def _sample_catalog() -> CatalogDocumentV1:
                             },
                             "lifecycle": {
                                 "releaseLines": [
-                                    {"key": "4.0", "maintenanceRef": "maintenance/4.0", "latest": "4.0.0"}
+                                    {"key": "4.0", "maintenanceRef": "maintenance/4.0", "latest": "4.0.0"},
                                 ],
                                 "releases": [{"version": "4.0.0"}],
                             },
-                        }
+                        },
                     ],
-                }
+                },
             ],
         },
         by_alias=True,
@@ -211,7 +211,7 @@ def _sample_provider_snapshot() -> ProviderSnapshotV1:
                     "key": "github",
                     "type": "githubReleases",
                     "fetchedAt": "2026-04-03T00:00:00Z",
-                }
+                },
             ],
             "records": [
                 {

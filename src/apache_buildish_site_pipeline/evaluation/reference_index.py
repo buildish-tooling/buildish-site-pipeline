@@ -18,9 +18,19 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from apache_buildish_site_pipeline.models.catalog import CompatibilityAssertionConfig, ReleaseLineConfig
-from apache_buildish_site_pipeline.models.enums import DiagnosticSeverity, ReleaseSelectionMode
-from apache_buildish_site_pipeline.planning.types import PlanningEvaluation, ResolvedArtifactConfig, ResolvedComponentConfig
+from apache_buildish_site_pipeline.models.catalog import (
+    CompatibilityAssertionConfig,
+    ReleaseLineConfig,
+)
+from apache_buildish_site_pipeline.models.enums import (
+    DiagnosticSeverity,
+    ReleaseSelectionMode,
+)
+from apache_buildish_site_pipeline.planning.types import (
+    PlanningEvaluation,
+    ResolvedArtifactConfig,
+    ResolvedComponentConfig,
+)
 
 from . import diagnostic_codes
 from .collector import DiagnosticCollector
@@ -114,7 +124,9 @@ def validate_references(
 ) -> None:
     """Validate contextual reference existence and authored identity consistency."""
 
-    reference_index = _build_context_reference_index(planning=planning, publication_targets=publication_targets)
+    reference_index = _build_context_reference_index(
+        planning=planning, publication_targets=publication_targets
+    )
     for component in planning.site.components:
         _validate_component_artifacts(component=component, collector=collector)
         _validate_compatibility_references(
@@ -125,7 +137,9 @@ def validate_references(
             collector=collector,
         )
         for artifact in component.artifacts:
-            _validate_release_lines(component_slug=component.slug, artifact=artifact, collector=collector)
+            _validate_release_lines(
+                component_slug=component.slug, artifact=artifact, collector=collector
+            )
             _validate_selection_references(
                 component_slug=component.slug,
                 artifact=artifact,
@@ -169,26 +183,46 @@ def _build_context_reference_index(
             route_kind=context.kind.value,
         )
         if context.release_line is not None:
-            targets_by_reference[f"line:{context.component_slug}/{context.artifact_key}@{context.release_line}"] = route
+            targets_by_reference[
+                f"line:{context.component_slug}/{context.artifact_key}@{context.release_line}"
+            ] = route
         if context.version is not None:
-            targets_by_reference[f"release:{context.component_slug}/{context.artifact_key}@{context.version}"] = route
+            targets_by_reference[
+                f"release:{context.component_slug}/{context.artifact_key}@{context.version}"
+            ] = route
 
     for component in planning.site.components:
-        artifacts_by_component[component.slug] = frozenset(artifact.key for artifact in component.artifacts)
+        artifacts_by_component[component.slug] = frozenset(
+            artifact.key for artifact in component.artifacts
+        )
         for artifact in component.artifacts:
             artifact_identity = (component.slug, artifact.key)
-            release_lines_by_artifact[artifact_identity] = frozenset(line.key for line in artifact.lifecycle.release_lines or ()) if artifact.lifecycle else frozenset()
-            known_releases = {release.version for release in artifact.lifecycle.releases or ()} if artifact.lifecycle else set()
-            provider_context = planning.provider_index.contexts_by_artifact.get(artifact_identity)
+            release_lines_by_artifact[artifact_identity] = (
+                frozenset(line.key for line in artifact.lifecycle.release_lines or ())
+                if artifact.lifecycle
+                else frozenset()
+            )
+            known_releases = (
+                {release.version for release in artifact.lifecycle.releases or ()}
+                if artifact.lifecycle
+                else set()
+            )
+            provider_context = planning.provider_index.contexts_by_artifact.get(
+                artifact_identity
+            )
             if provider_context is not None:
                 known_releases.update(provider_context.released_by_version)
             releases_by_artifact[artifact_identity] = frozenset(known_releases)
-            named_refs_by_artifact[artifact_identity] = frozenset(named_ref.key for named_ref in artifact.versioning.named_refs or ())
+            named_refs_by_artifact[artifact_identity] = frozenset(
+                named_ref.key for named_ref in artifact.versioning.named_refs or ()
+            )
 
     return build_reference_index(
         routes_by_lookup_key=routes_by_lookup_key,
         targets_by_reference=targets_by_reference,
-        known_components=frozenset(component.slug for component in planning.site.components),
+        known_components=frozenset(
+            component.slug for component in planning.site.components
+        ),
         artifacts_by_component=artifacts_by_component,
         release_lines_by_artifact=release_lines_by_artifact,
         releases_by_artifact=releases_by_artifact,
@@ -197,7 +231,9 @@ def _build_context_reference_index(
     )
 
 
-def _validate_component_artifacts(*, component: ResolvedComponentConfig, collector: DiagnosticCollector) -> None:
+def _validate_component_artifacts(
+    *, component: ResolvedComponentConfig, collector: DiagnosticCollector
+) -> None:
     seen: set[str] = set()
     duplicate_keys: set[str] = set()
     for artifact in component.artifacts:
@@ -214,8 +250,15 @@ def _validate_component_artifacts(*, component: ResolvedComponentConfig, collect
         )
 
 
-def _validate_release_lines(*, component_slug: str, artifact: ResolvedArtifactConfig, collector: DiagnosticCollector) -> None:
-    release_lines = tuple(artifact.lifecycle.release_lines or ()) if artifact.lifecycle else ()
+def _validate_release_lines(
+    *,
+    component_slug: str,
+    artifact: ResolvedArtifactConfig,
+    collector: DiagnosticCollector,
+) -> None:
+    release_lines = (
+        tuple(artifact.lifecycle.release_lines or ()) if artifact.lifecycle else ()
+    )
     known_lines = {line.key for line in release_lines}
     for line in release_lines:
         parent_line = getattr(line, "parent", None)
@@ -251,14 +294,29 @@ def _validate_selection_references(
     if selection is None:
         return
     artifact_identity = (component_slug, artifact.key)
-    known_releases = {release.version for release in artifact.lifecycle.releases or ()} if artifact.lifecycle else set()
-    provider_context = planning.provider_index.contexts_by_artifact.get(artifact_identity)
+    known_releases = (
+        {release.version for release in artifact.lifecycle.releases or ()}
+        if artifact.lifecycle
+        else set()
+    )
+    provider_context = planning.provider_index.contexts_by_artifact.get(
+        artifact_identity
+    )
     if provider_context is not None:
         known_releases.update(provider_context.released_by_version)
-    known_lines = {line.key for line in artifact.lifecycle.release_lines or ()} if artifact.lifecycle else set()
-    known_named_refs = {named_ref.key for named_ref in artifact.versioning.named_refs or ()}
+    known_lines = (
+        {line.key for line in artifact.lifecycle.release_lines or ()}
+        if artifact.lifecycle
+        else set()
+    )
+    known_named_refs = {
+        named_ref.key for named_ref in artifact.versioning.named_refs or ()
+    }
 
-    if selection.releases is not None and selection.releases.mode is ReleaseSelectionMode.EXPLICIT:
+    if (
+        selection.releases is not None
+        and selection.releases.mode is ReleaseSelectionMode.EXPLICIT
+    ):
         for version in selection.releases.versions or ():
             if version in known_releases:
                 continue
@@ -354,15 +412,21 @@ def _reference_exists(*, reference: str, reference_index: ReferenceIndex) -> boo
         return payload in reference_index.known_components
     if prefix == "artifact":
         component_slug, artifact_key = payload.split("/", maxsplit=1)
-        return artifact_key in reference_index.artifacts_by_component.get(component_slug, frozenset())
+        return artifact_key in reference_index.artifacts_by_component.get(
+            component_slug, frozenset()
+        )
     if prefix == "line":
         artifact_payload, line_key = payload.split("@", maxsplit=1)
         component_slug, artifact_key = artifact_payload.split("/", maxsplit=1)
-        return line_key in reference_index.release_lines_by_artifact.get((component_slug, artifact_key), frozenset())
+        return line_key in reference_index.release_lines_by_artifact.get(
+            (component_slug, artifact_key), frozenset()
+        )
     if prefix == "release":
         artifact_payload, version = payload.split("@", maxsplit=1)
         component_slug, artifact_key = artifact_payload.split("/", maxsplit=1)
-        return version in reference_index.releases_by_artifact.get((component_slug, artifact_key), frozenset())
+        return version in reference_index.releases_by_artifact.get(
+            (component_slug, artifact_key), frozenset()
+        )
     if prefix == "route":
         return len(reference_index.routes_by_path.get(payload.lower(), ())) == 1
     return reference in reference_index.targets_by_reference
@@ -386,7 +450,9 @@ def _add_reference_error(
     )
 
 
-def _has_line_cycle(*, start_key: str, release_lines: tuple[ReleaseLineConfig, ...]) -> bool:
+def _has_line_cycle(
+    *, start_key: str, release_lines: tuple[ReleaseLineConfig, ...]
+) -> bool:
     parents_by_key = {line.key: getattr(line, "parent", None) for line in release_lines}
     seen: set[str] = set()
     current: str | None = start_key

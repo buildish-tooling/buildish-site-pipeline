@@ -22,7 +22,10 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
-from apache_buildish_site_pipeline.cli.errors import RetainedStageError, StageIntegrityError
+from apache_buildish_site_pipeline.cli.errors import (
+    RetainedStageError,
+    StageIntegrityError,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -62,7 +65,7 @@ def finalize_stage_publication(
     _validate_initial_stage_root(normalized_stage_root)
     if normalized_stage_root.exists():
         normalized_stage_root.rmdir()
-    os.replace(normalized_candidate_root, normalized_stage_root)
+    normalized_candidate_root.replace(normalized_stage_root)
     _fsync_published_stage(normalized_stage_root)
     return StagePublicationResult(
         stage_root=normalized_stage_root,
@@ -73,26 +76,38 @@ def finalize_stage_publication(
 def validate_visible_stage_target_path(stage_root: Path) -> None:
     """Reject visible stage targets that resolve through symlinked parents."""
 
-    absolute_stage_root = stage_root if stage_root.is_absolute() else stage_root.absolute()
+    absolute_stage_root = (
+        stage_root if stage_root.is_absolute() else stage_root.absolute()
+    )
     parent_path = absolute_stage_root.parent
     if _contains_symlink(parent_path):
-        raise StageIntegrityError(f"Stage root parent directory resolves through a symlink: {parent_path}")
+        raise StageIntegrityError(
+            f"Stage root parent directory resolves through a symlink: {parent_path}"
+        )
     if absolute_stage_root.exists() and absolute_stage_root.is_symlink():
-        raise StageIntegrityError(f"Stage root must not be a symlink: {absolute_stage_root}")
+        raise StageIntegrityError(
+            f"Stage root must not be a symlink: {absolute_stage_root}"
+        )
 
 
 def validate_materialized_stage_tree(stage_root: Path) -> None:
     """Reject staged trees that contain symlinked files or directories."""
 
     try:
-        for root, dir_names, file_names in os.walk(stage_root, topdown=True, followlinks=False):
+        for root, dir_names, file_names in os.walk(
+            stage_root, topdown=True, followlinks=False
+        ):
             root_path = Path(root)
             for name in (*dir_names, *file_names):
                 entry_path = root_path / name
                 if entry_path.is_symlink():
-                    raise StageIntegrityError(f"Stage tree must not contain symlinks: {entry_path}")
+                    raise StageIntegrityError(
+                        f"Stage tree must not contain symlinks: {entry_path}"
+                    )
     except OSError as exc:
-        raise StageIntegrityError(f"Could not validate stage tree integrity for {stage_root}: {exc}") from exc
+        raise StageIntegrityError(
+            f"Could not validate stage tree integrity for {stage_root}: {exc}"
+        ) from exc
 
 
 def _validate_initial_stage_root(stage_root: Path) -> None:
@@ -108,7 +123,9 @@ def _validate_initial_stage_root(stage_root: Path) -> None:
         )
 
 
-def _validate_replaceable_stage_root(*, stage_root: Path, candidate_stage_root: Path) -> None:
+def _validate_replaceable_stage_root(
+    *, stage_root: Path, candidate_stage_root: Path
+) -> None:
     if stage_root.exists() and stage_root.is_symlink():
         raise StageIntegrityError(f"Stage root must not be a symlink: {stage_root}")
     if stage_root.exists() and not stage_root.is_dir():
@@ -116,28 +133,47 @@ def _validate_replaceable_stage_root(*, stage_root: Path, candidate_stage_root: 
     if not stage_root.exists():
         return
     manifest_path = stage_root / "manifest.json"
-    if not manifest_path.exists() or not manifest_path.is_file() or manifest_path.is_symlink():
-        raise StageIntegrityError(f"Existing visible stage is not a trustworthy stage tree: {stage_root}")
+    if (
+        not manifest_path.exists()
+        or not manifest_path.is_file()
+        or manifest_path.is_symlink()
+    ):
+        raise StageIntegrityError(
+            f"Existing visible stage is not a trustworthy stage tree: {stage_root}"
+        )
     validate_materialized_stage_tree(stage_root)
-    _validate_replacement_cleanup_scope(stage_root=stage_root, candidate_stage_root=candidate_stage_root)
+    _validate_replacement_cleanup_scope(
+        stage_root=stage_root, candidate_stage_root=candidate_stage_root
+    )
 
 
 def _validate_candidate_stage_root(stage_root: Path) -> None:
     if not stage_root.exists() or not stage_root.is_dir() or stage_root.is_symlink():
-        raise StageIntegrityError(f"Candidate stage root is not a normal directory: {stage_root}")
+        raise StageIntegrityError(
+            f"Candidate stage root is not a normal directory: {stage_root}"
+        )
     manifest_path = stage_root / "manifest.json"
-    if not manifest_path.exists() or not manifest_path.is_file() or manifest_path.is_symlink():
-        raise StageIntegrityError(f"Candidate stage root is missing manifest.json: {stage_root}")
+    if (
+        not manifest_path.exists()
+        or not manifest_path.is_file()
+        or manifest_path.is_symlink()
+    ):
+        raise StageIntegrityError(
+            f"Candidate stage root is missing manifest.json: {stage_root}"
+        )
     validate_materialized_stage_tree(stage_root)
 
 
-def _validate_replacement_cleanup_scope(*, stage_root: Path, candidate_stage_root: Path) -> None:
+def _validate_replacement_cleanup_scope(
+    *, stage_root: Path, candidate_stage_root: Path
+) -> None:
     existing_entries = _collect_stage_tree_entries(stage_root)
     candidate_entries = _collect_stage_tree_entries(candidate_stage_root)
     extra_existing_paths = sorted(existing_entries.keys() - candidate_entries.keys())
     if extra_existing_paths:
         raise StageIntegrityError(
-            "Visible stage replacement would delete paths with ambiguous ownership: " + ", ".join(extra_existing_paths[:5]),
+            "Visible stage replacement would delete paths with ambiguous ownership: "
+            + ", ".join(extra_existing_paths[:5]),
         )
     changed_entry_types = sorted(
         path
@@ -146,17 +182,20 @@ def _validate_replacement_cleanup_scope(*, stage_root: Path, candidate_stage_roo
     )
     if changed_entry_types:
         raise StageIntegrityError(
-            "Visible stage replacement would change existing path types ambiguously: " + ", ".join(changed_entry_types[:5]),
+            "Visible stage replacement would change existing path types ambiguously: "
+            + ", ".join(changed_entry_types[:5]),
         )
 
 
 def _collect_stage_tree_entries(stage_root: Path) -> dict[str, str]:
     entries: dict[str, str] = {}
     try:
-        for root, dir_names, file_names in os.walk(stage_root, topdown=True, followlinks=False):
+        for root, dir_names, file_names in os.walk(
+            stage_root, topdown=True, followlinks=False
+        ):
             root_path = Path(root)
             relative_root = root_path.relative_to(stage_root)
-            if relative_root != Path("."):
+            if relative_root != Path():
                 entries[str(relative_root)] = "directory"
             for directory_name in dir_names:
                 relative_path = (root_path / directory_name).relative_to(stage_root)
@@ -165,14 +204,20 @@ def _collect_stage_tree_entries(stage_root: Path) -> dict[str, str]:
                 relative_path = (root_path / file_name).relative_to(stage_root)
                 entries[str(relative_path)] = "file"
     except OSError as exc:
-        raise StageIntegrityError(f"Could not inspect stage tree entries for {stage_root}: {exc}") from exc
+        raise StageIntegrityError(
+            f"Could not inspect stage tree entries for {stage_root}: {exc}"
+        ) from exc
     return entries
 
 
-def _validate_publication_filesystems(*, candidate_stage_root: Path, stage_root: Path) -> None:
+def _validate_publication_filesystems(
+    *, candidate_stage_root: Path, stage_root: Path
+) -> None:
     stage_parent = stage_root.parent
     if not stage_parent.exists() or not stage_parent.is_dir():
-        raise StageIntegrityError(f"Stage root parent directory does not exist: {stage_parent}")
+        raise StageIntegrityError(
+            f"Stage root parent directory does not exist: {stage_parent}"
+        )
     target_device = _stat_device_id(stage_parent)
     candidate_device = _stat_device_id(candidate_stage_root)
     if candidate_device != target_device:
@@ -202,23 +247,27 @@ def _contains_symlink(path: Path) -> bool:
     return False
 
 
-def _replace_stage_root(*, candidate_stage_root: Path, stage_root: Path) -> StagePublicationResult:
+def _replace_stage_root(
+    *, candidate_stage_root: Path, stage_root: Path
+) -> StagePublicationResult:
     parent_path = stage_root.parent
     parent_path.mkdir(parents=True, exist_ok=True)
-    backup_root = Path(tempfile.mkdtemp(prefix=f".{stage_root.name}.backup.", dir=parent_path))
+    backup_root = Path(
+        tempfile.mkdtemp(prefix=f".{stage_root.name}.backup.", dir=parent_path)
+    )
     shutil.rmtree(backup_root, ignore_errors=True)
     previous_stage_moved = False
     published = False
     try:
         if stage_root.exists():
-            os.replace(stage_root, backup_root)
+            stage_root.replace(backup_root)
             previous_stage_moved = True
-        os.replace(candidate_stage_root, stage_root)
+        candidate_stage_root.replace(stage_root)
         published = True
     except OSError as exc:
         if previous_stage_moved and backup_root.exists() and not stage_root.exists():
             try:
-                os.replace(backup_root, stage_root)
+                backup_root.replace(stage_root)
             except OSError as rollback_exc:
                 raise StageIntegrityError(
                     f"Could not finalize stage publication or roll back safely for {stage_root}: {rollback_exc}",
@@ -226,7 +275,9 @@ def _replace_stage_root(*, candidate_stage_root: Path, stage_root: Path) -> Stag
             raise RetainedStageError(
                 f"Could not finalize the newly materialized stage; retained the prior stage at {stage_root}",
             ) from exc
-        raise StageIntegrityError(f"Could not finalize stage publication for {stage_root}: {exc}") from exc
+        raise StageIntegrityError(
+            f"Could not finalize stage publication for {stage_root}: {exc}"
+        ) from exc
     finally:
         if backup_root.exists():
             shutil.rmtree(backup_root, ignore_errors=True)
@@ -253,7 +304,9 @@ def _fsync_file(path: Path) -> None:
         fd = os.open(path, os.O_RDONLY)
         os.fsync(fd)
     except OSError as exc:
-        raise StageIntegrityError(f"Could not fsync published stage file {path}: {exc}") from exc
+        raise StageIntegrityError(
+            f"Could not fsync published stage file {path}: {exc}"
+        ) from exc
     finally:
         if fd is not None:
             os.close(fd)
@@ -265,7 +318,9 @@ def _fsync_directory(path: Path) -> None:
         fd = os.open(path, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
         os.fsync(fd)
     except OSError as exc:
-        raise StageIntegrityError(f"Could not fsync published stage directory {path}: {exc}") from exc
+        raise StageIntegrityError(
+            f"Could not fsync published stage directory {path}: {exc}"
+        ) from exc
     finally:
         if fd is not None:
             os.close(fd)

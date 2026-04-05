@@ -21,7 +21,12 @@ from dataclasses import dataclass, field
 from apache_buildish_site_pipeline.models.enums import RecordKind
 from apache_buildish_site_pipeline.models.provider_snapshot import ProviderSnapshotV1
 
-from .types import IndexedProviderRecord, ProviderContextIndex, ProviderSnapshotIndex, ResolvedSiteConfig
+from .types import (
+    IndexedProviderRecord,
+    ProviderContextIndex,
+    ProviderSnapshotIndex,
+    ResolvedSiteConfig,
+)
 
 _MAX_PROVIDER_SNAPSHOT_BYTES = 16 * 1024 * 1024
 _MAX_PROVIDER_RECORDS = 50_000
@@ -29,11 +34,19 @@ _MAX_PROVIDER_RECORDS = 50_000
 
 @dataclass(slots=True)
 class _MutableProviderContextBucket:
-    released_by_version: dict[str, list[IndexedProviderRecord]] = field(default_factory=dict)
-    candidates_by_version: dict[str, list[IndexedProviderRecord]] = field(default_factory=dict)
-    named_refs_by_key: dict[str, list[IndexedProviderRecord]] = field(default_factory=dict)
+    released_by_version: dict[str, list[IndexedProviderRecord]] = field(
+        default_factory=dict
+    )
+    candidates_by_version: dict[str, list[IndexedProviderRecord]] = field(
+        default_factory=dict
+    )
+    named_refs_by_key: dict[str, list[IndexedProviderRecord]] = field(
+        default_factory=dict
+    )
     refs_by_ref: dict[str, list[IndexedProviderRecord]] = field(default_factory=dict)
-    line_heads_by_release_line: dict[str, list[IndexedProviderRecord]] = field(default_factory=dict)
+    line_heads_by_release_line: dict[str, list[IndexedProviderRecord]] = field(
+        default_factory=dict
+    )
     development_records: list[IndexedProviderRecord] = field(default_factory=list)
 
 
@@ -44,7 +57,11 @@ def build_provider_snapshot_index(
 ) -> ProviderSnapshotIndex:
     """Index provider records by artifact and selection identity."""
 
-    encoded_size = len(provider_snapshot.model_dump_json(by_alias=True, exclude_none=True).encode("utf-8"))
+    encoded_size = len(
+        provider_snapshot.model_dump_json(by_alias=True, exclude_none=True).encode(
+            "utf-8"
+        )
+    )
     if encoded_size > _MAX_PROVIDER_SNAPSHOT_BYTES:
         raise ValueError("Provider snapshot exceeds the 16 MiB planning ceiling")
     if len(provider_snapshot.records) > _MAX_PROVIDER_RECORDS:
@@ -71,7 +88,9 @@ def build_provider_snapshot_index(
             component_slug=record.component_slug,
             artifact_key=record.artifact_key,
             external_id=record.external_id,
-            external_url=str(record.external_url) if record.external_url is not None else None,
+            external_url=str(record.external_url)
+            if record.external_url is not None
+            else None,
             version=record.version,
             display_version=record.display_version,
             tag=record.tag,
@@ -92,20 +111,38 @@ def build_provider_snapshot_index(
             assets=tuple(record.assets or ()),
         )
         if indexed_record.external_id is not None:
-            by_external_id[(indexed_record.provider, indexed_record.external_id)] = indexed_record
+            by_external_id[(indexed_record.provider, indexed_record.external_id)] = (
+                indexed_record
+            )
 
-        artifact_bucket = contexts_by_artifact.setdefault(artifact_identity, _MutableProviderContextBucket())
+        artifact_bucket = contexts_by_artifact.setdefault(
+            artifact_identity, _MutableProviderContextBucket()
+        )
         _add_to_context_bucket(artifact_bucket, indexed_record)
 
     return ProviderSnapshotIndex(
         providers={provider.key: provider for provider in provider_snapshot.providers},
         contexts_by_artifact={
             key: ProviderContextIndex(
-                released_by_version={version: tuple(records) for version, records in value.released_by_version.items()},
-                candidates_by_version={version: tuple(records) for version, records in value.candidates_by_version.items()},
-                named_refs_by_key={named_ref: tuple(records) for named_ref, records in value.named_refs_by_key.items()},
-                refs_by_ref={ref: tuple(records) for ref, records in value.refs_by_ref.items()},
-                line_heads_by_release_line={line: tuple(records) for line, records in value.line_heads_by_release_line.items()},
+                released_by_version={
+                    version: tuple(records)
+                    for version, records in value.released_by_version.items()
+                },
+                candidates_by_version={
+                    version: tuple(records)
+                    for version, records in value.candidates_by_version.items()
+                },
+                named_refs_by_key={
+                    named_ref: tuple(records)
+                    for named_ref, records in value.named_refs_by_key.items()
+                },
+                refs_by_ref={
+                    ref: tuple(records) for ref, records in value.refs_by_ref.items()
+                },
+                line_heads_by_release_line={
+                    line: tuple(records)
+                    for line, records in value.line_heads_by_release_line.items()
+                },
                 development_records=tuple(value.development_records),
             )
             for key, value in contexts_by_artifact.items()
@@ -116,16 +153,38 @@ def build_provider_snapshot_index(
     )
 
 
-def _add_to_context_bucket(artifact_bucket: _MutableProviderContextBucket, indexed_record: IndexedProviderRecord) -> None:
-    if indexed_record.version is not None and indexed_record.kind is RecordKind.RELEASED:
-        artifact_bucket.released_by_version.setdefault(indexed_record.version, []).append(indexed_record)
-    if indexed_record.version is not None and indexed_record.kind is RecordKind.CANDIDATE:
-        artifact_bucket.candidates_by_version.setdefault(indexed_record.version, []).append(indexed_record)
+def _add_to_context_bucket(
+    artifact_bucket: _MutableProviderContextBucket,
+    indexed_record: IndexedProviderRecord,
+) -> None:
+    if (
+        indexed_record.version is not None
+        and indexed_record.kind is RecordKind.RELEASED
+    ):
+        artifact_bucket.released_by_version.setdefault(
+            indexed_record.version, []
+        ).append(indexed_record)
+    if (
+        indexed_record.version is not None
+        and indexed_record.kind is RecordKind.CANDIDATE
+    ):
+        artifact_bucket.candidates_by_version.setdefault(
+            indexed_record.version, []
+        ).append(indexed_record)
     if indexed_record.named_ref_key is not None:
-        artifact_bucket.named_refs_by_key.setdefault(indexed_record.named_ref_key, []).append(indexed_record)
+        artifact_bucket.named_refs_by_key.setdefault(
+            indexed_record.named_ref_key, []
+        ).append(indexed_record)
     if indexed_record.ref is not None:
-        artifact_bucket.refs_by_ref.setdefault(indexed_record.ref, []).append(indexed_record)
-    if indexed_record.release_line is not None and indexed_record.kind is RecordKind.LINE_HEAD:
-        artifact_bucket.line_heads_by_release_line.setdefault(indexed_record.release_line, []).append(indexed_record)
+        artifact_bucket.refs_by_ref.setdefault(indexed_record.ref, []).append(
+            indexed_record
+        )
+    if (
+        indexed_record.release_line is not None
+        and indexed_record.kind is RecordKind.LINE_HEAD
+    ):
+        artifact_bucket.line_heads_by_release_line.setdefault(
+            indexed_record.release_line, []
+        ).append(indexed_record)
     if indexed_record.kind is RecordKind.DEVELOPMENT:
         artifact_bucket.development_records.append(indexed_record)

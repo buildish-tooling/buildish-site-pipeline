@@ -21,7 +21,11 @@ from dataclasses import dataclass
 from enum import IntEnum, StrEnum
 from pathlib import Path
 
-from apache_buildish_site_pipeline.models.enums import CheckFailureThreshold, PlanningTarget, RunStatus
+from apache_buildish_site_pipeline.models.enums import (
+    CheckFailureThreshold,
+    PlanningTarget,
+    RunStatus,
+)
 from apache_buildish_site_pipeline.models.planning_stage_contract import (
     CheckReportV1,
     ResolvedMaterializationReportV1,
@@ -73,6 +77,7 @@ class WatchEvent(ABC):
             "manifestPath": self.manifest_path,
         }
 
+
 @dataclass(frozen=True, slots=True)
 class WatchReadyEvent(WatchEvent):
     """One-time readiness signal once the visible stage is safe to consume."""
@@ -118,6 +123,7 @@ class WatchCycleEvent(WatchEvent, ABC):
             },
         )
         return payload
+
 
 @dataclass(frozen=True, slots=True)
 class WatchCycleSucceededEvent(WatchCycleEvent):
@@ -257,8 +263,6 @@ class WatchInvocation:
     fail_on_severity: CheckFailureThreshold
     report_request: ReportRequest
     unstable_event_request: WatchEventRequest | None
-    verbose: bool
-    debug: bool
 
 
 CommandInvocation = PlanInvocation | CheckInvocation | BuildInvocation | WatchInvocation

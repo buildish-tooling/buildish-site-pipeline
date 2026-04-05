@@ -64,7 +64,7 @@ class DiagnosticCollector:
                 artifact_key=artifact_key,
                 target_id=target_id,
                 details=reduced_details,
-            )
+            ),
         )
 
     def extend(self, diagnostics: tuple[PipelineDiagnosticEntry, ...]) -> None:
@@ -76,13 +76,23 @@ class DiagnosticCollector:
     def counts(self) -> DiagnosticCounts:
         diagnostics = self.build()
         return DiagnosticCounts(
-            error_count=sum(1 for entry in diagnostics if entry.severity is DiagnosticSeverity.ERROR),
-            warning_count=sum(1 for entry in diagnostics if entry.severity is DiagnosticSeverity.WARNING),
-            info_count=sum(1 for entry in diagnostics if entry.severity is DiagnosticSeverity.INFO),
+            error_count=sum(
+                1 for entry in diagnostics if entry.severity is DiagnosticSeverity.ERROR
+            ),
+            warning_count=sum(
+                1
+                for entry in diagnostics
+                if entry.severity is DiagnosticSeverity.WARNING
+            ),
+            info_count=sum(
+                1 for entry in diagnostics if entry.severity is DiagnosticSeverity.INFO
+            ),
         )
 
 
-def _reduce_details_if_needed(details: object | None) -> ReducedDiagnosticDetailsSummary | ExtensionsObject | None:
+def _reduce_details_if_needed(
+    details: object | None,
+) -> ReducedDiagnosticDetailsSummary | ExtensionsObject | None:
     if details is None:
         return None
     if not isinstance(details, dict):

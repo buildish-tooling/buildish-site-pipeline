@@ -26,7 +26,9 @@ from apache_buildish_site_pipeline.models.planning_stage_contract import (
 from .types import PlanningEvaluation
 
 
-def build_resolved_materialization_report(evaluation: PlanningEvaluation) -> ResolvedMaterializationReportV1:
+def build_resolved_materialization_report(
+    evaluation: PlanningEvaluation,
+) -> ResolvedMaterializationReportV1:
     """Convert an in-memory planning evaluation into the public report model."""
 
     return ResolvedMaterializationReportV1(
@@ -48,9 +50,14 @@ def build_resolved_materialization_report(evaluation: PlanningEvaluation) -> Res
                 status=local_input.readiness.status,
                 provenance=local_input.provenance,
                 watch_eligible=local_input.watch_eligible,
-                reason=local_input.readiness.reason.value if local_input.readiness.reason is not None else None,
+                reason=local_input.readiness.reason.value
+                if local_input.readiness.reason is not None
+                else None,
             )
             for local_input in evaluation.local_inputs
         ],
-        diagnostics=[*evaluation.diagnostics, *(evaluation.watch_plan.diagnostics if evaluation.watch_plan else ())],
+        diagnostics=[
+            *evaluation.diagnostics,
+            *(evaluation.watch_plan.diagnostics if evaluation.watch_plan else ()),
+        ],
     )

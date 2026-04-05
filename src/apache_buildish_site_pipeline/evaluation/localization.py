@@ -19,7 +19,10 @@ from __future__ import annotations
 from collections import defaultdict
 
 from apache_buildish_site_pipeline.models.enums import DiagnosticSeverity, RouteMode
-from apache_buildish_site_pipeline.planning.types import PlanningEvaluation, ResolvedComponentConfig
+from apache_buildish_site_pipeline.planning.types import (
+    PlanningEvaluation,
+    ResolvedComponentConfig,
+)
 
 from . import diagnostic_codes
 from .collector import DiagnosticCollector
@@ -34,14 +37,22 @@ def validate_localization(
 ) -> None:
     """Validate resolved localization policy and translatable-page grouping."""
 
-    components_by_slug = {component.slug: component for component in planning.site.components}
+    components_by_slug = {
+        component.slug: component for component in planning.site.components
+    }
     for component in planning.site.components:
         _validate_policy(component=component, collector=collector)
 
-    pages_by_translation: dict[tuple[str, str, str], dict[str, ScannedPage]] = defaultdict(dict)
+    pages_by_translation: dict[tuple[str, str, str], dict[str, ScannedPage]] = (
+        defaultdict(dict)
+    )
     translation_key_by_sibling_path: dict[tuple[str, str, str], str] = {}
     for page in page_scan.pages:
-        if page.translation_key is None or page.component_slug is None or page.artifact_key is None:
+        if (
+            page.translation_key is None
+            or page.component_slug is None
+            or page.artifact_key is None
+        ):
             continue
         component = components_by_slug[page.component_slug]
         locales = component.localization.supported_locales
@@ -69,7 +80,10 @@ def validate_localization(
         sibling_suffix = page.relative_path.partition("/")[2]
         sibling_key = (page.component_slug, page.artifact_key, sibling_suffix)
         existing_translation_key = translation_key_by_sibling_path.get(sibling_key)
-        if existing_translation_key is not None and existing_translation_key != page.translation_key:
+        if (
+            existing_translation_key is not None
+            and existing_translation_key != page.translation_key
+        ):
             collector.add(
                 severity=DiagnosticSeverity.ERROR,
                 code=diagnostic_codes.TRANSLATION_LINKAGE_CONFLICT,
@@ -86,7 +100,9 @@ def validate_localization(
             )
             continue
         translation_key_by_sibling_path[sibling_key] = page.translation_key
-        translation_group = pages_by_translation[(page.component_slug, page.artifact_key, page.translation_key)]
+        translation_group = pages_by_translation[
+            (page.component_slug, page.artifact_key, page.translation_key)
+        ]
         existing = translation_group.get(locale)
         if existing is not None:
             collector.add(
@@ -107,8 +123,14 @@ def validate_localization(
             continue
         translation_group[locale] = page
 
-    for (component_slug, artifact_key, translation_key), localized_pages in pages_by_translation.items():
-        sibling_suffixes = {page.relative_path.partition("/")[2] for page in localized_pages.values()}
+    for (
+        component_slug,
+        artifact_key,
+        translation_key,
+    ), localized_pages in pages_by_translation.items():
+        sibling_suffixes = {
+            page.relative_path.partition("/")[2] for page in localized_pages.values()
+        }
         if len(sibling_suffixes) <= 1:
             continue
         collector.add(
@@ -130,20 +152,51 @@ def validate_localization(
         )
 
 
-def _validate_policy(*, component: ResolvedComponentConfig, collector: DiagnosticCollector) -> None:
+def _validate_policy(
+    *, component: ResolvedComponentConfig, collector: DiagnosticCollector
+) -> None:
     localization = component.localization
     locales = localization.supported_locales
     if localization.route_mode is RouteMode.PREFIX_ALL and not locales:
-        _add_policy_error(component=component, collector=collector, message="Locale-prefixed routing requires supportedLocales")
-    if localization.route_mode is RouteMode.PREFIX_ALL and localization.default_locale is None:
-        _add_policy_error(component=component, collector=collector, message="Locale-prefixed routing requires defaultLocale")
-    if localization.default_locale is not None and locales is not None and localization.default_locale not in locales:
-        _add_policy_error(component=component, collector=collector, message="defaultLocale must be included in supportedLocales")
-    if localization.fallback_locale is not None and locales is not None and localization.fallback_locale not in locales:
-        _add_policy_error(component=component, collector=collector, message="fallbackLocale must be included in supportedLocales")
+        _add_policy_error(
+            component=component,
+            collector=collector,
+            message="Locale-prefixed routing requires supportedLocales",
+        )
+    if (
+        localization.route_mode is RouteMode.PREFIX_ALL
+        and localization.default_locale is None
+    ):
+        _add_policy_error(
+            component=component,
+            collector=collector,
+            message="Locale-prefixed routing requires defaultLocale",
+        )
+    if (
+        localization.default_locale is not None
+        and locales is not None
+        and localization.default_locale not in locales
+    ):
+        _add_policy_error(
+            component=component,
+            collector=collector,
+            message="defaultLocale must be included in supportedLocales",
+        )
+    if (
+        localization.fallback_locale is not None
+        and locales is not None
+        and localization.fallback_locale not in locales
+    ):
+        _add_policy_error(
+            component=component,
+            collector=collector,
+            message="fallbackLocale must be included in supportedLocales",
+        )
 
 
-def _add_policy_error(*, component: ResolvedComponentConfig, collector: DiagnosticCollector, message: str) -> None:
+def _add_policy_error(
+    *, component: ResolvedComponentConfig, collector: DiagnosticCollector, message: str
+) -> None:
     collector.add(
         severity=DiagnosticSeverity.ERROR,
         code=diagnostic_codes.LOCALIZATION_POLICY_INVALID,
@@ -153,11 +206,15 @@ def _add_policy_error(*, component: ResolvedComponentConfig, collector: Diagnost
             "defaultLocale": component.localization.default_locale,
             "supportedLocales": list(component.localization.supported_locales or ()),
             "fallbackLocale": component.localization.fallback_locale,
-            "routeMode": component.localization.route_mode.value if component.localization.route_mode else None,
+            "routeMode": component.localization.route_mode.value
+            if component.localization.route_mode
+            else None,
         },
     )
 
 
-def _locale_prefix(relative_path: str, supported_locales: tuple[str, ...]) -> str | None:
+def _locale_prefix(
+    relative_path: str, supported_locales: tuple[str, ...]
+) -> str | None:
     first_segment = relative_path.split("/", 1)[0]
     return first_segment if first_segment in supported_locales else None

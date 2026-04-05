@@ -19,7 +19,10 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
-from apache_buildish_site_pipeline.models.staged_front_matter import PipelineComponentFrontMatter, PipelineFrontMatterNamespace
+from apache_buildish_site_pipeline.models.staged_front_matter import (
+    PipelineComponentFrontMatter,
+    PipelineFrontMatterNamespace,
+)
 
 from ..front_matter import (
     authored_link_title,
@@ -54,7 +57,11 @@ def run_component_unit(spec: WorkerSpecWire) -> WorkerResultWire:
         else None
     )
 
-    if spec.component_pages_source is not None and spec.component_pages_stage_root is not None and spec.component_publication is not None:
+    if (
+        spec.component_pages_source is not None
+        and spec.component_pages_stage_root is not None
+        and spec.component_publication is not None
+    ):
         contributions, written = _stage_pages_tree(
             source_root=Path(spec.component_pages_source),
             destination_root=Path(spec.component_pages_stage_root),
@@ -74,8 +81,13 @@ def run_component_unit(spec: WorkerSpecWire) -> WorkerResultWire:
         files_written += written[0]
         page_files_written += written[1]
 
-    if spec.component_assets_source is not None and spec.component_assets_stage_root is not None:
-        written_assets = _copy_tree(Path(spec.component_assets_source), Path(spec.component_assets_stage_root))
+    if (
+        spec.component_assets_source is not None
+        and spec.component_assets_stage_root is not None
+    ):
+        written_assets = _copy_tree(
+            Path(spec.component_assets_source), Path(spec.component_assets_stage_root)
+        )
         files_written += written_assets
         asset_files_written += written_assets
 
@@ -100,12 +112,19 @@ def run_component_unit(spec: WorkerSpecWire) -> WorkerResultWire:
             files_written += written[0]
             page_files_written += written[1]
         if context.source_assets_root is not None:
-            written_assets = _copy_tree(Path(context.source_assets_root), Path(context.static_stage_root))
+            written_assets = _copy_tree(
+                Path(context.source_assets_root), Path(context.static_stage_root)
+            )
             files_written += written_assets
             asset_files_written += written_assets
 
     contribution_files = ContributionFileRefs(unit_manifest=spec.fragment_path)
-    write_unit_manifest(Path(spec.fragment_path), UnitContributionManifestWire(unit_id=spec.unit_id, pages=tuple(page_contributions)))
+    write_unit_manifest(
+        Path(spec.fragment_path),
+        UnitContributionManifestWire(
+            unit_id=spec.unit_id, pages=tuple(page_contributions)
+        ),
+    )
     return WorkerResultWire(
         unit_id=spec.unit_id,
         files_written=files_written,
@@ -145,16 +164,22 @@ def _stage_pages_tree(
             shutil.copy2(source_path, destination_path)
             files_written += 1
             continue
-        locale, default_locale, routed_relative_path = detect_locale(relative_path, localization)
+        locale, default_locale, routed_relative_path = detect_locale(
+            relative_path, localization
+        )
         public_path = public_page_path(base_publication.path, routed_relative_path)
-        public_url = public_page_url(base_publication.url, public_path, route_base_path=base_publication.path)
+        public_url = public_page_url(
+            base_publication.url, public_path, route_base_path=base_publication.path
+        )
         metadata = stage_authored_page(
             source_path=source_path,
             destination_path=destination_path,
             namespace=PipelineFrontMatterNamespace(
                 component=component_namespace,
                 page=None,
-            ) if component_namespace is not None else None,
+            )
+            if component_namespace is not None
+            else None,
         )
         contributions.append(
             StagedPageContributionWire(

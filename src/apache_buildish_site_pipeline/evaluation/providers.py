@@ -18,13 +18,19 @@ from __future__ import annotations
 
 from apache_buildish_site_pipeline.models.enums import DiagnosticSeverity
 from apache_buildish_site_pipeline.models.enums import RecordKind
-from apache_buildish_site_pipeline.planning.types import IndexedProviderRecord, PlanningEvaluation, SelectedVersionContext
+from apache_buildish_site_pipeline.planning.types import (
+    IndexedProviderRecord,
+    PlanningEvaluation,
+    SelectedVersionContext,
+)
 
 from . import diagnostic_codes
 from .collector import DiagnosticCollector
 
 
-def validate_providers(planning: PlanningEvaluation, collector: DiagnosticCollector) -> None:
+def validate_providers(
+    planning: PlanningEvaluation, collector: DiagnosticCollector
+) -> None:
     """Validate selected provider contexts remain deterministic."""
 
     for context in planning.selected_versions.contexts:
@@ -61,16 +67,26 @@ def validate_providers(planning: PlanningEvaluation, collector: DiagnosticCollec
         )
 
 
-def _matching_records(*, planning: PlanningEvaluation, context: SelectedVersionContext) -> tuple[IndexedProviderRecord, ...]:
-    provider_context = planning.provider_index.contexts_by_artifact.get((context.component_slug, context.artifact_key))
+def _matching_records(
+    *, planning: PlanningEvaluation, context: SelectedVersionContext
+) -> tuple[IndexedProviderRecord, ...]:
+    provider_context = planning.provider_index.contexts_by_artifact.get(
+        (context.component_slug, context.artifact_key)
+    )
     if provider_context is None:
         return ()
     if context.kind is RecordKind.DEVELOPMENT:
         if context.ref is None:
             return ()
-        return tuple(record for record in provider_context.development_records if record.ref == context.ref)
+        return tuple(
+            record
+            for record in provider_context.development_records
+            if record.ref == context.ref
+        )
     if context.kind is RecordKind.LINE_HEAD:
-        return provider_context.line_heads_by_release_line.get(context.release_line or "", ())
+        return provider_context.line_heads_by_release_line.get(
+            context.release_line or "", ()
+        )
     if context.kind is RecordKind.RELEASED:
         return provider_context.released_by_version.get(context.version or "", ())
     if context.kind is RecordKind.NAMED_REF:
@@ -81,3 +97,4 @@ def _matching_records(*, planning: PlanningEvaluation, context: SelectedVersionC
         return ()
     if context.kind is RecordKind.CANDIDATE:
         return provider_context.candidates_by_version.get(context.version or "", ())
+    raise AssertionError(f"Unhandled record kind in provider matching: {context.kind!r}")

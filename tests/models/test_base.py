@@ -54,7 +54,7 @@ class SitePipelineBaseModelTests(unittest.TestCase):
     def test_rejects_unknown_fields(self) -> None:
         with self.assertRaises(ValidationError):
             ExampleModel.model_validate(
-                {"schemaVersion": 1, "displayName": "Docs", "unexpectedField": True}
+                {"schemaVersion": 1, "displayName": "Docs", "unexpectedField": True},
             )
 
     def test_is_immutable_after_construction(self) -> None:

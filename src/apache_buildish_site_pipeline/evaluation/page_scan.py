@@ -18,10 +18,18 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from apache_buildish_site_pipeline.models.enums import DiagnosticSeverity, MaterializationInputKind, MaterializationStatus
+from apache_buildish_site_pipeline.models.enums import (
+    DiagnosticSeverity,
+    MaterializationInputKind,
+    MaterializationStatus,
+)
 from apache_buildish_site_pipeline.models.loading import load_yaml_mapping
 from apache_buildish_site_pipeline.models.page_metadata import PageTranslationMetadata
-from apache_buildish_site_pipeline.planning.types import LocalInputIdentity, PlanningEvaluation, ResolvedLocalInput
+from apache_buildish_site_pipeline.planning.types import (
+    LocalInputIdentity,
+    PlanningEvaluation,
+    ResolvedLocalInput,
+)
 
 from . import diagnostic_codes
 from .collector import DiagnosticCollector
@@ -38,7 +46,9 @@ _PAGE_INPUT_KINDS = {
 }
 
 
-def validate_page_scan(planning: PlanningEvaluation, collector: DiagnosticCollector) -> PageScanResult:
+def validate_page_scan(
+    planning: PlanningEvaluation, collector: DiagnosticCollector
+) -> PageScanResult:
     """Scan selected page inputs for malformed front matter and rooted-path escapes."""
 
     pages: list[ScannedPage] = []
@@ -51,7 +61,9 @@ def validate_page_scan(planning: PlanningEvaluation, collector: DiagnosticCollec
     return PageScanResult(pages=tuple(pages))
 
 
-def _scan_local_input(*, local_input: ResolvedLocalInput, collector: DiagnosticCollector) -> list[ScannedPage]:
+def _scan_local_input(
+    *, local_input: ResolvedLocalInput, collector: DiagnosticCollector
+) -> list[ScannedPage]:
     root = local_input.expected_local_path
     root_real = root.resolve(strict=False)
     input_id = _format_input_id(local_input.identity)
@@ -103,7 +115,7 @@ def _scan_local_input(*, local_input: ResolvedLocalInput, collector: DiagnosticC
                     local_input=local_input,
                     input_id=input_id,
                     collector=collector,
-                )
+                ),
             )
     return pages
 
@@ -128,7 +140,9 @@ def _scan_page_file(
             artifact_key=local_input.identity.artifact_key,
             details={"inputId": input_id, "path": relative_path, "reason": str(exc)},
         )
-        return _page_record(local_input=local_input, input_id=input_id, relative_path=relative_path)
+        return _page_record(
+            local_input=local_input, input_id=input_id, relative_path=relative_path
+        )
     front_matter = _extract_front_matter(
         text=text,
         relative_path=relative_path,
@@ -144,7 +158,11 @@ def _scan_page_file(
                 message=f"Page front matter for {relative_path} in {input_id} uses the reserved pipeline namespace",
                 component_slug=local_input.identity.component_slug,
                 artifact_key=local_input.identity.artifact_key,
-                details={"inputId": input_id, "path": relative_path, "field": "pipeline"},
+                details={
+                    "inputId": input_id,
+                    "path": relative_path,
+                    "field": "pipeline",
+                },
             )
         if "translationKey" in front_matter:
             try:
@@ -160,7 +178,11 @@ def _scan_page_file(
                     message=f"Page front matter for {relative_path} in {input_id} is invalid",
                     component_slug=local_input.identity.component_slug,
                     artifact_key=local_input.identity.artifact_key,
-                    details={"inputId": input_id, "path": relative_path, "reason": str(exc)},
+                    details={
+                        "inputId": input_id,
+                        "path": relative_path,
+                        "reason": str(exc),
+                    },
                 )
             else:
                 translation_key = translation.translation_key

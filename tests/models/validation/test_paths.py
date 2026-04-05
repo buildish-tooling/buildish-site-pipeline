@@ -34,8 +34,7 @@ class PathValidationTests(unittest.TestCase):
 
     def test_rejects_absolute_or_traversing_relative_paths(self) -> None:
         for value in ("/docs/site", "./docs/site", "docs/../site", "docs//site"):
-            with self.subTest(value=value):
-                with self.assertRaises(ValueError):
+            with self.subTest(value=value), self.assertRaises(ValueError):
                     validate_repo_relative_path(value)
 
         with self.assertRaises(ValueError):
@@ -47,8 +46,7 @@ class PathValidationTests(unittest.TestCase):
             (validate_stage_relative_path, r"data\routes.json"),
             (validate_public_path, "\\docs\\latest\\"),
         ):
-            with self.subTest(validator=validator.__name__, value=value):
-                with self.assertRaises(ValueError):
+            with self.subTest(validator=validator.__name__, value=value), self.assertRaises(ValueError):
                     validator(value)
 
     def test_accepts_normalized_public_paths_and_rejects_queries_or_relative_forms(self) -> None:
@@ -56,6 +54,5 @@ class PathValidationTests(unittest.TestCase):
         self.assertEqual(validate_public_path("/"), "/")
 
         for value in ("docs/latest/", "/docs/../latest/", "/docs/latest/?a=1"):
-            with self.subTest(value=value):
-                with self.assertRaises(ValueError):
+            with self.subTest(value=value), self.assertRaises(ValueError):
                     validate_public_path(value)

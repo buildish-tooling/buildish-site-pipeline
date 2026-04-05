@@ -93,7 +93,10 @@ class ProviderRecord(SitePipelineBaseModel):
 
     @model_validator(mode="after")
     def ensure_stable_locator_exists(self) -> Self:
-        if all(locator is None for locator in (self.external_id, self.version, self.tag, self.ref)):
+        if all(
+            locator is None
+            for locator in (self.external_id, self.version, self.tag, self.ref)
+        ):
             raise ValueError(
                 "Provider records must include at least one of externalId, version, tag, or ref",
             )
@@ -118,7 +121,9 @@ class ProviderSnapshotV1(SitePipelineBaseModel):
         seen_provider_external_ids: set[tuple[str, str]] = set()
         for record in self.records:
             if record.provider not in provider_keys:
-                raise ValueError(f"Unknown provider key {record.provider!r} in records[]")
+                raise ValueError(
+                    f"Unknown provider key {record.provider!r} in records[]"
+                )
             if record.external_id is None:
                 continue
 

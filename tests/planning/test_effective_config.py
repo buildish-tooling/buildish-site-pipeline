@@ -55,9 +55,9 @@ class EffectiveConfigResolutionTests(unittest.TestCase):
                                 "key": "runtime",
                                 "source": "runtime",
                                 "versioning": {"developmentRef": "main", "tagPattern": "^v.*$"},
-                            }
+                            },
                         ],
-                    }
+                    },
                 ],
             },
             by_alias=True,
@@ -100,7 +100,7 @@ class EffectiveConfigResolutionTests(unittest.TestCase):
                         "developmentSegment": "development",
                         "docsSegment": "docs",
                         "assetsSegment": "assets",
-                    }
+                    },
                 },
                 "site": {},
                 "origins": {"docs": {"baseUrl": "https://docs.example.org"}},
@@ -111,7 +111,7 @@ class EffectiveConfigResolutionTests(unittest.TestCase):
                         "content": {"source": "runtime"},
                         "publication": {"mountPath": "/spark/"},
                         "artifacts": [],
-                    }
+                    },
                 ],
             },
             by_alias=True,
@@ -139,8 +139,7 @@ class EffectiveConfigResolutionTests(unittest.TestCase):
             by_alias=True,
             by_name=False,
         )
-        with tempfile.TemporaryDirectory() as tempdir:
-            with self.assertRaises(ValueError):
+        with tempfile.TemporaryDirectory() as tempdir, self.assertRaises(ValueError):
                 resolve_site_config(catalog=catalog, workspace_root=Path(tempdir))
 
     def test_resolves_component_localization_from_defaults_and_overrides(self) -> None:
@@ -166,7 +165,7 @@ class EffectiveConfigResolutionTests(unittest.TestCase):
                         "localization": {"supportedLocales": ["de", "fr"], "defaultLocale": "fr"},
                         "publication": {"mountPath": "/spark/"},
                         "artifacts": [],
-                    }
+                    },
                 ],
             },
             by_alias=True,

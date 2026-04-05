@@ -43,9 +43,11 @@ def write_utf8_text_file(path: Path, text: str) -> bool:
             temp_file.flush()
             os.fsync(temp_file.fileno())
             temp_path = Path(temp_file.name)
-        os.replace(temp_path, path)
+        temp_path.replace(path)
     except OSError as exc:
-        raise StageIntegrityError(f"Could not write stage text file {path}: {exc}") from exc
+        raise StageIntegrityError(
+            f"Could not write stage text file {path}: {exc}"
+        ) from exc
     finally:
         if temp_path is not None and temp_path.exists():
             temp_path.unlink(missing_ok=True)
@@ -60,4 +62,6 @@ def _existing_text_matches(*, path: Path, text: str) -> bool:
     try:
         return path.read_text(encoding="utf-8") == text
     except OSError as exc:
-        raise StageIntegrityError(f"Could not read existing stage text file {path}: {exc}") from exc
+        raise StageIntegrityError(
+            f"Could not read existing stage text file {path}: {exc}"
+        ) from exc

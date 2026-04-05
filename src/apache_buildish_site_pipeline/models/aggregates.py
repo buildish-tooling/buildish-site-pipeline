@@ -23,7 +23,13 @@ from pydantic import Field, model_validator
 from .base import SitePipelineBaseModel
 from .catalog import ArtifactVersioningConfig, SupportWindow
 from .component_repository import SupportStatusDefinition
-from .enums import IndexBehavior, PublicationState, RecordKind, TrustClass, WithdrawalBehavior
+from .enums import (
+    IndexBehavior,
+    PublicationState,
+    RecordKind,
+    TrustClass,
+    WithdrawalBehavior,
+)
 from .provider_snapshot import ProviderAsset
 from .scalars import (
     ArtifactKey,
@@ -44,12 +50,21 @@ from .scalars import (
     UrlString,
     VersionString,
 )
-from .staged_front_matter import ArtifactFrontMatterSummary, ReleaseLineSummary, ResolvedPublication, TranslationLinkSummary
+from .staged_front_matter import (
+    ArtifactFrontMatterSummary,
+    ReleaseLineSummary,
+    ResolvedPublication,
+    TranslationLinkSummary,
+)
 from .validation.extensions import serialize_extensions_object
 
 _ALLOWED_REDIRECT_STATUS_CODES = frozenset({301, 302, 307, 308})
-_WITHDRAWN_PUBLICATION_STATES = frozenset({PublicationState.WITHDRAWN, PublicationState.TOMBSTONED})
-_ALLOWED_REF_KINDS = frozenset({RecordKind.DEVELOPMENT, RecordKind.NAMED_REF, RecordKind.LINE_HEAD})
+_WITHDRAWN_PUBLICATION_STATES = frozenset(
+    {PublicationState.WITHDRAWN, PublicationState.TOMBSTONED}
+)
+_ALLOWED_REF_KINDS = frozenset(
+    {RecordKind.DEVELOPMENT, RecordKind.NAMED_REF, RecordKind.LINE_HEAD}
+)
 _MAX_MOUNT_METADATA_BYTES = 16 * 1024
 
 
@@ -134,7 +149,9 @@ class ArtifactsDataEntry(SitePipelineBaseModel):
     latest_candidate: LatestCandidateSummary | None = None
     release_lines: list[ReleaseLineSummary] | None = None
     named_refs: list[RefAggregateEntry] | None = None
-    support_status_vocabulary: dict[NonEmptyString, SupportStatusDefinition] | None = None
+    support_status_vocabulary: dict[NonEmptyString, SupportStatusDefinition] | None = (
+        None
+    )
     support_policy_url: UrlString | None = None
 
     @model_validator(mode="after")
@@ -170,7 +187,9 @@ class ReleaseAggregateEntry(SitePipelineBaseModel):
     @model_validator(mode="after")
     def ensure_release_redirect_fields_are_consistent(self) -> Self:
         if self.release_line_ancestors is not None:
-            _ensure_unique_strings(self.release_line_ancestors, type_name="release-line ancestor")
+            _ensure_unique_strings(
+                self.release_line_ancestors, type_name="release-line ancestor"
+            )
 
         if self.withdrawal_behavior is None:
             if self.redirect_target is not None:
@@ -181,10 +200,18 @@ class ReleaseAggregateEntry(SitePipelineBaseModel):
             raise ValueError(
                 "withdrawalBehavior is only allowed when publicationState is withdrawn or tombstoned",
             )
-        if self.withdrawal_behavior is WithdrawalBehavior.REDIRECT and self.redirect_target is None:
+        if (
+            self.withdrawal_behavior is WithdrawalBehavior.REDIRECT
+            and self.redirect_target is None
+        ):
             raise ValueError("withdrawalBehavior redirect requires redirectTarget")
-        if self.withdrawal_behavior is not WithdrawalBehavior.REDIRECT and self.redirect_target is not None:
-            raise ValueError("redirectTarget is only allowed when withdrawalBehavior is redirect")
+        if (
+            self.withdrawal_behavior is not WithdrawalBehavior.REDIRECT
+            and self.redirect_target is not None
+        ):
+            raise ValueError(
+                "redirectTarget is only allowed when withdrawalBehavior is redirect"
+            )
         return self
 
 
@@ -225,7 +252,9 @@ class RefAggregateEntry(SitePipelineBaseModel):
     @model_validator(mode="after")
     def ensure_kind_stays_within_the_ref_subset(self) -> Self:
         if self.kind not in _ALLOWED_REF_KINDS:
-            raise ValueError("Ref aggregate kind must be development, namedRef, or lineHead")
+            raise ValueError(
+                "Ref aggregate kind must be development, namedRef, or lineHead"
+            )
         return self
 
 
@@ -290,7 +319,9 @@ class TranslationSetAggregateEntry(SitePipelineBaseModel):
 
     @model_validator(mode="after")
     def ensure_locale_entries_are_unique(self) -> Self:
-        _ensure_unique_strings([entry.locale for entry in self.entries], type_name="translation locale")
+        _ensure_unique_strings(
+            [entry.locale for entry in self.entries], type_name="translation locale"
+        )
         return self
 
 
@@ -308,7 +339,9 @@ class CompatibilityAggregateEntry(SitePipelineBaseModel):
     @model_validator(mode="after")
     def ensure_evidence_entries_are_unique(self) -> Self:
         if self.evidence is not None:
-            _ensure_unique_strings(self.evidence, type_name="compatibility evidence entry")
+            _ensure_unique_strings(
+                self.evidence, type_name="compatibility evidence entry"
+            )
         return self
 
 
@@ -329,9 +362,13 @@ class MountAggregateEntry(SitePipelineBaseModel):
     def ensure_metadata_stays_below_the_hard_ceiling(self) -> Self:
         if self.metadata is None:
             return self
-        metadata_size_bytes = len(serialize_extensions_object(self.metadata).encode("utf-8"))
+        metadata_size_bytes = len(
+            serialize_extensions_object(self.metadata).encode("utf-8")
+        )
         if metadata_size_bytes > _MAX_MOUNT_METADATA_BYTES:
-            raise ValueError("Mount metadata must not exceed 16 KiB after JSON serialization")
+            raise ValueError(
+                "Mount metadata must not exceed 16 KiB after JSON serialization"
+            )
         return self
 
 

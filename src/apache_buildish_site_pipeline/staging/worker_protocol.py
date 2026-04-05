@@ -16,7 +16,6 @@
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 import tempfile
 
@@ -86,7 +85,11 @@ class WorkerResultWire(SitePipelineBaseModel):
         normalized = self.normalized()
         if normalized.succeeded:
             return normalized
-        failure = normalized.failure.message if normalized.failure is not None else "unknown worker failure"
+        failure = (
+            normalized.failure.message
+            if normalized.failure is not None
+            else "unknown worker failure"
+        )
         raise StageIntegrityError(f"Worker {normalized.unit_id!r} failed: {failure}")
 
 
@@ -199,20 +202,26 @@ def write_unit_manifest(path: Path, manifest: UnitContributionManifestWire) -> N
         ) as temp_file:
             temp_file.write(manifest.model_dump_json(indent=2, by_alias=True))
             temp_path = Path(temp_file.name)
-        os.replace(temp_path, path)
+        temp_path.replace(path)
     except OSError as exc:
         if temp_path is not None:
             temp_path.unlink(missing_ok=True)
-        raise StageIntegrityError(f"Could not write worker contribution manifest: {path}") from exc
+        raise StageIntegrityError(
+            f"Could not write worker contribution manifest: {path}"
+        ) from exc
 
 
 def read_unit_manifest(path: Path) -> UnitContributionManifestWire:
     """Load one worker contribution manifest from JSON."""
 
-    return UnitContributionManifestWire.model_validate_json(path.read_text(encoding="utf-8"))
+    return UnitContributionManifestWire.model_validate_json(
+        path.read_text(encoding="utf-8")
+    )
 
 
-def worker_failure_result(*, unit_id: str, category: str, message: str, stage_meta: WorkerStageMetaWire) -> WorkerResultWire:
+def worker_failure_result(
+    *, unit_id: str, category: str, message: str, stage_meta: WorkerStageMetaWire
+) -> WorkerResultWire:
     """Build one normalized failure result for the explicit worker boundary."""
 
     return WorkerResultWire(

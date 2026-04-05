@@ -23,7 +23,11 @@ from . import diagnostic_codes
 from .collector import DiagnosticCollector
 from .types import PublicationIndex, PublishedTarget
 
-from apache_buildish_site_pipeline.planning.types import PlanningEvaluation, ResolvedPublicationPolicy, SelectedVersionContext
+from apache_buildish_site_pipeline.planning.types import (
+    PlanningEvaluation,
+    ResolvedPublicationPolicy,
+    SelectedVersionContext,
+)
 
 
 def target_id_for_context(context: SelectedVersionContext) -> str:
@@ -40,7 +44,9 @@ def target_id_for_context(context: SelectedVersionContext) -> str:
     return f"released:{context.component_slug}:{context.artifact_key}:{context.version}"
 
 
-def public_path_for_context(publication: ResolvedPublicationPolicy, context: SelectedVersionContext) -> str:
+def public_path_for_context(
+    publication: ResolvedPublicationPolicy, context: SelectedVersionContext
+) -> str:
     """Return the stable public route path for one selected version context."""
 
     if context.kind is RecordKind.DEVELOPMENT:
@@ -51,7 +57,11 @@ def public_path_for_context(publication: ResolvedPublicationPolicy, context: Sel
         return f"{publication.docs_path}{context.release_line}/"
     if context.kind is RecordKind.CANDIDATE:
         return f"{publication.docs_path}candidates/{context.version}/"
-    release_base_path = publication.component_path if publication.docs_path == publication.development_path else publication.docs_path
+    release_base_path = (
+        publication.component_path
+        if publication.docs_path == publication.development_path
+        else publication.docs_path
+    )
     return f"{release_base_path}releases/{context.version}/"
 
 
@@ -63,17 +73,41 @@ def build_publication_index(planning: PlanningEvaluation) -> PublicationIndex:
         publication = component.publication
         targets.extend(
             [
-                PublishedTarget(component.slug, f"component:{component.slug}", publication.origin.key, publication.component_path),
-                PublishedTarget(component.slug, f"development:{component.slug}", publication.origin.key, publication.development_path),
-                PublishedTarget(component.slug, f"assets:{component.slug}", publication.origin.key, publication.assets_path),
-            ]
+                PublishedTarget(
+                    component.slug,
+                    f"component:{component.slug}",
+                    publication.origin.key,
+                    publication.component_path,
+                ),
+                PublishedTarget(
+                    component.slug,
+                    f"development:{component.slug}",
+                    publication.origin.key,
+                    publication.development_path,
+                ),
+                PublishedTarget(
+                    component.slug,
+                    f"assets:{component.slug}",
+                    publication.origin.key,
+                    publication.assets_path,
+                ),
+            ],
         )
         if publication.docs_path != publication.development_path:
-            targets.append(PublishedTarget(component.slug, f"docs:{component.slug}", publication.origin.key, publication.docs_path))
+            targets.append(
+                PublishedTarget(
+                    component.slug,
+                    f"docs:{component.slug}",
+                    publication.origin.key,
+                    publication.docs_path,
+                )
+            )
     return PublicationIndex(targets=tuple(targets))
 
 
-def validate_publication(planning: PlanningEvaluation, collector: DiagnosticCollector) -> PublicationIndex:
+def validate_publication(
+    planning: PlanningEvaluation, collector: DiagnosticCollector
+) -> PublicationIndex:
     """Validate publication route uniqueness for the resolved plan."""
 
     publication_index = build_publication_index(planning)

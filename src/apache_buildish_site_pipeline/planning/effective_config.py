@@ -18,9 +18,16 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from apache_buildish_site_pipeline.models.catalog import CatalogDocumentV1, ComponentCatalogEntry
-from apache_buildish_site_pipeline.models.component_repository import ComponentRepositoryDocumentV1
-from apache_buildish_site_pipeline.models.validation.urls import extract_hostname_from_url
+from apache_buildish_site_pipeline.models.catalog import (
+    CatalogDocumentV1,
+    ComponentCatalogEntry,
+)
+from apache_buildish_site_pipeline.models.component_repository import (
+    ComponentRepositoryDocumentV1,
+)
+from apache_buildish_site_pipeline.models.validation.urls import (
+    extract_hostname_from_url,
+)
 
 from .types import (
     ResolvedArtifactConfig,
@@ -66,23 +73,43 @@ def resolve_site_config(
     sources = {}
     for key, source in source_configs.items():
         local_dir = _resolve_repo_path(normalized_workspace_root, source.local_dir)
-        metadata_relpath = source.metadata_file or (defaults.metadata_file if defaults is not None else None)
-        metadata_path = _resolve_repo_path(local_dir, metadata_relpath) if metadata_relpath else None
+        metadata_relpath = source.metadata_file or (
+            defaults.metadata_file if defaults is not None else None
+        )
+        metadata_path = (
+            _resolve_repo_path(local_dir, metadata_relpath)
+            if metadata_relpath
+            else None
+        )
         sources[key] = ResolvedSourceBinding(
             key=key,
             local_dir=local_dir,
             metadata_file=metadata_path,
-            repository=str(source.repository) if source.repository is not None else None,
-            default_branch=str(source.default_branch) if source.default_branch is not None else None,
+            repository=str(source.repository)
+            if source.repository is not None
+            else None,
+            default_branch=str(source.default_branch)
+            if source.default_branch is not None
+            else None,
         )
 
-    site_pages_root = _resolve_repo_path(normalized_workspace_root, site_config.pages_root) if site_config and site_config.pages_root else None
-    site_assets_root = _resolve_repo_path(normalized_workspace_root, site_config.assets_root) if site_config and site_config.assets_root else None
+    site_pages_root = (
+        _resolve_repo_path(normalized_workspace_root, site_config.pages_root)
+        if site_config and site_config.pages_root
+        else None
+    )
+    site_assets_root = (
+        _resolve_repo_path(normalized_workspace_root, site_config.assets_root)
+        if site_config and site_config.assets_root
+        else None
+    )
     site_vendor_assets = site_config.vendor_assets if site_config is not None else None
     vendor_assets = tuple(
         ResolvedVendorAsset(
             key=f"vendorAssets:{index}",
-            source_path=_resolve_repo_path(normalized_workspace_root, vendor_asset.source),
+            source_path=_resolve_repo_path(
+                normalized_workspace_root, vendor_asset.source
+            ),
             config=vendor_asset,
         )
         for index, vendor_asset in enumerate(site_vendor_assets or ())
@@ -126,7 +153,9 @@ def _resolve_component(
         component=component,
         sources=sources,
         workspace_root=workspace_root,
-        default_metadata_file=catalog.defaults.metadata_file if catalog.defaults is not None else None,
+        default_metadata_file=catalog.defaults.metadata_file
+        if catalog.defaults is not None
+        else None,
     )
     publication = _resolve_publication(
         catalog=catalog,
@@ -159,10 +188,26 @@ def _resolve_component(
     artifacts = []
     for artifact in component.artifacts or ():
         source_binding = sources[artifact.source]
-        artifact_docs_root = _resolve_repo_path(source_binding.local_dir, artifact.docs_root) if artifact.docs_root else docs_root or source_binding.local_dir
-        artifact_assets_root = _resolve_repo_path(source_binding.local_dir, artifact.assets_root) if artifact.assets_root else assets_root
-        component_vocabulary = component_document.lifecycle.support_status_vocabulary if component_document and component_document.lifecycle else None
-        artifact_vocabulary = artifact.lifecycle.support_status_vocabulary if artifact.lifecycle and artifact.lifecycle.support_status_vocabulary else None
+        artifact_docs_root = (
+            _resolve_repo_path(source_binding.local_dir, artifact.docs_root)
+            if artifact.docs_root
+            else docs_root or source_binding.local_dir
+        )
+        artifact_assets_root = (
+            _resolve_repo_path(source_binding.local_dir, artifact.assets_root)
+            if artifact.assets_root
+            else assets_root
+        )
+        component_vocabulary = (
+            component_document.lifecycle.support_status_vocabulary
+            if component_document and component_document.lifecycle
+            else None
+        )
+        artifact_vocabulary = (
+            artifact.lifecycle.support_status_vocabulary
+            if artifact.lifecycle and artifact.lifecycle.support_status_vocabulary
+            else None
+        )
         support_status_vocabulary = dict(component_vocabulary or {})
         support_status_vocabulary.update(artifact_vocabulary or {})
         artifacts.append(
@@ -176,7 +221,7 @@ def _resolve_component(
                 publication_selection=artifact.publication_selection,
                 lifecycle=artifact.lifecycle,
                 support_status_vocabulary=support_status_vocabulary,
-            )
+            ),
         )
 
     return ResolvedComponentConfig(
@@ -208,7 +253,11 @@ def _resolve_component_content_source(
     if component.local_dir is None:
         return None
     local_dir = _resolve_repo_path(workspace_root, component.local_dir)
-    metadata_path = _resolve_repo_path(local_dir, default_metadata_file) if default_metadata_file else None
+    metadata_path = (
+        _resolve_repo_path(local_dir, default_metadata_file)
+        if default_metadata_file
+        else None
+    )
     return ResolvedSourceBinding(
         key=f"component:{component.slug}",
         local_dir=local_dir,
@@ -231,30 +280,59 @@ def _resolve_publication(
     group = groups.get(component.group) if component.group is not None else None
     group_publication = group.publication if group is not None else None
     origin_key = (
-        publication.origin if publication and publication.origin is not None else None
-    ) or (
-        group_publication.origin
-        if group_publication is not None
-        and group_publication.origin is not None
-        else None
-    ) or (defaults.origin if defaults is not None else None)
+        (publication.origin if publication and publication.origin is not None else None)
+        or (
+            group_publication.origin
+            if group_publication is not None and group_publication.origin is not None
+            else None
+        )
+        or (defaults.origin if defaults is not None else None)
+    )
     if origin_key is None:
-        raise ValueError(f"Component {component.slug!r} cannot resolve a publication origin")
+        raise ValueError(
+            f"Component {component.slug!r} cannot resolve a publication origin"
+        )
 
     mount_path = None
     if publication is not None and publication.mount_path is not None:
         mount_path = str(publication.mount_path)
-    elif group_path_prefix is not None and publication is not None and publication.path_segment is not None:
+    elif (
+        group_path_prefix is not None
+        and publication is not None
+        and publication.path_segment is not None
+    ):
         mount_path = _join_public_path(group_path_prefix, publication.path_segment)
 
-    component_path = str(publication.component_path) if publication and publication.component_path is not None else mount_path
+    component_path = (
+        str(publication.component_path)
+        if publication and publication.component_path is not None
+        else mount_path
+    )
     if component_path is None:
-        raise ValueError(f"Component {component.slug!r} cannot resolve a component publication path")
+        raise ValueError(
+            f"Component {component.slug!r} cannot resolve a component publication path"
+        )
 
-    development_segment = defaults.development_segment if defaults and defaults.development_segment else _DEFAULT_DEVELOPMENT_SEGMENT
-    docs_segment = defaults.docs_segment if defaults and defaults.docs_segment else _DEFAULT_DOCS_SEGMENT
-    assets_segment = defaults.assets_segment if defaults and defaults.assets_segment else _DEFAULT_ASSETS_SEGMENT
-    development_path = str(publication.development_path) if publication and publication.development_path is not None else _join_public_path(component_path, development_segment)
+    development_segment = (
+        defaults.development_segment
+        if defaults and defaults.development_segment
+        else _DEFAULT_DEVELOPMENT_SEGMENT
+    )
+    docs_segment = (
+        defaults.docs_segment
+        if defaults and defaults.docs_segment
+        else _DEFAULT_DOCS_SEGMENT
+    )
+    assets_segment = (
+        defaults.assets_segment
+        if defaults and defaults.assets_segment
+        else _DEFAULT_ASSETS_SEGMENT
+    )
+    development_path = (
+        str(publication.development_path)
+        if publication and publication.development_path is not None
+        else _join_public_path(component_path, development_segment)
+    )
     docs_path = (
         str(publication.docs_path)
         if publication and publication.docs_path is not None
@@ -262,7 +340,11 @@ def _resolve_publication(
         if docs_segment is not None
         else development_path
     )
-    assets_path = str(publication.assets_path) if publication and publication.assets_path is not None else _join_public_path(component_path, assets_segment)
+    assets_path = (
+        str(publication.assets_path)
+        if publication and publication.assets_path is not None
+        else _join_public_path(component_path, assets_segment)
+    )
     origin = origins[origin_key]
     return ResolvedPublicationPolicy(
         origin=origin,
@@ -274,7 +356,9 @@ def _resolve_publication(
         development_url=_join_public_url(origin.base_url, development_path),
         docs_url=_join_public_url(origin.base_url, docs_path),
         assets_url=_join_public_url(origin.base_url, assets_path),
-        canonical_path=str(publication.canonical_path) if publication and publication.canonical_path is not None else None,
+        canonical_path=str(publication.canonical_path)
+        if publication and publication.canonical_path is not None
+        else None,
         aliases=tuple(publication.aliases or ()) if publication else (),
         redirects=tuple(publication.redirects or ()) if publication else (),
     )
@@ -288,8 +372,12 @@ def _resolve_component_content_path(
 ) -> Path | None:
     if source_binding is None:
         return None
-    document_content = component_document.content if component_document is not None else None
-    content_relpath = getattr(document_content, field_name) if document_content is not None else None
+    document_content = (
+        component_document.content if component_document is not None else None
+    )
+    content_relpath = (
+        getattr(document_content, field_name) if document_content is not None else None
+    )
     effective_relpath = content_relpath or default_relpath
     if effective_relpath is None:
         return None
@@ -354,5 +442,7 @@ def _resolve_repo_path(root: Path, relative_path: str) -> Path:
     candidate_path = (root / relative_path).resolve(strict=False)
     normalized_root = root.resolve(strict=False)
     if not candidate_path.is_relative_to(normalized_root):
-        raise ValueError(f"Resolved path {candidate_path} escapes declared root {normalized_root}")
+        raise ValueError(
+            f"Resolved path {candidate_path} escapes declared root {normalized_root}"
+        )
     return candidate_path

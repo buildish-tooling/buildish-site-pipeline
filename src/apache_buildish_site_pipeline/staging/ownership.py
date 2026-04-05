@@ -71,13 +71,23 @@ def context_subpath(context: SelectedVersionContext) -> Path:
     if context.kind == RecordKind.RELEASED:
         return Path("releases") / (context.version or "unversioned")
     if context.kind == RecordKind.LINE_HEAD:
-        release_line = context.release_line or (context.provider_record.release_line if context.provider_record is not None else None) or "unknown"
+        release_line = (
+            context.release_line
+            or (
+                context.provider_record.release_line
+                if context.provider_record is not None
+                else None
+            )
+            or "unknown"
+        )
         return Path("line-heads") / release_line
     if context.kind == RecordKind.NAMED_REF:
         return Path("refs") / (context.named_ref_key or context.ref or "unknown")
     if context.kind == RecordKind.CANDIDATE:
         return Path("candidates") / (context.version or context.ref or "unknown")
-    raise StageIntegrityError(f"Unsupported selected context kind for staging: {context.kind}")
+    raise StageIntegrityError(
+        f"Unsupported selected context kind for staging: {context.kind}"
+    )
 
 
 def build_owned_units(build_plan: EffectiveBuildPlan) -> tuple[OwnedUnit, ...]:
@@ -121,14 +131,27 @@ def build_owned_units(build_plan: EffectiveBuildPlan) -> tuple[OwnedUnit, ...]:
             OwnedContextInput(
                 context_id=f"{context.component_slug}:{context.artifact_key}:{context.kind}:{context.ref}",
                 context=context,
-                content_stage_root=Path("content") / "components" / context.component_slug / "contexts" / context_subpath(context),
-                static_stage_root=Path("static") / "components" / context.component_slug / "contexts" / context_subpath(context) / "assets",
+                content_stage_root=Path("content")
+                / "components"
+                / context.component_slug
+                / "contexts"
+                / context_subpath(context),
+                static_stage_root=Path("static")
+                / "components"
+                / context.component_slug
+                / "contexts"
+                / context_subpath(context)
+                / "assets",
             ),
         )
 
     for component in build_plan.site.components:
         component_contexts = tuple(contexts_by_component.get(component.slug, ()))
-        if component.pages_root is None and component.assets_root is None and not component_contexts:
+        if (
+            component.pages_root is None
+            and component.assets_root is None
+            and not component_contexts
+        ):
             continue
         units.append(
             OwnedUnit(
@@ -156,9 +179,16 @@ def _validate_output_ownership(units: tuple[OwnedUnit, ...]) -> None:
             claims.append((path, path.casefold(), unit.owner_id, unit.unit_id))
     sorted_claims = sorted(claims, key=lambda claim: claim[0])
     for index, (path, casefold_path, owner_id, unit_id) in enumerate(sorted_claims):
-        for other_path, other_casefold_path, other_owner_id, other_unit_id in sorted_claims[index + 1 :]:
+        for (
+            other_path,
+            other_casefold_path,
+            other_owner_id,
+            other_unit_id,
+        ) in sorted_claims[index + 1 :]:
             overlapping_paths = (
-                other_path == path or other_path.startswith(f"{path}/") or path.startswith(f"{other_path}/")
+                other_path == path
+                or other_path.startswith(f"{path}/")
+                or path.startswith(f"{other_path}/")
             )
             casefold_collision = (
                 other_casefold_path == casefold_path
@@ -167,11 +197,19 @@ def _validate_output_ownership(units: tuple[OwnedUnit, ...]) -> None:
             )
             if not overlapping_paths and not casefold_collision:
                 continue
-            if unit_id == other_unit_id and owner_id == other_owner_id and path == other_path:
+            if (
+                unit_id == other_unit_id
+                and owner_id == other_owner_id
+                and path == other_path
+            ):
                 continue
             if owner_id == other_owner_id and overlapping_paths:
                 continue
-            detail = "case-insensitive path collision" if casefold_collision and not overlapping_paths else "ambiguous stage output ownership"
+            detail = (
+                "case-insensitive path collision"
+                if casefold_collision and not overlapping_paths
+                else "ambiguous stage output ownership"
+            )
             raise StageIntegrityError(
                 f"{detail} between {unit_id!r} and {other_unit_id!r}: {path!r} vs {other_path!r}",
             )

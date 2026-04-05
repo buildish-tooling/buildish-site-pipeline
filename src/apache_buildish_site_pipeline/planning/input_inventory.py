@@ -16,7 +16,10 @@
 
 from __future__ import annotations
 
-from apache_buildish_site_pipeline.models.enums import MaterializationInputKind, MaterializationStatus
+from apache_buildish_site_pipeline.models.enums import (
+    MaterializationInputKind,
+    MaterializationStatus,
+)
 
 from .types import (
     InputReadiness,
@@ -28,39 +31,50 @@ from .types import (
 )
 
 
-def derive_local_inputs(*, site: ResolvedSiteConfig, selected_versions: SelectedVersionSet) -> tuple[ResolvedLocalInput, ...]:
+def derive_local_inputs(
+    *, site: ResolvedSiteConfig, selected_versions: SelectedVersionSet
+) -> tuple[ResolvedLocalInput, ...]:
     """Project the site and selected version contexts into concrete local inputs."""
 
     inputs: list[ResolvedLocalInput] = []
     if site.site_pages_root is not None:
         inputs.append(
             ResolvedLocalInput(
-                identity=LocalInputIdentity(source_key="site:pages", input_kind=MaterializationInputKind.SITE_PAGES),
+                identity=LocalInputIdentity(
+                    source_key="site:pages",
+                    input_kind=MaterializationInputKind.SITE_PAGES,
+                ),
                 declared_root=site.site_pages_root,
                 expected_local_path=site.site_pages_root,
                 provenance="workspace",
                 readiness=InputReadiness(status=MaterializationStatus.UNRESOLVED),
-            )
+            ),
         )
     if site.site_assets_root is not None:
         inputs.append(
             ResolvedLocalInput(
-                identity=LocalInputIdentity(source_key="site:assets", input_kind=MaterializationInputKind.SITE_ASSETS),
+                identity=LocalInputIdentity(
+                    source_key="site:assets",
+                    input_kind=MaterializationInputKind.SITE_ASSETS,
+                ),
                 declared_root=site.site_assets_root,
                 expected_local_path=site.site_assets_root,
                 provenance="workspace",
                 readiness=InputReadiness(status=MaterializationStatus.UNRESOLVED),
-            )
+            ),
         )
     for vendor_asset in site.vendor_assets:
         inputs.append(
             ResolvedLocalInput(
-                identity=LocalInputIdentity(source_key=vendor_asset.key, input_kind=MaterializationInputKind.VENDOR_ASSETS),
+                identity=LocalInputIdentity(
+                    source_key=vendor_asset.key,
+                    input_kind=MaterializationInputKind.VENDOR_ASSETS,
+                ),
                 declared_root=vendor_asset.source_path,
                 expected_local_path=vendor_asset.source_path,
                 provenance="workspace",
                 readiness=InputReadiness(status=MaterializationStatus.UNRESOLVED),
-            )
+            ),
         )
     for context in selected_versions.contexts:
         expected_local_path = _expected_context_path(context)
@@ -81,7 +95,7 @@ def derive_local_inputs(*, site: ResolvedSiteConfig, selected_versions: Selected
                 expected_local_path=expected_local_path,
                 provenance="workspace" if context.mutable_in_place else "snapshot",
                 readiness=InputReadiness(status=MaterializationStatus.UNRESOLVED),
-            )
+            ),
         )
     return tuple(inputs)
 
@@ -89,10 +103,19 @@ def derive_local_inputs(*, site: ResolvedSiteConfig, selected_versions: Selected
 def _expected_context_path(context: SelectedVersionContext):
     if context.input_kind is MaterializationInputKind.DEVELOPMENT:
         return context.docs_root
-    if context.input_kind is MaterializationInputKind.LINE_HEAD and context.release_line is not None:
+    if (
+        context.input_kind is MaterializationInputKind.LINE_HEAD
+        and context.release_line is not None
+    ):
         return context.docs_root / "maintenance" / context.release_line
-    if context.input_kind is MaterializationInputKind.RELEASED and context.version is not None:
+    if (
+        context.input_kind is MaterializationInputKind.RELEASED
+        and context.version is not None
+    ):
         return context.docs_root / "releases" / context.version
-    if context.input_kind is MaterializationInputKind.CANDIDATE and context.version is not None:
+    if (
+        context.input_kind is MaterializationInputKind.CANDIDATE
+        and context.version is not None
+    ):
         return context.docs_root / "candidates" / context.version
     return context.docs_root

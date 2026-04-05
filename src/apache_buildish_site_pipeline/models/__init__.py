@@ -120,7 +120,12 @@ from .planning_stage_contract import (
     StageRunReportV1,
     StageRunSummary,
 )
-from .provider_snapshot import ProviderAsset, ProviderDescriptor, ProviderRecord, ProviderSnapshotV1
+from .provider_snapshot import (
+    ProviderAsset,
+    ProviderDescriptor,
+    ProviderRecord,
+    ProviderSnapshotV1,
+)
 from .scalars import (
     ArtifactKey,
     ExtensionsObject,

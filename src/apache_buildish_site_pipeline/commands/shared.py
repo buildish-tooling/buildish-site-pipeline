@@ -21,7 +21,9 @@ from pathlib import Path
 
 from apache_buildish_site_pipeline.models import ProviderSnapshotV1
 from apache_buildish_site_pipeline.models.catalog import CatalogDocumentV1
-from apache_buildish_site_pipeline.models.component_repository import ComponentRepositoryDocumentV1
+from apache_buildish_site_pipeline.models.component_repository import (
+    ComponentRepositoryDocumentV1,
+)
 from apache_buildish_site_pipeline.models.enums import DocumentFormat
 from apache_buildish_site_pipeline.models.loading import (
     LoadingError,
@@ -51,7 +53,9 @@ class LoadedWorkspaceInputs:
     provider_snapshot_path: Path | None
 
 
-def load_workspace_inputs(workspace_root: Path, catalog_path: Path | None = None) -> LoadedWorkspaceInputs:
+def load_workspace_inputs(
+    workspace_root: Path, catalog_path: Path | None = None
+) -> LoadedWorkspaceInputs:
     """Load default catalog, provider snapshot, and component metadata inputs."""
 
     resolved_workspace_root = workspace_root.resolve(strict=False)
@@ -71,7 +75,9 @@ def load_workspace_inputs(workspace_root: Path, catalog_path: Path | None = None
             source_name=str(resolved_catalog_path),
         )
         provider_snapshot, provider_snapshot_path = _load_provider_snapshot(site_root)
-        component_documents = _load_component_documents(resolved_workspace_root, catalog)
+        component_documents = _load_component_documents(
+            resolved_workspace_root, catalog
+        )
     except LoadingError as exc:
         raise InvocationError(str(exc)) from exc
     return LoadedWorkspaceInputs(
@@ -112,13 +118,17 @@ def _load_component_documents(
     catalog: CatalogDocumentV1,
 ) -> dict[str, ComponentRepositoryDocumentV1]:
     component_documents: dict[str, ComponentRepositoryDocumentV1] = {}
-    default_metadata_file = catalog.defaults.metadata_file if catalog.defaults is not None else None
+    default_metadata_file = (
+        catalog.defaults.metadata_file if catalog.defaults is not None else None
+    )
     sources = catalog.sources or {}
     for component in catalog.components:
         source_key = component.content.source if component.content is not None else None
         if source_key is not None:
             source_binding = sources[source_key]
-            repository_root = (repo_root / source_binding.local_dir).resolve(strict=False)
+            repository_root = (repo_root / source_binding.local_dir).resolve(
+                strict=False
+            )
             metadata_file = source_binding.metadata_file or default_metadata_file
         elif component.local_dir is not None:
             repository_root = (repo_root / component.local_dir).resolve(strict=False)
@@ -129,7 +139,9 @@ def _load_component_documents(
             continue
         metadata_path = (repository_root / metadata_file).resolve(strict=False)
         if not metadata_path.is_relative_to(repository_root):
-            raise InvocationError(f"Component metadata path escapes its repository root: {metadata_path}")
+            raise InvocationError(
+                f"Component metadata path escapes its repository root: {metadata_path}"
+            )
         if not metadata_path.exists():
             continue
         component_documents[component.slug] = load_component_repository_document(

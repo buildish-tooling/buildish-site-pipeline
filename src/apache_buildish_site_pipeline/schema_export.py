@@ -27,6 +27,7 @@ import json
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
+import sys
 from typing import Any
 
 from pydantic import Field, TypeAdapter, create_model
@@ -47,7 +48,9 @@ from apache_buildish_site_pipeline.models.aggregates import (
 )
 from apache_buildish_site_pipeline.models.base import SitePipelineBaseModel
 from apache_buildish_site_pipeline.models.catalog import CatalogDocumentV1
-from apache_buildish_site_pipeline.models.component_repository import ComponentRepositoryDocumentV1
+from apache_buildish_site_pipeline.models.component_repository import (
+    ComponentRepositoryDocumentV1,
+)
 from apache_buildish_site_pipeline.models.planning_stage_contract import (
     CheckReportV1,
     PipelineDiagnosticEntry,
@@ -56,7 +59,9 @@ from apache_buildish_site_pipeline.models.planning_stage_contract import (
     StageRunReportV1,
 )
 from apache_buildish_site_pipeline.models.provider_snapshot import ProviderSnapshotV1
-from apache_buildish_site_pipeline.models.staged_front_matter import PipelineFrontMatterNamespace
+from apache_buildish_site_pipeline.models.staged_front_matter import (
+    PipelineFrontMatterNamespace,
+)
 from apache_buildish_site_pipeline.staging.incremental_metadata import (
     AggregateDependencyMapV1,
     OutputOwnershipMapV1,
@@ -64,7 +69,9 @@ from apache_buildish_site_pipeline.staging.incremental_metadata import (
 )
 
 _JSON_SCHEMA_DRAFT_202012 = "https://json-schema.org/draft/2020-12/schema"
-_PUBLISHED_SCHEMA_BASE_URL = "https://buildish.apache.org/components/site-pipeline/schemas"
+_PUBLISHED_SCHEMA_BASE_URL = (
+    "https://buildish.apache.org/components/site-pipeline/schemas"
+)
 _GENERATED_COMMENT = "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`."
 
 SchemaBuilder = Callable[[], dict[str, Any]]
@@ -87,7 +94,9 @@ def _model_schema(model: type[SitePipelineBaseModel]) -> SchemaBuilder:
     return build
 
 
-def _items_file_schema(*, model_name: str, item_model: type[SitePipelineBaseModel], items_description: str) -> SchemaBuilder:
+def _items_file_schema(
+    *, model_name: str, item_model: type[SitePipelineBaseModel], items_description: str
+) -> SchemaBuilder:
     def build() -> dict[str, Any]:
         item_schema = item_model.model_json_schema(by_alias=True)
         defs = item_schema.pop("$defs", None)
@@ -329,7 +338,10 @@ def write_schema_files(output_dir: Path) -> tuple[Path, ...]:
     written_paths: list[Path] = []
     for export in schema_exports():
         output_path = output_dir / export.filename
-        output_path.write_text(json.dumps(build_schema_document(export), indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        output_path.write_text(
+            json.dumps(build_schema_document(export), indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
         written_paths.append(output_path)
     return tuple(written_paths)
 
@@ -341,8 +353,14 @@ def write_authored_schema_files(output_dir: Path) -> tuple[Path, ...]:
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="python -m apache_buildish_site_pipeline.schema_export")
-    parser.add_argument("--output-dir", default="schemas", help="Directory that should receive the generated JSON Schema files.")
+    parser = argparse.ArgumentParser(
+        prog="python -m apache_buildish_site_pipeline.schema_export"
+    )
+    parser.add_argument(
+        "--output-dir",
+        default="schemas",
+        help="Directory that should receive the generated JSON Schema files.",
+    )
     return parser
 
 
@@ -351,7 +369,8 @@ def main(argv: list[str] | None = None) -> int:
 
     args = _build_parser().parse_args(argv)
     for output_path in write_schema_files(Path(args.output_dir)):
-        print(output_path.as_posix())
+        sys.stdout.write(output_path.as_posix())  # noqa: TID251
+        sys.stdout.write("\n")  # noqa: TID251
     return 0
 
 

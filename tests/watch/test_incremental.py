@@ -307,12 +307,11 @@ class WatchIncrementalTests(unittest.TestCase):
             probe_thread = threading.Thread(target=_probe)
             probe_thread.start()
             try:
-                with _cwd(workspace_root):
-                    with unittest.mock.patch(
-                        "apache_buildish_site_pipeline.commands.watch.watch",
-                        return_value=_MutatingRawEventBatches(),
-                    ):
-                        exit_code = _run(argv=["watch"], stdout=io.StringIO(), stderr=io.StringIO())
+                with _cwd(workspace_root), unittest.mock.patch(
+                    "apache_buildish_site_pipeline.commands.watch.watch",
+                    return_value=_MutatingRawEventBatches(),
+                ):
+                    exit_code = _run(argv=["watch"], stdout=io.StringIO(), stderr=io.StringIO())
             finally:
                 stop_event.set()
                 probe_thread.join(timeout=5)
@@ -324,12 +323,11 @@ class WatchIncrementalTests(unittest.TestCase):
 def _run_watch_then_snapshot(*, workspace_root, responses: list[tuple[bool, object]]) -> dict[str, object]:
     stdout = io.StringIO()
     stderr = io.StringIO()
-    with _cwd(workspace_root):
-        with unittest.mock.patch(
-            "apache_buildish_site_pipeline.commands.watch._open_watch_event_stream",
-            new=_fake_watch_event_stream_factory(responses=responses),
-        ):
-            exit_code = _run(argv=["watch"], stdout=stdout, stderr=stderr)
+    with _cwd(workspace_root), unittest.mock.patch(
+        "apache_buildish_site_pipeline.commands.watch._open_watch_event_stream",
+        new=_fake_watch_event_stream_factory(responses=responses),
+    ):
+        exit_code = _run(argv=["watch"], stdout=stdout, stderr=stderr)
 
     if exit_code != 0:
         raise AssertionError(f"watch exited {exit_code}: {stderr.getvalue()}")
@@ -361,12 +359,11 @@ def _run_watch_then_snapshot_from_raw_batches(
             self._batch_index += 1
             return batch
 
-    with _cwd(workspace_root):
-        with unittest.mock.patch(
-            "apache_buildish_site_pipeline.commands.watch.watch",
-            return_value=_MutatingRawEventBatches(),
-        ):
-            exit_code = _run(argv=["watch"], stdout=stdout, stderr=stderr)
+    with _cwd(workspace_root), unittest.mock.patch(
+        "apache_buildish_site_pipeline.commands.watch.watch",
+        return_value=_MutatingRawEventBatches(),
+    ):
+        exit_code = _run(argv=["watch"], stdout=stdout, stderr=stderr)
 
     if exit_code != 0:
         raise AssertionError(f"watch exited {exit_code}: {stderr.getvalue()}")

@@ -36,7 +36,11 @@ def run_site_pages_unit(spec: WorkerSpecWire) -> WorkerResultWire:
         relative_path = source_path.relative_to(source_root)
         destination_path = target_root / relative_path
         if is_page_path(source_path):
-            stage_authored_page(source_path=source_path, destination_path=destination_path, namespace=None)
+            stage_authored_page(
+                source_path=source_path,
+                destination_path=destination_path,
+                namespace=None,
+            )
             page_files_written += 1
         else:
             destination_path.parent.mkdir(parents=True, exist_ok=True)

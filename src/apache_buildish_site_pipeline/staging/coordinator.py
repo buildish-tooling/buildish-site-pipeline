@@ -26,18 +26,38 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from apache_buildish_site_pipeline.cli.errors import RetainedStageError, StageIntegrityError
+from apache_buildish_site_pipeline.cli.errors import (
+    RetainedStageError,
+    StageIntegrityError,
+)
 from apache_buildish_site_pipeline.models import ProviderSnapshotV1
 from apache_buildish_site_pipeline.models.enums import RecordKind
-from apache_buildish_site_pipeline.models.planning_stage_contract import PipelineDiagnosticEntry, StageCommand, StageManifestV1
-from apache_buildish_site_pipeline.planning.types import ResolvedComponentConfig, SelectedVersionContext
+from apache_buildish_site_pipeline.models.planning_stage_contract import (
+    PipelineDiagnosticEntry,
+    StageCommand,
+    StageManifestV1,
+)
+from apache_buildish_site_pipeline.planning.types import (
+    ResolvedComponentConfig,
+    SelectedVersionContext,
+)
 
 from .front_matter import build_component_front_matter, build_version_context
 from .manifest_builder import build_stage_manifest
 from .ownership import OwnedContextInput, OwnedUnit, OwnedUnitKind, build_owned_units
-from .publication import StagePublicationResult, finalize_stage_publication, validate_visible_stage_target_path
+from .publication import (
+    StagePublicationResult,
+    finalize_stage_publication,
+    validate_visible_stage_target_path,
+)
 from .publication_paths import public_path_for_context
-from .types import BuildRequest, BuildRunOutcome, EffectiveBuildPlan, StageDestination, WorkRootLayout
+from .types import (
+    BuildRequest,
+    BuildRunOutcome,
+    EffectiveBuildPlan,
+    StageDestination,
+    WorkRootLayout,
+)
 from .worker_entrypoint import execute_worker_spec
 from .worker_protocol import (
     ComponentContextWire,
@@ -47,7 +67,12 @@ from .worker_protocol import (
     WorkerSpecWire,
     WorkerStageMetaWire,
 )
-from .workdirs import RunWorkspace, create_work_root_layout, prepare_next_stage_root, remove_work_root
+from .workdirs import (
+    RunWorkspace,
+    create_work_root_layout,
+    prepare_next_stage_root,
+    remove_work_root,
+)
 
 
 _WORKER_PROCESS_TIMEOUT_SECONDS = 120.0
@@ -66,7 +91,9 @@ def run_build(request: BuildRequest) -> BuildRunOutcome:
                 removals=request.seed_stage_removals,
             )
         units = build_owned_units(request.build_plan)
-        worker_results, built_unit_ids = _run_owned_units(request=request, layout=layout, units=units)
+        worker_results, built_unit_ids = _run_owned_units(
+            request=request, layout=layout, units=units
+        )
         manifest = build_stage_manifest(
             layout=layout,
             command=request.command,
@@ -152,7 +179,9 @@ def publish_stage(
         return publication
     except Exception as error:
         if assembly_root is not None:
-            raise RetainedStageError(f"Retained failed stage assembly root for inspection: {temp_root}") from error
+            raise RetainedStageError(
+                f"Retained failed stage assembly root for inspection: {temp_root}"
+            ) from error
         shutil.rmtree(temp_root, ignore_errors=True)
         raise
 
@@ -164,9 +193,16 @@ def _run_owned_units(
     units: tuple[OwnedUnit, ...],
 ) -> tuple[tuple[WorkerResultWire, ...], tuple[str, ...]]:
     if request.included_unit_ids is not None:
-        units = tuple(unit for unit in units if unit.unit_id in request.included_unit_ids)
-    run_workspace = RunWorkspace(workspace_root=request.build_plan.workspace_root, layout=layout)
-    specs = tuple(_worker_spec_for_unit(unit=unit, request=request, run_workspace=run_workspace) for unit in units)
+        units = tuple(
+            unit for unit in units if unit.unit_id in request.included_unit_ids
+        )
+    run_workspace = RunWorkspace(
+        workspace_root=request.build_plan.workspace_root, layout=layout
+    )
+    specs = tuple(
+        _worker_spec_for_unit(unit=unit, request=request, run_workspace=run_workspace)
+        for unit in units
+    )
     if not specs:
         return (), ()
 
@@ -176,16 +212,24 @@ def _run_owned_units(
         if worker_count == 1
         else _run_worker_specs_in_pool(specs=specs, worker_count=worker_count)
     )
-    return tuple(result.require_success() for result in results), tuple(spec.unit_id for spec in specs)
+    return tuple(result.require_success() for result in results), tuple(
+        spec.unit_id for spec in specs
+    )
 
 
-def _seed_next_stage_root(*, candidate_stage_root: Path, seed_stage_root: Path, removals: tuple[str, ...]) -> None:
+def _seed_next_stage_root(
+    *, candidate_stage_root: Path, seed_stage_root: Path, removals: tuple[str, ...]
+) -> None:
     shutil.copytree(seed_stage_root, candidate_stage_root, dirs_exist_ok=True)
     normalized_candidate_root = candidate_stage_root.resolve(strict=False)
     for stage_relative_path in removals:
-        target_path = (candidate_stage_root / Path(stage_relative_path)).resolve(strict=False)
+        target_path = (candidate_stage_root / Path(stage_relative_path)).resolve(
+            strict=False
+        )
         if not target_path.is_relative_to(normalized_candidate_root):
-            raise StageIntegrityError(f"Seed-stage removal escapes candidate root: {stage_relative_path}")
+            raise StageIntegrityError(
+                f"Seed-stage removal escapes candidate root: {stage_relative_path}"
+            )
         if not target_path.exists():
             continue
         if target_path.is_dir():
@@ -194,7 +238,9 @@ def _seed_next_stage_root(*, candidate_stage_root: Path, seed_stage_root: Path, 
             target_path.unlink()
 
 
-def _worker_spec_for_unit(*, unit: OwnedUnit, request: BuildRequest, run_workspace: RunWorkspace) -> WorkerSpecWire:
+def _worker_spec_for_unit(
+    *, unit: OwnedUnit, request: BuildRequest, run_workspace: RunWorkspace
+) -> WorkerSpecWire:
     unit_workspace = run_workspace.workspace_for_unit(unit)
     stage_meta = WorkerStageMetaWire(
         content_roots=tuple(str(root) for root in unit_workspace.content_roots),
@@ -237,7 +283,11 @@ def _worker_spec_for_unit(*, unit: OwnedUnit, request: BuildRequest, run_workspa
             stage_meta=stage_meta,
         )
 
-    component = next(component for component in request.build_plan.site.components if component.slug == unit.component_slug)
+    component = next(
+        component
+        for component in request.build_plan.site.components
+        if component.slug == unit.component_slug
+    )
     component_front_matter = build_component_front_matter(
         component,
         tuple(context.context for context in unit.contexts),
@@ -247,7 +297,9 @@ def _worker_spec_for_unit(*, unit: OwnedUnit, request: BuildRequest, run_workspa
         localization = LocalizationWire(
             default_locale=component.localization.default_locale,
             supported_locales=tuple(component.localization.supported_locales or ()),
-            route_mode=component.localization.route_mode.value if component.localization.route_mode is not None else None,
+            route_mode=component.localization.route_mode.value
+            if component.localization.route_mode is not None
+            else None,
         )
     component_publication = PagePublicationWire(
         path=component.publication.component_path,
@@ -264,19 +316,42 @@ def _worker_spec_for_unit(*, unit: OwnedUnit, request: BuildRequest, run_workspa
         unit_root=str(unit_workspace.unit_root),
         fragment_path=str(unit_workspace.fragment_path),
         component_slug=component.slug,
-        component_pages_source=str(unit.component_pages_source) if unit.component_pages_source is not None else None,
-        component_pages_stage_root=str(run_workspace.layout.next_stage_root / "content" / "components" / component.slug / "pages"),
-        component_assets_source=str(unit.component_assets_source) if unit.component_assets_source is not None else None,
-        component_assets_stage_root=str(run_workspace.layout.next_stage_root / "static" / "components" / component.slug / "assets"),
+        component_pages_source=str(unit.component_pages_source)
+        if unit.component_pages_source is not None
+        else None,
+        component_pages_stage_root=str(
+            run_workspace.layout.next_stage_root
+            / "content"
+            / "components"
+            / component.slug
+            / "pages"
+        ),
+        component_assets_source=str(unit.component_assets_source)
+        if unit.component_assets_source is not None
+        else None,
+        component_assets_stage_root=str(
+            run_workspace.layout.next_stage_root
+            / "static"
+            / "components"
+            / component.slug
+            / "assets"
+        ),
         component_front_matter=component_front_matter,
         component_publication=component_publication,
         localization=localization,
-        contexts=tuple(_context_wire(component=component, owned_context=context, layout=run_workspace.layout) for context in unit.contexts),
+        contexts=tuple(
+            _context_wire(
+                component=component, owned_context=context, layout=run_workspace.layout
+            )
+            for context in unit.contexts
+        ),
         stage_meta=stage_meta,
     )
 
 
-def _run_worker_specs_in_pool(*, specs: tuple[WorkerSpecWire, ...], worker_count: int) -> tuple[WorkerResultWire, ...]:
+def _run_worker_specs_in_pool(
+    *, specs: tuple[WorkerSpecWire, ...], worker_count: int
+) -> tuple[WorkerResultWire, ...]:
     ordered_results: list[WorkerResultWire | None] = [None] * len(specs)
     with ThreadPoolExecutor(max_workers=worker_count) as executor:
         future_to_index = {
@@ -290,7 +365,11 @@ def _run_worker_specs_in_pool(*, specs: tuple[WorkerSpecWire, ...], worker_count
 
 def _run_worker_subprocess(spec: WorkerSpecWire) -> WorkerResultWire:
     completed = subprocess.run(
-        [sys.executable, "-m", "apache_buildish_site_pipeline.staging.worker_entrypoint"],
+        [
+            sys.executable,
+            "-m",
+            "apache_buildish_site_pipeline.staging.worker_entrypoint",
+        ],
         input=spec.model_dump_json(by_alias=True),
         capture_output=True,
         env=_worker_process_env(),
@@ -306,7 +385,9 @@ def _run_worker_subprocess(spec: WorkerSpecWire) -> WorkerResultWire:
     try:
         return WorkerResultWire.model_validate_json(completed.stdout).normalized()
     except ValidationError as exc:
-        raise StageIntegrityError(f"Worker {spec.unit_id!r} returned malformed JSON") from exc
+        raise StageIntegrityError(
+            f"Worker {spec.unit_id!r} returned malformed JSON"
+        ) from exc
 
 
 def _worker_process_env() -> dict[str, str]:
@@ -314,7 +395,9 @@ def _worker_process_env() -> dict[str, str]:
     python_path = os.pathsep.join(path for path in sys.path if path)
     if python_path:
         existing = env.get("PYTHONPATH")
-        env["PYTHONPATH"] = python_path if not existing else f"{python_path}{os.pathsep}{existing}"
+        env["PYTHONPATH"] = (
+            python_path if not existing else f"{python_path}{os.pathsep}{existing}"
+        )
     return env
 
 
@@ -328,11 +411,19 @@ def _context_wire(
     publication = component.publication
     public_path = public_path_for_context(publication=publication, context=context)
     public_url = f"{publication.origin.base_url.rstrip('/')}{public_path}"
-    version_context = build_version_context(component, context).model_dump(mode="json", by_alias=True, exclude_none=True)
+    version_context = build_version_context(component, context).model_dump(
+        mode="json", by_alias=True, exclude_none=True
+    )
     version_context["provider"] = {
-        "key": context.provider_record.provider if context.provider_record is not None else None,
-        "externalId": context.provider_record.external_id if context.provider_record is not None else None,
-        "externalUrl": context.provider_record.external_url if context.provider_record is not None else None,
+        "key": context.provider_record.provider
+        if context.provider_record is not None
+        else None,
+        "externalId": context.provider_record.external_id
+        if context.provider_record is not None
+        else None,
+        "externalUrl": context.provider_record.external_url
+        if context.provider_record is not None
+        else None,
     }
     page_kind = "docs-page"
     section = "docs"
@@ -358,7 +449,9 @@ def _context_wire(
         artifact_key=context.artifact_key,
         source_docs_root=str(docs_root) if docs_root is not None else None,
         source_assets_root=str(assets_root) if assets_root is not None else None,
-        content_stage_root=str(layout.next_stage_root / owned_context.content_stage_root),
+        content_stage_root=str(
+            layout.next_stage_root / owned_context.content_stage_root
+        ),
         static_stage_root=str(layout.next_stage_root / owned_context.static_stage_root),
         publication=PagePublicationWire(
             path=public_path,
@@ -376,7 +469,9 @@ def _context_wire(
     )
 
 
-def _source_root_for_context(root: Path | None, context: SelectedVersionContext) -> Path | None:
+def _source_root_for_context(
+    root: Path | None, context: SelectedVersionContext
+) -> Path | None:
     if root is None:
         return None
     if context.kind is RecordKind.RELEASED and context.version is not None:

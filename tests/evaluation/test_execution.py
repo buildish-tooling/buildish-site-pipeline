@@ -164,7 +164,7 @@ class EvaluationExecutionTests(unittest.TestCase):
                             {
                                 "fromPath": "/spark/development/docs/",
                                 "target": "release:spark/runtime@4.0.0",
-                            }
+                            },
                         ],
                     },
                 ),
@@ -368,7 +368,7 @@ class EvaluationExecutionTests(unittest.TestCase):
                                 "subjectRef": "artifact:spark/runtime",
                                 "targetRef": "artifact:spark/missing",
                                 "relation": "supports",
-                            }
+                            },
                         ],
                     },
                 ),
@@ -418,7 +418,7 @@ class EvaluationExecutionTests(unittest.TestCase):
                             "ref": "refs/heads/stable",
                             "externalId": "stable-2",
                         },
-                    ]
+                    ],
                 ),
             )
             result = run_evaluation(
@@ -430,39 +430,36 @@ class EvaluationExecutionTests(unittest.TestCase):
         self.assertTrue(any(diagnostic.code == "provider-context-ambiguous" for diagnostic in result.diagnostics))
 
     def test_route_inventory_limit_blocks_stage(self) -> None:
-        with tempfile.TemporaryDirectory() as tempdir:
-            with patch("apache_buildish_site_pipeline.evaluation.limits._ROUTE_INVENTORY_LIMIT", 1):
-                planning = _planning_eval(Path(tempdir))
-                result = run_evaluation(
-                    request=EvaluationRequest(mode=EvaluationMode.BUILD),
-                    planning=planning,
-                )
+        with tempfile.TemporaryDirectory() as tempdir, patch("apache_buildish_site_pipeline.evaluation.limits._ROUTE_INVENTORY_LIMIT", 1):
+            planning = _planning_eval(Path(tempdir))
+            result = run_evaluation(
+                request=EvaluationRequest(mode=EvaluationMode.BUILD),
+                planning=planning,
+            )
 
         limit_diagnostic = next(diagnostic for diagnostic in result.diagnostics if diagnostic.code == "operational-limit-exceeded")
         self.assertFalse(result.stage_gate.allowed)
         self.assertEqual(limit_diagnostic.details["metric"], "routeInventoryCount")
 
     def test_selected_version_context_limit_blocks_stage(self) -> None:
-        with tempfile.TemporaryDirectory() as tempdir:
-            with patch("apache_buildish_site_pipeline.evaluation.limits._SELECTED_VERSION_CONTEXT_LIMIT", 1):
-                planning = _planning_eval(Path(tempdir))
-                result = run_evaluation(
-                    request=EvaluationRequest(mode=EvaluationMode.BUILD),
-                    planning=planning,
-                )
+        with tempfile.TemporaryDirectory() as tempdir, patch("apache_buildish_site_pipeline.evaluation.limits._SELECTED_VERSION_CONTEXT_LIMIT", 1):
+            planning = _planning_eval(Path(tempdir))
+            result = run_evaluation(
+                request=EvaluationRequest(mode=EvaluationMode.BUILD),
+                planning=planning,
+            )
 
         limit_diagnostic = next(diagnostic for diagnostic in result.diagnostics if diagnostic.code == "operational-limit-exceeded")
         self.assertFalse(result.stage_gate.allowed)
         self.assertEqual(limit_diagnostic.details["metric"], "selectedVersionContextCount")
 
     def test_provider_snapshot_size_limit_blocks_stage(self) -> None:
-        with tempfile.TemporaryDirectory() as tempdir:
-            with patch("apache_buildish_site_pipeline.evaluation.limits._PROVIDER_SNAPSHOT_BYTES_LIMIT", 1):
-                planning = _planning_eval(Path(tempdir))
-                result = run_evaluation(
-                    request=EvaluationRequest(mode=EvaluationMode.BUILD),
-                    planning=planning,
-                )
+        with tempfile.TemporaryDirectory() as tempdir, patch("apache_buildish_site_pipeline.evaluation.limits._PROVIDER_SNAPSHOT_BYTES_LIMIT", 1):
+            planning = _planning_eval(Path(tempdir))
+            result = run_evaluation(
+                request=EvaluationRequest(mode=EvaluationMode.BUILD),
+                planning=planning,
+            )
 
         limit_diagnostic = next(diagnostic for diagnostic in result.diagnostics if diagnostic.code == "operational-limit-exceeded")
         self.assertFalse(result.stage_gate.allowed)
@@ -556,7 +553,7 @@ def _catalog(
                                 "releases": [{"version": "4.0.0"}],
                             },
                             **(spark_artifact or {}),
-                        }
+                        },
                     ],
                 },
                 {
@@ -569,7 +566,7 @@ def _catalog(
                             "source": "runtime-two",
                             "versioning": {"developmentRef": "main", "tagPattern": "^v.*$"},
                             **(flink_artifact or {}),
-                        }
+                        },
                     ],
                 },
             ],

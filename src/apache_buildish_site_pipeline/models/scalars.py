@@ -37,25 +37,41 @@ from .validation.paths import (
 )
 from .validation.regex import validate_regex_string
 from .validation.references import validate_reference_string
-from .validation.urls import validate_hostname_string, validate_provider_base_url, validate_url_string
+from .validation.urls import (
+    validate_hostname_string,
+    validate_provider_base_url,
+    validate_url_string,
+)
 
 NonEmptyString = Annotated[str, StringConstraints(min_length=1)]
 NonNegativeInteger = Annotated[int, Field(strict=True, ge=0)]
 PositiveInteger = Annotated[int, Field(strict=True, gt=0)]
 
-Identifier = Annotated[str, StringConstraints(min_length=1), AfterValidator(validate_identifier)]
+Identifier = Annotated[
+    str, StringConstraints(min_length=1), AfterValidator(validate_identifier)
+]
 Slug = Annotated[str, StringConstraints(min_length=1), AfterValidator(validate_slug)]
-ArtifactKey = Annotated[str, StringConstraints(min_length=1), AfterValidator(validate_artifact_key)]
+ArtifactKey = Annotated[
+    str, StringConstraints(min_length=1), AfterValidator(validate_artifact_key)
+]
 OriginKey = Identifier
-SourceKey = Annotated[str, StringConstraints(min_length=1), AfterValidator(validate_source_key)]
-ProviderKey = Annotated[str, StringConstraints(min_length=1), AfterValidator(validate_provider_key)]
+SourceKey = Annotated[
+    str, StringConstraints(min_length=1), AfterValidator(validate_source_key)
+]
+ProviderKey = Annotated[
+    str, StringConstraints(min_length=1), AfterValidator(validate_provider_key)
+]
 VersionString = Annotated[
     str,
     StringConstraints(min_length=1),
     AfterValidator(validate_version_string),
 ]
-RefString = Annotated[str, StringConstraints(min_length=1), AfterValidator(validate_ref_string)]
-RegexString = Annotated[str, StringConstraints(min_length=1), AfterValidator(validate_regex_string)]
+RefString = Annotated[
+    str, StringConstraints(min_length=1), AfterValidator(validate_ref_string)
+]
+RegexString = Annotated[
+    str, StringConstraints(min_length=1), AfterValidator(validate_regex_string)
+]
 ReferenceString = Annotated[
     str,
     StringConstraints(min_length=1),
@@ -93,7 +109,9 @@ HostnameString = Annotated[
     StringConstraints(min_length=1),
     AfterValidator(validate_hostname_string),
 ]
-UrlString = Annotated[str, StringConstraints(min_length=1), AfterValidator(validate_url_string)]
+UrlString = Annotated[
+    str, StringConstraints(min_length=1), AfterValidator(validate_url_string)
+]
 ProviderBaseUrl = Annotated[
     str,
     StringConstraints(min_length=1),

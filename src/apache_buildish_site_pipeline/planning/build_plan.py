@@ -16,11 +16,20 @@
 
 from __future__ import annotations
 
-from apache_buildish_site_pipeline.models.enums import MaterializationStatus, PlanningTarget
+from apache_buildish_site_pipeline.models.enums import (
+    MaterializationStatus,
+    PlanningTarget,
+)
 
 from apache_buildish_site_pipeline.staging.types import EffectiveBuildPlan
 
-from .types import PlanToBuildBridge, ResolvedLocalInput, ResolvedSiteConfig, SelectedVersionSet, WatchInputPlan
+from .types import (
+    PlanToBuildBridge,
+    ResolvedLocalInput,
+    ResolvedSiteConfig,
+    SelectedVersionSet,
+    WatchInputPlan,
+)
 
 
 def build_effective_build_plan(
@@ -38,7 +47,9 @@ def build_effective_build_plan(
         for local_input in local_inputs
         if local_input.readiness.status is not MaterializationStatus.PRESENT
     )
-    watch_ready = target is PlanningTarget.BUILD or (watch_plan is not None and len(watch_plan.roots) > 0)
+    watch_ready = target is PlanningTarget.BUILD or (
+        watch_plan is not None and len(watch_plan.roots) > 0
+    )
     bridge = PlanToBuildBridge(
         ready=selected_versions.deterministic and not blocking_inputs and watch_ready,
         blocking_inputs=blocking_inputs,

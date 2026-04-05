@@ -25,7 +25,9 @@ from ..worker_protocol import WorkerResultWire, WorkerSpecWire
 def run_site_assets_unit(spec: WorkerSpecWire) -> WorkerResultWire:
     """Stage site-owned static assets into the site static subtree."""
 
-    files_written = _copy_tree(Path(spec.site_assets_source or ""), Path(spec.stage_meta.static_roots[0]))
+    files_written = _copy_tree(
+        Path(spec.site_assets_source or ""), Path(spec.stage_meta.static_roots[0])
+    )
     return WorkerResultWire(
         unit_id=spec.unit_id,
         files_written=files_written,

@@ -19,7 +19,13 @@ from __future__ import annotations
 from ..commands.build import run_build
 from ..commands.check import run_check
 from ..commands.plan import run_plan
-from .contract import BuildInvocation, CheckInvocation, CommandInvocation, CommandResult, PlanInvocation
+from .contract import (
+    BuildInvocation,
+    CheckInvocation,
+    CommandInvocation,
+    CommandResult,
+    PlanInvocation,
+)
 
 
 def dispatch_command(invocation: CommandInvocation) -> CommandResult:

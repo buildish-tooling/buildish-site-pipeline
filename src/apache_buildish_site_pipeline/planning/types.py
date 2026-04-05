@@ -44,8 +44,13 @@ from apache_buildish_site_pipeline.models.enums import (
     RouteMode,
     WithdrawalBehavior,
 )
-from apache_buildish_site_pipeline.models.planning_stage_contract import PipelineDiagnosticEntry
-from apache_buildish_site_pipeline.models.provider_snapshot import ProviderAsset, ProviderDescriptor
+from apache_buildish_site_pipeline.models.planning_stage_contract import (
+    PipelineDiagnosticEntry,
+)
+from apache_buildish_site_pipeline.models.provider_snapshot import (
+    ProviderAsset,
+    ProviderDescriptor,
+)
 
 if TYPE_CHECKING:
     from apache_buildish_site_pipeline.staging.types import EffectiveBuildPlan

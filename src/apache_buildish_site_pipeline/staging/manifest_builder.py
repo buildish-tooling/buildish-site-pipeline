@@ -18,7 +18,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from apache_buildish_site_pipeline.models.planning_stage_contract import StageCommand, StageManifestV1
+from apache_buildish_site_pipeline.models.planning_stage_contract import (
+    StageCommand,
+    StageManifestV1,
+)
 from apache_buildish_site_pipeline.models.provider_snapshot import ProviderSnapshotV1
 
 from .aggregates import finalize_pages_and_write_aggregates

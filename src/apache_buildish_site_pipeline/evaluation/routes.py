@@ -16,15 +16,28 @@
 
 from __future__ import annotations
 
-from apache_buildish_site_pipeline.models.enums import DiagnosticSeverity, RecordKind, WithdrawalBehavior
+from apache_buildish_site_pipeline.models.enums import (
+    DiagnosticSeverity,
+    RecordKind,
+    WithdrawalBehavior,
+)
 
 from . import diagnostic_codes
 from .collector import DiagnosticCollector
 from .publication import public_path_for_context, target_id_for_context
-from .reference_index import KnownRoute, build_reference_index, resolve_internal_reference, route_from_published_target
+from .reference_index import (
+    KnownRoute,
+    build_reference_index,
+    resolve_internal_reference,
+    route_from_published_target,
+)
 from .types import PublicationIndex, RouteInventory
 
-from apache_buildish_site_pipeline.planning.types import PlanningEvaluation, ResolvedComponentConfig, SelectedVersionContext
+from apache_buildish_site_pipeline.planning.types import (
+    PlanningEvaluation,
+    ResolvedComponentConfig,
+    SelectedVersionContext,
+)
 
 
 def validate_routes(
@@ -34,7 +47,9 @@ def validate_routes(
 ) -> RouteInventory:
     """Validate shared route occupancy and redirect targets for the resolved plan."""
 
-    component_by_slug = {component.slug: component for component in planning.site.components}
+    component_by_slug = {
+        component.slug: component for component in planning.site.components
+    }
     routes_by_lookup_key: dict[tuple[str, str], KnownRoute] = {}
     targets_by_reference: dict[str, KnownRoute] = {}
     redirect_edges: dict[tuple[str, str], tuple[str, str]] = {}
@@ -65,7 +80,11 @@ def validate_routes(
             targets_by_reference[reference] = route
 
     for component in planning.site.components:
-        _validate_canonical_path(component=component, routes_by_lookup_key=routes_by_lookup_key, collector=collector)
+        _validate_canonical_path(
+            component=component,
+            routes_by_lookup_key=routes_by_lookup_key,
+            collector=collector,
+        )
         _register_aliases(
             component=component,
             collector=collector,
@@ -107,14 +126,21 @@ def validate_routes(
         route_count=(
             len(publication_index.targets)
             + len(planning.selected_versions.contexts)
-            + sum(len(component.publication.aliases) for component in planning.site.components)
+            + sum(
+                len(component.publication.aliases)
+                for component in planning.site.components
+            )
         ),
         redirect_count=(
-            sum(len(component.publication.redirects) for component in planning.site.components)
+            sum(
+                len(component.publication.redirects)
+                for component in planning.site.components
+            )
             + sum(
                 1
                 for context in planning.selected_versions.contexts
-                if context.withdrawal_behavior is WithdrawalBehavior.REDIRECT and context.redirect_target is not None
+                if context.withdrawal_behavior is WithdrawalBehavior.REDIRECT
+                and context.redirect_target is not None
             )
         ),
     )
@@ -129,8 +155,14 @@ def _validate_canonical_path(
     canonical_path = component.publication.canonical_path
     if canonical_path is None:
         return
-    route = routes_by_lookup_key.get(_route_lookup_key(component.publication.origin.key, canonical_path))
-    if route is not None and route.component_slug == component.slug and route.route_kind != "redirect":
+    route = routes_by_lookup_key.get(
+        _route_lookup_key(component.publication.origin.key, canonical_path)
+    )
+    if (
+        route is not None
+        and route.component_slug == component.slug
+        and route.route_kind != "redirect"
+    ):
         return
     collector.add(
         severity=DiagnosticSeverity.ERROR,
@@ -158,7 +190,9 @@ def _register_aliases(
             component_slug=component.slug,
             route_kind="alias",
         )
-        _register_route(route=route, collector=collector, routes_by_lookup_key=routes_by_lookup_key)
+        _register_route(
+            route=route, collector=collector, routes_by_lookup_key=routes_by_lookup_key
+        )
 
 
 def _register_redirect_sources(
@@ -175,7 +209,9 @@ def _register_redirect_sources(
             component_slug=component.slug,
             route_kind="redirect",
         )
-        _register_route(route=route, collector=collector, routes_by_lookup_key=routes_by_lookup_key)
+        _register_route(
+            route=route, collector=collector, routes_by_lookup_key=routes_by_lookup_key
+        )
 
 
 def _register_route(
@@ -205,7 +241,9 @@ def _register_route(
     )
 
 
-def _allows_shared_context_route(*, existing: KnownRoute, candidate: KnownRoute) -> bool:
+def _allows_shared_context_route(
+    *, existing: KnownRoute, candidate: KnownRoute
+) -> bool:
     if existing.component_slug != candidate.component_slug:
         return False
     if candidate.route_kind != "context":
@@ -242,7 +280,10 @@ def _validate_context_redirect_target(
     reference_index,
     redirect_edges: dict[tuple[str, str], tuple[str, str]],
 ) -> None:
-    if context.withdrawal_behavior is not WithdrawalBehavior.REDIRECT or context.redirect_target is None:
+    if (
+        context.withdrawal_behavior is not WithdrawalBehavior.REDIRECT
+        or context.redirect_target is None
+    ):
         return
     component = component_by_slug[context.component_slug]
     source_path = public_path_for_context(component.publication, context)
@@ -273,7 +314,7 @@ def _validate_redirect_target(
     artifact_key: str | None = None,
     target_id: str | None = None,
 ) -> None:
-    if reference.startswith("http://") or reference.startswith("https://"):
+    if reference.startswith(("http://", "https://")):
         return
     resolved_target = resolve_internal_reference(
         reference=reference,
@@ -291,12 +332,18 @@ def _validate_redirect_target(
             component_slug=component_slug,
             artifact_key=artifact_key,
             target_id=target_id,
-            details={"redirectId": redirect_id, "target": reference, "fromPath": source_path},
+            details={
+                "redirectId": redirect_id,
+                "target": reference,
+                "fromPath": source_path,
+            },
         )
         return
-    redirect_edges[_route_lookup_key(source_origin_key, source_path)] = _route_lookup_key(
-        resolved_target.origin_key,
-        resolved_target.path,
+    redirect_edges[_route_lookup_key(source_origin_key, source_path)] = (
+        _route_lookup_key(
+            resolved_target.origin_key,
+            resolved_target.path,
+        )
     )
 
 
@@ -319,7 +366,10 @@ def _validate_redirect_loops(
         if cycle_key in reported_cycles:
             continue
         reported_cycles.add(cycle_key)
-        cycle_labels = [f"{origin}:{routes_by_lookup_key[(origin, path)].path}" for origin, path in cycle]
+        cycle_labels = [
+            f"{origin}:{routes_by_lookup_key[(origin, path)].path}"
+            for origin, path in cycle
+        ]
         collector.add(
             severity=DiagnosticSeverity.ERROR,
             code=diagnostic_codes.REDIRECT_LOOP,
@@ -353,7 +403,9 @@ def _reference_string_for_context(context: SelectedVersionContext) -> str | None
     if context.kind is RecordKind.LINE_HEAD:
         return f"line:{context.component_slug}/{context.artifact_key}@{context.release_line}"
     if context.kind is RecordKind.RELEASED:
-        return f"release:{context.component_slug}/{context.artifact_key}@{context.version}"
+        return (
+            f"release:{context.component_slug}/{context.artifact_key}@{context.version}"
+        )
     return None
 
 

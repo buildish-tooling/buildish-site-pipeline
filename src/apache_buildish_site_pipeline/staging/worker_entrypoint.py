@@ -19,7 +19,12 @@ from __future__ import annotations
 import sys
 
 from .ownership import OwnedUnitKind
-from .units import run_component_unit, run_site_assets_unit, run_site_pages_unit, run_vendor_assets_unit
+from .units import (
+    run_component_unit,
+    run_site_assets_unit,
+    run_site_pages_unit,
+    run_vendor_assets_unit,
+)
 from .worker_protocol import WorkerResultWire, WorkerSpecWire, worker_failure_result
 
 
@@ -44,7 +49,9 @@ def execute_worker_spec(spec: WorkerSpecWire) -> WorkerResultWire:
         if unit_kind is OwnedUnitKind.VENDOR_ASSETS:
             return run_vendor_assets_unit(spec).normalized()
         return run_component_unit(spec).normalized()
-    except Exception as exc:  # pragma: no cover - exercised through the subprocess boundary.
+    except (
+        Exception
+    ) as exc:  # pragma: no cover - exercised through the subprocess boundary.
         return worker_failure_result(
             unit_id=spec.unit_id,
             category=exc.__class__.__name__,
@@ -58,8 +65,8 @@ def main() -> int:
 
     spec = WorkerSpecWire.model_validate_json(sys.stdin.read())
     result = execute_worker_spec(spec)
-    sys.stdout.write(result.model_dump_json(by_alias=True))
-    sys.stdout.write("\n")
+    sys.stdout.write(result.model_dump_json(by_alias=True))  # noqa: TID251
+    sys.stdout.write("\n")  # noqa: TID251
     return 0
 
 

@@ -16,7 +16,11 @@
 
 from __future__ import annotations
 
-from apache_buildish_site_pipeline.evaluation import EvaluationMode, EvaluationRequest, run_evaluation
+from apache_buildish_site_pipeline.evaluation import (
+    EvaluationMode,
+    EvaluationRequest,
+    run_evaluation,
+)
 from apache_buildish_site_pipeline.models.enums import PlanningTarget, StageCommand
 from apache_buildish_site_pipeline.planning import evaluate_planning
 from apache_buildish_site_pipeline.staging.coordinator import publish_stage
@@ -30,7 +34,9 @@ from .stage_report import build_stage_run_report
 def run_build(invocation: BuildInvocation) -> CommandResult:
     """Execute one `build` command."""
 
-    loaded_inputs = load_workspace_inputs(invocation.layout.workspace_root, invocation.layout.catalog_path)
+    loaded_inputs = load_workspace_inputs(
+        invocation.layout.workspace_root, invocation.layout.catalog_path
+    )
     planning = evaluate_planning(
         target=PlanningTarget.BUILD,
         catalog=loaded_inputs.catalog,
@@ -80,4 +86,8 @@ def run_build(invocation: BuildInvocation) -> CommandResult:
         workspace_root=invocation.layout.workspace_root,
         private_roots=(invocation.layout.work_root, invocation.layout.stage_root),
     )
-    return CommandResult(exit_code=ApplicationExitCode.SUCCESS, report=report, text_output=render_text_report(report))
+    return CommandResult(
+        exit_code=ApplicationExitCode.SUCCESS,
+        report=report,
+        text_output=render_text_report(report),
+    )

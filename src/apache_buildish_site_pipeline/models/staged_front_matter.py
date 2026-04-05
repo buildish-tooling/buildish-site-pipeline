@@ -56,7 +56,9 @@ class ResolvedOrigin(SitePipelineBaseModel):
     @model_validator(mode="after")
     def ensure_hostname_matches_base_url(self) -> Self:
         if self.hostname.lower() != extract_hostname_from_url(self.base_url).lower():
-            raise ValueError("ResolvedOrigin.hostname must match the hostname extracted from baseUrl")
+            raise ValueError(
+                "ResolvedOrigin.hostname must match the hostname extracted from baseUrl"
+            )
         return self
 
 
@@ -150,7 +152,9 @@ class VersionContext(SitePipelineBaseModel):
     @model_validator(mode="after")
     def ensure_path_and_url_pairs_stay_in_sync(self) -> Self:
         if (self.path is None) != (self.url is None):
-            raise ValueError("VersionContext path and url must either both be present or both be absent")
+            raise ValueError(
+                "VersionContext path and url must either both be present or both be absent"
+            )
         if (self.docs_path is None) != (self.docs_url is None):
             raise ValueError(
                 "VersionContext docsPath and docsUrl must either both be present or both be absent",

@@ -124,7 +124,9 @@ def _decode_document_text(document: str | bytes, *, source_name: str) -> str:
         ) from exc
 
 
-def _reject_duplicate_json_object(pairs: list[tuple[object, object]]) -> dict[object, object]:
+def _reject_duplicate_json_object(
+    pairs: list[tuple[object, object]],
+) -> dict[object, object]:
     mapping: dict[object, object] = {}
     for key, value in pairs:
         if key in mapping:
@@ -133,7 +135,9 @@ def _reject_duplicate_json_object(pairs: list[tuple[object, object]]) -> dict[ob
     return mapping
 
 
-def _require_mapping_root(raw_document: object, *, source_name: str) -> Mapping[str, object]:
+def _require_mapping_root(
+    raw_document: object, *, source_name: str
+) -> Mapping[str, object]:
     if not isinstance(raw_document, dict):
         raise DocumentRootTypeError(
             "Expected document root to be a mapping/object",
@@ -142,7 +146,9 @@ def _require_mapping_root(raw_document: object, *, source_name: str) -> Mapping[
     return cast(Mapping[str, object], raw_document)
 
 
-def load_yaml_mapping(document: str | bytes, *, source_name: str = "<memory>") -> Mapping[str, object]:
+def load_yaml_mapping(
+    document: str | bytes, *, source_name: str = "<memory>"
+) -> Mapping[str, object]:
     """Decode and parse one YAML document with duplicate-key rejection."""
     document_text = _decode_document_text(document, source_name=source_name)
     try:
@@ -161,11 +167,15 @@ def load_yaml_mapping(document: str | bytes, *, source_name: str = "<memory>") -
     return _require_mapping_root(raw_document, source_name=source_name)
 
 
-def load_json_mapping(document: str | bytes, *, source_name: str = "<memory>") -> Mapping[str, object]:
+def load_json_mapping(
+    document: str | bytes, *, source_name: str = "<memory>"
+) -> Mapping[str, object]:
     """Decode and parse one JSON document with duplicate-key rejection."""
     document_text = _decode_document_text(document, source_name=source_name)
     try:
-        raw_document = json.loads(document_text, object_pairs_hook=_reject_duplicate_json_object)
+        raw_document = json.loads(
+            document_text, object_pairs_hook=_reject_duplicate_json_object
+        )
     except DuplicateKeyError as exc:
         if exc.source_name is None:
             exc.source_name = source_name

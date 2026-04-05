@@ -34,8 +34,7 @@ class UrlValidationTests(unittest.TestCase):
 
     def test_rejects_disallowed_or_relative_urls(self) -> None:
         for value in ("javascript:alert(1)", "data:text/plain,hi", "/docs/latest", "https://user:pass@example.org"):
-            with self.subTest(value=value):
-                with self.assertRaises(ValueError):
+            with self.subTest(value=value), self.assertRaises(ValueError):
                     validate_url_string(value)
 
     def test_rejects_non_public_or_raw_api_provider_base_urls(self) -> None:
@@ -45,8 +44,7 @@ class UrlValidationTests(unittest.TestCase):
             "https://api.github.com/repos/apache/spark",
             "https://example.org/project?view=api",
         ):
-            with self.subTest(value=value):
-                with self.assertRaises(ValueError):
+            with self.subTest(value=value), self.assertRaises(ValueError):
                     validate_provider_base_url(value)
 
     def test_accepts_bare_hostnames_and_rejects_url_fragments(self) -> None:
@@ -54,6 +52,5 @@ class UrlValidationTests(unittest.TestCase):
         self.assertEqual(validate_hostname_string("203.0.113.10"), "203.0.113.10")
 
         for value in ("https://docs.example.org", "docs.example.org/path", "bad host"):
-            with self.subTest(value=value):
-                with self.assertRaises(ValueError):
+            with self.subTest(value=value), self.assertRaises(ValueError):
                     validate_hostname_string(value)

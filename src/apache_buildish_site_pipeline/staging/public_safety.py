@@ -18,7 +18,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from apache_buildish_site_pipeline.models.planning_stage_contract import PipelineDiagnosticEntry, ReducedDiagnosticDetailsSummary
+from apache_buildish_site_pipeline.models.planning_stage_contract import (
+    PipelineDiagnosticEntry,
+    ReducedDiagnosticDetailsSummary,
+)
 
 REDACTED_LOCAL_PATH = "[redacted-local-path]"
 _LOCAL_DETAIL_FIELDS = frozenset(
@@ -47,9 +50,15 @@ def sanitize_public_diagnostics(
     """Return diagnostics with machine-local path details sanitized for public output."""
 
     normalized_workspace_root = workspace_root.resolve(strict=False)
-    normalized_private_roots = tuple(root.resolve(strict=False) for root in private_roots)
+    normalized_private_roots = tuple(
+        root.resolve(strict=False) for root in private_roots
+    )
     return tuple(
-        _sanitize_diagnostic(entry, workspace_root=normalized_workspace_root, private_roots=normalized_private_roots)
+        _sanitize_diagnostic(
+            entry,
+            workspace_root=normalized_workspace_root,
+            private_roots=normalized_private_roots,
+        )
         for entry in diagnostics
     )
 
@@ -70,7 +79,9 @@ def _sanitize_diagnostic(
     workspace_root: Path,
     private_roots: tuple[Path, ...],
 ) -> PipelineDiagnosticEntry:
-    if entry.details is None or isinstance(entry.details, ReducedDiagnosticDetailsSummary):
+    if entry.details is None or isinstance(
+        entry.details, ReducedDiagnosticDetailsSummary
+    ):
         return entry
     return entry.model_copy(
         update={

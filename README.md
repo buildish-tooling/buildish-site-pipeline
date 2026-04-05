@@ -57,6 +57,10 @@ inputs, and emits metadata that a downstream renderer can consume.
 `site-pipeline preview` is also available for a deliberately barebones preview,
 but it is far away from a real rendered website.
 
+Human-facing diagnostics use a centralized CLI logger. Use `--quiet`,
+`--verbose`, or `--debug` on commands such as `site-pipeline watch` to adjust
+stderr log detail without changing explicit report or JSONL event outputs.
+
 ## Documentation
 
 - [Documentation index](docs/_index.md)

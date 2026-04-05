@@ -54,8 +54,12 @@ class RunWorkspace:
             unit_id=unit.unit_id,
             unit_root=unit_root,
             fragment_path=self.layout.fragments_root / f"{normalized_unit_id}.json",
-            content_roots=tuple(self.layout.next_stage_root / root for root in unit.content_stage_roots),
-            static_roots=tuple(self.layout.next_stage_root / root for root in unit.static_stage_roots),
+            content_roots=tuple(
+                self.layout.next_stage_root / root for root in unit.content_stage_roots
+            ),
+            static_roots=tuple(
+                self.layout.next_stage_root / root for root in unit.static_stage_roots
+            ),
         )
 
 
@@ -65,11 +69,17 @@ def prepare_next_stage_root(stage_root: Path) -> Path:
     normalized_stage_root = stage_root.resolve(strict=False)
     if normalized_stage_root.exists():
         if normalized_stage_root.is_symlink():
-            raise StageIntegrityError(f"Candidate stage root must not be a symlink: {normalized_stage_root}")
+            raise StageIntegrityError(
+                f"Candidate stage root must not be a symlink: {normalized_stage_root}"
+            )
         if not normalized_stage_root.is_dir():
-            raise StageIntegrityError(f"Candidate stage root must be a directory: {normalized_stage_root}")
+            raise StageIntegrityError(
+                f"Candidate stage root must be a directory: {normalized_stage_root}"
+            )
         if any(normalized_stage_root.iterdir()):
-            raise StageIntegrityError(f"Candidate stage root must be absent or empty: {normalized_stage_root}")
+            raise StageIntegrityError(
+                f"Candidate stage root must be absent or empty: {normalized_stage_root}"
+            )
     normalized_stage_root.mkdir(parents=True, exist_ok=True)
     return normalized_stage_root
 
@@ -80,7 +90,9 @@ def create_work_root_layout(*, next_stage_root: Path) -> WorkRootLayout:
     normalized_stage_root = next_stage_root.resolve(strict=False)
     parent_path = normalized_stage_root.parent
     parent_path.mkdir(parents=True, exist_ok=True)
-    work_root = Path(tempfile.mkdtemp(prefix=f".{normalized_stage_root.name}.work.", dir=parent_path))
+    work_root = Path(
+        tempfile.mkdtemp(prefix=f".{normalized_stage_root.name}.work.", dir=parent_path)
+    )
 
     layout = WorkRootLayout(
         work_root=work_root,

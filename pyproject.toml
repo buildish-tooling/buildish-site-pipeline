@@ -57,7 +57,48 @@ target-version = "py313"
 extend-exclude = ["tests"]
 
 [tool.ruff.lint]
-select = ["F", "B", "UP", "S"]
+select = [
+    # flake8-builtins
+    "A",
+    # flake8-bugbear
+    "B",
+    # flake8-future-annotations
+    "FA",
+    # flake8-datetimez
+    "DTZ",
+    # Pyflakes
+    "F",
+    # flake8-implicit-str-concat
+    "ISC",
+    # flake8-bandit
+    "S",
+    # pyupgrade
+    "UP",
+    # flake8-logging
+    "LOG",
+    # flake8-logging-format
+    "G",
+    # flake8-use-pathlib
+    "PTH",
+    # flake8-pyi
+    "PYI",
+    # flake8-pie
+    "PIE",
+    # flake8-return
+    "RET",
+    # flake8-self
+    "SLF",
+    # flake8-slots
+    "SLOT",
+    # print()
+    "T20",
+    # flake8-tidy-imports / banned APIs
+    "TID251",
+]
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"sys.stdout".msg = "Use the CLI logging/reporting helpers instead."
+"sys.stderr".msg = "Use the CLI logging/reporting helpers instead."
 
 [tool.ruff.lint.per-file-ignores]
 "src/apache_buildish_site_pipeline/models/__init__.py" = ["F401"]

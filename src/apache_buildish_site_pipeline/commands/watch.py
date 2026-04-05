@@ -24,19 +24,42 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from itertools import chain
+import logging
 from pathlib import Path
 from types import FrameType
 from typing import TextIO
 
 from watchfiles import DefaultFilter, watch
 
-from apache_buildish_site_pipeline.evaluation import EvaluationMode, EvaluationRequest, run_evaluation
-from apache_buildish_site_pipeline.models import DocumentFormat, PipelineDiagnosticEntry, load_stage_manifest
-from apache_buildish_site_pipeline.models.enums import DiagnosticSeverity, PlanningTarget, StageCommand
-from apache_buildish_site_pipeline.models.planning_stage_contract import StageManifestV1, StageRunReportV1
+from apache_buildish_site_pipeline.evaluation import (
+    EvaluationMode,
+    EvaluationRequest,
+    run_evaluation,
+)
+from apache_buildish_site_pipeline.models import (
+    DocumentFormat,
+    PipelineDiagnosticEntry,
+    load_stage_manifest,
+)
+from apache_buildish_site_pipeline.models.enums import (
+    DiagnosticSeverity,
+    PlanningTarget,
+    StageCommand,
+)
+from apache_buildish_site_pipeline.models.planning_stage_contract import (
+    StageManifestV1,
+    StageRunReportV1,
+)
 from apache_buildish_site_pipeline.planning import evaluate_planning
-from apache_buildish_site_pipeline.staging.coordinator import cleanup_after_publication, run_build
-from apache_buildish_site_pipeline.staging.incremental_metadata import COORDINATOR_OWNER_ID, RetainedStageIncrementalState, load_retained_stage_incremental_state
+from apache_buildish_site_pipeline.staging.coordinator import (
+    cleanup_after_publication,
+    run_build,
+)
+from apache_buildish_site_pipeline.staging.incremental_metadata import (
+    COORDINATOR_OWNER_ID,
+    RetainedStageIncrementalState,
+    load_retained_stage_incremental_state,
+)
 from apache_buildish_site_pipeline.staging.ownership import OwnedUnit, build_owned_units
 from apache_buildish_site_pipeline.staging.publication import (
     finalize_stage_publication,
@@ -44,7 +67,9 @@ from apache_buildish_site_pipeline.staging.publication import (
     validate_visible_stage_target_path,
 )
 from apache_buildish_site_pipeline.staging.types import BuildRequest, StageDestination
-from apache_buildish_site_pipeline.staging.worker_protocol import UnitContributionManifestWire
+from apache_buildish_site_pipeline.staging.worker_protocol import (
+    UnitContributionManifestWire,
+)
 
 from ..cli.contract import (
     ApplicationExitCode,
@@ -57,7 +82,13 @@ from ..cli.contract import (
     WatchInvocation,
     WatchReadyEvent,
 )
-from ..cli.errors import InvocationError, RetainedStageError, SitePipelineCliError, StageIntegrityError
+from ..cli.errors import (
+    InvocationError,
+    RetainedStageError,
+    SitePipelineCliError,
+    StageIntegrityError,
+)
+from ..cli.logging_support import log_lifecycle, log_trace
 from ..cli.reporting import (
     emit_report,
     render_text_report,
@@ -72,6 +103,7 @@ _WATCH_DEBOUNCE_MS = 250
 _WATCH_STEP_MS = 50
 _WATCH_RUST_TIMEOUT_MS = 250
 _WATCH_SHUTDOWN_SIGNALS = (signal.SIGINT, signal.SIGTERM)
+_LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -119,10 +151,8 @@ class _WatchShutdownController:
 class _WatchIo:
     """Process-local watch output routing for machine and human consumers."""
 
-    invocation: WatchInvocation
     event_request: WatchEventRequest | None
     event_sink: TextIO | None
-    stderr: TextIO
 
     def emit_cycle_event(self, report: StageRunReportV1) -> None:
         """Write one unstable machine-readable cycle event when enabled."""
@@ -149,34 +179,44 @@ class _WatchIo:
         dirty_paths: tuple[Path, ...],
         watch_roots: tuple[Path, ...],
     ) -> None:
-        """Write optional human-facing watch progress lines to stderr."""
+        """Write optional human-facing watch progress logs."""
 
-        if not self.invocation.verbose:
-            return
-        self._write_stderr(f"watch cycle {report.cycle}: {render_text_report(report)}")
-        if not self.invocation.debug:
+        log_lifecycle(
+            _LOGGER, "watch cycle %s: %s", report.cycle, render_text_report(report)
+        )
+        if _LOGGER.isEnabledFor(logging.INFO):
+            if dirty_paths:
+                _LOGGER.info("watch dirty path count: %s", len(dirty_paths))
+            else:
+                _LOGGER.info("watch dirty path count: <initial scan>")
+            _LOGGER.info("watch root count: %s", len(watch_roots))
+        if not _LOGGER.isEnabledFor(logging.DEBUG):
             return
         if dirty_paths:
-            self._write_stderr(
-                "watch debug dirty paths: " + ", ".join(str(path) for path in dirty_paths),
+            _LOGGER.debug(
+                "watch debug dirty paths: %s",
+                ", ".join(str(path) for path in dirty_paths),
             )
         else:
-            self._write_stderr("watch debug dirty paths: <initial scan>")
-        self._write_stderr(
-            "watch debug roots: " + ", ".join(str(path) for path in watch_roots),
+            _LOGGER.debug("watch debug dirty paths: <initial scan>")
+        _LOGGER.debug(
+            "watch debug roots: %s",
+            ", ".join(str(path) for path in watch_roots),
         )
 
     def _write_event(self, payload: WatchEvent) -> None:
         if self.event_request is None or self.event_sink is None:
-            raise AssertionError("Watch event sink must exist when unstable events are enabled")
+            raise AssertionError(
+                "Watch event sink must exist when unstable events are enabled"
+            )
         if self.event_request.event_format is not WatchEventFormat.JSONL:
-            raise AssertionError(f"Unsupported watch event format: {self.event_request.event_format!r}")
-        self.event_sink.write(json.dumps(payload.to_json_payload(), separators=(",", ":")) + "\n")
+            raise AssertionError(
+                f"Unsupported watch event format: {self.event_request.event_format!r}"
+            )
+        self.event_sink.write(
+            json.dumps(payload.to_json_payload(), separators=(",", ":")) + "\n"
+        )
         self.event_sink.flush()
-
-    def _write_stderr(self, message: str) -> None:
-        self.stderr.write(f"{message}\n")
-        self.stderr.flush()
 
 
 class _WatchEventStream:
@@ -194,8 +234,12 @@ class _WatchEventStream:
     ) -> None:
         self._stage_root = stage_root.resolve(strict=False)
         self._work_root = work_root.resolve(strict=False)
-        self._report_output = report_output.resolve(strict=False) if report_output is not None else None
-        self._event_output = event_output.resolve(strict=False) if event_output is not None else None
+        self._report_output = (
+            report_output.resolve(strict=False) if report_output is not None else None
+        )
+        self._event_output = (
+            event_output.resolve(strict=False) if event_output is not None else None
+        )
         self._stop_event = stop_event
         self._default_filter = DefaultFilter()
         self._raw_events = watch(
@@ -228,7 +272,10 @@ class _WatchEventStream:
                 if not wait_for_first or self._stop_event.is_set():
                     return None if self._stop_event.is_set() else ()
                 continue
-            dirty_paths.extend(Path(changed_path).resolve(strict=False) for _, changed_path in raw_changes)
+            dirty_paths.extend(
+                Path(changed_path).resolve(strict=False)
+                for _, changed_path in raw_changes
+            )
 
     def close(self) -> None:
         close = getattr(self._raw_events, "close", None)
@@ -236,7 +283,9 @@ class _WatchEventStream:
             close()
 
     def _watch_filter(self, change, changed_path: str) -> bool:
-        return self._default_filter(change, changed_path) and not _is_pipeline_owned_path(
+        return self._default_filter(
+            change, changed_path
+        ) and not _is_pipeline_owned_path(
             path=Path(changed_path),
             stage_root=self._stage_root,
             work_root=self._work_root,
@@ -245,7 +294,7 @@ class _WatchEventStream:
         )
 
 
-def run_watch(invocation: WatchInvocation, *, stdout: TextIO, stderr: TextIO) -> CommandResult:
+def run_watch(invocation: WatchInvocation, *, stdout: TextIO) -> CommandResult:
     """Run the initial watch cycle and continue rebuilding on watched changes."""
 
     watch_event_request = revalidate_watch_event_request(
@@ -259,23 +308,38 @@ def run_watch(invocation: WatchInvocation, *, stdout: TextIO, stderr: TextIO) ->
         and invocation.report_request.output_path is not None
         and watch_event_request.output_path == invocation.report_request.output_path
     ):
-        raise InvocationError("--unstable-events-output must differ from --report-output")
+        raise InvocationError(
+            "--unstable-events-output must differ from --report-output"
+        )
     invocation = WatchInvocation(
         layout=invocation.layout,
         fail_on_severity=invocation.fail_on_severity,
         report_request=invocation.report_request,
         unstable_event_request=watch_event_request,
-        verbose=invocation.verbose,
-        debug=invocation.debug,
     )
 
-    with _open_watch_event_output(request=watch_event_request, stdout=stdout) as event_sink:
+    with _open_watch_event_output(
+        request=watch_event_request, stdout=stdout
+    ) as event_sink:
         watch_io = _WatchIo(
-            invocation=invocation,
             event_request=watch_event_request,
             event_sink=event_sink,
-            stderr=stderr,
         )
+        if _LOGGER.isEnabledFor(logging.INFO):
+            _LOGGER.info(
+                "watch report sink: %s",
+                invocation.report_request.output_path
+                if invocation.report_request.output_path is not None
+                else "stdout",
+            )
+            _LOGGER.info(
+                "watch event sink: %s",
+                "disabled"
+                if watch_event_request is None
+                else watch_event_request.output_path
+                if watch_event_request.output_path is not None
+                else "stdout",
+            )
         trusted_stage = _load_trusted_stage(invocation.layout.stage_root)
         cycle_number = 1
         outcome = _run_watch_cycle(
@@ -291,30 +355,41 @@ def run_watch(invocation: WatchInvocation, *, stdout: TextIO, stderr: TextIO) ->
         )
         _emit_cycle_report(invocation=invocation, report=outcome.report, stdout=stdout)
         watch_io.emit_cycle_event(outcome.report)
-        watch_io.emit_cycle_log(report=outcome.report, dirty_paths=(), watch_roots=outcome.watch_roots)
+        watch_io.emit_cycle_log(
+            report=outcome.report, dirty_paths=(), watch_roots=outcome.watch_roots
+        )
 
         if not outcome.report.summary.stage_usable:
-            raise StageIntegrityError("Initial watch cycle failed before any trustworthy stage existed")
+            raise StageIntegrityError(
+                "Initial watch cycle failed before any trustworthy stage existed"
+            )
 
         watch_io.emit_ready(outcome.report)
         trusted_stage = outcome.trusted_stage
         last_report = outcome.report
         current_watch_roots = outcome.watch_roots
-        with _graceful_watch_shutdown() as shutdown_controller:
-            with _open_watch_event_stream(
+        with (
+            _graceful_watch_shutdown() as shutdown_controller,
+            _open_watch_event_stream(
                 watch_roots=current_watch_roots,
                 stage_root=invocation.layout.stage_root,
                 work_root=invocation.layout.work_root,
                 report_output=invocation.report_request.output_path,
-                event_output=watch_event_request.output_path if watch_event_request is not None else None,
+                event_output=watch_event_request.output_path
+                if watch_event_request is not None
+                else None,
                 stop_event=shutdown_controller.stop_event,
-            ) as event_stream:
-                while True:
-                    pending_dirty_paths = event_stream.collect_dirty_paths(wait_for_first=True)
-                    if pending_dirty_paths is None:
-                        return _watch_success_result(last_report)
+            ) as event_stream,
+        ):
+            while True:
+                pending_dirty_paths = event_stream.collect_dirty_paths(
+                    wait_for_first=True
+                )
+                if pending_dirty_paths is None:
+                    return _watch_success_result(last_report)
 
-                    cycle_number, trusted_stage, current_watch_roots, last_report = _run_follow_up_cycle(
+                cycle_number, trusted_stage, current_watch_roots, last_report = (
+                    _run_follow_up_cycle(
                         invocation=invocation,
                         cycle_number=cycle_number,
                         trusted_stage=trusted_stage,
@@ -323,16 +398,20 @@ def run_watch(invocation: WatchInvocation, *, stdout: TextIO, stderr: TextIO) ->
                         stdout=stdout,
                         watch_io=watch_io,
                     )
-                    if shutdown_controller.shutdown_requested:
-                        return _watch_success_result(last_report)
+                )
+                if shutdown_controller.shutdown_requested:
+                    return _watch_success_result(last_report)
 
-                    while True:
-                        pending_dirty_paths = event_stream.collect_dirty_paths(wait_for_first=False)
-                        if pending_dirty_paths is None:
-                            return _watch_success_result(last_report)
-                        if not pending_dirty_paths:
-                            break
-                        cycle_number, trusted_stage, current_watch_roots, last_report = _run_follow_up_cycle(
+                while True:
+                    pending_dirty_paths = event_stream.collect_dirty_paths(
+                        wait_for_first=False
+                    )
+                    if pending_dirty_paths is None:
+                        return _watch_success_result(last_report)
+                    if not pending_dirty_paths:
+                        break
+                    cycle_number, trusted_stage, current_watch_roots, last_report = (
+                        _run_follow_up_cycle(
                             invocation=invocation,
                             cycle_number=cycle_number,
                             trusted_stage=trusted_stage,
@@ -341,6 +420,7 @@ def run_watch(invocation: WatchInvocation, *, stdout: TextIO, stderr: TextIO) ->
                             stdout=stdout,
                             watch_io=watch_io,
                         )
+                    )
 
 
 def _run_follow_up_cycle(
@@ -356,6 +436,7 @@ def _run_follow_up_cycle(
     """Run one later watch cycle and enforce stage-integrity rules."""
 
     next_cycle_number = cycle_number + 1
+    log_trace(_LOGGER, "watch follow-up cycle %s starting", next_cycle_number)
     outcome = _run_watch_cycle(
         invocation=invocation,
         cycle_number=next_cycle_number,
@@ -365,10 +446,14 @@ def _run_follow_up_cycle(
     )
     _emit_cycle_report(invocation=invocation, report=outcome.report, stdout=stdout)
     watch_io.emit_cycle_event(outcome.report)
-    watch_io.emit_cycle_log(report=outcome.report, dirty_paths=dirty_paths, watch_roots=outcome.watch_roots)
+    watch_io.emit_cycle_log(
+        report=outcome.report, dirty_paths=dirty_paths, watch_roots=outcome.watch_roots
+    )
 
     if not outcome.report.summary.stage_usable:
-        raise StageIntegrityError(f"Watch cycle {next_cycle_number} left no trustworthy stage to serve")
+        raise StageIntegrityError(
+            f"Watch cycle {next_cycle_number} left no trustworthy stage to serve"
+        )
     return next_cycle_number, outcome.trusted_stage, outcome.watch_roots, outcome.report
 
 
@@ -391,7 +476,9 @@ def _run_watch_cycle(
     dirty_paths: tuple[Path, ...],
 ) -> WatchCycleOutcome:
     try:
-        loaded_inputs = load_workspace_inputs(invocation.layout.workspace_root, invocation.layout.catalog_path)
+        loaded_inputs = load_workspace_inputs(
+            invocation.layout.workspace_root, invocation.layout.catalog_path
+        )
         planning = evaluate_planning(
             target=PlanningTarget.WATCH,
             catalog=loaded_inputs.catalog,
@@ -419,7 +506,11 @@ def _run_watch_cycle(
             private_roots=(invocation.layout.work_root, invocation.layout.stage_root),
         )
 
-    planning_roots = planning.watch_plan.roots if planning.watch_plan is not None else prior_watch_roots
+    planning_roots = (
+        planning.watch_plan.roots
+        if planning.watch_plan is not None
+        else prior_watch_roots
+    )
     watch_roots = _derive_watch_roots(
         workspace_root=invocation.layout.workspace_root,
         site_root=invocation.layout.site_root,
@@ -434,11 +525,18 @@ def _run_watch_cycle(
                 succeeded=False,
                 wrote_stage=False,
                 stage_usable=trusted_stage is not None,
-                stage_root_path=trusted_stage.stage_root if trusted_stage is not None else None,
-                manifest_path=trusted_stage.manifest_path if trusted_stage is not None else None,
+                stage_root_path=trusted_stage.stage_root
+                if trusted_stage is not None
+                else None,
+                manifest_path=trusted_stage.manifest_path
+                if trusted_stage is not None
+                else None,
                 cycle=cycle_number,
                 workspace_root=invocation.layout.workspace_root,
-                private_roots=(invocation.layout.work_root, invocation.layout.stage_root),
+                private_roots=(
+                    invocation.layout.work_root,
+                    invocation.layout.stage_root,
+                ),
             ),
             trusted_stage=trusted_stage,
             watch_roots=watch_roots,
@@ -476,7 +574,8 @@ def _run_watch_cycle(
             trusted_stage=trusted_stage,
             prior_watch_roots=watch_roots,
             evaluation=evaluation,
-            diagnostics=tuple(evaluation.diagnostics) + (_build_cycle_failure_diagnostic(str(exc)),),
+            diagnostics=tuple(evaluation.diagnostics)
+            + (_build_cycle_failure_diagnostic(str(exc)),),
             workspace_root=invocation.layout.workspace_root,
             private_roots=(invocation.layout.work_root, invocation.layout.stage_root),
         )
@@ -493,7 +592,8 @@ def _run_watch_cycle(
             trusted_stage=trusted_stage,
             prior_watch_roots=watch_roots,
             evaluation=evaluation,
-            diagnostics=tuple(evaluation.diagnostics) + (_build_cycle_failure_diagnostic(str(exc)),),
+            diagnostics=tuple(evaluation.diagnostics)
+            + (_build_cycle_failure_diagnostic(str(exc)),),
             workspace_root=invocation.layout.workspace_root,
             private_roots=(invocation.layout.work_root, invocation.layout.stage_root),
         )
@@ -510,7 +610,11 @@ def _run_watch_cycle(
             prior_watch_roots=watch_roots,
             evaluation=evaluation,
             diagnostics=tuple(evaluation.diagnostics)
-            + (_build_cycle_failure_diagnostic("Published watch stage did not remain incrementally trusted"),),
+            + (
+                _build_cycle_failure_diagnostic(
+                    "Published watch stage did not remain incrementally trusted"
+                ),
+            ),
             workspace_root=invocation.layout.workspace_root,
             private_roots=(invocation.layout.work_root, invocation.layout.stage_root),
         )
@@ -544,7 +648,11 @@ def _select_incremental_build(
 ) -> IncrementalBuildSelection:
     units = build_owned_units(build_plan)
     current_unit_ids = frozenset(unit.unit_id for unit in units)
-    if trusted_stage is None or trusted_stage.incremental_state is None or not current_unit_ids:
+    if (
+        trusted_stage is None
+        or trusted_stage.incremental_state is None
+        or not current_unit_ids
+    ):
         return IncrementalBuildSelection()
 
     dirty_unit_ids = _dirty_unit_ids_for_paths(
@@ -559,7 +667,8 @@ def _select_incremental_build(
     retained_manifests = tuple(
         manifest
         for manifest in trusted_stage.incremental_state.unit_contributions.units
-        if manifest.unit_id in current_unit_ids and manifest.unit_id not in dirty_unit_ids
+        if manifest.unit_id in current_unit_ids
+        and manifest.unit_id not in dirty_unit_ids
     )
     seed_stage_removals = {
         str(claim.stage_relative_path)
@@ -594,29 +703,55 @@ def _dirty_unit_ids_for_paths(
     normalized_workspace_root = workspace_root.resolve(strict=False)
     normalized_site_root = site_root.resolve(strict=False)
     normalized_catalog_path = catalog_path.resolve(strict=False)
-    normalized_provider_snapshot_path = provider_snapshot_path.resolve(strict=False) if provider_snapshot_path is not None else None
+    normalized_provider_snapshot_path = (
+        provider_snapshot_path.resolve(strict=False)
+        if provider_snapshot_path is not None
+        else None
+    )
     dirty_unit_ids: set[str] = set()
     for dirty_path in dirty_paths:
         normalized_dirty_path = dirty_path.resolve(strict=False)
-        if normalized_dirty_path == normalized_catalog_path or normalized_dirty_path == normalized_provider_snapshot_path:
+        if normalized_dirty_path in (
+            normalized_catalog_path,
+            normalized_provider_snapshot_path,
+        ):
             return current_unit_ids
-        if _matches_stage_input(normalized_dirty_path, build_plan.site.site_pages_root) and "site-pages" in current_unit_ids:
+        if (
+            _matches_stage_input(normalized_dirty_path, build_plan.site.site_pages_root)
+            and "site-pages" in current_unit_ids
+        ):
             dirty_unit_ids.add("site-pages")
             continue
-        if _matches_stage_input(normalized_dirty_path, build_plan.site.site_assets_root) and "site-assets" in current_unit_ids:
+        if (
+            _matches_stage_input(
+                normalized_dirty_path, build_plan.site.site_assets_root
+            )
+            and "site-assets" in current_unit_ids
+        ):
             dirty_unit_ids.add("site-assets")
             continue
-        if any(_matches_stage_input(normalized_dirty_path, asset.source_path) for asset in build_plan.site.vendor_assets):
+        if any(
+            _matches_stage_input(normalized_dirty_path, asset.source_path)
+            for asset in build_plan.site.vendor_assets
+        ):
             if "vendor-assets" in current_unit_ids:
                 dirty_unit_ids.add("vendor-assets")
             continue
-        component_unit_id = _dirty_component_unit_id(build_plan=build_plan, dirty_path=normalized_dirty_path)
+        component_unit_id = _dirty_component_unit_id(
+            build_plan=build_plan, dirty_path=normalized_dirty_path
+        )
         if component_unit_id is not None and component_unit_id in current_unit_ids:
             dirty_unit_ids.add(component_unit_id)
             continue
-        if normalized_dirty_path == normalized_site_root or normalized_dirty_path.is_relative_to(normalized_site_root):
+        if (
+            normalized_dirty_path == normalized_site_root
+            or normalized_dirty_path.is_relative_to(normalized_site_root)
+        ):
             return current_unit_ids
-        if normalized_dirty_path == normalized_workspace_root or normalized_dirty_path.is_relative_to(normalized_workspace_root):
+        if (
+            normalized_dirty_path == normalized_workspace_root
+            or normalized_dirty_path.is_relative_to(normalized_workspace_root)
+        ):
             return current_unit_ids
     return frozenset(dirty_unit_ids)
 
@@ -640,24 +775,49 @@ def _matches_stage_input(path: Path, candidate_root: Path | None) -> bool:
     if candidate_root is None:
         return False
     normalized_candidate_root = candidate_root.resolve(strict=False)
-    return path == normalized_candidate_root or path.is_relative_to(normalized_candidate_root)
+    return path == normalized_candidate_root or path.is_relative_to(
+        normalized_candidate_root
+    )
 
 
 def _unclaimed_seed_paths(trusted_stage: TrustedStageState) -> set[str]:
-    claims = trusted_stage.incremental_state.output_ownership.claims if trusted_stage.incremental_state is not None else ()
-    claimed_directories = {str(claim.stage_relative_path) for claim in claims if claim.path_kind == "directory"}
-    claimed_files = {str(claim.stage_relative_path) for claim in claims if claim.path_kind == "file"}
+    claims = (
+        trusted_stage.incremental_state.output_ownership.claims
+        if trusted_stage.incremental_state is not None
+        else ()
+    )
+    claimed_directories = {
+        str(claim.stage_relative_path)
+        for claim in claims
+        if claim.path_kind == "directory"
+    }
+    claimed_files = {
+        str(claim.stage_relative_path) for claim in claims if claim.path_kind == "file"
+    }
     unknown_paths: set[str] = set()
-    for path in sorted(trusted_stage.stage_root.rglob("*"), key=lambda item: (len(item.relative_to(trusted_stage.stage_root).parts), str(item))):
+    for path in sorted(
+        trusted_stage.stage_root.rglob("*"),
+        key=lambda item: (
+            len(item.relative_to(trusted_stage.stage_root).parts),
+            str(item),
+        ),
+    ):
         stage_relative_path = str(path.relative_to(trusted_stage.stage_root))
-        if _stage_path_is_claimed(stage_relative_path, claimed_directories, claimed_files):
+        if _stage_path_is_claimed(
+            stage_relative_path, claimed_directories, claimed_files
+        ):
             continue
         unknown_paths.add(stage_relative_path)
     return unknown_paths
 
 
-def _stage_path_is_claimed(stage_relative_path: str, claimed_directories: set[str], claimed_files: set[str]) -> bool:
-    if stage_relative_path in claimed_files or stage_relative_path in claimed_directories:
+def _stage_path_is_claimed(
+    stage_relative_path: str, claimed_directories: set[str], claimed_files: set[str]
+) -> bool:
+    if (
+        stage_relative_path in claimed_files
+        or stage_relative_path in claimed_directories
+    ):
         return True
     return any(
         stage_relative_path.startswith(f"{claim}/")
@@ -684,8 +844,12 @@ def _failed_cycle_outcome(
             succeeded=False,
             wrote_stage=False,
             stage_usable=trusted_stage is not None,
-            stage_root_path=trusted_stage.stage_root if trusted_stage is not None else None,
-            manifest_path=trusted_stage.manifest_path if trusted_stage is not None else None,
+            stage_root_path=trusted_stage.stage_root
+            if trusted_stage is not None
+            else None,
+            manifest_path=trusted_stage.manifest_path
+            if trusted_stage is not None
+            else None,
             cycle=cycle_number,
             workspace_root=workspace_root,
             private_roots=private_roots,
@@ -738,7 +902,9 @@ def _open_watch_event_stream(
 
 
 @contextmanager
-def _open_watch_event_output(*, request: WatchEventRequest | None, stdout: TextIO) -> Iterator[TextIO | None]:
+def _open_watch_event_output(
+    *, request: WatchEventRequest | None, stdout: TextIO
+) -> Iterator[TextIO | None]:
     """Open the configured watch-event sink so watch owns its machine stream directly."""
 
     if request is None:
@@ -759,7 +925,9 @@ def _graceful_watch_shutdown() -> Iterator[_WatchShutdownController]:
     """Translate later watch shutdown signals into an orderly stop request."""
 
     controller = _WatchShutdownController(stop_event=threading.Event())
-    previous_handlers = {signum: signal.getsignal(signum) for signum in _WATCH_SHUTDOWN_SIGNALS}
+    previous_handlers = {
+        signum: signal.getsignal(signum) for signum in _WATCH_SHUTDOWN_SIGNALS
+    }
 
     def _handle_shutdown(signum: int, frame: FrameType | None) -> None:
         del signum, frame
@@ -774,7 +942,9 @@ def _graceful_watch_shutdown() -> Iterator[_WatchShutdownController]:
             signal.signal(signum, previous_handler)
 
 
-def _derive_watch_roots(*, workspace_root: Path, site_root: Path, planning_roots: tuple[Path, ...]) -> tuple[Path, ...]:
+def _derive_watch_roots(
+    *, workspace_root: Path, site_root: Path, planning_roots: tuple[Path, ...]
+) -> tuple[Path, ...]:
     """Keep a stable workspace-level watch root so topology changes remain visible."""
 
     return _coalesce_dirty_paths(
@@ -790,8 +960,13 @@ def _coalesce_dirty_paths(paths: tuple[Path, ...] | list[Path]) -> tuple[Path, .
     """Deduplicate noisy changed-path bursts into the smallest ancestor set."""
 
     coalesced: list[Path] = []
-    for path in sorted({candidate.resolve(strict=False) for candidate in paths}, key=lambda item: (len(item.parts), str(item))):
-        if any(path == existing or path.is_relative_to(existing) for existing in coalesced):
+    for path in sorted(
+        {candidate.resolve(strict=False) for candidate in paths},
+        key=lambda item: (len(item.parts), str(item)),
+    ):
+        if any(
+            path == existing or path.is_relative_to(existing) for existing in coalesced
+        ):
             continue
         coalesced.append(path)
     return tuple(coalesced)
@@ -810,9 +985,13 @@ def _is_pipeline_owned_path(
     normalized_path = path.resolve(strict=False)
     normalized_stage_root = stage_root.resolve(strict=False)
     normalized_work_root = work_root.resolve(strict=False)
-    if normalized_path == normalized_stage_root or normalized_path.is_relative_to(normalized_stage_root):
+    if normalized_path == normalized_stage_root or normalized_path.is_relative_to(
+        normalized_stage_root
+    ):
         return True
-    if normalized_path == normalized_work_root or normalized_path.is_relative_to(normalized_work_root):
+    if normalized_path == normalized_work_root or normalized_path.is_relative_to(
+        normalized_work_root
+    ):
         return True
 
     stage_parent = normalized_stage_root.parent
@@ -820,7 +999,8 @@ def _is_pipeline_owned_path(
     stage_backup_prefix = f".{normalized_stage_root.name}.backup."
     for candidate in chain((normalized_path,), normalized_path.parents):
         if candidate.parent == stage_parent and (
-            candidate.name.startswith(stage_temp_prefix) or candidate.name.startswith(stage_backup_prefix)
+            candidate.name.startswith(stage_temp_prefix)
+            or candidate.name.startswith(stage_backup_prefix)
         ):
             return True
 
@@ -828,8 +1008,11 @@ def _is_pipeline_owned_path(
         normalized_report_output = report_output.resolve(strict=False)
         if normalized_path == normalized_report_output:
             return True
-        if normalized_path.parent == normalized_report_output.parent and normalized_path.name.startswith(
-            f".{normalized_report_output.name}.",
+        if (
+            normalized_path.parent == normalized_report_output.parent
+            and normalized_path.name.startswith(
+                f".{normalized_report_output.name}.",
+            )
         ):
             return True
 
@@ -851,7 +1034,11 @@ def _load_trusted_stage(stage_root: Path) -> TrustedStageState | None:
             return None
         validate_materialized_stage_tree(normalized_stage_root)
         manifest_path = normalized_stage_root / "manifest.json"
-        if not manifest_path.exists() or not manifest_path.is_file() or manifest_path.is_symlink():
+        if (
+            not manifest_path.exists()
+            or not manifest_path.is_file()
+            or manifest_path.is_symlink()
+        ):
             return None
         manifest = load_stage_manifest(
             manifest_path.read_text(encoding="utf-8"),
@@ -866,7 +1053,9 @@ def _load_trusted_stage(stage_root: Path) -> TrustedStageState | None:
         stage_root=normalized_stage_root,
         manifest_path=manifest_path,
         manifest=manifest,
-        incremental_state=load_retained_stage_incremental_state(stage_root=normalized_stage_root, manifest=manifest),
+        incremental_state=load_retained_stage_incremental_state(
+            stage_root=normalized_stage_root, manifest=manifest
+        ),
     )
 
 

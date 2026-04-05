@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import io
 import json
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -291,6 +292,7 @@ class CliTests(unittest.TestCase):
                     exit_code = _run(
                         argv=[
                             "watch",
+                            "--quiet",
                             "--unstable-events",
                             "jsonl",
                             "--report-format",
@@ -321,7 +323,7 @@ class CliTests(unittest.TestCase):
             ):
                 with _cwd(workspace_root):
                     exit_code = _run(
-                        argv=["watch", "--unstable-events", "jsonl"],
+                        argv=["watch", "--quiet", "--unstable-events", "jsonl"],
                         stdout=stdout,
                         stderr=stderr,
                     )
@@ -344,6 +346,7 @@ class CliTests(unittest.TestCase):
                     exit_code = _run(
                         argv=[
                             "watch",
+                            "--quiet",
                             "--unstable-events",
                             "jsonl",
                             "--unstable-events-output",
@@ -420,6 +423,7 @@ class CliTests(unittest.TestCase):
                     exit_code = _run(
                         argv=[
                             "watch",
+                            "--quiet",
                             "--unstable-events",
                             "jsonl",
                             "--report-format",
@@ -438,6 +442,135 @@ class CliTests(unittest.TestCase):
         self.assertEqual([event["event"] for event in events], ["cycle-succeeded", "ready", "cycle-failed"])
         self.assertTrue(events[-1]["stageUsable"])
         self.assertEqual(stderr.getvalue(), "")
+
+    def test_watch_default_writes_lifecycle_summary_to_stderr(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            report_path = workspace_root / "watch-report.json"
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            with mock.patch(
+                "apache_buildish_site_pipeline.commands.watch._open_watch_event_stream",
+                new=_fake_watch_event_stream_factory(responses=[(True, None)]),
+            ):
+                with _cwd(workspace_root):
+                    exit_code = _run(
+                        argv=[
+                            "watch",
+                            "--report-format",
+                            "json",
+                            "--report-schema-version",
+                            "1",
+                            "--report-output",
+                            str(report_path),
+                        ],
+                        stdout=stdout,
+                        stderr=stderr,
+                    )
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(stdout.getvalue(), "")
+        self.assertIn("watch cycle 1: watch clean: succeeded=yes", stderr.getvalue())
+
+    def test_watch_quiet_suppresses_lifecycle_summary(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            report_path = workspace_root / "watch-report.json"
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            with mock.patch(
+                "apache_buildish_site_pipeline.commands.watch._open_watch_event_stream",
+                new=_fake_watch_event_stream_factory(responses=[(True, None)]),
+            ):
+                with _cwd(workspace_root):
+                    exit_code = _run(
+                        argv=[
+                            "watch",
+                            "--quiet",
+                            "--report-format",
+                            "json",
+                            "--report-schema-version",
+                            "1",
+                            "--report-output",
+                            str(report_path),
+                        ],
+                        stdout=stdout,
+                        stderr=stderr,
+                    )
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(stdout.getvalue(), "")
+        self.assertEqual(stderr.getvalue(), "")
+
+    def test_watch_verbose_writes_sink_and_dirty_count_details_to_stderr(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            report_path = workspace_root / "watch-report.json"
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            with mock.patch(
+                "apache_buildish_site_pipeline.commands.watch._open_watch_event_stream",
+                new=_fake_watch_event_stream_factory(responses=[(True, None)]),
+            ):
+                with _cwd(workspace_root):
+                    exit_code = _run(
+                        argv=[
+                            "watch",
+                            "--verbose",
+                            "--report-format",
+                            "json",
+                            "--report-schema-version",
+                            "1",
+                            "--report-output",
+                            str(report_path),
+                        ],
+                        stdout=stdout,
+                        stderr=stderr,
+                    )
+
+        self.assertEqual(exit_code, 0)
+        self.assertIn("watch report sink:", stderr.getvalue())
+        self.assertIn("watch event sink: disabled", stderr.getvalue())
+        self.assertIn("watch dirty path count: <initial scan>", stderr.getvalue())
+        self.assertIn("watch root count: 1", stderr.getvalue())
+
+    def test_watch_stdout_guard_redirects_plain_prints_when_events_own_stdout(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            report_path = workspace_root / "watch-report.json"
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            with mock.patch(
+                "apache_buildish_site_pipeline.commands.watch._open_watch_event_stream",
+                new=_fake_watch_event_stream_factory(responses=[(True, None)]),
+            ):
+                import apache_buildish_site_pipeline.commands.watch as watch_command
+
+                original_cycle = watch_command._run_watch_cycle  # noqa: SLF001
+
+                def _noisy_run_watch_cycle(*args: object, **kwargs: object):
+                    sys.stdout.write("accidental stdout line\n")  # noqa: TID251
+                    return original_cycle(*args, **kwargs)
+
+                with mock.patch.object(watch_command, "_run_watch_cycle", side_effect=_noisy_run_watch_cycle):
+                    with _cwd(workspace_root):
+                        exit_code = _run(
+                            argv=[
+                                "watch",
+                                "--quiet",
+                                "--unstable-events",
+                                "jsonl",
+                                "--report-format",
+                                "json",
+                                "--report-schema-version",
+                                "1",
+                                "--report-output",
+                                str(report_path),
+                            ],
+                            stdout=stdout,
+                            stderr=stderr,
+                        )
+
+        events = _parse_jsonl(stdout.getvalue())
+        self.assertEqual(exit_code, 0)
+        self.assertEqual([event["event"] for event in events], ["cycle-succeeded", "ready"])
+        self.assertIn("accidental stdout line", stderr.getvalue())
 
     def test_watch_debug_writes_cycle_details_to_stderr(self) -> None:
         with _workspace(with_content_file=True) as workspace_root:
@@ -473,6 +606,7 @@ class CliTests(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         self.assertEqual(stdout.getvalue(), "")
         self.assertIn("watch cycle 1: watch clean: succeeded=yes", stderr.getvalue())
+        self.assertIn("watch dirty path count: <initial scan>", stderr.getvalue())
         self.assertIn("watch debug dirty paths: <initial scan>", stderr.getvalue())
         self.assertIn(str(watched_file), stderr.getvalue())
         self.assertIn("watch debug roots:", stderr.getvalue())
@@ -528,6 +662,7 @@ class CliTests(unittest.TestCase):
                     exit_code = _run(
                         argv=[
                             "watch",
+                            "--quiet",
                             "--report-format",
                             "json",
                             "--report-schema-version",
@@ -574,6 +709,7 @@ class CliTests(unittest.TestCase):
                     exit_code = _run(
                         argv=[
                             "watch",
+                            "--quiet",
                             "--report-format",
                             "json",
                             "--report-schema-version",
@@ -620,11 +756,11 @@ class CliTests(unittest.TestCase):
                         (False, None),
                     ],
                 ),
-            ):
-                with _cwd(workspace_root):
+            ), _cwd(workspace_root):
                     exit_code = _run(
                         argv=[
                             "watch",
+                            "--quiet",
                             "--report-format",
                             "json",
                             "--report-schema-version",
@@ -672,11 +808,11 @@ class CliTests(unittest.TestCase):
                         (False, None),
                     ],
                 ),
-            ):
-                with _cwd(workspace_root):
+            ), _cwd(workspace_root):
                     exit_code = _run(
                         argv=[
                             "watch",
+                            "--quiet",
                             "--report-format",
                             "json",
                             "--report-schema-version",
@@ -716,11 +852,11 @@ class CliTests(unittest.TestCase):
                     responses=[(True, None)],
                     captured_watch_roots=captured_watch_roots,
                 ),
-            ):
-                with _cwd(workspace_root):
+            ), _cwd(workspace_root):
                     exit_code = _run(
                         argv=[
                             "watch",
+                            "--quiet",
                             "--report-format",
                             "json",
                             "--report-schema-version",
@@ -758,11 +894,11 @@ class CliTests(unittest.TestCase):
                         (True, None),
                     ],
                 ),
-            ):
-                with _cwd(workspace_root):
+            ), _cwd(workspace_root):
                     exit_code = _run(
                         argv=[
                             "watch",
+                            "--quiet",
                             "--report-format",
                             "json",
                             "--report-schema-version",
@@ -854,7 +990,7 @@ class CliTests(unittest.TestCase):
                 ):
                     self.assertEqual(_run(argv=["check"], stdout=io.StringIO(), stderr=io.StringIO()), 0)
                     self.assertEqual(_run(argv=["build"], stdout=io.StringIO(), stderr=io.StringIO()), 0)
-                    self.assertEqual(_run(argv=["watch"], stdout=io.StringIO(), stderr=io.StringIO()), 0)
+                    self.assertEqual(_run(argv=["watch", "--quiet"], stdout=io.StringIO(), stderr=io.StringIO()), 0)
 
         self.assertEqual(
             observed_calls,

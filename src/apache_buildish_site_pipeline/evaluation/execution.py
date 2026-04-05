@@ -40,18 +40,29 @@ from .types import (
 from apache_buildish_site_pipeline.planning.types import PlanningEvaluation
 
 
-def run_evaluation(*, request: EvaluationRequest, planning: PlanningEvaluation) -> EvaluationResult:
+def run_evaluation(
+    *, request: EvaluationRequest, planning: PlanningEvaluation
+) -> EvaluationResult:
     """Run the shared contextual validation pipeline."""
 
     collector = DiagnosticCollector()
     publication_index = validate_publication(planning, collector)
-    validate_references(planning=planning, publication_targets=publication_index.targets, collector=collector)
+    validate_references(
+        planning=planning,
+        publication_targets=publication_index.targets,
+        collector=collector,
+    )
     route_inventory = validate_routes(planning, publication_index, collector)
     page_scan = validate_page_scan(planning, collector)
     validate_localization(planning=planning, page_scan=page_scan, collector=collector)
     validate_providers(planning, collector)
     validate_inputs(planning, collector)
-    validate_limits(planning=planning, route_inventory=route_inventory, page_scan=page_scan, collector=collector)
+    validate_limits(
+        planning=planning,
+        route_inventory=route_inventory,
+        page_scan=page_scan,
+        collector=collector,
+    )
     if planning.build_plan_candidate is None:
         collector.add(
             severity=DiagnosticSeverity.ERROR,
@@ -73,14 +84,18 @@ def run_evaluation(*, request: EvaluationRequest, planning: PlanningEvaluation) 
         for diagnostic in diagnostics
         if diagnostic.severity is DiagnosticSeverity.ERROR
     )
-    stage_allowed = not blocking_conditions and planning.build_plan_candidate is not None
+    stage_allowed = (
+        not blocking_conditions and planning.build_plan_candidate is not None
+    )
     return EvaluationResult(
         request=request,
         planning=planning,
         diagnostics=diagnostics,
         counts=counts,
         run_status=run_status,
-        stage_gate=StageGateDecision(allowed=stage_allowed, blocking_conditions=blocking_conditions),
+        stage_gate=StageGateDecision(
+            allowed=stage_allowed, blocking_conditions=blocking_conditions
+        ),
         build_plan=planning.build_plan_candidate if stage_allowed else None,
         artifacts=EvaluationArtifacts(
             publication_index=publication_index,

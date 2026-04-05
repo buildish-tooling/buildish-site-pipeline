@@ -27,10 +27,15 @@ from .types import InputReadiness, MaterializationStatusReason, ResolvedLocalInp
 _MARKER_FILENAME = ".site-pipeline-materialization.json"
 
 
-def classify_input_readiness(inputs: tuple[ResolvedLocalInput, ...]) -> tuple[ResolvedLocalInput, ...]:
+def classify_input_readiness(
+    inputs: tuple[ResolvedLocalInput, ...],
+) -> tuple[ResolvedLocalInput, ...]:
     """Classify each required input as present, missing, stale, or unresolved."""
 
-    return tuple(replace(local_input, readiness=_classify_one(local_input)) for local_input in inputs)
+    return tuple(
+        replace(local_input, readiness=_classify_one(local_input))
+        for local_input in inputs
+    )
 
 
 def _classify_one(local_input: ResolvedLocalInput) -> InputReadiness:
@@ -43,7 +48,10 @@ def _classify_one(local_input: ResolvedLocalInput) -> InputReadiness:
         )
 
     if not normalized_path.exists():
-        return InputReadiness(status=MaterializationStatus.MISSING, reason=MaterializationStatusReason.PATH_MISSING)
+        return InputReadiness(
+            status=MaterializationStatus.MISSING,
+            reason=MaterializationStatusReason.PATH_MISSING,
+        )
     if not normalized_path.is_dir():
         return InputReadiness(
             status=MaterializationStatus.UNRESOLVED,
@@ -56,14 +64,19 @@ def _classify_one(local_input: ResolvedLocalInput) -> InputReadiness:
     return InputReadiness(status=MaterializationStatus.PRESENT)
 
 
-def _classify_marker_readiness(expected_path: Path, local_input: ResolvedLocalInput) -> InputReadiness | None:
+def _classify_marker_readiness(
+    expected_path: Path, local_input: ResolvedLocalInput
+) -> InputReadiness | None:
     marker_path = expected_path / _MARKER_FILENAME
     if not marker_path.exists():
         return None
     try:
         payload = json.loads(marker_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
-        return InputReadiness(status=MaterializationStatus.UNRESOLVED, reason=MaterializationStatusReason.INVALID_MARKER)
+        return InputReadiness(
+            status=MaterializationStatus.UNRESOLVED,
+            reason=MaterializationStatusReason.INVALID_MARKER,
+        )
 
     expected_pairs = {
         "version": local_input.identity.version,

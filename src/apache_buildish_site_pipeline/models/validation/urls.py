@@ -48,7 +48,9 @@ def validate_provider_base_url(value: str) -> str:
         raise ValueError("Provider baseUrl must include a hostname")
 
     lowered_hostname = hostname.lower()
-    if lowered_hostname == "localhost" or lowered_hostname.endswith(_NON_PUBLIC_HOST_SUFFIXES):
+    if lowered_hostname == "localhost" or lowered_hostname.endswith(
+        _NON_PUBLIC_HOST_SUFFIXES
+    ):
         raise ValueError("Provider baseUrl must not use a non-public hostname")
 
     try:
@@ -68,7 +70,9 @@ def validate_provider_base_url(value: str) -> str:
 
     first_label = lowered_hostname.split(".", maxsplit=1)[0]
     if first_label == "api":
-        raise ValueError("Provider baseUrl must be human-facing rather than a raw API endpoint")
+        raise ValueError(
+            "Provider baseUrl must be human-facing rather than a raw API endpoint"
+        )
     if parsed_url.query or parsed_url.fragment:
         raise ValueError("Provider baseUrl must not carry query or fragment components")
     return value
@@ -85,9 +89,13 @@ def extract_hostname_from_url(value: str) -> str:
 
 def validate_hostname_string(value: str) -> str:
     """Validate a bare hostname or host-literal string."""
-    value = _validate_no_structural_whitespace_or_controls(value, type_name="HostnameString")
+    value = _validate_no_structural_whitespace_or_controls(
+        value, type_name="HostnameString"
+    )
     if any(separator in value for separator in ("/", "@", "?", "#")):
-        raise ValueError("HostnameString must be a bare hostname without URL components")
+        raise ValueError(
+            "HostnameString must be a bare hostname without URL components"
+        )
 
     try:
         ipaddress.ip_address(value)
@@ -102,8 +110,12 @@ def validate_hostname_string(value: str) -> str:
 
     for label in labels:
         if label.startswith("-") or label.endswith("-"):
-            raise ValueError("HostnameString labels must not start or end with a hyphen")
+            raise ValueError(
+                "HostnameString labels must not start or end with a hyphen"
+            )
         if not all(character.isalnum() or character == "-" for character in label):
-            raise ValueError("HostnameString labels must use letters, digits, or hyphens only")
+            raise ValueError(
+                "HostnameString labels must use letters, digits, or hyphens only"
+            )
 
     return value

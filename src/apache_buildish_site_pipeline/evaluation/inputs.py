@@ -16,7 +16,10 @@
 
 from __future__ import annotations
 
-from apache_buildish_site_pipeline.models.enums import DiagnosticSeverity, MaterializationStatus
+from apache_buildish_site_pipeline.models.enums import (
+    DiagnosticSeverity,
+    MaterializationStatus,
+)
 
 from . import diagnostic_codes
 from .collector import DiagnosticCollector
@@ -24,7 +27,9 @@ from .collector import DiagnosticCollector
 from apache_buildish_site_pipeline.planning.types import PlanningEvaluation
 
 
-def validate_inputs(planning: PlanningEvaluation, collector: DiagnosticCollector) -> None:
+def validate_inputs(
+    planning: PlanningEvaluation, collector: DiagnosticCollector
+) -> None:
     """Turn planning readiness results into shared evaluation diagnostics."""
 
     for local_input in planning.local_inputs:
@@ -48,6 +53,8 @@ def validate_inputs(planning: PlanningEvaluation, collector: DiagnosticCollector
             target_id=local_input.identity.input_kind.value,
             details={
                 "expectedLocalPath": str(local_input.expected_local_path),
-                "reason": local_input.readiness.reason.value if local_input.readiness.reason else None,
+                "reason": local_input.readiness.reason.value
+                if local_input.readiness.reason
+                else None,
             },
         )

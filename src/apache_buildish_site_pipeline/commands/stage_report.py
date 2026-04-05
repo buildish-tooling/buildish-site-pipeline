@@ -20,10 +20,19 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from apache_buildish_site_pipeline.evaluation.summary import build_run_status
-from apache_buildish_site_pipeline.evaluation.types import DiagnosticCounts, EvaluationResult
+from apache_buildish_site_pipeline.evaluation.types import (
+    DiagnosticCounts,
+    EvaluationResult,
+)
 from apache_buildish_site_pipeline.models.enums import DiagnosticSeverity, StageCommand
-from apache_buildish_site_pipeline.models.planning_stage_contract import PipelineDiagnosticEntry, StageRunReportV1, StageRunSummary
-from apache_buildish_site_pipeline.staging.public_safety import sanitize_public_diagnostics
+from apache_buildish_site_pipeline.models.planning_stage_contract import (
+    PipelineDiagnosticEntry,
+    StageRunReportV1,
+    StageRunSummary,
+)
+from apache_buildish_site_pipeline.staging.public_safety import (
+    sanitize_public_diagnostics,
+)
 
 
 def build_stage_run_report(
@@ -42,7 +51,11 @@ def build_stage_run_report(
 ) -> StageRunReportV1:
     """Build a typed stage-run report from evaluation data and final stage state."""
 
-    effective_diagnostics = tuple(diagnostics if diagnostics is not None else (evaluation.diagnostics if evaluation is not None else ()))
+    effective_diagnostics = tuple(
+        diagnostics
+        if diagnostics is not None
+        else (evaluation.diagnostics if evaluation is not None else ())
+    )
     report_workspace_root = workspace_root or _report_workspace_root(evaluation)
     if report_workspace_root is not None:
         effective_diagnostics = sanitize_public_diagnostics(
@@ -71,11 +84,19 @@ def build_stage_run_report(
     )
 
 
-def _count_diagnostics(diagnostics: tuple[PipelineDiagnosticEntry, ...]) -> DiagnosticCounts:
+def _count_diagnostics(
+    diagnostics: tuple[PipelineDiagnosticEntry, ...],
+) -> DiagnosticCounts:
     return DiagnosticCounts(
-        error_count=sum(1 for entry in diagnostics if entry.severity is DiagnosticSeverity.ERROR),
-        warning_count=sum(1 for entry in diagnostics if entry.severity is DiagnosticSeverity.WARNING),
-        info_count=sum(1 for entry in diagnostics if entry.severity is DiagnosticSeverity.INFO),
+        error_count=sum(
+            1 for entry in diagnostics if entry.severity is DiagnosticSeverity.ERROR
+        ),
+        warning_count=sum(
+            1 for entry in diagnostics if entry.severity is DiagnosticSeverity.WARNING
+        ),
+        info_count=sum(
+            1 for entry in diagnostics if entry.severity is DiagnosticSeverity.INFO
+        ),
     )
 
 

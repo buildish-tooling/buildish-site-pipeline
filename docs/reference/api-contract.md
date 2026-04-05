@@ -162,6 +162,29 @@ That shared flag family should apply to:
 
 Command-specific flags such as `--fail-on` may extend that shared base.
 
+## Shared human-log flags
+
+The stable commands also share one human-log verbosity flag family:
+
+- `--quiet`
+- `--verbose`
+- `--debug`
+
+These flags control only human-facing diagnostics. They must not rewrite or
+reformat explicit command outputs such as text reports, JSON reports, or
+unstable watch-event JSONL.
+
+Recommended meanings are:
+
+- default: write lifecycle/progress logs to `stderr`
+- `--verbose`: add informational diagnostics to `stderr`
+- `--debug`: add detailed debugging diagnostics to `stderr`
+- `--quiet`: suppress lifecycle/info/debug logs while still allowing
+  warnings/errors on `stderr`
+
+The CLI should configure this logging policy centrally so future diagnostics do
+not require each command to manage its own `stdout` versus `stderr` rules.
+
 ## Shared workspace selection flags
 
 The stable commands also share a workspace-selection flag family:
@@ -327,7 +350,9 @@ Recommended forms are:
 - `site-pipeline build --report-format json --report-schema-version 1 --report-output -`
 - `site-pipeline build --report-format json --report-schema-version 1 --report-output .site-pipeline/build-report.json`
 - `site-pipeline watch`
+- `site-pipeline watch --quiet`
 - `site-pipeline watch --workspace-root /workspace --catalog /workspace/buildish/site/components.yaml`
+- `site-pipeline watch --verbose`
 - `site-pipeline watch --report-format json --report-schema-version 1 --report-output .site-pipeline/watch-report.json`
 - `site-pipeline watch --unstable-events jsonl`
 - `site-pipeline watch --unstable-events jsonl --debug --report-format json --report-schema-version 1 --report-output .site-pipeline/watch-report.json`
@@ -341,6 +366,9 @@ Recommended flag meanings are:
   stdout and is the default; for `watch`, JSON report output should be a file
   path that the command rewrites after each completed cycle. That file path is
   machine-local and follows host-native path semantics.
+- `watch` human logs follow the shared logging policy: default lifecycle logs,
+  extra info under `--verbose`, deeper detail under `--debug`, and reduced
+  chatter under `--quiet`
 
 ## Unstable watch event stream
 
@@ -362,10 +390,15 @@ Current stream rules are:
 - when `--unstable-events-output` points at a file, that path uses the same
   host-native path semantics and output-path safety rules as `--report-output`
   and is written directly by `site-pipeline`
-- human-facing watch summaries and debug diagnostics are written to `stderr`
+- human-facing watch logs are written through the shared logger to `stderr`
 - non-event output must not be mixed into the JSONL stream when the sink is
   `stdout`; the CLI therefore keeps the final human report on `stderr` in that
   mode
+- when the event sink is `stdout`, `watch` also performs a best-effort stdout
+  guard by redirecting ordinary Python-level stdout writes to `stderr` while
+  the machine stream owns `stdout`; consumers still must tolerate malformed or
+  foreign lines defensively because native code or third-party dependencies can
+  bypass that guard
 - consumers should discard malformed JSONL lines defensively instead of
   treating one bad line as a fatal protocol guarantee
 

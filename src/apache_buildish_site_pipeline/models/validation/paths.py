@@ -94,4 +94,6 @@ def validate_public_path(value: str) -> str:
 
 def validate_mount_source_ref(value: str) -> str:
     """Validate a stable mount-source reference token."""
-    return _validate_no_structural_whitespace_or_controls(value, type_name="MountSourceRef")
+    return _validate_no_structural_whitespace_or_controls(
+        value, type_name="MountSourceRef"
+    )

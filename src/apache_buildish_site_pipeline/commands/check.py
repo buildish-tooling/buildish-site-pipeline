@@ -16,7 +16,12 @@
 
 from __future__ import annotations
 
-from apache_buildish_site_pipeline.evaluation import EvaluationMode, EvaluationRequest, build_check_report, run_evaluation
+from apache_buildish_site_pipeline.evaluation import (
+    EvaluationMode,
+    EvaluationRequest,
+    build_check_report,
+    run_evaluation,
+)
 from apache_buildish_site_pipeline.models.enums import PlanningTarget
 from apache_buildish_site_pipeline.planning import evaluate_planning
 
@@ -28,7 +33,9 @@ from .shared import load_workspace_inputs
 def run_check(invocation: CheckInvocation) -> CommandResult:
     """Execute one `check` command."""
 
-    loaded_inputs = load_workspace_inputs(invocation.layout.workspace_root, invocation.layout.catalog_path)
+    loaded_inputs = load_workspace_inputs(
+        invocation.layout.workspace_root, invocation.layout.catalog_path
+    )
     planning = evaluate_planning(
         target=PlanningTarget.BUILD,
         catalog=loaded_inputs.catalog,
@@ -47,5 +54,11 @@ def run_check(invocation: CheckInvocation) -> CommandResult:
         planning=planning,
     )
     report = build_check_report(evaluation)
-    exit_code = ApplicationExitCode.SUCCESS if report.summary.passed else ApplicationExitCode.DOMAIN_FAILURE
-    return CommandResult(exit_code=exit_code, report=report, text_output=render_text_report(report))
+    exit_code = (
+        ApplicationExitCode.SUCCESS
+        if report.summary.passed
+        else ApplicationExitCode.DOMAIN_FAILURE
+    )
+    return CommandResult(
+        exit_code=exit_code, report=report, text_output=render_text_report(report)
+    )

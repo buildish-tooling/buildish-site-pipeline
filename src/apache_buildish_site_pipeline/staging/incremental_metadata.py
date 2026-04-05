@@ -21,7 +21,11 @@ from pathlib import Path
 from typing import Literal, cast
 
 from ..models.base import SitePipelineBaseModel
-from ..models.planning_stage_contract import StageDataFiles, StageManifestV1, StageRelativePath
+from ..models.planning_stage_contract import (
+    StageDataFiles,
+    StageManifestV1,
+    StageRelativePath,
+)
 from .ownership import OwnedUnit
 from .worker_protocol import UnitContributionManifestWire
 
@@ -74,7 +78,9 @@ class RetainedStageIncrementalState:
     aggregate_dependencies: AggregateDependencyMapV1
 
 
-def build_output_ownership_map(*, units: tuple[OwnedUnit, ...], data_files: StageDataFiles) -> OutputOwnershipMapV1:
+def build_output_ownership_map(
+    *, units: tuple[OwnedUnit, ...], data_files: StageDataFiles
+) -> OutputOwnershipMapV1:
     """Describe every published first-wave output root and shared aggregate exactly once."""
 
     claims = [
@@ -95,16 +101,28 @@ def build_output_ownership_map(*, units: tuple[OwnedUnit, ...], data_files: Stag
         )
         for stage_relative_path in _coordinator_owned_stage_paths(data_files)
     )
-    claims.sort(key=lambda claim: (str(claim.stage_relative_path), claim.path_kind, claim.owner_id, claim.unit_id or ""))
+    claims.sort(
+        key=lambda claim: (
+            str(claim.stage_relative_path),
+            claim.path_kind,
+            claim.owner_id,
+            claim.unit_id or "",
+        )
+    )
     return OutputOwnershipMapV1(claims=tuple(claims))
 
 
-def build_aggregate_dependency_map(*, units: tuple[OwnedUnit, ...], data_files: StageDataFiles) -> AggregateDependencyMapV1:
+def build_aggregate_dependency_map(
+    *, units: tuple[OwnedUnit, ...], data_files: StageDataFiles
+) -> AggregateDependencyMapV1:
     """Persist a conservative dependency map for coordinator-owned shared outputs."""
 
     dependent_unit_ids = tuple(sorted(unit.unit_id for unit in units))
     entries = tuple(
-        AggregateDependencyEntryV1(stage_relative_path=str(stage_relative_path), dependent_unit_ids=dependent_unit_ids)
+        AggregateDependencyEntryV1(
+            stage_relative_path=str(stage_relative_path),
+            dependent_unit_ids=dependent_unit_ids,
+        )
         for stage_relative_path in _shared_aggregate_stage_paths(data_files)
     )
     return AggregateDependencyMapV1(entries=entries)
@@ -118,7 +136,11 @@ def load_retained_stage_incremental_state(
     """Load retained incremental metadata when the trusted stage exposes it."""
 
     data_files = manifest.data_files
-    required_paths = (data_files.unit_contributions, data_files.output_ownership, data_files.aggregate_dependencies)
+    required_paths = (
+        data_files.unit_contributions,
+        data_files.output_ownership,
+        data_files.aggregate_dependencies,
+    )
     if any(path is None for path in required_paths):
         return None
     unit_contributions_path, output_ownership_path, aggregate_dependencies_path = (
@@ -128,13 +150,19 @@ def load_retained_stage_incremental_state(
     )
     try:
         unit_contributions = PersistedUnitContributionsV1.model_validate_json(
-            _resolve_stage_file(stage_root=stage_root, stage_relative_path=unit_contributions_path).read_text(encoding="utf-8"),
+            _resolve_stage_file(
+                stage_root=stage_root, stage_relative_path=unit_contributions_path
+            ).read_text(encoding="utf-8"),
         )
         output_ownership = OutputOwnershipMapV1.model_validate_json(
-            _resolve_stage_file(stage_root=stage_root, stage_relative_path=output_ownership_path).read_text(encoding="utf-8"),
+            _resolve_stage_file(
+                stage_root=stage_root, stage_relative_path=output_ownership_path
+            ).read_text(encoding="utf-8"),
         )
         aggregate_dependencies = AggregateDependencyMapV1.model_validate_json(
-            _resolve_stage_file(stage_root=stage_root, stage_relative_path=aggregate_dependencies_path).read_text(encoding="utf-8"),
+            _resolve_stage_file(
+                stage_root=stage_root, stage_relative_path=aggregate_dependencies_path
+            ).read_text(encoding="utf-8"),
         )
     except Exception:
         return None
@@ -148,16 +176,30 @@ def load_retained_stage_incremental_state(
 def _resolve_stage_file(*, stage_root: Path, stage_relative_path: str) -> Path:
     candidate = (stage_root / Path(stage_relative_path)).resolve(strict=False)
     normalized_stage_root = stage_root.resolve(strict=False)
-    if not candidate.is_relative_to(normalized_stage_root) or not candidate.is_file() or candidate.is_symlink():
+    if (
+        not candidate.is_relative_to(normalized_stage_root)
+        or not candidate.is_file()
+        or candidate.is_symlink()
+    ):
         raise ValueError(f"Invalid retained stage metadata path: {stage_relative_path}")
     return candidate
 
 
-def _coordinator_owned_stage_paths(data_files: StageDataFiles) -> tuple[StageRelativePath, ...]:
-    return tuple((*_shared_aggregate_stage_paths(data_files), *tuple(_internal_metadata_stage_paths(data_files)), StageRelativePath("manifest.json")))
+def _coordinator_owned_stage_paths(
+    data_files: StageDataFiles,
+) -> tuple[StageRelativePath, ...]:
+    return tuple(
+        (
+            *_shared_aggregate_stage_paths(data_files),
+            *tuple(_internal_metadata_stage_paths(data_files)),
+            StageRelativePath("manifest.json"),
+        )
+    )
 
 
-def _shared_aggregate_stage_paths(data_files: StageDataFiles) -> tuple[StageRelativePath, ...]:
+def _shared_aggregate_stage_paths(
+    data_files: StageDataFiles,
+) -> tuple[StageRelativePath, ...]:
     aggregate_paths = (
         data_files.components,
         data_files.artifacts,
@@ -176,6 +218,12 @@ def _shared_aggregate_stage_paths(data_files: StageDataFiles) -> tuple[StageRela
     return tuple(path for path in aggregate_paths if path is not None)
 
 
-def _internal_metadata_stage_paths(data_files: StageDataFiles) -> tuple[StageRelativePath, ...]:
-    internal_paths = (data_files.unit_contributions, data_files.output_ownership, data_files.aggregate_dependencies)
+def _internal_metadata_stage_paths(
+    data_files: StageDataFiles,
+) -> tuple[StageRelativePath, ...]:
+    internal_paths = (
+        data_files.unit_contributions,
+        data_files.output_ownership,
+        data_files.aggregate_dependencies,
+    )
     return tuple(path for path in internal_paths if path is not None)

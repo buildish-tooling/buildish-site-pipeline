@@ -21,10 +21,20 @@ from pathlib import Path
 
 from apache_buildish_site_pipeline.models import ProviderSnapshotV1
 from apache_buildish_site_pipeline.models.enums import PlanningTarget
-from apache_buildish_site_pipeline.models.planning_stage_contract import PipelineDiagnosticEntry, StageManifestV1, StageCommand
+from apache_buildish_site_pipeline.models.planning_stage_contract import (
+    PipelineDiagnosticEntry,
+    StageManifestV1,
+    StageCommand,
+)
 
-from apache_buildish_site_pipeline.planning.types import ResolvedLocalInput, ResolvedSiteConfig, SelectedVersionContext
-from apache_buildish_site_pipeline.staging.worker_protocol import UnitContributionManifestWire
+from apache_buildish_site_pipeline.planning.types import (
+    ResolvedLocalInput,
+    ResolvedSiteConfig,
+    SelectedVersionContext,
+)
+from apache_buildish_site_pipeline.staging.worker_protocol import (
+    UnitContributionManifestWire,
+)
 
 
 @dataclass(frozen=True, slots=True)

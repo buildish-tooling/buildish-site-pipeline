@@ -16,10 +16,16 @@
 
 from __future__ import annotations
 
-from .common import _validate_no_structural_whitespace_or_controls, validate_artifact_key, validate_slug
+from .common import (
+    _validate_no_structural_whitespace_or_controls,
+    validate_artifact_key,
+    validate_slug,
+)
 from .paths import validate_public_path
 
-_SUPPORTED_REFERENCE_PREFIXES = frozenset({"route", "component", "artifact", "line", "release"})
+_SUPPORTED_REFERENCE_PREFIXES = frozenset(
+    {"route", "component", "artifact", "line", "release"}
+)
 
 
 def _split_component_artifact(payload: str) -> tuple[str, str]:
@@ -34,12 +40,16 @@ def _split_component_artifact(payload: str) -> tuple[str, str]:
 
 def validate_reference_string(value: str) -> str:
     """Validate the grammar of a typed internal reference string."""
-    value = _validate_no_structural_whitespace_or_controls(value, type_name="ReferenceString")
+    value = _validate_no_structural_whitespace_or_controls(
+        value, type_name="ReferenceString"
+    )
 
     try:
         prefix, payload = value.split(":", maxsplit=1)
     except ValueError as exc:
-        raise ValueError("ReferenceString must contain a typed prefix and payload") from exc
+        raise ValueError(
+            "ReferenceString must contain a typed prefix and payload"
+        ) from exc
     if prefix not in _SUPPORTED_REFERENCE_PREFIXES:
         raise ValueError("ReferenceString uses an unsupported typed prefix")
     if payload == "":
@@ -58,9 +68,15 @@ def validate_reference_string(value: str) -> str:
     try:
         artifact_payload, qualifier = payload.split("@", maxsplit=1)
     except ValueError as exc:
-        raise ValueError("Line and release references must contain an @ qualifier") from exc
+        raise ValueError(
+            "Line and release references must contain an @ qualifier"
+        ) from exc
     if qualifier == "":
-        raise ValueError("Line and release references must include a non-empty qualifier")
+        raise ValueError(
+            "Line and release references must include a non-empty qualifier"
+        )
     _split_component_artifact(artifact_payload)
-    _validate_no_structural_whitespace_or_controls(qualifier, type_name="Reference qualifier")
+    _validate_no_structural_whitespace_or_controls(
+        qualifier, type_name="Reference qualifier"
+    )
     return value

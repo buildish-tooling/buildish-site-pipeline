@@ -74,7 +74,9 @@ class ReducedDiagnosticDetailsSummary(SitePipelineBaseModel):
     @model_validator(mode="after")
     def ensure_actual_size_exceeds_limit(self) -> Self:
         if self.actual_bytes <= self.limit_bytes:
-            raise ValueError("Reduced diagnostic details must record actualBytes > limitBytes")
+            raise ValueError(
+                "Reduced diagnostic details must record actualBytes > limitBytes"
+            )
         return self
 
 
@@ -112,7 +114,9 @@ class ResolvedMaterializationReportV1(SitePipelineBaseModel):
         if self.target is PlanningTarget.WATCH and any(
             entry.watch_eligible is None for entry in self.entries
         ):
-            raise ValueError("Watch planning reports must include watchEligible on every entry")
+            raise ValueError(
+                "Watch planning reports must include watchEligible on every entry"
+            )
         return self
 
 
@@ -128,20 +132,27 @@ class CheckSummary(SitePipelineBaseModel):
 
     @model_validator(mode="after")
     def ensure_normative_count_and_pass_rules(self) -> Self:
-        if self.status is RunStatus.CLEAN and (self.error_count != 0 or self.warning_count != 0):
+        if self.status is RunStatus.CLEAN and (
+            self.error_count != 0 or self.warning_count != 0
+        ):
             raise ValueError("status=clean requires zero errors and zero warnings")
         if self.status is RunStatus.WARNINGS and (
             self.error_count != 0 or self.warning_count == 0
         ):
-            raise ValueError("status=warnings requires zero errors and at least one warning")
+            raise ValueError(
+                "status=warnings requires zero errors and at least one warning"
+            )
         if self.status is RunStatus.ERRORS and self.error_count == 0:
             raise ValueError("status=errors requires at least one error")
 
         expected_passed = self.error_count == 0 and (
-            self.fail_on_severity is CheckFailureThreshold.ERROR or self.warning_count == 0
+            self.fail_on_severity is CheckFailureThreshold.ERROR
+            or self.warning_count == 0
         )
         if self.passed is not expected_passed:
-            raise ValueError("passed must match the failOnSeverity threshold and diagnostic counts")
+            raise ValueError(
+                "passed must match the failOnSeverity threshold and diagnostic counts"
+            )
         return self
 
 
@@ -168,18 +179,24 @@ class StageRunSummary(SitePipelineBaseModel):
 
     @model_validator(mode="after")
     def ensure_normative_stage_summary_rules(self) -> Self:
-        if self.status is RunStatus.CLEAN and (self.error_count != 0 or self.warning_count != 0):
+        if self.status is RunStatus.CLEAN and (
+            self.error_count != 0 or self.warning_count != 0
+        ):
             raise ValueError("status=clean requires zero errors and zero warnings")
         if self.status is RunStatus.WARNINGS and (
             self.error_count != 0 or self.warning_count == 0
         ):
-            raise ValueError("status=warnings requires zero errors and at least one warning")
+            raise ValueError(
+                "status=warnings requires zero errors and at least one warning"
+            )
         if self.status is RunStatus.ERRORS and self.error_count == 0:
             raise ValueError("status=errors requires at least one error")
         if self.wrote_stage and not self.stage_usable:
             raise ValueError("wroteStage=true requires stageUsable=true")
         if self.succeeded and (not self.wrote_stage or not self.stage_usable):
-            raise ValueError("succeeded=true requires wroteStage=true and stageUsable=true")
+            raise ValueError(
+                "succeeded=true requires wroteStage=true and stageUsable=true"
+            )
         return self
 
 

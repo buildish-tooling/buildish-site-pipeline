@@ -18,11 +18,15 @@ from __future__ import annotations
 
 import argparse
 from collections.abc import Sequence
+import logging
 import sys
 from pathlib import Path
 from typing import Never, TextIO
 
-from apache_buildish_site_pipeline.models.enums import CheckFailureThreshold, PlanningTarget
+from apache_buildish_site_pipeline.models.enums import (
+    CheckFailureThreshold,
+    PlanningTarget,
+)
 
 from ..commands.watch import run_watch
 from .contract import (
@@ -37,6 +41,11 @@ from .contract import (
 )
 from .dispatch import dispatch_command
 from .errors import CommandExecutionError, InvocationError, SitePipelineCliError
+from .logging_support import (
+    configure_cli_logging,
+    derive_cli_log_mode,
+    guard_stdout_for_machine_output,
+)
 from .reporting import (
     build_report_request,
     build_watch_event_request,
@@ -44,6 +53,9 @@ from .reporting import (
     revalidate_report_request,
     revalidate_watch_event_request,
 )
+
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class _ArgumentParser(argparse.ArgumentParser):
@@ -54,10 +66,11 @@ class _ArgumentParser(argparse.ArgumentParser):
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the CLI and return the process exit code."""
 
-    return _run(argv=argv, stdout=sys.stdout, stderr=sys.stderr)
+    return _run(argv=argv, stdout=sys.stdout, stderr=sys.stderr)  # noqa: TID251
 
 
 def _run(*, argv: Sequence[str] | None, stdout: TextIO, stderr: TextIO) -> int:
+    configure_cli_logging(mode=derive_cli_log_mode(argv), stderr=stderr)
     try:
         invocation = parse_invocation(argv)
         if isinstance(invocation, WatchInvocation):
@@ -66,12 +79,18 @@ def _run(*, argv: Sequence[str] | None, stdout: TextIO, stderr: TextIO) -> int:
                 report_request = revalidate_report_request(
                     cwd=invocation.layout.cwd,
                     request=report_request,
-                    forbidden_roots=(invocation.layout.stage_root, invocation.layout.work_root),
+                    forbidden_roots=(
+                        invocation.layout.stage_root,
+                        invocation.layout.work_root,
+                    ),
                 )
             watch_event_request = revalidate_watch_event_request(
                 cwd=invocation.layout.cwd,
                 request=invocation.unstable_event_request,
-                forbidden_roots=(invocation.layout.stage_root, invocation.layout.work_root),
+                forbidden_roots=(
+                    invocation.layout.stage_root,
+                    invocation.layout.work_root,
+                ),
             )
             if (
                 watch_event_request is not None
@@ -79,26 +98,34 @@ def _run(*, argv: Sequence[str] | None, stdout: TextIO, stderr: TextIO) -> int:
                 and report_request.output_path is not None
                 and watch_event_request.output_path == report_request.output_path
             ):
-                raise InvocationError("--unstable-events-output must differ from --report-output")
+                raise InvocationError(
+                    "--unstable-events-output must differ from --report-output"
+                )
             invocation = WatchInvocation(
                 layout=invocation.layout,
                 fail_on_severity=invocation.fail_on_severity,
                 report_request=report_request,
                 unstable_event_request=watch_event_request,
-                verbose=invocation.verbose,
-                debug=invocation.debug,
             )
-            result = run_watch(invocation, stdout=stdout, stderr=stderr)
-            if report_request.output_path is None:
-                if watch_event_request is None or not watch_event_request.writes_to_stdout:
-                    emit_report(
-                        request=report_request,
-                        report=result.report,
-                        text_output=result.text_output,
-                        stdout=stdout,
-                    )
-                else:
-                    _write_stream_output(stderr, result.text_output)
+            with guard_stdout_for_machine_output(
+                enabled=watch_event_request is not None
+                and watch_event_request.writes_to_stdout,
+                stderr=stderr,
+            ):
+                result = run_watch(invocation, stdout=stdout)
+                if report_request.output_path is None:
+                    if (
+                        watch_event_request is None
+                        or not watch_event_request.writes_to_stdout
+                    ):
+                        emit_report(
+                            request=report_request,
+                            report=result.report,
+                            text_output=result.text_output,
+                            stdout=stdout,
+                        )
+                    else:
+                        _write_stream_output(stderr, result.text_output)
             return int(result.exit_code)
 
         result = dispatch_command(invocation)
@@ -107,7 +134,10 @@ def _run(*, argv: Sequence[str] | None, stdout: TextIO, stderr: TextIO) -> int:
             report_request = revalidate_report_request(
                 cwd=invocation.layout.cwd,
                 request=report_request,
-                forbidden_roots=(invocation.layout.stage_root, invocation.layout.work_root),
+                forbidden_roots=(
+                    invocation.layout.stage_root,
+                    invocation.layout.work_root,
+                ),
             )
         emit_report(
             request=report_request,
@@ -117,13 +147,13 @@ def _run(*, argv: Sequence[str] | None, stdout: TextIO, stderr: TextIO) -> int:
         )
         return int(result.exit_code)
     except InvocationError as exc:
-        _write_error(stderr, str(exc))
+        _emit_error(str(exc), stderr=stderr)
         return int(ApplicationExitCode.INVOCATION_ERROR)
     except CommandExecutionError as exc:
-        _write_error(stderr, str(exc))
+        _emit_error(str(exc), stderr=stderr)
         return int(ApplicationExitCode.INTERNAL_FAILURE)
     except SitePipelineCliError as exc:
-        _write_error(stderr, str(exc))
+        _emit_error(str(exc), stderr=stderr)
         return int(ApplicationExitCode.INTERNAL_FAILURE)
 
 
@@ -133,7 +163,11 @@ def parse_invocation(argv: Sequence[str] | None = None) -> CommandInvocation:
     parser = _build_parser()
     namespace = parser.parse_args(argv)
     cwd = Path.cwd().resolve()
-    workspace_root = _resolve_cli_path(cwd=cwd, raw_path=namespace.workspace_root) if namespace.workspace_root else cwd
+    workspace_root = (
+        _resolve_cli_path(cwd=cwd, raw_path=namespace.workspace_root)
+        if namespace.workspace_root
+        else cwd
+    )
     catalog_path = (
         _resolve_cli_path(cwd=cwd, raw_path=namespace.catalog)
         if namespace.catalog
@@ -158,8 +192,12 @@ def parse_invocation(argv: Sequence[str] | None = None) -> CommandInvocation:
     )
     watch_event_request = build_watch_event_request(
         cwd=cwd,
-        event_format=namespace.unstable_events if namespace.command == "watch" else None,
-        event_output=namespace.unstable_events_output if namespace.command == "watch" else None,
+        event_format=namespace.unstable_events
+        if namespace.command == "watch"
+        else None,
+        event_output=namespace.unstable_events_output
+        if namespace.command == "watch"
+        else None,
         forbidden_roots=(layout.stage_root, layout.work_root),
     )
     if (
@@ -168,7 +206,9 @@ def parse_invocation(argv: Sequence[str] | None = None) -> CommandInvocation:
         and report_request.output_path is not None
         and watch_event_request.output_path == report_request.output_path
     ):
-        raise InvocationError("--unstable-events-output must differ from --report-output")
+        raise InvocationError(
+            "--unstable-events-output must differ from --report-output"
+        )
 
     if namespace.command == "plan":
         return PlanInvocation(
@@ -189,8 +229,6 @@ def parse_invocation(argv: Sequence[str] | None = None) -> CommandInvocation:
         fail_on_severity=CheckFailureThreshold(namespace.fail_on_severity),
         report_request=report_request,
         unstable_event_request=watch_event_request,
-        verbose=bool(namespace.verbose or namespace.debug),
-        debug=bool(namespace.debug),
     )
 
 
@@ -200,11 +238,18 @@ def _build_parser() -> argparse.ArgumentParser:
 
     plan_parser = subparsers.add_parser("plan", allow_abbrev=False)
     _add_workspace_arguments(plan_parser)
-    plan_parser.add_argument("--for", dest="planning_target", choices=[value.value for value in PlanningTarget], default=PlanningTarget.BUILD.value)
+    _add_logging_arguments(plan_parser)
+    plan_parser.add_argument(
+        "--for",
+        dest="planning_target",
+        choices=[value.value for value in PlanningTarget],
+        default=PlanningTarget.BUILD.value,
+    )
     _add_report_arguments(plan_parser)
 
     check_parser = subparsers.add_parser("check", allow_abbrev=False)
     _add_workspace_arguments(check_parser)
+    _add_logging_arguments(check_parser)
     check_parser.add_argument(
         "--fail-on",
         dest="fail_on_severity",
@@ -215,10 +260,12 @@ def _build_parser() -> argparse.ArgumentParser:
 
     build_parser = subparsers.add_parser("build", allow_abbrev=False)
     _add_workspace_arguments(build_parser)
+    _add_logging_arguments(build_parser)
     _add_report_arguments(build_parser)
 
     watch_parser = subparsers.add_parser("watch", allow_abbrev=False)
     _add_workspace_arguments(watch_parser)
+    _add_logging_arguments(watch_parser)
     watch_parser.add_argument(
         "--fail-on",
         dest="fail_on_severity",
@@ -237,16 +284,6 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Write unstable watch events to PATH or '-' for stdout (default).",
     )
-    watch_parser.add_argument(
-        "--verbose",
-        action="store_true",
-        help="Write human-facing watch cycle summaries to stderr.",
-    )
-    watch_parser.add_argument(
-        "--debug",
-        action="store_true",
-        help="Write verbose watch summaries plus dirty-path/debug details to stderr.",
-    )
     _add_report_arguments(watch_parser)
     return parser
 
@@ -262,6 +299,25 @@ def _add_report_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--report-output", default="-")
 
 
+def _add_logging_arguments(parser: argparse.ArgumentParser) -> None:
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
+        "--quiet",
+        action="store_true",
+        help="Suppress lifecycle and informational human logs; warnings/errors still go to stderr.",
+    )
+    group.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Write informational human logs to stderr in addition to default lifecycle progress logs.",
+    )
+    group.add_argument(
+        "--debug",
+        action="store_true",
+        help="Write detailed debugging diagnostics to stderr in addition to verbose logs.",
+    )
+
+
 def _resolve_cli_path(*, cwd: Path, raw_path: str) -> Path:
     candidate = Path(raw_path)
     if not candidate.is_absolute():
@@ -269,7 +325,11 @@ def _resolve_cli_path(*, cwd: Path, raw_path: str) -> Path:
     return candidate.absolute()
 
 
-def _write_error(stderr: TextIO, message: str) -> None:
+def _emit_error(message: str, *, stderr: TextIO) -> None:
+    root_logger = logging.getLogger()
+    if root_logger.handlers:
+        _LOGGER.error("site-pipeline: %s", message)
+        return
     stderr.write(f"site-pipeline: {message}\n")
     stderr.flush()
 

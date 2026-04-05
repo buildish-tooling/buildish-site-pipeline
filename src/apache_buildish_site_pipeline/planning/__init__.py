@@ -19,9 +19,13 @@ from __future__ import annotations
 from pathlib import Path
 
 from apache_buildish_site_pipeline.models.catalog import CatalogDocumentV1
-from apache_buildish_site_pipeline.models.component_repository import ComponentRepositoryDocumentV1
+from apache_buildish_site_pipeline.models.component_repository import (
+    ComponentRepositoryDocumentV1,
+)
 from apache_buildish_site_pipeline.models.enums import PlanningTarget
-from apache_buildish_site_pipeline.models.planning_stage_contract import PipelineDiagnosticEntry
+from apache_buildish_site_pipeline.models.planning_stage_contract import (
+    PipelineDiagnosticEntry,
+)
 from apache_buildish_site_pipeline.models.provider_snapshot import ProviderSnapshotV1
 
 from .build_plan import build_effective_build_plan
@@ -53,8 +57,12 @@ def evaluate_planning(
         workspace_root=workspace_root,
         component_documents=component_documents,
     )
-    provider_index = build_provider_snapshot_index(provider_snapshot=provider_snapshot, site=site)
-    selected_versions = select_version_contexts(site=site, provider_index=provider_index)
+    provider_index = build_provider_snapshot_index(
+        provider_snapshot=provider_snapshot, site=site
+    )
+    selected_versions = select_version_contexts(
+        site=site, provider_index=provider_index
+    )
     local_inputs = derive_local_inputs(site=site, selected_versions=selected_versions)
     ready_inputs = classify_input_readiness(local_inputs)
     watched_inputs, watch_plan = derive_watch_plan(

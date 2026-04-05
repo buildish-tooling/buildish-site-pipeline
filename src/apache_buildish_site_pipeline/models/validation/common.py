@@ -22,7 +22,9 @@ _CONTROL_CHARACTER_PATTERN = re.compile(r"[\x00-\x1f\x7f]")
 _IDENTIFIER_PATTERN = re.compile(r"^[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?$")
 
 
-def _validate_no_structural_whitespace_or_controls(value: str, *, type_name: str) -> str:
+def _validate_no_structural_whitespace_or_controls(
+    value: str, *, type_name: str
+) -> str:
     if value != value.strip():
         raise ValueError(f"{type_name} must not have leading or trailing whitespace")
     if any(character.isspace() for character in value):
@@ -68,14 +70,18 @@ def validate_provider_key(value: str) -> str:
 
 def validate_version_string(value: str) -> str:
     """Validate an opaque exact version string."""
-    return _validate_no_structural_whitespace_or_controls(value, type_name="VersionString")
+    return _validate_no_structural_whitespace_or_controls(
+        value, type_name="VersionString"
+    )
 
 
 def validate_ref_string(value: str) -> str:
     """Validate an opaque source-control reference string."""
     value = _validate_no_structural_whitespace_or_controls(value, type_name="RefString")
     if value.startswith("/") or value.endswith("/") or "//" in value:
-        raise ValueError("RefString must not be absolute or contain empty path segments")
+        raise ValueError(
+            "RefString must not be absolute or contain empty path segments"
+        )
     if value in {".", ".."}:
         raise ValueError("RefString must not be a traversal token")
     return value

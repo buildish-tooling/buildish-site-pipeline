@@ -20,9 +20,14 @@ from dataclasses import replace
 from pathlib import Path
 
 from apache_buildish_site_pipeline.cli.errors import CommandExecutionError
-from apache_buildish_site_pipeline.models.enums import MaterializationInputKind, PlanningTarget
+from apache_buildish_site_pipeline.models.enums import (
+    MaterializationInputKind,
+    PlanningTarget,
+)
 from apache_buildish_site_pipeline.models.enums import DiagnosticSeverity
-from apache_buildish_site_pipeline.models.planning_stage_contract import PipelineDiagnosticEntry
+from apache_buildish_site_pipeline.models.planning_stage_contract import (
+    PipelineDiagnosticEntry,
+)
 
 from .types import MaterializationStatusReason, ResolvedLocalInput, WatchInputPlan
 
@@ -51,11 +56,25 @@ def derive_watch_plan(
     diagnostics: list[PipelineDiagnosticEntry] = []
     for local_input in local_inputs:
         watch_eligible = _is_watch_eligible(local_input, normalized_workspace_root)
-        updated_inputs.append(replace(local_input, watch_eligible=watch_eligible if target is PlanningTarget.WATCH else watch_eligible))
-        if target is not PlanningTarget.WATCH or not watch_eligible or not local_input.expected_local_path.exists():
+        updated_inputs.append(
+            replace(
+                local_input,
+                watch_eligible=watch_eligible
+                if target is PlanningTarget.WATCH
+                else watch_eligible,
+            )
+        )
+        if (
+            target is not PlanningTarget.WATCH
+            or not watch_eligible
+            or not local_input.expected_local_path.exists()
+        ):
             continue
         candidate_root = local_input.expected_local_path.resolve(strict=False)
-        if any(_conflicts_with_protected_path(candidate_root, protected_path) for protected_path in protected_paths):
+        if any(
+            _conflicts_with_protected_path(candidate_root, protected_path)
+            for protected_path in protected_paths
+        ):
             diagnostics.append(
                 PipelineDiagnosticEntry(
                     severity=DiagnosticSeverity.WARNING,
@@ -64,23 +83,38 @@ def derive_watch_plan(
                     component_slug=local_input.identity.component_slug,
                     artifact_key=local_input.identity.artifact_key,
                     details={"reason": MaterializationStatusReason.WATCH_ROOT_CONFLICT},
-                )
+                ),
             )
             continue
         root_candidates.append(candidate_root)
 
     distinct_roots = tuple(sorted(set(root_candidates)))
     if len(distinct_roots) > _MAX_WATCH_ROOTS:
-        raise CommandExecutionError("Planning derived more than the 32 watch-root ceiling")
-    watch_plan = WatchInputPlan(roots=distinct_roots, diagnostics=tuple(diagnostics)) if target is PlanningTarget.WATCH else None
+        raise CommandExecutionError(
+            "Planning derived more than the 32 watch-root ceiling"
+        )
+    watch_plan = (
+        WatchInputPlan(roots=distinct_roots, diagnostics=tuple(diagnostics))
+        if target is PlanningTarget.WATCH
+        else None
+    )
     return tuple(updated_inputs), watch_plan
 
 
 def _is_watch_eligible(local_input: ResolvedLocalInput, workspace_root: Path) -> bool:
-    if local_input.identity.input_kind in {MaterializationInputKind.RELEASED, MaterializationInputKind.CANDIDATE}:
+    if local_input.identity.input_kind in {
+        MaterializationInputKind.RELEASED,
+        MaterializationInputKind.CANDIDATE,
+    }:
         return False
-    return local_input.expected_local_path.resolve(strict=False).is_relative_to(workspace_root)
+    return local_input.expected_local_path.resolve(strict=False).is_relative_to(
+        workspace_root
+    )
 
 
 def _conflicts_with_protected_path(candidate_root: Path, protected_path: Path) -> bool:
-    return candidate_root == protected_path or candidate_root.is_relative_to(protected_path) or protected_path.is_relative_to(candidate_root)
+    return (
+        candidate_root == protected_path
+        or candidate_root.is_relative_to(protected_path)
+        or protected_path.is_relative_to(candidate_root)
+    )

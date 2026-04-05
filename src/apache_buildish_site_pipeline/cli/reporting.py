@@ -26,8 +26,18 @@ from apache_buildish_site_pipeline.models.planning_stage_contract import (
     ResolvedMaterializationReportV1,
 )
 
-from .contract import ReportFormat, ReportModel, ReportRequest, WatchEventFormat, WatchEventRequest
-from .errors import InvocationError, ReportWriteError, UnsupportedReportSchemaVersionError
+from .contract import (
+    ReportFormat,
+    ReportModel,
+    ReportRequest,
+    WatchEventFormat,
+    WatchEventRequest,
+)
+from .errors import (
+    InvocationError,
+    ReportWriteError,
+    UnsupportedReportSchemaVersionError,
+)
 
 
 def build_report_request(
@@ -49,25 +59,39 @@ def build_report_request(
     normalized_format = ReportFormat(report_format)
     if normalized_format is ReportFormat.JSON:
         if schema_version is None:
-            raise InvocationError("JSON report output requires --report-schema-version 1")
+            raise InvocationError(
+                "JSON report output requires --report-schema-version 1"
+            )
         if schema_version != 1:
             raise UnsupportedReportSchemaVersionError(
                 "JSON report output currently supports only --report-schema-version 1",
             )
     elif schema_version is not None:
-        raise InvocationError("--report-schema-version is only valid together with --report-format json")
+        raise InvocationError(
+            "--report-schema-version is only valid together with --report-format json"
+        )
 
     if report_output == "-":
         if forbid_stdout_json and normalized_format is ReportFormat.JSON:
-            raise InvocationError("watch JSON reports must be written to a file, not stdout")
-        return ReportRequest(report_format=normalized_format, schema_version=schema_version, output_path=None)
+            raise InvocationError(
+                "watch JSON reports must be written to a file, not stdout"
+            )
+        return ReportRequest(
+            report_format=normalized_format,
+            schema_version=schema_version,
+            output_path=None,
+        )
 
     output_path = _validate_safe_output_path(
         cwd=cwd,
         raw_path=_parse_cli_local_path(report_output),
         forbidden_roots=forbidden_roots,
     )
-    return ReportRequest(report_format=normalized_format, schema_version=schema_version, output_path=output_path)
+    return ReportRequest(
+        report_format=normalized_format,
+        schema_version=schema_version,
+        output_path=output_path,
+    )
 
 
 def revalidate_report_request(
@@ -102,7 +126,9 @@ def build_watch_event_request(
 
     if event_format is None:
         if event_output is not None:
-            raise InvocationError("--unstable-events-output is only valid together with --unstable-events")
+            raise InvocationError(
+                "--unstable-events-output is only valid together with --unstable-events"
+            )
         return None
 
     normalized_format = WatchEventFormat(event_format)
@@ -140,10 +166,14 @@ def revalidate_watch_event_request(
     )
 
 
-def emit_report(*, request: ReportRequest, report: ReportModel, text_output: str, stdout: TextIO) -> None:
+def emit_report(
+    *, request: ReportRequest, report: ReportModel, text_output: str, stdout: TextIO
+) -> None:
     """Emit the final operator-facing report to stdout or a file."""
 
-    serialized = _serialize_report(report=report, request=request, text_output=text_output)
+    serialized = _serialize_report(
+        report=report, request=request, text_output=text_output
+    )
     if request.output_path is None:
         stdout.write(serialized)
         if not serialized.endswith("\n"):
@@ -153,7 +183,9 @@ def emit_report(*, request: ReportRequest, report: ReportModel, text_output: str
     _write_report_file(path=request.output_path, content=serialized)
 
 
-def _serialize_report(*, report: ReportModel, request: ReportRequest, text_output: str) -> str:
+def _serialize_report(
+    *, report: ReportModel, request: ReportRequest, text_output: str
+) -> str:
     if request.report_format is ReportFormat.TEXT:
         return text_output
     return report.model_dump_json(indent=2, exclude_none=True)
@@ -193,11 +225,17 @@ def _validate_safe_output_path(
     normalized_path = absolute_path.resolve(strict=False)
     parent_path = absolute_path.parent
     if not parent_path.exists() or not parent_path.is_dir():
-        raise InvocationError(f"{path_label} parent directory does not exist: {parent_path}")
+        raise InvocationError(
+            f"{path_label} parent directory does not exist: {parent_path}"
+        )
     if _contains_symlink(parent_path):
-        raise InvocationError(f"{path_label} parent directory resolves through a symlink: {parent_path}")
+        raise InvocationError(
+            f"{path_label} parent directory resolves through a symlink: {parent_path}"
+        )
     if absolute_path.exists() and absolute_path.is_symlink():
-        raise InvocationError(f"{path_label} path must not be a symlink: {absolute_path}")
+        raise InvocationError(
+            f"{path_label} path must not be a symlink: {absolute_path}"
+        )
     for forbidden_root in forbidden_roots:
         if normalized_path.is_relative_to(forbidden_root.resolve(strict=False)):
             raise InvocationError(f"{path_label} must live outside {forbidden_root}")
@@ -211,8 +249,7 @@ def _parse_cli_local_path(raw_path: str) -> Path:
 
 
 def _absolute_path(*, cwd: Path, raw_path: Path) -> Path:
-    candidate_path = raw_path if raw_path.is_absolute() else cwd / raw_path
-    return Path(os.path.abspath(candidate_path))
+    return raw_path if raw_path.is_absolute() else cwd / raw_path
 
 
 def _contains_symlink(path: Path) -> bool:
@@ -230,9 +267,13 @@ def _write_report_file(*, path: Path, content: str) -> None:
     absolute_path = _absolute_path(cwd=Path.cwd(), raw_path=path)
     parent_path = absolute_path.parent
     if _contains_symlink(parent_path):
-        raise ReportWriteError(f"Report output parent directory resolves through a symlink: {parent_path}")
+        raise ReportWriteError(
+            f"Report output parent directory resolves through a symlink: {parent_path}"
+        )
     if absolute_path.exists() and absolute_path.is_symlink():
-        raise ReportWriteError(f"Report output path must not be a symlink: {absolute_path}")
+        raise ReportWriteError(
+            f"Report output path must not be a symlink: {absolute_path}"
+        )
 
     temp_path: Path | None = None
     try:
@@ -248,9 +289,11 @@ def _write_report_file(*, path: Path, content: str) -> None:
             temp_file.flush()
             os.fsync(temp_file.fileno())
             temp_path = Path(temp_file.name)
-        os.replace(temp_path, absolute_path)
+        temp_path.replace(absolute_path)
     except OSError as exc:
-        raise ReportWriteError(f"Could not write report to {absolute_path}: {exc}") from exc
+        raise ReportWriteError(
+            f"Could not write report to {absolute_path}: {exc}"
+        ) from exc
     finally:
         if temp_path is not None and temp_path.exists():
             temp_path.unlink(missing_ok=True)

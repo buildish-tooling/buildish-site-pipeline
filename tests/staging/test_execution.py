@@ -60,8 +60,7 @@ class StagingExecutionTests(unittest.TestCase):
                 del src, dst
                 raise OSError("replace blocked")
 
-            with mock.patch("apache_buildish_site_pipeline.staging.file_writes.os.replace", side_effect=_fail_replace):
-                with self.assertRaises(StageIntegrityError) as raised:
+            with mock.patch("apache_buildish_site_pipeline.staging.file_writes.os.replace", side_effect=_fail_replace), self.assertRaises(StageIntegrityError) as raised:
                     _write_json_file(json_path, [_JsonStub('{"componentId":"runtime"}')])
 
             self.assertIn("Could not write stage text file", str(raised.exception))
@@ -87,13 +86,18 @@ class StagingExecutionTests(unittest.TestCase):
             manifest_path.parent.mkdir(parents=True, exist_ok=True)
             manifest_path.write_text('{"unitId":"trusted"}\n', encoding="utf-8")
 
-            def _fail_replace(src, dst):
-                del src, dst
+            def _fail_replace(path, target):
+                del path, target
                 raise OSError("replace blocked")
 
-            with mock.patch("apache_buildish_site_pipeline.staging.worker_protocol.os.replace", side_effect=_fail_replace):
-                with self.assertRaises(StageIntegrityError) as raised:
-                    write_unit_manifest(manifest_path, UnitContributionManifestWire(unit_id="component:spark"))
+            with mock.patch(
+                "apache_buildish_site_pipeline.staging.worker_protocol.Path.replace",
+                new=_fail_replace,
+            ), self.assertRaises(StageIntegrityError) as raised:
+                write_unit_manifest(
+                    manifest_path,
+                    UnitContributionManifestWire(unit_id="component:spark"),
+                )
 
             self.assertIn("Could not write worker contribution manifest", str(raised.exception))
             self.assertEqual(manifest_path.read_text(encoding="utf-8"), '{"unitId":"trusted"}\n')
@@ -269,8 +273,7 @@ class StagingExecutionTests(unittest.TestCase):
                         stage_root.parent.resolve(strict=False): 202,
                     },
                 ),
-            ):
-                with self.assertRaises(StageIntegrityError) as raised:
+            ), self.assertRaises(StageIntegrityError) as raised:
                     finalize_stage_publication(candidate_stage_root=candidate_stage_root, stage_root=stage_root)
 
             self.assertIn("same filesystem", str(raised.exception))
@@ -295,13 +298,12 @@ class StagingExecutionTests(unittest.TestCase):
                         stage_root.parent.resolve(strict=False): 202,
                     },
                 ),
-            ):
-                with self.assertRaises(StageIntegrityError) as raised:
-                    finalize_stage_publication(
-                        candidate_stage_root=candidate_stage_root,
-                        stage_root=stage_root,
-                        allow_replace_existing=True,
-                    )
+            ), self.assertRaises(StageIntegrityError) as raised:
+                finalize_stage_publication(
+                    candidate_stage_root=candidate_stage_root,
+                    stage_root=stage_root,
+                    allow_replace_existing=True,
+                )
 
             self.assertIn("same filesystem", str(raised.exception))
             self.assertTrue(candidate_stage_root.exists())

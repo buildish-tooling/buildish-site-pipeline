@@ -43,6 +43,5 @@ class ReferenceValidationTests(unittest.TestCase):
             "route:docs/latest/",
             "component:Spark",
         ):
-            with self.subTest(value=value):
-                with self.assertRaises(ValueError):
+            with self.subTest(value=value), self.assertRaises(ValueError):
                     validate_reference_string(value)

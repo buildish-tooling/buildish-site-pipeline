@@ -23,7 +23,7 @@ COPY --from=uvbin /uv /uvx /usr/local/bin/
 
 WORKDIR /opt/site-pipeline
 COPY README.md pyproject.toml uv.lock main.py ./
-COPY apache_buildish_site_pipeline ./apache_buildish_site_pipeline
+COPY src ./src
 RUN uv sync --frozen --no-dev --no-editable \
     && uv pip install --python /opt/site-pipeline/.venv/bin/python --no-deps .
 

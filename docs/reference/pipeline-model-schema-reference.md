@@ -862,13 +862,15 @@ Additionally:
 <a id="stagemanifest"></a>
 ## StageManifest
 
-Authoritative entry-point document for a staged output tree.
+Authoritative entry-point document for a staged output tree. Consumers use it to
+discover the staged layout and available aggregate files. It is not intended to
+be normal renderer template data.
 
 | Field | Type | Req | Description |
 | --- | --- | --- | --- |
 | `schemaVersion` | `Integer` | yes | Schema version for the stage manifest format. |
 | `stageLayoutVersion` | `Integer` | yes | Version of the staged-tree layout contract. |
-| `generatedAt` | `TimestampString` | yes | Build completion time for the stage root. |
+| `generatedAt` | `TimestampString` | yes | Build completion time for the stage root. It changes on each successful finalized stage publication. |
 | `command` | `StageCommand` | yes | Producing command mode such as `build` or `watch`. |
 | `frontMatterFormat` | `String` | yes | Page front matter serialization format, set to `yaml`. |
 | `aggregateFormat` | `String` | yes | Aggregate metadata serialization format, set to `json`. |

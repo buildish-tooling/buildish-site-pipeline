@@ -217,6 +217,7 @@ class WatchIncrementalTests(unittest.TestCase):
         self.assertEqual(build_exit_code, 0)
         self.assertEqual(watch_snapshot, build_snapshot)
 
+
     def test_noisy_watch_event_burst_matches_fresh_clean_build(self) -> None:
         with _workspace(with_content_file=True) as workspace_root:
             _expand_workspace_for_multiple_owned_units(workspace_root)

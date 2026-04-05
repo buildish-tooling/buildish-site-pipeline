@@ -90,6 +90,14 @@ It records:
 Consumers should read `manifest.json` first and treat it as authoritative for
 which aggregate files exist.
 
+Consumers should also treat `manifest.json` as a coordination and publication-
+boundary document, not as an ordinary renderer data file. It is written last for
+each finalized stage publication, so successful `build` and `watch` updates may
+change it even when a renderer would otherwise keep using the same staged pages
+and aggregate payloads. Renderers should normally read staged pages and
+`data/*.json` instead of importing `manifest.json` into templates or normal
+site-data processing.
+
 ## Aggregate metadata inventory
 
 The core aggregate inventory is:
@@ -146,7 +154,9 @@ top of the stage contract rather than substitutes for it.
 
 Different downstream consumers can stay focused on the parts they need:
 
-- renderers read staged content, page front matter, and aggregate metadata
+- renderers read staged content, page front matter, and aggregate metadata;
+  they use `manifest.json` only to discover the stage layout and available data
+  files
 - deployment adapters read route and redirect metadata and can turn them into
   concrete HTTP server or CDN config as described in
   [../how-to/http-server-config-how-to.md](../how-to/http-server-config-how-to.md)
@@ -158,6 +168,8 @@ Different downstream consumers can stay focused on the parts they need:
 The stage contract follows these rules:
 
 - `manifest.json` is authoritative for layout and file presence
+- `manifest.json` is a control-plane entry point and publication marker, not a
+  normal renderer template/data input
 - omitted aggregate files mean the corresponding dataset is absent for that stage
 - aggregate files must use stable identifiers and public metadata, not machine-
   local implementation details

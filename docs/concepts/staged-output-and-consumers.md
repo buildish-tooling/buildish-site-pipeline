@@ -46,6 +46,12 @@ where the important stage roots and aggregate files live:
 
 If a consumer does not know where to start, `manifest.json` is the answer.
 
+Use it to discover the stage layout and the aggregate files that exist for that
+stage. Do not treat it as ordinary renderer data or import it into templates.
+`manifest.json` is the hand-off marker for a finalized stage publication, so it
+may change on every successful build or watch cycle even when the meaningful
+renderer-facing inputs stay the same.
+
 ## Staged pages carry pipeline front matter
 
 Site Pipeline keeps authored content readable but adds normalized `pipeline`
@@ -101,6 +107,8 @@ Downstream systems should not:
 - inspect internal Python objects
 - infer routing directly from repo layout
 - fetch provider state on their own to reconstruct page metadata
+- treat `manifest.json` as normal renderer data when staged pages and
+  `data/*.json` already provide the renderer-facing inputs
 
 They should use the staged output instead.
 

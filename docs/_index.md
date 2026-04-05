@@ -46,6 +46,10 @@ styled website.
   - the JSON metadata files under `site/.stage/data/`
   - `site/.stage/manifest.json` as the entry point into the staged output
 
+`manifest.json` is the stage entry point and publication marker. Use it to
+discover the staged tree, but renderers should normally consume staged pages and
+`data/*.json` rather than importing `manifest.json` as ordinary site data.
+
 ## What Site Pipeline is
 
 - a reusable staging pipeline for documentation sites
@@ -182,6 +186,10 @@ site/.stage/
 
 That staged tree is the durable boundary. Renderers and deployment adapters
 should consume it instead of reading your repositories directly.
+
+In that boundary, `manifest.json` is the discovery and readiness document.
+Renderer-facing content usually belongs in staged pages and aggregate files, not
+in the manifest itself.
 
 ## Choose your path
 

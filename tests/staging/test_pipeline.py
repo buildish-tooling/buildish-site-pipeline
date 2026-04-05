@@ -16,6 +16,8 @@ from __future__ import annotations
 
 import io
 import json
+import os
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -26,6 +28,7 @@ from apache_buildish_site_pipeline.cli import _run
 from apache_buildish_site_pipeline.commands.shared import load_workspace_inputs
 from apache_buildish_site_pipeline.models.enums import PlanningTarget
 from apache_buildish_site_pipeline.planning import evaluate_planning
+from apache_buildish_site_pipeline.staging.file_writes import write_utf8_text_file
 from apache_buildish_site_pipeline.staging.ownership import OwnedUnit, OwnedUnitKind, _validate_output_ownership, build_owned_units
 from tests.support.workspace import _cwd, _workspace
 
@@ -137,6 +140,30 @@ class StagingPipelineTests(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         self.assertEqual(components[0]["slug"], "spark")
         self.assertEqual(components[0]["weight"], 100)
+
+    def test_write_utf8_text_file_preserves_mtime_for_identical_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            target_path = Path(tempdir) / "data.json"
+
+            write_utf8_text_file(target_path, '{"items": []}\n')
+            os.utime(target_path, ns=(1_234_567_890, 1_234_567_890))
+
+            changed = write_utf8_text_file(target_path, '{"items": []}\n')
+
+            self.assertFalse(changed)
+            self.assertEqual(target_path.stat().st_mtime_ns, 1_234_567_890)
+
+    def test_write_utf8_text_file_updates_mtime_when_bytes_change(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            target_path = Path(tempdir) / "data.json"
+
+            write_utf8_text_file(target_path, '{"items": []}\n')
+            os.utime(target_path, ns=(1_234_567_890, 1_234_567_890))
+
+            changed = write_utf8_text_file(target_path, '{"items": [{"slug": "spark"}]}\n')
+
+            self.assertTrue(changed)
+            self.assertNotEqual(target_path.stat().st_mtime_ns, 1_234_567_890)
 
 
 if __name__ == "__main__":

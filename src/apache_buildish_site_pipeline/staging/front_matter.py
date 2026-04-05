@@ -39,6 +39,7 @@ from apache_buildish_site_pipeline.models.staged_front_matter import (
     VersionContext,
 )
 from apache_buildish_site_pipeline.planning.types import ResolvedArtifactConfig, ResolvedComponentConfig, ResolvedLocalizationPolicy, SelectedVersionContext
+from apache_buildish_site_pipeline.staging.file_writes import write_utf8_text_file
 from apache_buildish_site_pipeline.staging.publication_paths import public_path_for_context
 from apache_buildish_site_pipeline.staging.worker_protocol import StagedPageContributionWire
 
@@ -168,7 +169,7 @@ def stage_authored_page(
         metadata["pipeline"] = namespace.model_dump(mode="json", by_alias=True, exclude_none=True)
     destination_path.parent.mkdir(parents=True, exist_ok=True)
     rendered_post = frontmatter.Post(post.content, **metadata)
-    destination_path.write_text(frontmatter.dumps(rendered_post), encoding="utf-8")
+    write_utf8_text_file(destination_path, frontmatter.dumps(rendered_post))
     return metadata
 
 
@@ -186,7 +187,7 @@ def finalize_staged_page(
         component=component,
         page=page,
     ).model_dump(mode="json", by_alias=True, exclude_none=True)
-    staged_page_path.write_text(frontmatter.dumps(frontmatter.Post(post.content, **metadata)), encoding="utf-8")
+    write_utf8_text_file(staged_page_path, frontmatter.dumps(frontmatter.Post(post.content, **metadata)))
 
 
 def extract_page_translation_key(metadata: Mapping[str, object]) -> str | None:

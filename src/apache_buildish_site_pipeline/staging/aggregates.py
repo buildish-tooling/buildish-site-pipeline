@@ -19,9 +19,7 @@ from __future__ import annotations
 from collections import defaultdict
 from collections.abc import Mapping
 from datetime import UTC, datetime
-import os
 from pathlib import Path
-import tempfile
 from typing import Any
 
 from apache_buildish_site_pipeline.cli.errors import StageIntegrityError
@@ -49,6 +47,7 @@ from apache_buildish_site_pipeline.models.provider_snapshot import ProviderSnaps
 from apache_buildish_site_pipeline.models.staged_front_matter import PipelineComponentFrontMatter, TranslationLinkSummary
 from apache_buildish_site_pipeline.planning.types import IndexedProviderRecord, ResolvedArtifactConfig, ResolvedComponentConfig, SelectedVersionContext
 
+from .file_writes import write_utf8_text_file
 from .front_matter import build_component_front_matter, build_page_front_matter, build_translation_link, finalize_staged_page
 from .incremental_metadata import (
     PersistedUnitContributionsV1,
@@ -793,26 +792,7 @@ def _write_json_file(path: Path, value: Any) -> None:
         serialized += "\n  ]\n}"
     else:
         serialized = "[\n" + ",\n".join(_serialize_item(item, indent="") for item in value) + "\n]"
-    temp_path: Path | None = None
-    try:
-        with tempfile.NamedTemporaryFile(
-            mode="w",
-            encoding="utf-8",
-            dir=path.parent,
-            prefix=f".{path.name}.",
-            suffix=".tmp",
-            delete=False,
-        ) as temp_file:
-            temp_file.write(serialized + "\n")
-            temp_file.flush()
-            os.fsync(temp_file.fileno())
-            temp_path = Path(temp_file.name)
-        os.replace(temp_path, path)
-    except OSError as exc:
-        raise StageIntegrityError(f"Could not write stage JSON file {path}: {exc}") from exc
-    finally:
-        if temp_path is not None and temp_path.exists():
-            temp_path.unlink(missing_ok=True)
+    write_utf8_text_file(path, serialized + "\n")
 
 
 def _serialize_item(item: Any, *, indent: str) -> str:

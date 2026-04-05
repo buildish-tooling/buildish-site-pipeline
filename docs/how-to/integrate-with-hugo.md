@@ -28,6 +28,8 @@ This page is a stub for the future Hugo integration guide.
 - how to point Hugo at `site/.stage/`
 - how to combine `site-pipeline watch` with `hugo serve`
 - how to map staged pages, static assets, and JSON data into a Hugo site
+- how to use `manifest.json` for stage discovery without pulling it into normal
+  Hugo template data
 - how to keep renderer responsibilities separate from Site Pipeline
 
 ## Why this guide matters
@@ -35,6 +37,10 @@ This page is a stub for the future Hugo integration guide.
 Hugo is the main renderer example used across the current user-facing docs. A
 full guide should make it obvious that Site Pipeline prepares the staged site,
 while Hugo renders and serves it.
+
+That guide should also make it clear that `manifest.json` is a discovery and
+publication-marker file. Hugo should normally render from staged pages and
+aggregate JSON data, not from the manifest itself.
 
 ## Planned guide shape
 

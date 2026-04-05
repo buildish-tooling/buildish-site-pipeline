@@ -50,6 +50,11 @@ It is the authoritative entry point for:
 - which aggregate data files are present
 - where the route and redirect inventories live for this stage
 
+Use it as a lookup file and contract entry point. Do not treat it as ordinary
+renderer data. It is the finalized stage marker and may change on each
+successful stage refresh even when the interesting renderer-facing data files do
+not.
+
 ## Then inspect the route surfaces
 
 The most useful next files are usually:

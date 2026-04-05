@@ -331,6 +331,71 @@ class CliTests(unittest.TestCase):
         self.assertEqual([event["event"] for event in events], ["cycle-succeeded", "ready"])
         self.assertIn("watch clean: succeeded=yes", stderr.getvalue())
 
+    def test_watch_unstable_events_can_write_jsonl_to_a_file_owned_by_watch(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            events_path = workspace_root / "site/.watch-events.jsonl"
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            with mock.patch(
+                "apache_buildish_site_pipeline.commands.watch._open_watch_event_stream",
+                new=_fake_watch_event_stream_factory(responses=[(True, None)]),
+            ):
+                with _cwd(workspace_root):
+                    exit_code = _run(
+                        argv=[
+                            "watch",
+                            "--unstable-events",
+                            "jsonl",
+                            "--unstable-events-output",
+                            str(events_path),
+                        ],
+                        stdout=stdout,
+                        stderr=stderr,
+                    )
+                events = _parse_jsonl(events_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual([event["event"] for event in events], ["cycle-succeeded", "ready"])
+        self.assertIn("watch clean: succeeded=yes", stdout.getvalue())
+        self.assertEqual(stderr.getvalue(), "")
+
+    def test_watch_unstable_events_output_requires_unstable_events(self) -> None:
+        with _workspace() as workspace_root:
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            with _cwd(workspace_root):
+                exit_code = _run(
+                    argv=["watch", "--unstable-events-output", "events.jsonl"],
+                    stdout=stdout,
+                    stderr=stderr,
+                )
+
+        self.assertEqual(exit_code, 2)
+        self.assertIn("only valid together with --unstable-events", stderr.getvalue())
+
+    def test_watch_unstable_events_output_rejects_same_file_as_report_output(self) -> None:
+        with _workspace() as workspace_root:
+            shared_path = workspace_root / "events-and-report.json"
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            with _cwd(workspace_root):
+                exit_code = _run(
+                    argv=[
+                        "watch",
+                        "--unstable-events",
+                        "jsonl",
+                        "--unstable-events-output",
+                        str(shared_path),
+                        "--report-output",
+                        str(shared_path),
+                    ],
+                    stdout=stdout,
+                    stderr=stderr,
+                )
+
+        self.assertEqual(exit_code, 2)
+        self.assertIn("must differ from --report-output", stderr.getvalue())
+
     def test_watch_unstable_events_emit_cycle_failed_for_later_failure(self) -> None:
         with _workspace(with_content_file=True) as workspace_root:
             report_path = workspace_root / "watch-report.json"

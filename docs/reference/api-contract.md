@@ -348,6 +348,7 @@ Recommended flag meanings are:
 event stream for local orchestration helpers:
 
 - `--unstable-events jsonl`
+- `--unstable-events-output -|<path>` (optional; defaults to `-` for stdout)
 
 This stream is intentionally separate from the stable report contract.
 Consumers should treat it as a convenience API for local wrappers such as
@@ -355,9 +356,16 @@ Consumers should treat it as a convenience API for local wrappers such as
 
 Current stream rules are:
 
-- machine-readable events are written to `stdout` as one JSON object per line
+- machine-readable events are written as one JSON object per line to the sink
+  selected by `--unstable-events-output`
+- `--unstable-events-output -` keeps the stream on `stdout`
+- when `--unstable-events-output` points at a file, that path uses the same
+  host-native path semantics and output-path safety rules as `--report-output`
+  and is written directly by `site-pipeline`
 - human-facing watch summaries and debug diagnostics are written to `stderr`
-- non-event output must not be mixed into the JSONL stream on `stdout`
+- non-event output must not be mixed into the JSONL stream when the sink is
+  `stdout`; the CLI therefore keeps the final human report on `stderr` in that
+  mode
 - consumers should discard malformed JSONL lines defensively instead of
   treating one bad line as a fatal protocol guarantee
 

@@ -52,7 +52,7 @@ class WatchEventType(StrEnum):
 
 @dataclass(frozen=True, slots=True)
 class WatchEvent(ABC):
-    """Base machine-readable watch event emitted on stdout."""
+    """Base machine-readable watch event emitted on the configured sink."""
 
     cycle: int
     stage_root_path: str | None
@@ -64,7 +64,7 @@ class WatchEvent(ABC):
         """Return the concrete event discriminator written into the JSONL stream."""
 
     def to_json_payload(self) -> dict[str, object | None]:
-        """Serialize the event into the JSON payload written to stdout."""
+        """Serialize the event into the JSON payload written to the event sink."""
 
         return {
             "event": self.event_type.value,
@@ -212,6 +212,18 @@ class ReportRequest:
 
 
 @dataclass(frozen=True, slots=True)
+class WatchEventRequest:
+    """Normalized unstable watch-event emission request."""
+
+    event_format: WatchEventFormat
+    output_path: Path | None
+
+    @property
+    def writes_to_stdout(self) -> bool:
+        return self.output_path is None
+
+
+@dataclass(frozen=True, slots=True)
 class PlanInvocation:
     """Parsed `plan` command invocation."""
 
@@ -244,7 +256,7 @@ class WatchInvocation:
     layout: RepositoryLayout
     fail_on_severity: CheckFailureThreshold
     report_request: ReportRequest
-    unstable_event_format: WatchEventFormat | None
+    unstable_event_request: WatchEventRequest | None
     verbose: bool
     debug: bool
 

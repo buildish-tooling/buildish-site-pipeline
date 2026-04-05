@@ -175,12 +175,14 @@ class WatchInternalTests(unittest.TestCase):
             (workspace_root, site_root),
         )
 
-    def test_pipeline_owned_path_detection_filters_stage_work_and_report_temps(self) -> None:
+    def test_pipeline_owned_path_detection_filters_stage_work_event_outputs_and_backup_descendants(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             workspace_root = Path(tempdir)
             stage_root = workspace_root / "site/.stage"
             work_root = workspace_root / "site/.site-pipeline-work"
             report_output = workspace_root / "watch-report.json"
+            event_output = workspace_root / "site/.watch-events.123456.jsonl"
+            backup_descendant = workspace_root / "site/..stage.backup.abcdef/content/index.md"
             authored_path = workspace_root / "components/runtime/docs/index.md"
 
             self.assertTrue(
@@ -189,6 +191,7 @@ class WatchInternalTests(unittest.TestCase):
                     stage_root=stage_root,
                     work_root=work_root,
                     report_output=report_output,
+                    event_output=event_output,
                 ),
             )
             self.assertTrue(
@@ -197,6 +200,7 @@ class WatchInternalTests(unittest.TestCase):
                     stage_root=stage_root,
                     work_root=work_root,
                     report_output=report_output,
+                    event_output=event_output,
                 ),
             )
             self.assertTrue(
@@ -205,6 +209,25 @@ class WatchInternalTests(unittest.TestCase):
                     stage_root=stage_root,
                     work_root=work_root,
                     report_output=report_output,
+                    event_output=event_output,
+                ),
+            )
+            self.assertTrue(
+                _is_pipeline_owned_path(
+                    path=event_output,
+                    stage_root=stage_root,
+                    work_root=work_root,
+                    report_output=report_output,
+                    event_output=event_output,
+                ),
+            )
+            self.assertTrue(
+                _is_pipeline_owned_path(
+                    path=backup_descendant,
+                    stage_root=stage_root,
+                    work_root=work_root,
+                    report_output=report_output,
+                    event_output=event_output,
                 ),
             )
             self.assertFalse(
@@ -213,6 +236,7 @@ class WatchInternalTests(unittest.TestCase):
                     stage_root=stage_root,
                     work_root=work_root,
                     report_output=report_output,
+                    event_output=event_output,
                 ),
             )
 
@@ -310,6 +334,7 @@ class WatchInternalTests(unittest.TestCase):
                     stage_root=workspace_root / "site/.stage",
                     work_root=workspace_root / ".buildish/work",
                     report_output=None,
+                    event_output=None,
                     stop_event=threading.Event(),
                 )
                 try:
@@ -340,6 +365,7 @@ class WatchInternalTests(unittest.TestCase):
                     stage_root=workspace_root / "site/.stage",
                     work_root=workspace_root / ".buildish/work",
                     report_output=None,
+                    event_output=None,
                     stop_event=threading.Event(),
                 )
                 try:

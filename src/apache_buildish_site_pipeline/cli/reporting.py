@@ -26,7 +26,7 @@ from apache_buildish_site_pipeline.models.planning_stage_contract import (
     ResolvedMaterializationReportV1,
 )
 
-from .contract import ReportFormat, ReportModel, ReportRequest
+from .contract import ReportFormat, ReportModel, ReportRequest, WatchEventFormat, WatchEventRequest
 from .errors import InvocationError, ReportWriteError, UnsupportedReportSchemaVersionError
 
 
@@ -91,6 +91,55 @@ def revalidate_report_request(
     )
 
 
+def build_watch_event_request(
+    *,
+    cwd: Path,
+    event_format: str | None,
+    event_output: str | None,
+    forbidden_roots: tuple[Path, ...] = (),
+) -> WatchEventRequest | None:
+    """Normalize and validate one unstable watch-event stream request."""
+
+    if event_format is None:
+        if event_output is not None:
+            raise InvocationError("--unstable-events-output is only valid together with --unstable-events")
+        return None
+
+    normalized_format = WatchEventFormat(event_format)
+    raw_event_output = event_output
+    if raw_event_output is None or raw_event_output == "-":
+        return WatchEventRequest(event_format=normalized_format, output_path=None)
+
+    output_path = _validate_safe_output_path(
+        cwd=cwd,
+        raw_path=_parse_cli_local_path(raw_event_output),
+        forbidden_roots=forbidden_roots,
+        path_label="Watch event output",
+    )
+    return WatchEventRequest(event_format=normalized_format, output_path=output_path)
+
+
+def revalidate_watch_event_request(
+    *,
+    cwd: Path,
+    request: WatchEventRequest | None,
+    forbidden_roots: tuple[Path, ...] = (),
+) -> WatchEventRequest | None:
+    """Re-run output-path safety checks before opening a watch-event file sink."""
+
+    if request is None or request.output_path is None:
+        return request
+    return WatchEventRequest(
+        event_format=request.event_format,
+        output_path=_validate_safe_output_path(
+            cwd=cwd,
+            raw_path=request.output_path,
+            forbidden_roots=forbidden_roots,
+            path_label="Watch event output",
+        ),
+    )
+
+
 def emit_report(*, request: ReportRequest, report: ReportModel, text_output: str, stdout: TextIO) -> None:
     """Emit the final operator-facing report to stdout or a file."""
 
@@ -133,19 +182,25 @@ def render_text_report(report: ReportModel) -> str:
     )
 
 
-def _validate_safe_output_path(*, cwd: Path, raw_path: Path, forbidden_roots: tuple[Path, ...]) -> Path:
+def _validate_safe_output_path(
+    *,
+    cwd: Path,
+    raw_path: Path,
+    forbidden_roots: tuple[Path, ...],
+    path_label: str = "Report output",
+) -> Path:
     absolute_path = _absolute_path(cwd=cwd, raw_path=raw_path)
     normalized_path = absolute_path.resolve(strict=False)
     parent_path = absolute_path.parent
     if not parent_path.exists() or not parent_path.is_dir():
-        raise InvocationError(f"Report output parent directory does not exist: {parent_path}")
+        raise InvocationError(f"{path_label} parent directory does not exist: {parent_path}")
     if _contains_symlink(parent_path):
-        raise InvocationError(f"Report output parent directory resolves through a symlink: {parent_path}")
+        raise InvocationError(f"{path_label} parent directory resolves through a symlink: {parent_path}")
     if absolute_path.exists() and absolute_path.is_symlink():
-        raise InvocationError(f"Report output path must not be a symlink: {absolute_path}")
+        raise InvocationError(f"{path_label} path must not be a symlink: {absolute_path}")
     for forbidden_root in forbidden_roots:
         if normalized_path.is_relative_to(forbidden_root.resolve(strict=False)):
-            raise InvocationError(f"Report output must live outside {forbidden_root}")
+            raise InvocationError(f"{path_label} must live outside {forbidden_root}")
     return absolute_path
 
 

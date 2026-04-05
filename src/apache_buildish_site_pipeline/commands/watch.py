@@ -23,6 +23,7 @@ import threading
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
+from itertools import chain
 from pathlib import Path
 from types import FrameType
 from typing import TextIO
@@ -52,11 +53,17 @@ from ..cli.contract import (
     WatchCycleSucceededEvent,
     WatchEvent,
     WatchEventFormat,
+    WatchEventRequest,
     WatchInvocation,
     WatchReadyEvent,
 )
 from ..cli.errors import InvocationError, RetainedStageError, SitePipelineCliError, StageIntegrityError
-from ..cli.reporting import emit_report, render_text_report, revalidate_report_request
+from ..cli.reporting import (
+    emit_report,
+    render_text_report,
+    revalidate_report_request,
+    revalidate_watch_event_request,
+)
 from .shared import load_workspace_inputs
 from .stage_report import build_stage_run_report
 
@@ -113,13 +120,14 @@ class _WatchIo:
     """Process-local watch output routing for machine and human consumers."""
 
     invocation: WatchInvocation
-    stdout: TextIO
+    event_request: WatchEventRequest | None
+    event_sink: TextIO | None
     stderr: TextIO
 
     def emit_cycle_event(self, report: StageRunReportV1) -> None:
         """Write one unstable machine-readable cycle event when enabled."""
 
-        if self.invocation.unstable_event_format is None:
+        if self.event_request is None:
             return
         self._write_event(
             WatchCycleSucceededEvent.from_report(report)
@@ -130,7 +138,7 @@ class _WatchIo:
     def emit_ready(self, report: StageRunReportV1) -> None:
         """Write the one-time readiness event once a consumer-safe stage exists."""
 
-        if self.invocation.unstable_event_format is None:
+        if self.event_request is None:
             return
         self._write_event(WatchReadyEvent.from_report(report))
 
@@ -159,10 +167,12 @@ class _WatchIo:
         )
 
     def _write_event(self, payload: WatchEvent) -> None:
-        if self.invocation.unstable_event_format is not WatchEventFormat.JSONL:
-            raise AssertionError(f"Unsupported watch event format: {self.invocation.unstable_event_format!r}")
-        self.stdout.write(json.dumps(payload.to_json_payload(), separators=(",", ":")) + "\n")
-        self.stdout.flush()
+        if self.event_request is None or self.event_sink is None:
+            raise AssertionError("Watch event sink must exist when unstable events are enabled")
+        if self.event_request.event_format is not WatchEventFormat.JSONL:
+            raise AssertionError(f"Unsupported watch event format: {self.event_request.event_format!r}")
+        self.event_sink.write(json.dumps(payload.to_json_payload(), separators=(",", ":")) + "\n")
+        self.event_sink.flush()
 
     def _write_stderr(self, message: str) -> None:
         self.stderr.write(f"{message}\n")
@@ -179,11 +189,13 @@ class _WatchEventStream:
         stage_root: Path,
         work_root: Path,
         report_output: Path | None,
+        event_output: Path | None,
         stop_event: threading.Event,
     ) -> None:
         self._stage_root = stage_root.resolve(strict=False)
         self._work_root = work_root.resolve(strict=False)
         self._report_output = report_output.resolve(strict=False) if report_output is not None else None
+        self._event_output = event_output.resolve(strict=False) if event_output is not None else None
         self._stop_event = stop_event
         self._default_filter = DefaultFilter()
         self._raw_events = watch(
@@ -229,68 +241,79 @@ class _WatchEventStream:
             stage_root=self._stage_root,
             work_root=self._work_root,
             report_output=self._report_output,
+            event_output=self._event_output,
         )
 
 
 def run_watch(invocation: WatchInvocation, *, stdout: TextIO, stderr: TextIO) -> CommandResult:
     """Run the initial watch cycle and continue rebuilding on watched changes."""
 
-    watch_io = _WatchIo(invocation=invocation, stdout=stdout, stderr=stderr)
-    trusted_stage = _load_trusted_stage(invocation.layout.stage_root)
-    cycle_number = 1
-    outcome = _run_watch_cycle(
-        invocation=invocation,
-        cycle_number=cycle_number,
-        trusted_stage=trusted_stage,
-        prior_watch_roots=_derive_watch_roots(
-            workspace_root=invocation.layout.workspace_root,
-            site_root=invocation.layout.site_root,
-            planning_roots=(),
-        ),
-        dirty_paths=(),
+    watch_event_request = revalidate_watch_event_request(
+        cwd=invocation.layout.cwd,
+        request=invocation.unstable_event_request,
+        forbidden_roots=(invocation.layout.stage_root, invocation.layout.work_root),
     )
-    _emit_cycle_report(invocation=invocation, report=outcome.report, stdout=stdout)
-    watch_io.emit_cycle_event(outcome.report)
-    watch_io.emit_cycle_log(report=outcome.report, dirty_paths=(), watch_roots=outcome.watch_roots)
+    if (
+        watch_event_request is not None
+        and watch_event_request.output_path is not None
+        and invocation.report_request.output_path is not None
+        and watch_event_request.output_path == invocation.report_request.output_path
+    ):
+        raise InvocationError("--unstable-events-output must differ from --report-output")
+    invocation = WatchInvocation(
+        layout=invocation.layout,
+        fail_on_severity=invocation.fail_on_severity,
+        report_request=invocation.report_request,
+        unstable_event_request=watch_event_request,
+        verbose=invocation.verbose,
+        debug=invocation.debug,
+    )
 
-    if not outcome.report.summary.stage_usable:
-        raise StageIntegrityError("Initial watch cycle failed before any trustworthy stage existed")
+    with _open_watch_event_output(request=watch_event_request, stdout=stdout) as event_sink:
+        watch_io = _WatchIo(
+            invocation=invocation,
+            event_request=watch_event_request,
+            event_sink=event_sink,
+            stderr=stderr,
+        )
+        trusted_stage = _load_trusted_stage(invocation.layout.stage_root)
+        cycle_number = 1
+        outcome = _run_watch_cycle(
+            invocation=invocation,
+            cycle_number=cycle_number,
+            trusted_stage=trusted_stage,
+            prior_watch_roots=_derive_watch_roots(
+                workspace_root=invocation.layout.workspace_root,
+                site_root=invocation.layout.site_root,
+                planning_roots=(),
+            ),
+            dirty_paths=(),
+        )
+        _emit_cycle_report(invocation=invocation, report=outcome.report, stdout=stdout)
+        watch_io.emit_cycle_event(outcome.report)
+        watch_io.emit_cycle_log(report=outcome.report, dirty_paths=(), watch_roots=outcome.watch_roots)
 
-    watch_io.emit_ready(outcome.report)
-    trusted_stage = outcome.trusted_stage
-    last_report = outcome.report
-    current_watch_roots = outcome.watch_roots
-    with _graceful_watch_shutdown() as shutdown_controller:
-        with _open_watch_event_stream(
-            watch_roots=current_watch_roots,
-            stage_root=invocation.layout.stage_root,
-            work_root=invocation.layout.work_root,
-            report_output=invocation.report_request.output_path,
-            stop_event=shutdown_controller.stop_event,
-        ) as event_stream:
-            while True:
-                pending_dirty_paths = event_stream.collect_dirty_paths(wait_for_first=True)
-                if pending_dirty_paths is None:
-                    return _watch_success_result(last_report)
+        if not outcome.report.summary.stage_usable:
+            raise StageIntegrityError("Initial watch cycle failed before any trustworthy stage existed")
 
-                cycle_number, trusted_stage, current_watch_roots, last_report = _run_follow_up_cycle(
-                    invocation=invocation,
-                    cycle_number=cycle_number,
-                    trusted_stage=trusted_stage,
-                    last_watch_roots=current_watch_roots,
-                    dirty_paths=pending_dirty_paths,
-                    stdout=stdout,
-                    watch_io=watch_io,
-                )
-                if shutdown_controller.shutdown_requested:
-                    return _watch_success_result(last_report)
-
+        watch_io.emit_ready(outcome.report)
+        trusted_stage = outcome.trusted_stage
+        last_report = outcome.report
+        current_watch_roots = outcome.watch_roots
+        with _graceful_watch_shutdown() as shutdown_controller:
+            with _open_watch_event_stream(
+                watch_roots=current_watch_roots,
+                stage_root=invocation.layout.stage_root,
+                work_root=invocation.layout.work_root,
+                report_output=invocation.report_request.output_path,
+                event_output=watch_event_request.output_path if watch_event_request is not None else None,
+                stop_event=shutdown_controller.stop_event,
+            ) as event_stream:
                 while True:
-                    pending_dirty_paths = event_stream.collect_dirty_paths(wait_for_first=False)
+                    pending_dirty_paths = event_stream.collect_dirty_paths(wait_for_first=True)
                     if pending_dirty_paths is None:
                         return _watch_success_result(last_report)
-                    if not pending_dirty_paths:
-                        break
+
                     cycle_number, trusted_stage, current_watch_roots, last_report = _run_follow_up_cycle(
                         invocation=invocation,
                         cycle_number=cycle_number,
@@ -300,6 +323,24 @@ def run_watch(invocation: WatchInvocation, *, stdout: TextIO, stderr: TextIO) ->
                         stdout=stdout,
                         watch_io=watch_io,
                     )
+                    if shutdown_controller.shutdown_requested:
+                        return _watch_success_result(last_report)
+
+                    while True:
+                        pending_dirty_paths = event_stream.collect_dirty_paths(wait_for_first=False)
+                        if pending_dirty_paths is None:
+                            return _watch_success_result(last_report)
+                        if not pending_dirty_paths:
+                            break
+                        cycle_number, trusted_stage, current_watch_roots, last_report = _run_follow_up_cycle(
+                            invocation=invocation,
+                            cycle_number=cycle_number,
+                            trusted_stage=trusted_stage,
+                            last_watch_roots=current_watch_roots,
+                            dirty_paths=pending_dirty_paths,
+                            stdout=stdout,
+                            watch_io=watch_io,
+                        )
 
 
 def _run_follow_up_cycle(
@@ -677,6 +718,7 @@ def _open_watch_event_stream(
     stage_root: Path,
     work_root: Path,
     report_output: Path | None,
+    event_output: Path | None,
     stop_event: threading.Event,
 ) -> Iterator[_WatchEventStream]:
     """Open one watchfiles-backed event stream for the steady-state loop."""
@@ -686,12 +728,30 @@ def _open_watch_event_stream(
         stage_root=stage_root,
         work_root=work_root,
         report_output=report_output,
+        event_output=event_output,
         stop_event=stop_event,
     )
     try:
         yield event_stream
     finally:
         event_stream.close()
+
+
+@contextmanager
+def _open_watch_event_output(*, request: WatchEventRequest | None, stdout: TextIO) -> Iterator[TextIO | None]:
+    """Open the configured watch-event sink so watch owns its machine stream directly."""
+
+    if request is None:
+        yield None
+        return
+    if request.writes_to_stdout:
+        yield stdout
+        return
+    output_path = request.output_path
+    if output_path is None:
+        raise AssertionError("Watch event output path must exist for file-backed sinks")
+    with output_path.open("w", encoding="utf-8", buffering=1) as handle:
+        yield handle
 
 
 @contextmanager
@@ -743,6 +803,7 @@ def _is_pipeline_owned_path(
     stage_root: Path,
     work_root: Path,
     report_output: Path | None,
+    event_output: Path | None,
 ) -> bool:
     """Return whether a changed path belongs to watch-owned outputs or temp files."""
 
@@ -757,19 +818,25 @@ def _is_pipeline_owned_path(
     stage_parent = normalized_stage_root.parent
     stage_temp_prefix = f".{normalized_stage_root.name}."
     stage_backup_prefix = f".{normalized_stage_root.name}.backup."
-    if normalized_path.parent == stage_parent and (
-        normalized_path.name.startswith(stage_temp_prefix) or normalized_path.name.startswith(stage_backup_prefix)
-    ):
-        return True
+    for candidate in chain((normalized_path,), normalized_path.parents):
+        if candidate.parent == stage_parent and (
+            candidate.name.startswith(stage_temp_prefix) or candidate.name.startswith(stage_backup_prefix)
+        ):
+            return True
 
-    if report_output is None:
+    if report_output is not None:
+        normalized_report_output = report_output.resolve(strict=False)
+        if normalized_path == normalized_report_output:
+            return True
+        if normalized_path.parent == normalized_report_output.parent and normalized_path.name.startswith(
+            f".{normalized_report_output.name}.",
+        ):
+            return True
+
+    if event_output is None:
         return False
-    normalized_report_output = report_output.resolve(strict=False)
-    if normalized_path == normalized_report_output:
-        return True
-    return normalized_path.parent == normalized_report_output.parent and normalized_path.name.startswith(
-        f".{normalized_report_output.name}.",
-    )
+    normalized_event_output = event_output.resolve(strict=False)
+    return normalized_path == normalized_event_output
 
 
 def _load_trusted_stage(stage_root: Path) -> TrustedStageState | None:

@@ -37,7 +37,13 @@ from .contract import (
 )
 from .dispatch import dispatch_command
 from .errors import CommandExecutionError, InvocationError, SitePipelineCliError
-from .reporting import build_report_request, emit_report, revalidate_report_request
+from .reporting import (
+    build_report_request,
+    build_watch_event_request,
+    emit_report,
+    revalidate_report_request,
+    revalidate_watch_event_request,
+)
 
 
 class _ArgumentParser(argparse.ArgumentParser):
@@ -55,11 +61,38 @@ def _run(*, argv: Sequence[str] | None, stdout: TextIO, stderr: TextIO) -> int:
     try:
         invocation = parse_invocation(argv)
         if isinstance(invocation, WatchInvocation):
+            report_request = invocation.report_request
+            if report_request.output_path is not None:
+                report_request = revalidate_report_request(
+                    cwd=invocation.layout.cwd,
+                    request=report_request,
+                    forbidden_roots=(invocation.layout.stage_root, invocation.layout.work_root),
+                )
+            watch_event_request = revalidate_watch_event_request(
+                cwd=invocation.layout.cwd,
+                request=invocation.unstable_event_request,
+                forbidden_roots=(invocation.layout.stage_root, invocation.layout.work_root),
+            )
+            if (
+                watch_event_request is not None
+                and watch_event_request.output_path is not None
+                and report_request.output_path is not None
+                and watch_event_request.output_path == report_request.output_path
+            ):
+                raise InvocationError("--unstable-events-output must differ from --report-output")
+            invocation = WatchInvocation(
+                layout=invocation.layout,
+                fail_on_severity=invocation.fail_on_severity,
+                report_request=report_request,
+                unstable_event_request=watch_event_request,
+                verbose=invocation.verbose,
+                debug=invocation.debug,
+            )
             result = run_watch(invocation, stdout=stdout, stderr=stderr)
-            if invocation.report_request.output_path is None:
-                if invocation.unstable_event_format is None:
+            if report_request.output_path is None:
+                if watch_event_request is None or not watch_event_request.writes_to_stdout:
                     emit_report(
-                        request=invocation.report_request,
+                        request=report_request,
                         report=result.report,
                         text_output=result.text_output,
                         stdout=stdout,
@@ -123,6 +156,19 @@ def parse_invocation(argv: Sequence[str] | None = None) -> CommandInvocation:
         forbidden_roots=(layout.stage_root, layout.work_root),
         forbid_stdout_json=namespace.command == "watch",
     )
+    watch_event_request = build_watch_event_request(
+        cwd=cwd,
+        event_format=namespace.unstable_events if namespace.command == "watch" else None,
+        event_output=namespace.unstable_events_output if namespace.command == "watch" else None,
+        forbidden_roots=(layout.stage_root, layout.work_root),
+    )
+    if (
+        watch_event_request is not None
+        and watch_event_request.output_path is not None
+        and report_request.output_path is not None
+        and watch_event_request.output_path == report_request.output_path
+    ):
+        raise InvocationError("--unstable-events-output must differ from --report-output")
 
     if namespace.command == "plan":
         return PlanInvocation(
@@ -142,7 +188,7 @@ def parse_invocation(argv: Sequence[str] | None = None) -> CommandInvocation:
         layout=layout,
         fail_on_severity=CheckFailureThreshold(namespace.fail_on_severity),
         report_request=report_request,
-        unstable_event_format=WatchEventFormat(namespace.unstable_events) if namespace.unstable_events is not None else None,
+        unstable_event_request=watch_event_request,
         verbose=bool(namespace.verbose or namespace.debug),
         debug=bool(namespace.debug),
     )
@@ -183,7 +229,13 @@ def _build_parser() -> argparse.ArgumentParser:
         "--unstable-events",
         choices=[value.value for value in WatchEventFormat],
         default=None,
-        help="Emit unstable machine-readable watch events to stdout using the selected encoding.",
+        help="Emit unstable machine-readable watch events using the selected encoding.",
+    )
+    watch_parser.add_argument(
+        "--unstable-events-output",
+        metavar="PATH|-",
+        default=None,
+        help="Write unstable watch events to PATH or '-' for stdout (default).",
     )
     watch_parser.add_argument(
         "--verbose",

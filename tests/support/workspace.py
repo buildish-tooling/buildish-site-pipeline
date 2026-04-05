@@ -165,9 +165,10 @@ def _fake_watch_event_stream_factory(
         stage_root: Path,
         work_root: Path,
         report_output: Path | None,
+        event_output: Path | None,
         stop_event,
     ):
-        del stage_root, work_root, report_output, stop_event
+        del stage_root, work_root, report_output, event_output, stop_event
         if captured_watch_roots is not None:
             captured_watch_roots.append(watch_roots)
         yield _FakeWatchEventStream(list(responses))

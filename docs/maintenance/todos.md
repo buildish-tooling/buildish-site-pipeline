@@ -84,10 +84,10 @@ not as a reason to weaken the current publication-integrity rules.
 
 The first slice of explicit watch readiness signaling now exists:
 
-- `site-pipeline watch --unstable-events jsonl`
+- `site-pipeline watch --unstable-events jsonl [--unstable-events-output PATH|-]`
 - machine-readable events `ready`, `cycle-succeeded`, and `cycle-failed`
 - human-facing `--verbose` and `--debug` output routed to `stderr`
-- documentation for the stdout/stderr split and defensive malformed-line
+- documentation for the event-sink contract plus defensive malformed-line
   handling in the API contract
 
 The remaining work in this area is follow-up hardening and ergonomics, not the

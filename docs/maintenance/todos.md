@@ -35,6 +35,20 @@ for the short maintainer checklist. The highest-leverage themes are thinner
 orchestration, more explicit invariants in types, and more aggressively
 single-sourced trust-boundary and policy rules.
 
+## CI changed-files gating after previous failures
+
+The current CI changed-files detection compares the current head only against the
+event base SHA. That is fine for the common fast path, but it can skip important
+jobs when an earlier commit in the same push or pull request already failed a
+gated job and the newest commit does not touch one of the trigger paths.
+
+The deferred follow-up is to make the changed-files gating logic aware of prior
+failed jobs for the same branch or pull request, so a follow-up commit does not
+incorrectly skip `check` just because the newest diff is narrower.
+
+Any future fix should preserve the current optimization goal while making the
+failure recovery path safe and predictable.
+
 ## Local operator path-mapping overrides
 
 The CLI now separates the shared authored catalog path from the operator's

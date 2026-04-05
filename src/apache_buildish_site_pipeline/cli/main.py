@@ -32,6 +32,7 @@ from .contract import (
     CommandInvocation,
     PlanInvocation,
     RepositoryLayout,
+    WatchEventFormat,
     WatchInvocation,
 )
 from .dispatch import dispatch_command
@@ -54,14 +55,17 @@ def _run(*, argv: Sequence[str] | None, stdout: TextIO, stderr: TextIO) -> int:
     try:
         invocation = parse_invocation(argv)
         if isinstance(invocation, WatchInvocation):
-            result = run_watch(invocation, stdout=stdout)
+            result = run_watch(invocation, stdout=stdout, stderr=stderr)
             if invocation.report_request.output_path is None:
-                emit_report(
-                    request=invocation.report_request,
-                    report=result.report,
-                    text_output=result.text_output,
-                    stdout=stdout,
-                )
+                if invocation.unstable_event_format is None:
+                    emit_report(
+                        request=invocation.report_request,
+                        report=result.report,
+                        text_output=result.text_output,
+                        stdout=stdout,
+                    )
+                else:
+                    _write_stream_output(stderr, result.text_output)
             return int(result.exit_code)
 
         result = dispatch_command(invocation)
@@ -138,6 +142,9 @@ def parse_invocation(argv: Sequence[str] | None = None) -> CommandInvocation:
         layout=layout,
         fail_on_severity=CheckFailureThreshold(namespace.fail_on_severity),
         report_request=report_request,
+        unstable_event_format=WatchEventFormat(namespace.unstable_events) if namespace.unstable_events is not None else None,
+        verbose=bool(namespace.verbose or namespace.debug),
+        debug=bool(namespace.debug),
     )
 
 
@@ -172,6 +179,22 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=[value.value for value in CheckFailureThreshold],
         default=CheckFailureThreshold.ERROR.value,
     )
+    watch_parser.add_argument(
+        "--unstable-events",
+        choices=[value.value for value in WatchEventFormat],
+        default=None,
+        help="Emit unstable machine-readable watch events to stdout using the selected encoding.",
+    )
+    watch_parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Write human-facing watch cycle summaries to stderr.",
+    )
+    watch_parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Write verbose watch summaries plus dirty-path/debug details to stderr.",
+    )
     _add_report_arguments(watch_parser)
     return parser
 
@@ -197,3 +220,10 @@ def _resolve_cli_path(*, cwd: Path, raw_path: str) -> Path:
 def _write_error(stderr: TextIO, message: str) -> None:
     stderr.write(f"site-pipeline: {message}\n")
     stderr.flush()
+
+
+def _write_stream_output(stream: TextIO, message: str) -> None:
+    stream.write(message)
+    if not message.endswith("\n"):
+        stream.write("\n")
+    stream.flush()

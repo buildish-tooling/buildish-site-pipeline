@@ -63,6 +63,7 @@ def finalize_stage_publication(
     if normalized_stage_root.exists():
         normalized_stage_root.rmdir()
     os.replace(normalized_candidate_root, normalized_stage_root)
+    _fsync_published_stage(normalized_stage_root)
     return StagePublicationResult(
         stage_root=normalized_stage_root,
         manifest_path=normalized_stage_root / "manifest.json",
@@ -207,11 +208,13 @@ def _replace_stage_root(*, candidate_stage_root: Path, stage_root: Path) -> Stag
     backup_root = Path(tempfile.mkdtemp(prefix=f".{stage_root.name}.backup.", dir=parent_path))
     shutil.rmtree(backup_root, ignore_errors=True)
     previous_stage_moved = False
+    published = False
     try:
         if stage_root.exists():
             os.replace(stage_root, backup_root)
             previous_stage_moved = True
         os.replace(candidate_stage_root, stage_root)
+        published = True
     except OSError as exc:
         if previous_stage_moved and backup_root.exists() and not stage_root.exists():
             try:
@@ -227,7 +230,42 @@ def _replace_stage_root(*, candidate_stage_root: Path, stage_root: Path) -> Stag
     finally:
         if backup_root.exists():
             shutil.rmtree(backup_root, ignore_errors=True)
+    if published:
+        _fsync_published_stage(stage_root)
     return StagePublicationResult(
         stage_root=stage_root,
         manifest_path=stage_root / "manifest.json",
     )
+
+
+def _fsync_published_stage(stage_root: Path) -> None:
+    """Sync the published manifest and directory entries before watch declares readiness."""
+
+    manifest_path = stage_root / "manifest.json"
+    _fsync_file(manifest_path)
+    _fsync_directory(stage_root)
+    _fsync_directory(stage_root.parent)
+
+
+def _fsync_file(path: Path) -> None:
+    fd: int | None = None
+    try:
+        fd = os.open(path, os.O_RDONLY)
+        os.fsync(fd)
+    except OSError as exc:
+        raise StageIntegrityError(f"Could not fsync published stage file {path}: {exc}") from exc
+    finally:
+        if fd is not None:
+            os.close(fd)
+
+
+def _fsync_directory(path: Path) -> None:
+    fd: int | None = None
+    try:
+        fd = os.open(path, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
+        os.fsync(fd)
+    except OSError as exc:
+        raise StageIntegrityError(f"Could not fsync published stage directory {path}: {exc}") from exc
+    finally:
+        if fd is not None:
+            os.close(fd)

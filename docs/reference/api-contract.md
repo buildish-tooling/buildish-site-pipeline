@@ -329,6 +329,8 @@ Recommended forms are:
 - `site-pipeline watch`
 - `site-pipeline watch --workspace-root /workspace --catalog /workspace/buildish/site/components.yaml`
 - `site-pipeline watch --report-format json --report-schema-version 1 --report-output .site-pipeline/watch-report.json`
+- `site-pipeline watch --unstable-events jsonl`
+- `site-pipeline watch --unstable-events jsonl --debug --report-format json --report-schema-version 1 --report-output .site-pipeline/watch-report.json`
 
 Recommended flag meanings are:
 
@@ -339,6 +341,55 @@ Recommended flag meanings are:
   stdout and is the default; for `watch`, JSON report output should be a file
   path that the command rewrites after each completed cycle. That file path is
   machine-local and follows host-native path semantics.
+
+## Unstable watch event stream
+
+`site-pipeline watch` also supports one explicitly unstable machine-readable
+event stream for local orchestration helpers:
+
+- `--unstable-events jsonl`
+
+This stream is intentionally separate from the stable report contract.
+Consumers should treat it as a convenience API for local wrappers such as
+`make serve`, not as a long-term compatibility promise.
+
+Current stream rules are:
+
+- machine-readable events are written to `stdout` as one JSON object per line
+- human-facing watch summaries and debug diagnostics are written to `stderr`
+- non-event output must not be mixed into the JSONL stream on `stdout`
+- consumers should discard malformed JSONL lines defensively instead of
+  treating one bad line as a fatal protocol guarantee
+
+Current event types are:
+
+- `ready`: emitted once after the initial watch cycle has produced a
+  consumer-safe stage
+- `cycle-succeeded`: emitted after each successful watch cycle
+- `cycle-failed`: emitted after a failed watch cycle when the process retains or
+  reports the last trustworthy stage state
+
+All current events include:
+
+- `event`: event discriminator string
+- `cycle`: watch-cycle number
+- `stageRootPath`: absolute visible-stage path when known
+- `manifestPath`: absolute staged `manifest.json` path when known
+
+Cycle outcome events also include:
+
+- `status`
+- `succeeded`
+- `wroteStage`
+- `stageUsable`
+- `errorCount`
+- `warningCount`
+- `infoCount`
+
+The current implementation models those payloads internally via one base
+`WatchEvent` type and concrete `WatchReadyEvent`, `WatchCycleSucceededEvent`,
+and `WatchCycleFailedEvent` variants so JSON serialization stays centralized and
+reviewable.
 
 ## Stable outputs API
 

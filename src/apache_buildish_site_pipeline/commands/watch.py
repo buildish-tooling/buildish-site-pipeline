@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 
+import json
 import signal
 import shutil
 import threading
@@ -24,6 +25,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from types import FrameType
+from typing import TextIO
 
 from watchfiles import DefaultFilter, watch
 
@@ -43,7 +45,16 @@ from apache_buildish_site_pipeline.staging.publication import (
 from apache_buildish_site_pipeline.staging.types import BuildRequest, StageDestination
 from apache_buildish_site_pipeline.staging.worker_protocol import UnitContributionManifestWire
 
-from ..cli.contract import ApplicationExitCode, CommandResult, WatchInvocation
+from ..cli.contract import (
+    ApplicationExitCode,
+    CommandResult,
+    WatchCycleFailedEvent,
+    WatchCycleSucceededEvent,
+    WatchEvent,
+    WatchEventFormat,
+    WatchInvocation,
+    WatchReadyEvent,
+)
 from ..cli.errors import InvocationError, RetainedStageError, SitePipelineCliError, StageIntegrityError
 from ..cli.reporting import emit_report, render_text_report, revalidate_report_request
 from .shared import load_workspace_inputs
@@ -95,6 +106,67 @@ class _WatchShutdownController:
     def request_shutdown(self) -> None:
         self.shutdown_requested = True
         self.stop_event.set()
+
+
+@dataclass(frozen=True, slots=True)
+class _WatchIo:
+    """Process-local watch output routing for machine and human consumers."""
+
+    invocation: WatchInvocation
+    stdout: TextIO
+    stderr: TextIO
+
+    def emit_cycle_event(self, report: StageRunReportV1) -> None:
+        """Write one unstable machine-readable cycle event when enabled."""
+
+        if self.invocation.unstable_event_format is None:
+            return
+        self._write_event(
+            WatchCycleSucceededEvent.from_report(report)
+            if report.summary.succeeded
+            else WatchCycleFailedEvent.from_report(report),
+        )
+
+    def emit_ready(self, report: StageRunReportV1) -> None:
+        """Write the one-time readiness event once a consumer-safe stage exists."""
+
+        if self.invocation.unstable_event_format is None:
+            return
+        self._write_event(WatchReadyEvent.from_report(report))
+
+    def emit_cycle_log(
+        self,
+        *,
+        report: StageRunReportV1,
+        dirty_paths: tuple[Path, ...],
+        watch_roots: tuple[Path, ...],
+    ) -> None:
+        """Write optional human-facing watch progress lines to stderr."""
+
+        if not self.invocation.verbose:
+            return
+        self._write_stderr(f"watch cycle {report.cycle}: {render_text_report(report)}")
+        if not self.invocation.debug:
+            return
+        if dirty_paths:
+            self._write_stderr(
+                "watch debug dirty paths: " + ", ".join(str(path) for path in dirty_paths),
+            )
+        else:
+            self._write_stderr("watch debug dirty paths: <initial scan>")
+        self._write_stderr(
+            "watch debug roots: " + ", ".join(str(path) for path in watch_roots),
+        )
+
+    def _write_event(self, payload: WatchEvent) -> None:
+        if self.invocation.unstable_event_format is not WatchEventFormat.JSONL:
+            raise AssertionError(f"Unsupported watch event format: {self.invocation.unstable_event_format!r}")
+        self.stdout.write(json.dumps(payload.to_json_payload(), separators=(",", ":")) + "\n")
+        self.stdout.flush()
+
+    def _write_stderr(self, message: str) -> None:
+        self.stderr.write(f"{message}\n")
+        self.stderr.flush()
 
 
 class _WatchEventStream:
@@ -160,9 +232,10 @@ class _WatchEventStream:
         )
 
 
-def run_watch(invocation: WatchInvocation, *, stdout) -> CommandResult:
+def run_watch(invocation: WatchInvocation, *, stdout: TextIO, stderr: TextIO) -> CommandResult:
     """Run the initial watch cycle and continue rebuilding on watched changes."""
 
+    watch_io = _WatchIo(invocation=invocation, stdout=stdout, stderr=stderr)
     trusted_stage = _load_trusted_stage(invocation.layout.stage_root)
     cycle_number = 1
     outcome = _run_watch_cycle(
@@ -177,10 +250,13 @@ def run_watch(invocation: WatchInvocation, *, stdout) -> CommandResult:
         dirty_paths=(),
     )
     _emit_cycle_report(invocation=invocation, report=outcome.report, stdout=stdout)
+    watch_io.emit_cycle_event(outcome.report)
+    watch_io.emit_cycle_log(report=outcome.report, dirty_paths=(), watch_roots=outcome.watch_roots)
 
     if not outcome.report.summary.stage_usable:
         raise StageIntegrityError("Initial watch cycle failed before any trustworthy stage existed")
 
+    watch_io.emit_ready(outcome.report)
     trusted_stage = outcome.trusted_stage
     last_report = outcome.report
     current_watch_roots = outcome.watch_roots
@@ -204,6 +280,7 @@ def run_watch(invocation: WatchInvocation, *, stdout) -> CommandResult:
                     last_watch_roots=current_watch_roots,
                     dirty_paths=pending_dirty_paths,
                     stdout=stdout,
+                    watch_io=watch_io,
                 )
                 if shutdown_controller.shutdown_requested:
                     return _watch_success_result(last_report)
@@ -221,6 +298,7 @@ def run_watch(invocation: WatchInvocation, *, stdout) -> CommandResult:
                         last_watch_roots=current_watch_roots,
                         dirty_paths=pending_dirty_paths,
                         stdout=stdout,
+                        watch_io=watch_io,
                     )
 
 
@@ -232,6 +310,7 @@ def _run_follow_up_cycle(
     last_watch_roots: tuple[Path, ...],
     dirty_paths: tuple[Path, ...],
     stdout,
+    watch_io: _WatchIo,
 ) -> tuple[int, TrustedStageState | None, tuple[Path, ...], StageRunReportV1]:
     """Run one later watch cycle and enforce stage-integrity rules."""
 
@@ -244,6 +323,8 @@ def _run_follow_up_cycle(
         dirty_paths=dirty_paths,
     )
     _emit_cycle_report(invocation=invocation, report=outcome.report, stdout=stdout)
+    watch_io.emit_cycle_event(outcome.report)
+    watch_io.emit_cycle_log(report=outcome.report, dirty_paths=dirty_paths, watch_roots=outcome.watch_roots)
 
     if not outcome.report.summary.stage_usable:
         raise StageIntegrityError(f"Watch cycle {next_cycle_number} left no trustworthy stage to serve")

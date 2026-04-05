@@ -20,16 +20,93 @@ import io
 import json
 import tempfile
 import unittest
-from unittest import mock
 from pathlib import Path
+from unittest import mock
 
 from apache_buildish_site_pipeline.cli import _run
+from apache_buildish_site_pipeline.cli.contract import WatchCycleFailedEvent, WatchCycleSucceededEvent, WatchReadyEvent
 from apache_buildish_site_pipeline.cli.dispatch import dispatch_command as _dispatch_command
 from apache_buildish_site_pipeline.cli.errors import CommandExecutionError
+from apache_buildish_site_pipeline.models.enums import RunStatus
 from tests.support.workspace import _cwd, _fake_watch_event_stream_factory, _workspace
 
 
 class CliTests(unittest.TestCase):
+    def test_watch_event_classes_serialize_expected_payloads(self) -> None:
+        stage_root_path = "/workspace/stage"
+        manifest_path = f"{stage_root_path}/manifest.json"
+        ready_event = WatchReadyEvent(
+            cycle=3,
+            stage_root_path=stage_root_path,
+            manifest_path=manifest_path,
+        )
+        succeeded_event = WatchCycleSucceededEvent(
+            cycle=4,
+            stage_root_path=stage_root_path,
+            manifest_path=manifest_path,
+            status=RunStatus.CLEAN,
+            succeeded=True,
+            wrote_stage=True,
+            stage_usable=True,
+            error_count=0,
+            warning_count=1,
+            info_count=2,
+        )
+        failed_event = WatchCycleFailedEvent(
+            cycle=5,
+            stage_root_path=None,
+            manifest_path=None,
+            status=RunStatus.ERRORS,
+            succeeded=False,
+            wrote_stage=False,
+            stage_usable=False,
+            error_count=1,
+            warning_count=0,
+            info_count=0,
+        )
+
+        self.assertEqual(
+            ready_event.to_json_payload(),
+            {
+                "event": "ready",
+                "cycle": 3,
+                "stageRootPath": "/workspace/stage",
+                "manifestPath": "/workspace/stage/manifest.json",
+            },
+        )
+        self.assertEqual(
+            succeeded_event.to_json_payload(),
+            {
+                "event": "cycle-succeeded",
+                "cycle": 4,
+                "stageRootPath": "/workspace/stage",
+                "manifestPath": "/workspace/stage/manifest.json",
+                "status": "clean",
+                "succeeded": True,
+                "wroteStage": True,
+                "stageUsable": True,
+                "errorCount": 0,
+                "warningCount": 1,
+                "infoCount": 2,
+            },
+        )
+        self.assertEqual(
+            failed_event.to_json_payload(),
+            {
+                "event": "cycle-failed",
+                "cycle": 5,
+                "stageRootPath": None,
+                "manifestPath": None,
+                "status": "errors",
+                "succeeded": False,
+                "wroteStage": False,
+                "stageUsable": False,
+                "errorCount": 1,
+                "warningCount": 0,
+                "infoCount": 0,
+            },
+        )
+
     def test_plan_json_report_to_stdout(self) -> None:
         with _workspace() as workspace_root:
             stdout = io.StringIO()
@@ -200,6 +277,140 @@ class CliTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 2)
         self.assertIn("watch JSON reports must be written to a file", stderr.getvalue())
+
+    def test_watch_unstable_events_write_jsonl_to_stdout(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            report_path = workspace_root / "watch-report.json"
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            with mock.patch(
+                "apache_buildish_site_pipeline.commands.watch._open_watch_event_stream",
+                new=_fake_watch_event_stream_factory(responses=[(True, None)]),
+            ):
+                with _cwd(workspace_root):
+                    exit_code = _run(
+                        argv=[
+                            "watch",
+                            "--unstable-events",
+                            "jsonl",
+                            "--report-format",
+                            "json",
+                            "--report-schema-version",
+                            "1",
+                            "--report-output",
+                            str(report_path),
+                        ],
+                        stdout=stdout,
+                        stderr=stderr,
+                    )
+
+        events = _parse_jsonl(stdout.getvalue())
+        self.assertEqual(exit_code, 0)
+        self.assertEqual([event["event"] for event in events], ["cycle-succeeded", "ready"])
+        self.assertEqual(events[0]["cycle"], 1)
+        self.assertEqual(events[1]["cycle"], 1)
+        self.assertEqual(stderr.getvalue(), "")
+
+    def test_watch_unstable_events_keep_human_report_on_stderr_when_stdout_is_reserved(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            with mock.patch(
+                "apache_buildish_site_pipeline.commands.watch._open_watch_event_stream",
+                new=_fake_watch_event_stream_factory(responses=[(True, None)]),
+            ):
+                with _cwd(workspace_root):
+                    exit_code = _run(
+                        argv=["watch", "--unstable-events", "jsonl"],
+                        stdout=stdout,
+                        stderr=stderr,
+                    )
+
+        events = _parse_jsonl(stdout.getvalue())
+        self.assertEqual(exit_code, 0)
+        self.assertEqual([event["event"] for event in events], ["cycle-succeeded", "ready"])
+        self.assertIn("watch clean: succeeded=yes", stderr.getvalue())
+
+    def test_watch_unstable_events_emit_cycle_failed_for_later_failure(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            report_path = workspace_root / "watch-report.json"
+            watched_file = workspace_root / "components/runtime/docs/releases/4.0.0/index.md"
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+
+            def _break_catalog_then_trigger_cycle():
+                (workspace_root / "site/components.yaml").unlink()
+                return (watched_file,)
+
+            with mock.patch(
+                "apache_buildish_site_pipeline.commands.watch._open_watch_event_stream",
+                new=_fake_watch_event_stream_factory(
+                    responses=[
+                        (True, _break_catalog_then_trigger_cycle),
+                        (False, None),
+                    ],
+                ),
+            ):
+                with _cwd(workspace_root):
+                    exit_code = _run(
+                        argv=[
+                            "watch",
+                            "--unstable-events",
+                            "jsonl",
+                            "--report-format",
+                            "json",
+                            "--report-schema-version",
+                            "1",
+                            "--report-output",
+                            str(report_path),
+                        ],
+                        stdout=stdout,
+                        stderr=stderr,
+                    )
+
+        events = _parse_jsonl(stdout.getvalue())
+        self.assertEqual(exit_code, 0)
+        self.assertEqual([event["event"] for event in events], ["cycle-succeeded", "ready", "cycle-failed"])
+        self.assertTrue(events[-1]["stageUsable"])
+        self.assertEqual(stderr.getvalue(), "")
+
+    def test_watch_debug_writes_cycle_details_to_stderr(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            report_path = workspace_root / "watch-report.json"
+            watched_file = workspace_root / "components/runtime/docs/releases/4.0.0/index.md"
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            with mock.patch(
+                "apache_buildish_site_pipeline.commands.watch._open_watch_event_stream",
+                new=_fake_watch_event_stream_factory(
+                    responses=[
+                        (True, (watched_file,)),
+                        (False, None),
+                    ],
+                ),
+            ):
+                with _cwd(workspace_root):
+                    exit_code = _run(
+                        argv=[
+                            "watch",
+                            "--debug",
+                            "--report-format",
+                            "json",
+                            "--report-schema-version",
+                            "1",
+                            "--report-output",
+                            str(report_path),
+                        ],
+                        stdout=stdout,
+                        stderr=stderr,
+                    )
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(stdout.getvalue(), "")
+        self.assertIn("watch cycle 1: watch clean: succeeded=yes", stderr.getvalue())
+        self.assertIn("watch debug dirty paths: <initial scan>", stderr.getvalue())
+        self.assertIn(str(watched_file), stderr.getvalue())
+        self.assertIn("watch debug roots:", stderr.getvalue())
 
     def test_json_reports_require_schema_version(self) -> None:
         with _workspace() as workspace_root:
@@ -594,3 +805,7 @@ class CliTests(unittest.TestCase):
                 ("evaluation", "watch", "watch"),
             ],
         )
+
+
+def _parse_jsonl(text: str) -> list[dict[str, object]]:
+    return [json.loads(line) for line in text.splitlines() if line.strip()]

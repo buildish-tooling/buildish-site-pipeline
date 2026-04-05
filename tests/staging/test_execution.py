@@ -221,6 +221,39 @@ class StagingExecutionTests(unittest.TestCase):
             self.assertEqual(existing_file.read_text(encoding="utf-8"), "legacy\n")
             self.assertTrue(candidate_stage_root.exists())
 
+    def test_initial_publication_syncs_published_stage_before_returning(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            candidate_stage_root = _create_candidate_stage(workspace_root / "candidate-stage")
+            stage_root = workspace_root / "site/.stage"
+            stage_root.parent.mkdir(parents=True, exist_ok=True)
+
+            with mock.patch(
+                "apache_buildish_site_pipeline.staging.publication._fsync_published_stage",
+            ) as fsync_published_stage:
+                publication = finalize_stage_publication(candidate_stage_root=candidate_stage_root, stage_root=stage_root)
+
+        self.assertEqual(publication.stage_root, stage_root.resolve(strict=False))
+        fsync_published_stage.assert_called_once_with(stage_root.resolve(strict=False))
+
+    def test_replacement_publication_syncs_published_stage_before_returning(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            candidate_stage_root = _create_candidate_stage(workspace_root / "candidate-stage")
+            stage_root = _create_candidate_stage(workspace_root / "site/.stage")
+
+            with mock.patch(
+                "apache_buildish_site_pipeline.staging.publication._fsync_published_stage",
+            ) as fsync_published_stage:
+                publication = finalize_stage_publication(
+                    candidate_stage_root=candidate_stage_root,
+                    stage_root=stage_root,
+                    allow_replace_existing=True,
+                )
+
+        self.assertEqual(publication.stage_root, stage_root.resolve(strict=False))
+        fsync_published_stage.assert_called_once_with(stage_root.resolve(strict=False))
+
     def test_initial_publication_rejects_cross_filesystem_candidate(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             workspace_root = Path(tempdir)

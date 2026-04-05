@@ -16,11 +16,12 @@
 
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import IntEnum, StrEnum
 from pathlib import Path
 
-from apache_buildish_site_pipeline.models.enums import CheckFailureThreshold, PlanningTarget
+from apache_buildish_site_pipeline.models.enums import CheckFailureThreshold, PlanningTarget, RunStatus
 from apache_buildish_site_pipeline.models.planning_stage_contract import (
     CheckReportV1,
     ResolvedMaterializationReportV1,
@@ -33,6 +34,141 @@ class ReportFormat(StrEnum):
 
     TEXT = "text"
     JSON = "json"
+
+
+class WatchEventFormat(StrEnum):
+    """Supported unstable machine-readable watch event encodings."""
+
+    JSONL = "jsonl"
+
+
+class WatchEventType(StrEnum):
+    """Stable identifiers for the currently supported watch event variants."""
+
+    READY = "ready"
+    CYCLE_SUCCEEDED = "cycle-succeeded"
+    CYCLE_FAILED = "cycle-failed"
+
+
+@dataclass(frozen=True, slots=True)
+class WatchEvent(ABC):
+    """Base machine-readable watch event emitted on stdout."""
+
+    cycle: int
+    stage_root_path: str | None
+    manifest_path: str | None
+
+    @property
+    @abstractmethod
+    def event_type(self) -> WatchEventType:
+        """Return the concrete event discriminator written into the JSONL stream."""
+
+    def to_json_payload(self) -> dict[str, object | None]:
+        """Serialize the event into the JSON payload written to stdout."""
+
+        return {
+            "event": self.event_type.value,
+            "cycle": self.cycle,
+            "stageRootPath": self.stage_root_path,
+            "manifestPath": self.manifest_path,
+        }
+
+@dataclass(frozen=True, slots=True)
+class WatchReadyEvent(WatchEvent):
+    """One-time readiness signal once the visible stage is safe to consume."""
+
+    @property
+    def event_type(self) -> WatchEventType:
+        return WatchEventType.READY
+
+    @classmethod
+    def from_report(cls, report: StageRunReportV1) -> WatchReadyEvent:
+        if report.cycle is None:
+            raise ValueError("watch events require watch reports with a cycle number")
+        return cls(
+            cycle=report.cycle,
+            stage_root_path=report.stage_root_path,
+            manifest_path=report.manifest_path,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class WatchCycleEvent(WatchEvent, ABC):
+    """Shared payload fields for cycle outcome events."""
+
+    status: RunStatus
+    succeeded: bool
+    wrote_stage: bool
+    stage_usable: bool
+    error_count: int
+    warning_count: int
+    info_count: int
+
+    def to_json_payload(self) -> dict[str, object | None]:
+        payload = super().to_json_payload()
+        payload.update(
+            {
+                "status": self.status.value,
+                "succeeded": self.succeeded,
+                "wroteStage": self.wrote_stage,
+                "stageUsable": self.stage_usable,
+                "errorCount": self.error_count,
+                "warningCount": self.warning_count,
+                "infoCount": self.info_count,
+            },
+        )
+        return payload
+
+@dataclass(frozen=True, slots=True)
+class WatchCycleSucceededEvent(WatchCycleEvent):
+    """Successful watch cycle payload."""
+
+    @property
+    def event_type(self) -> WatchEventType:
+        return WatchEventType.CYCLE_SUCCEEDED
+
+    @classmethod
+    def from_report(cls, report: StageRunReportV1) -> WatchCycleSucceededEvent:
+        if report.cycle is None:
+            raise ValueError("watch events require watch reports with a cycle number")
+        return cls(
+            cycle=report.cycle,
+            stage_root_path=report.stage_root_path,
+            manifest_path=report.manifest_path,
+            status=report.summary.status,
+            succeeded=report.summary.succeeded,
+            wrote_stage=report.summary.wrote_stage,
+            stage_usable=report.summary.stage_usable,
+            error_count=report.summary.error_count,
+            warning_count=report.summary.warning_count,
+            info_count=report.summary.info_count,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class WatchCycleFailedEvent(WatchCycleEvent):
+    """Failed watch cycle payload."""
+
+    @property
+    def event_type(self) -> WatchEventType:
+        return WatchEventType.CYCLE_FAILED
+
+    @classmethod
+    def from_report(cls, report: StageRunReportV1) -> WatchCycleFailedEvent:
+        if report.cycle is None:
+            raise ValueError("watch events require watch reports with a cycle number")
+        return cls(
+            cycle=report.cycle,
+            stage_root_path=report.stage_root_path,
+            manifest_path=report.manifest_path,
+            status=report.summary.status,
+            succeeded=report.summary.succeeded,
+            wrote_stage=report.summary.wrote_stage,
+            stage_usable=report.summary.stage_usable,
+            error_count=report.summary.error_count,
+            warning_count=report.summary.warning_count,
+            info_count=report.summary.info_count,
+        )
 
 
 class ApplicationExitCode(IntEnum):
@@ -108,6 +244,9 @@ class WatchInvocation:
     layout: RepositoryLayout
     fail_on_severity: CheckFailureThreshold
     report_request: ReportRequest
+    unstable_event_format: WatchEventFormat | None
+    verbose: bool
+    debug: bool
 
 
 CommandInvocation = PlanInvocation | CheckInvocation | BuildInvocation | WatchInvocation

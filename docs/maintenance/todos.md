@@ -79,3 +79,26 @@ The likely design space is one of:
 
 This should be treated as renderer-gentleness and operational-stability work,
 not as a reason to weaken the current publication-integrity rules.
+
+## Follow-ups for unstable watch readiness events
+
+The first slice of explicit watch readiness signaling now exists:
+
+- `site-pipeline watch --unstable-events jsonl`
+- machine-readable events `ready`, `cycle-succeeded`, and `cycle-failed`
+- human-facing `--verbose` and `--debug` output routed to `stderr`
+- documentation for the stdout/stderr split and defensive malformed-line
+  handling in the API contract
+
+The remaining work in this area is follow-up hardening and ergonomics, not the
+basic event-stream introduction. Follow-ups worth evaluating include:
+
+- whether the publication path should explicitly `fsync` the final manifest file
+  and/or parent directory before declaring a new trusted stage ready
+- whether a simpler shell-oriented `--ready-file <path>` mechanism is still
+  worth offering later despite weaker cross-filesystem semantics than stdio
+- whether downstream renderers such as Hugo still need extra startup-burst
+  mitigation even when wrappers wait for the explicit `ready` event
+
+This work should improve operator ergonomics without changing the current safety
+rules around trusted-stage publication or weakening the manifest-last contract.

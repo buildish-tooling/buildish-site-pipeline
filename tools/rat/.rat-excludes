@@ -26,3 +26,6 @@ dist/**
 **/.ruff_cache/**
 **/*.egg-info/**
 tests/fixtures/second-consumer-workspace/worktrees/rocket-cache-alt/site/assets/logos/mark.txt
+
+# Local dev symlinks to sibling repos
+workspace-links/**

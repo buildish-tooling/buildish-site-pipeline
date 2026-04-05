@@ -22,3 +22,5 @@ __pycache__/
 
 site/components.local.yaml
 
+# for local dev only
+workspace-links/

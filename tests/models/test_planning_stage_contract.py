@@ -56,6 +56,15 @@ from apache_buildish_site_pipeline.models.planning_stage_contract import (
 class PlanningStageContractTests(unittest.TestCase):
     """Validate the first planning/staging contract model family."""
 
+    def test_reduced_diagnostic_summary_requires_actual_size_to_exceed_limit(self) -> None:
+        with self.assertRaises(ValidationError):
+            ReducedDiagnosticDetailsSummary(
+                omitted=True,
+                reason="sizeLimitExceeded",
+                actual_bytes=1024,
+                limit_bytes=1024,
+            )
+
     def test_resolved_materialization_report_requires_watch_eligible_in_watch_mode(self) -> None:
         entry = ResolvedMaterializationEntry(
             input_kind=MaterializationInputKind.SITE_PAGES,
@@ -109,6 +118,79 @@ class PlanningStageContractTests(unittest.TestCase):
                 warning_count=2,
                 info_count=0,
             )
+
+        with self.assertRaises(ValidationError):
+            CheckSummary(
+                status=RunStatus.WARNINGS,
+                passed=False,
+                fail_on_severity=CheckFailureThreshold.WARNING,
+                error_count=1,
+                warning_count=1,
+                info_count=0,
+            )
+
+        with self.assertRaises(ValidationError):
+            CheckSummary(
+                status=RunStatus.ERRORS,
+                passed=False,
+                fail_on_severity=CheckFailureThreshold.ERROR,
+                error_count=0,
+                warning_count=0,
+                info_count=0,
+            )
+
+    def test_stage_run_summary_enforces_normative_state_combinations(self) -> None:
+        invalid_cases = (
+            dict(
+                status=RunStatus.CLEAN,
+                succeeded=True,
+                wrote_stage=True,
+                stage_usable=True,
+                error_count=0,
+                warning_count=1,
+                info_count=0,
+            ),
+            dict(
+                status=RunStatus.WARNINGS,
+                succeeded=False,
+                wrote_stage=False,
+                stage_usable=False,
+                error_count=1,
+                warning_count=1,
+                info_count=0,
+            ),
+            dict(
+                status=RunStatus.ERRORS,
+                succeeded=False,
+                wrote_stage=False,
+                stage_usable=False,
+                error_count=0,
+                warning_count=0,
+                info_count=0,
+            ),
+            dict(
+                status=RunStatus.ERRORS,
+                succeeded=False,
+                wrote_stage=True,
+                stage_usable=False,
+                error_count=1,
+                warning_count=0,
+                info_count=0,
+            ),
+            dict(
+                status=RunStatus.WARNINGS,
+                succeeded=True,
+                wrote_stage=False,
+                stage_usable=True,
+                error_count=0,
+                warning_count=1,
+                info_count=0,
+            ),
+        )
+
+        for payload in invalid_cases:
+            with self.subTest(payload=payload), self.assertRaises(ValidationError):
+                StageRunSummary(**payload)
 
     def test_pipeline_diagnostic_details_accept_reduced_summary_and_reject_non_json_values(self) -> None:
         diagnostic = PipelineDiagnosticEntry(
@@ -190,6 +272,46 @@ class PlanningStageContractTests(unittest.TestCase):
                 stage_root_path="/workspace/out/stage",
                 diagnostics=[],
                 cycle=4,
+            )
+
+        with self.assertRaises(ValidationError):
+            StageRunReportV1(
+                schema_version=1,
+                generated_at=datetime.now(tz=UTC),
+                command=StageCommand.WATCH,
+                summary=summary,
+                diagnostics=[],
+            )
+
+        with self.assertRaises(ValidationError):
+            StageRunReportV1(
+                schema_version=1,
+                generated_at=datetime.now(tz=UTC),
+                command=StageCommand.WATCH,
+                summary=summary,
+                manifest_path="/workspace/out/stage/manifest.json",
+                diagnostics=[],
+                cycle=5,
+            )
+
+        with self.assertRaises(ValidationError):
+            StageRunReportV1(
+                schema_version=1,
+                generated_at=datetime.now(tz=UTC),
+                command=StageCommand.WATCH,
+                summary=StageRunSummary(
+                    status=RunStatus.ERRORS,
+                    succeeded=False,
+                    wrote_stage=False,
+                    stage_usable=False,
+                    error_count=1,
+                    warning_count=0,
+                    info_count=0,
+                ),
+                stage_root_path="/workspace/out/stage",
+                manifest_path="/workspace/out/stage/manifest.json",
+                diagnostics=[],
+                cycle=6,
             )
 
     def test_stage_manifest_validates_paths_and_serializes_literal_formats(self) -> None:

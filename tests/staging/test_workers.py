@@ -16,28 +16,48 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+import io
 import json
 import shutil
 import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from unittest import mock
 
+from apache_buildish_site_pipeline.cli.errors import RetainedStageError, StageIntegrityError
 from apache_buildish_site_pipeline.commands.stage_report import build_stage_run_report
-from apache_buildish_site_pipeline.models.enums import DiagnosticSeverity, StageCommand
+from apache_buildish_site_pipeline.models.enums import DiagnosticSeverity, RecordKind, StageCommand
 from apache_buildish_site_pipeline.models.planning_stage_contract import PipelineDiagnosticEntry
 from apache_buildish_site_pipeline.staging.aggregates import _build_content_index_entries, _write_aggregate_files
-from apache_buildish_site_pipeline.staging.coordinator import cleanup_after_publication, run_build
+from apache_buildish_site_pipeline.staging.coordinator import (
+    _context_wire,
+    _run_worker_subprocess,
+    _seed_next_stage_root,
+    cleanup_after_publication,
+    materialize_stage_tree,
+    publish_stage,
+    run_build,
+)
 from apache_buildish_site_pipeline.staging.ownership import OwnedUnit, OwnedUnitKind, build_owned_units
 from apache_buildish_site_pipeline.staging.public_safety import REDACTED_LOCAL_PATH, sanitize_public_diagnostics
+from apache_buildish_site_pipeline.staging import worker_entrypoint
 from apache_buildish_site_pipeline.staging.worker_entrypoint import execute_worker_spec
-from apache_buildish_site_pipeline.staging.worker_protocol import StagedPageContributionWire, WorkerSpecWire
+from apache_buildish_site_pipeline.staging.worker_protocol import StagedPageContributionWire, WorkerResultWire, WorkerSpecWire
 from apache_buildish_site_pipeline.staging.workdirs import RunWorkspace
 from tests.support.staging import _build_request, _expand_workspace_for_multiple_owned_units, _stage_snapshot, _work_layout
 from tests.support.workspace import _workspace
 
 
 class StagingWorkerTests(unittest.TestCase):
+    def _component_unit(self, request) -> OwnedUnit:
+        return next(
+            unit
+            for unit in build_owned_units(request.build_plan)
+            if unit.kind is OwnedUnitKind.COMPONENT
+        )
+
     def _assert_symlink_escape_failure(self, result) -> None:
         self.assertFalse(result.succeeded)
         self.assertIsNotNone(result.failure)
@@ -81,6 +101,38 @@ class StagingWorkerTests(unittest.TestCase):
         self.assertFalse(result.succeeded)
         self.assertIsNotNone(result.failure)
         self.assertEqual(result.failure.category, "unknownUnitKind")
+
+    def test_worker_entrypoint_main_round_trips_one_json_payload(self) -> None:
+        spec = WorkerSpecWire(
+            unit_id="site-pages",
+            unit_kind="site-pages",
+            owner_id="site-pages",
+            workspace_root="/workspace",
+            fragment_path="/workspace/.work/fragments/site-pages.json",
+            site_pages_source="/workspace/site/content",
+            stage_meta={"content_roots": ("/workspace/site/.stage/content",)},
+        )
+        result = WorkerResultWire(unit_id="site-pages", succeeded=True, files_written=1)
+        stdin = io.StringIO(spec.model_dump_json(by_alias=True))
+        stdout = io.StringIO()
+
+        with mock.patch.object(worker_entrypoint.sys, "stdin", stdin), mock.patch.object(
+            worker_entrypoint.sys,
+            "stdout",
+            stdout,
+        ), mock.patch.object(
+            worker_entrypoint,
+            "execute_worker_spec",
+            return_value=result,
+        ) as execute:
+            exit_code = worker_entrypoint.main()
+
+        self.assertEqual(exit_code, 0)
+        execute.assert_called_once()
+        self.assertEqual(
+            json.loads(stdout.getvalue()),
+            json.loads(result.model_dump_json(by_alias=True)),
+        )
 
     def test_worker_entrypoint_rejects_site_pages_symlink_escape(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
@@ -191,6 +243,243 @@ class StagingWorkerTests(unittest.TestCase):
         self.assertEqual(outcome_one.worker_count, 1)
         self.assertEqual(outcome_two.worker_count, 2)
         self.assertEqual(snapshot_one, snapshot_two)
+
+    def test_run_build_seeds_stage_root_and_can_skip_all_owned_units(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            request = _build_request(workspace_root, pool_size=1)
+            seed_stage_root = workspace_root / "seed-stage"
+            seed_stage_root.mkdir(parents=True, exist_ok=True)
+            (seed_stage_root / "keep.txt").write_text("keep\n", encoding="utf-8")
+            (seed_stage_root / "remove.txt").write_text("remove\n", encoding="utf-8")
+            seeded_request = replace(
+                request,
+                seed_stage_root=seed_stage_root,
+                seed_stage_removals=("remove.txt",),
+                included_unit_ids=frozenset(),
+            )
+
+            outcome = run_build(seeded_request)
+            try:
+                self.assertEqual(outcome.built_unit_ids, ())
+                self.assertTrue((outcome.layout.next_stage_root / "keep.txt").is_file())
+                self.assertFalse((outcome.layout.next_stage_root / "remove.txt").exists())
+            finally:
+                cleanup_after_publication(outcome)
+                shutil.rmtree(outcome.layout.next_stage_root, ignore_errors=True)
+
+    def test_run_build_removes_work_root_when_owned_unit_execution_fails(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            request = _build_request(workspace_root, pool_size=1)
+
+            with mock.patch(
+                "apache_buildish_site_pipeline.staging.coordinator._run_owned_units",
+                side_effect=RuntimeError("boom"),
+            ), mock.patch(
+                "apache_buildish_site_pipeline.staging.coordinator.remove_work_root",
+            ) as remove_work_root:
+                with self.assertRaisesRegex(RuntimeError, "boom"):
+                    run_build(request)
+
+        remove_work_root.assert_called_once()
+
+    def test_materialize_stage_tree_returns_manifest_after_cleanup(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            request = _build_request(workspace_root, pool_size=1)
+            outcome = SimpleNamespace(manifest=SimpleNamespace(schema_version=1))
+
+            with mock.patch(
+                "apache_buildish_site_pipeline.staging.coordinator.run_build",
+                return_value=outcome,
+            ) as run_build_mock, mock.patch(
+                "apache_buildish_site_pipeline.staging.coordinator.cleanup_after_publication",
+            ) as cleanup:
+                manifest = materialize_stage_tree(
+                    build_plan=request.build_plan,
+                    diagnostics=request.diagnostics,
+                    provider_snapshot=request.provider_snapshot,
+                    stage_root=workspace_root / "visible-stage",
+                )
+
+        self.assertIs(manifest, outcome.manifest)
+        run_build_mock.assert_called_once()
+        cleanup.assert_called_once_with(outcome)
+
+    def test_publish_stage_wraps_failures_when_retaining_assembly_root(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            request = _build_request(workspace_root, pool_size=1)
+            assembly_root = workspace_root / "retained-assembly"
+            assembly_root.mkdir(parents=True, exist_ok=True)
+
+            with mock.patch(
+                "apache_buildish_site_pipeline.staging.coordinator.run_build",
+                side_effect=RuntimeError("boom"),
+            ):
+                with self.assertRaises(RetainedStageError) as failure:
+                    publish_stage(
+                        build_plan=request.build_plan,
+                        diagnostics=request.diagnostics,
+                        provider_snapshot=request.provider_snapshot,
+                        stage_root=workspace_root / "visible-stage",
+                        assembly_root=assembly_root,
+                    )
+
+            self.assertTrue(assembly_root.exists())
+
+        self.assertIn("Retained failed stage assembly root", str(failure.exception))
+
+    def test_publish_stage_removes_temporary_assembly_root_on_failure(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            request = _build_request(workspace_root, pool_size=1)
+            temp_root = workspace_root / ".stage-build.failed"
+            temp_root.mkdir(parents=True, exist_ok=True)
+
+            with mock.patch(
+                "apache_buildish_site_pipeline.staging.coordinator.tempfile.mkdtemp",
+                return_value=str(temp_root),
+            ), mock.patch(
+                "apache_buildish_site_pipeline.staging.coordinator.run_build",
+                side_effect=RuntimeError("boom"),
+            ):
+                with self.assertRaisesRegex(RuntimeError, "boom"):
+                    publish_stage(
+                        build_plan=request.build_plan,
+                        diagnostics=request.diagnostics,
+                        provider_snapshot=request.provider_snapshot,
+                        stage_root=workspace_root / "visible-stage",
+                    )
+
+        self.assertFalse(temp_root.exists())
+
+    def test_publish_stage_finalizes_and_cleans_up_on_success(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            request = _build_request(workspace_root, pool_size=1)
+            outcome = SimpleNamespace(layout=SimpleNamespace(next_stage_root=workspace_root / "candidate-stage"))
+            publication = SimpleNamespace(stage_root=workspace_root / "visible-stage")
+
+            with mock.patch(
+                "apache_buildish_site_pipeline.staging.coordinator.run_build",
+                return_value=outcome,
+            ), mock.patch(
+                "apache_buildish_site_pipeline.staging.coordinator.finalize_stage_publication",
+                return_value=publication,
+            ) as finalize_stage_publication, mock.patch(
+                "apache_buildish_site_pipeline.staging.coordinator.cleanup_after_publication",
+            ) as cleanup:
+                result = publish_stage(
+                    build_plan=request.build_plan,
+                    diagnostics=request.diagnostics,
+                    provider_snapshot=request.provider_snapshot,
+                    stage_root=workspace_root / "visible-stage",
+                )
+
+        self.assertIs(result, publication)
+        finalize_stage_publication.assert_called_once_with(
+            candidate_stage_root=outcome.layout.next_stage_root,
+            stage_root=(workspace_root / "visible-stage").resolve(strict=False),
+            allow_replace_existing=False,
+        )
+        cleanup.assert_called_once_with(outcome)
+
+    def test_seed_next_stage_root_removes_paths_and_rejects_escape_attempts(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            seed_stage_root = workspace_root / "seed"
+            seed_stage_root.mkdir(parents=True, exist_ok=True)
+            (seed_stage_root / "keep.txt").write_text("keep\n", encoding="utf-8")
+            (seed_stage_root / "remove.txt").write_text("remove\n", encoding="utf-8")
+            (seed_stage_root / "nested").mkdir()
+            (seed_stage_root / "nested/value.txt").write_text("nested\n", encoding="utf-8")
+
+            candidate_stage_root = workspace_root / "candidate"
+            _seed_next_stage_root(
+                candidate_stage_root=candidate_stage_root,
+                seed_stage_root=seed_stage_root,
+                removals=("remove.txt", "nested", "missing.txt"),
+            )
+
+            self.assertTrue((candidate_stage_root / "keep.txt").is_file())
+            self.assertFalse((candidate_stage_root / "remove.txt").exists())
+            self.assertFalse((candidate_stage_root / "nested").exists())
+
+            with self.assertRaisesRegex(StageIntegrityError, "escapes candidate root"):
+                _seed_next_stage_root(
+                    candidate_stage_root=workspace_root / "escape-candidate",
+                    seed_stage_root=seed_stage_root,
+                    removals=("../outside.txt",),
+                )
+
+    def test_run_worker_subprocess_rejects_exit_failures_and_malformed_json(self) -> None:
+        spec = WorkerSpecWire(
+            unit_id="spark",
+            unit_kind="component",
+            owner_id="spark",
+            workspace_root="/workspace",
+            fragment_path="/workspace/.work/fragments/spark.json",
+        )
+
+        with mock.patch(
+            "apache_buildish_site_pipeline.staging.coordinator.subprocess.run",
+            return_value=SimpleNamespace(returncode=7, stderr="boom", stdout=""),
+        ):
+            with self.assertRaisesRegex(StageIntegrityError, "exited with status 7: boom"):
+                _run_worker_subprocess(spec)
+
+        with mock.patch(
+            "apache_buildish_site_pipeline.staging.coordinator.subprocess.run",
+            return_value=SimpleNamespace(returncode=0, stderr="", stdout="{not-json"),
+        ):
+            with self.assertRaisesRegex(StageIntegrityError, "returned malformed JSON"):
+                _run_worker_subprocess(spec)
+
+    def test_context_wire_maps_candidate_and_named_ref_sections(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            request = _build_request(workspace_root, pool_size=1)
+            layout = _work_layout(workspace_root)
+            component = request.build_plan.site.components[0]
+            component_unit = self._component_unit(request)
+            released_context = next(
+                owned_context
+                for owned_context in component_unit.contexts
+                if owned_context.context.kind is RecordKind.RELEASED
+            )
+            candidate_owned_context = replace(
+                released_context,
+                context_id="candidate",
+                context=replace(
+                    released_context.context,
+                    kind=RecordKind.CANDIDATE,
+                    version="4.0.0-rc1",
+                    release_line="4.0",
+                ),
+            )
+            named_ref_owned_context = replace(
+                released_context,
+                context_id="named-ref",
+                context=replace(
+                    released_context.context,
+                    kind=RecordKind.NAMED_REF,
+                    version=None,
+                    named_ref_key="preview",
+                    ref="refs/heads/preview",
+                    release_line=None,
+                ),
+            )
+
+            candidate_wire = _context_wire(
+                component=component,
+                owned_context=candidate_owned_context,
+                layout=layout,
+            )
+            named_ref_wire = _context_wire(
+                component=component,
+                owned_context=named_ref_owned_context,
+                layout=layout,
+            )
+
+        self.assertEqual((candidate_wire.page_kind, candidate_wire.section), ("candidate-page", "candidate"))
+        self.assertTrue(candidate_wire.source_docs_root.endswith("/candidates/4.0.0-rc1"))
+        self.assertEqual((named_ref_wire.page_kind, named_ref_wire.section), ("ref-page", "ref"))
+        self.assertTrue(named_ref_wire.source_docs_root.endswith("/refs/preview"))
 
     def test_stage_run_report_sanitizes_machine_local_diagnostic_details(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:

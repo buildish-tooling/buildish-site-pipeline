@@ -20,7 +20,10 @@ import unittest
 
 from apache_buildish_site_pipeline.evaluation.collector import DiagnosticCollector
 from apache_buildish_site_pipeline.models.enums import DiagnosticSeverity
-from apache_buildish_site_pipeline.models.planning_stage_contract import ReducedDiagnosticDetailsSummary
+from apache_buildish_site_pipeline.models.planning_stage_contract import (
+    PipelineDiagnosticEntry,
+    ReducedDiagnosticDetailsSummary,
+)
 
 
 class DiagnosticCollectorTests(unittest.TestCase):
@@ -42,3 +45,50 @@ class DiagnosticCollectorTests(unittest.TestCase):
 
         self.assertEqual(diagnostics[0].code, "error-one")
         self.assertIsInstance(diagnostics[1].details, ReducedDiagnosticDetailsSummary)
+
+    def test_extend_and_counts_include_prebuilt_entries(self) -> None:
+        collector = DiagnosticCollector()
+        collector.extend(
+            (
+                PipelineDiagnosticEntry(
+                    severity=DiagnosticSeverity.INFO,
+                    code="info-one",
+                    message="from extend",
+                ),
+            )
+        )
+        collector.add(
+            severity=DiagnosticSeverity.WARNING,
+            code="warning-one",
+            message="from add",
+        )
+
+        counts = collector.counts()
+
+        self.assertEqual(counts.error_count, 0)
+        self.assertEqual(counts.warning_count, 1)
+        self.assertEqual(counts.info_count, 1)
+
+    def test_add_rejects_non_object_details(self) -> None:
+        collector = DiagnosticCollector()
+
+        with self.assertRaises(TypeError):
+            collector.add(
+                severity=DiagnosticSeverity.ERROR,
+                code="bad-details",
+                message="broken",
+                details=["not", "an", "object"],
+            )
+
+    def test_add_preserves_small_object_details(self) -> None:
+        collector = DiagnosticCollector()
+        details = {"component": "spark"}
+
+        collector.add(
+            severity=DiagnosticSeverity.INFO,
+            code="small-details",
+            message="kept",
+            details=details,
+        )
+
+        self.assertEqual(collector.build()[0].details, details)

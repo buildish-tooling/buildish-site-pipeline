@@ -225,10 +225,12 @@ def _select_release_contexts(
         selected_versions = tuple(release_policy.versions or ())
     elif release_policy.mode is ReleaseSelectionMode.ALL_KNOWN:
         selected_versions = tuple(
-            sorted(known_versions, key=_descending_version_sort_key)
+            sorted(known_versions, key=_descending_version_sort_key, reverse=True)
         )
     elif release_policy.mode is ReleaseSelectionMode.LATEST_N:
-        sorted_versions = sorted(known_versions, key=_descending_version_sort_key)
+        sorted_versions = sorted(
+            known_versions, key=_descending_version_sort_key, reverse=True
+        )
         selected_versions = tuple(sorted_versions[: release_policy.count or 0])
     else:
         selected_versions = (
@@ -344,7 +346,9 @@ def _select_candidate_contexts(
     else:
         selected_versions = tuple(
             sorted(
-                provider_context.candidates_by_version, key=_descending_version_sort_key
+                provider_context.candidates_by_version,
+                key=_descending_version_sort_key,
+                reverse=True,
             )[:1]
         )
 

@@ -22,10 +22,16 @@ import tempfile
 import unittest
 from datetime import UTC, datetime
 from pathlib import Path
+from unittest import mock
 
 from apache_buildish_site_pipeline.cli.contract import ReportFormat
-from apache_buildish_site_pipeline.cli.errors import InvocationError
+from apache_buildish_site_pipeline.cli.errors import (
+    InvocationError,
+    ReportWriteError,
+    UnsupportedReportSchemaVersionError,
+)
 from apache_buildish_site_pipeline.cli.reporting import (
+    _write_report_file,
     build_report_request,
     build_watch_event_request,
     emit_report,
@@ -97,6 +103,15 @@ class CliReportingTests(unittest.TestCase):
             str(raised.exception),
         )
 
+    def test_json_report_rejects_unsupported_schema_version(self) -> None:
+        with self.assertRaises(UnsupportedReportSchemaVersionError):
+            build_report_request(
+                cwd=Path.cwd(),
+                report_format="json",
+                schema_version=2,
+                report_output="-",
+            )
+
     def test_report_output_stdout_for_json_requires_explicit_permission(self) -> None:
         with self.assertRaises(InvocationError) as raised:
             build_report_request(
@@ -125,6 +140,21 @@ class CliReportingTests(unittest.TestCase):
             str(raised.exception),
         )
 
+    def test_watch_event_request_is_optional_and_supports_stdout(self) -> None:
+        self.assertIsNone(
+            build_watch_event_request(
+                cwd=Path.cwd(),
+                event_format=None,
+                event_output=None,
+            )
+        )
+        stdout_request = build_watch_event_request(
+            cwd=Path.cwd(),
+            event_format="jsonl",
+            event_output="-",
+        )
+        self.assertIsNone(stdout_request.output_path)
+
     def test_revalidate_report_request_rejects_output_symlink_created_after_parse(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             cwd = Path(tempdir)
@@ -143,6 +173,25 @@ class CliReportingTests(unittest.TestCase):
 
         self.assertIn("must not be a symlink", str(raised.exception))
 
+    def test_revalidate_report_request_keeps_stdout_output_unchanged(self) -> None:
+        request = build_report_request(
+            cwd=Path.cwd(),
+            report_format="text",
+            schema_version=None,
+            report_output="-",
+        )
+
+        self.assertIs(revalidate_report_request(cwd=Path.cwd(), request=request), request)
+
+    def test_report_output_rejects_missing_parent_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir, self.assertRaises(InvocationError):
+            build_report_request(
+                cwd=Path(tempdir),
+                report_format="text",
+                schema_version=None,
+                report_output="missing/report.txt",
+            )
+
     def test_revalidate_watch_event_request_rejects_forbidden_output_root(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             cwd = Path(tempdir)
@@ -160,6 +209,17 @@ class CliReportingTests(unittest.TestCase):
                 )
 
         self.assertIn("must live outside", str(raised.exception))
+
+    def test_revalidate_watch_event_request_keeps_none_and_stdout_requests(self) -> None:
+        self.assertIsNone(
+            revalidate_watch_event_request(cwd=Path.cwd(), request=None)
+        )
+        request = build_watch_event_request(
+            cwd=Path.cwd(),
+            event_format="jsonl",
+            event_output="-",
+        )
+        self.assertIs(revalidate_watch_event_request(cwd=Path.cwd(), request=request), request)
 
     def test_emit_report_appends_newline_to_stdout_but_not_to_files(self) -> None:
         payload = self._plan_report()
@@ -194,6 +254,72 @@ class CliReportingTests(unittest.TestCase):
             self.assertFalse(
                 (cwd / "report.txt").read_text(encoding="utf-8").endswith("\n")
             )
+
+    def test_emit_report_serializes_json_payload(self) -> None:
+        payload = self._plan_report()
+        stdout = io.StringIO()
+        request = build_report_request(
+            cwd=Path.cwd(),
+            report_format="json",
+            schema_version=1,
+            report_output="-",
+        )
+
+        emit_report(report=payload, request=request, text_output="ignored", stdout=stdout)
+
+        self.assertIn('"schemaVersion": 1', stdout.getvalue())
+
+    def test_report_output_rejects_symlinked_parent_directory_during_parse(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            actual_parent = root / "actual"
+            actual_parent.mkdir()
+            linked_parent = root / "linked"
+            linked_parent.symlink_to(actual_parent, target_is_directory=True)
+
+            with self.assertRaises(InvocationError):
+                build_report_request(
+                    cwd=root,
+                    report_format="text",
+                    schema_version=None,
+                    report_output="linked/report.txt",
+                )
+
+    def test_write_report_file_rejects_symlinked_parent_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            actual_parent = root / "actual"
+            actual_parent.mkdir()
+            linked_parent = root / "linked"
+            linked_parent.symlink_to(actual_parent, target_is_directory=True)
+
+            with self.assertRaises(ReportWriteError):
+                _write_report_file(path=linked_parent / "report.txt", content="payload")
+
+    def test_write_report_file_rejects_symlinked_output_path(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            actual_file = root / "actual.txt"
+            actual_file.write_text("kept", encoding="utf-8")
+            linked_output = root / "report.txt"
+            linked_output.symlink_to(actual_file)
+
+            with self.assertRaises(ReportWriteError):
+                _write_report_file(path=linked_output, content="payload")
+
+    def test_write_report_file_cleans_up_temp_file_after_write_error(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            report_path = root / "report.txt"
+
+            with mock.patch(
+                "apache_buildish_site_pipeline.cli.reporting.Path.replace",
+                side_effect=OSError("boom"),
+            ):
+                with self.assertRaises(ReportWriteError):
+                    _write_report_file(path=report_path, content="payload")
+
+            self.assertEqual(list(root.glob(".report.txt.*.tmp")), [])
 
     def test_render_text_report_formats_plan_check_and_stage_reports(self) -> None:
         self.assertIn("plan build", render_text_report(self._plan_report()))

@@ -21,6 +21,7 @@ import tempfile
 
 from apache_buildish_site_pipeline.cli.errors import StageIntegrityError
 from apache_buildish_site_pipeline.models.base import SitePipelineBaseModel
+from apache_buildish_site_pipeline.models.enums import RouteMode
 
 
 class WorkerStageMetaWire(SitePipelineBaseModel):
@@ -98,7 +99,7 @@ class LocalizationWire(SitePipelineBaseModel):
 
     default_locale: str | None = None
     supported_locales: tuple[str, ...] = ()
-    route_mode: str | None = None
+    route_mode: RouteMode | None = None
 
 
 class PagePublicationWire(SitePipelineBaseModel):

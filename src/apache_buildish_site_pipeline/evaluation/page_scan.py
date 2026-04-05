@@ -23,7 +23,7 @@ from apache_buildish_site_pipeline.models.enums import (
     MaterializationInputKind,
     MaterializationStatus,
 )
-from apache_buildish_site_pipeline.models.loading import load_yaml_mapping
+from apache_buildish_site_pipeline.models.loading import LoadingError, load_yaml_mapping
 from apache_buildish_site_pipeline.models.page_metadata import PageTranslationMetadata
 from apache_buildish_site_pipeline.planning.types import (
     LocalInputIdentity,
@@ -222,7 +222,7 @@ def _extract_front_matter(
         return {}
     try:
         return dict(load_yaml_mapping(raw_front_matter))
-    except ValueError as exc:
+    except LoadingError as exc:
         collector.add(
             severity=DiagnosticSeverity.ERROR,
             code=diagnostic_codes.PAGE_FRONT_MATTER_INVALID,

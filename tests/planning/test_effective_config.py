@@ -21,10 +21,48 @@ import unittest
 from pathlib import Path
 
 from apache_buildish_site_pipeline.models import CatalogDocumentV1, ComponentRepositoryDocumentV1
-from apache_buildish_site_pipeline.planning.effective_config import resolve_site_config
+from apache_buildish_site_pipeline.planning.effective_config import (
+    _join_public_path,
+    _resolve_repo_path,
+    resolve_site_config,
+)
 
 
 class EffectiveConfigResolutionTests(unittest.TestCase):
+    def test_resolves_component_local_dir_into_implicit_content_source(self) -> None:
+        catalog = CatalogDocumentV1.model_validate(
+            {
+                "schemaVersion": 1,
+                "defaults": {
+                    "metadataFile": "site/component.yaml",
+                    "publication": {"origin": "docs"},
+                },
+                "site": {},
+                "origins": {"docs": {"baseUrl": "https://docs.example.org"}},
+                "components": [
+                    {
+                        "slug": "spark",
+                        "localDir": "components/runtime",
+                        "publication": {"mountPath": "/spark/"},
+                        "artifacts": [],
+                    },
+                ],
+            },
+            by_alias=True,
+            by_name=False,
+        )
+
+        with tempfile.TemporaryDirectory() as tempdir:
+            site = resolve_site_config(catalog=catalog, workspace_root=Path(tempdir))
+
+        component = site.components[0]
+        self.assertEqual(component.content_source.key, "component:spark")
+        self.assertEqual(component.content_source.local_dir, site.workspace_root / "components/runtime")
+        self.assertEqual(
+            component.content_source.metadata_file,
+            site.workspace_root / "components/runtime/site/component.yaml",
+        )
+
     def test_resolves_defaults_groups_and_component_documents(self) -> None:
         catalog = CatalogDocumentV1.model_validate(
             {
@@ -140,7 +178,57 @@ class EffectiveConfigResolutionTests(unittest.TestCase):
             by_name=False,
         )
         with tempfile.TemporaryDirectory() as tempdir, self.assertRaises(ValueError):
-                resolve_site_config(catalog=catalog, workspace_root=Path(tempdir))
+            resolve_site_config(catalog=catalog, workspace_root=Path(tempdir))
+
+    def test_rejects_missing_publication_origin(self) -> None:
+        catalog = CatalogDocumentV1.model_validate(
+            {
+                "schemaVersion": 1,
+                "site": {},
+                "components": [
+                    {
+                        "slug": "spark",
+                        "publication": {"mountPath": "/spark/"},
+                        "artifacts": [],
+                    },
+                ],
+            },
+            by_alias=True,
+            by_name=False,
+        )
+
+        with tempfile.TemporaryDirectory() as tempdir, self.assertRaisesRegex(
+            ValueError, "cannot resolve a publication origin"
+        ):
+            resolve_site_config(catalog=catalog, workspace_root=Path(tempdir))
+
+    def test_allows_component_without_bound_content_source(self) -> None:
+        catalog = CatalogDocumentV1.model_validate(
+            {
+                "schemaVersion": 1,
+                "defaults": {"publication": {"origin": "docs"}},
+                "site": {},
+                "origins": {"docs": {"baseUrl": "https://docs.example.org"}},
+                "components": [
+                    {
+                        "slug": "spark",
+                        "publication": {"mountPath": "/spark/"},
+                        "artifacts": [],
+                    },
+                ],
+            },
+            by_alias=True,
+            by_name=False,
+        )
+
+        with tempfile.TemporaryDirectory() as tempdir:
+            site = resolve_site_config(catalog=catalog, workspace_root=Path(tempdir))
+
+        component = site.components[0]
+        self.assertIsNone(component.content_source)
+        self.assertIsNone(component.pages_root)
+        self.assertIsNone(component.docs_root)
+        self.assertIsNone(component.assets_root)
 
     def test_resolves_component_localization_from_defaults_and_overrides(self) -> None:
         catalog = CatalogDocumentV1.model_validate(
@@ -180,3 +268,12 @@ class EffectiveConfigResolutionTests(unittest.TestCase):
         self.assertEqual("fr", localization.default_locale)
         self.assertEqual("de", localization.fallback_locale)
         self.assertEqual("prefixAll", localization.route_mode.value)
+
+    def test_join_public_path_handles_root_prefix(self) -> None:
+        self.assertEqual(_join_public_path("/", "spark"), "/spark/")
+
+    def test_resolve_repo_path_rejects_escape(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir, self.assertRaisesRegex(
+            ValueError, "escapes declared root"
+        ):
+            _resolve_repo_path(Path(tempdir), "../outside")

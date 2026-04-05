@@ -67,6 +67,29 @@ class ReadinessAndReportBuilderTests(unittest.TestCase):
         self.assertEqual(readiness.status, MaterializationStatus.UNRESOLVED)
         self.assertEqual(readiness.reason, MaterializationStatusReason.INVALID_MARKER)
 
+    def test_classify_input_readiness_detects_missing_path(self) -> None:
+        readiness = classify_input_readiness(
+            (self._local_input(Path("/workspace"), Path("/workspace/missing")),)
+        )[0].readiness
+
+        self.assertEqual(readiness.status, MaterializationStatus.MISSING)
+        self.assertEqual(readiness.reason, MaterializationStatusReason.PATH_MISSING)
+
+    def test_classify_input_readiness_requires_directory(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            expected_path = Path(temp_dir) / "docs.txt"
+            expected_path.write_text("content\n", encoding="utf-8")
+
+            readiness = classify_input_readiness(
+                (self._local_input(Path(temp_dir), expected_path),)
+            )[0].readiness
+
+        self.assertEqual(readiness.status, MaterializationStatus.UNRESOLVED)
+        self.assertEqual(
+            readiness.reason,
+            MaterializationStatusReason.EXPECTED_DIRECTORY,
+        )
+
     def test_classify_input_readiness_detects_stale_identity_marker(self) -> None:
         with TemporaryDirectory() as temp_dir:
             expected_path = Path(temp_dir) / "docs"
@@ -84,6 +107,22 @@ class ReadinessAndReportBuilderTests(unittest.TestCase):
             readiness.reason,
             MaterializationStatusReason.STALE_IDENTITY_MISMATCH,
         )
+
+    def test_classify_input_readiness_ignores_marker_when_identity_fields_are_absent(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            expected_path = Path(temp_dir) / "docs"
+            expected_path.mkdir()
+            (expected_path / ".site-pipeline-materialization.json").write_text(
+                json.dumps({"version": "4.0.1", "ref": "refs/heads/main"}),
+                encoding="utf-8",
+            )
+
+            readiness = classify_input_readiness(
+                (self._local_input(Path(temp_dir), expected_path),)
+            )[0].readiness
+
+        self.assertEqual(readiness.status, MaterializationStatus.PRESENT)
+        self.assertIsNone(readiness.reason)
 
     def test_build_resolved_materialization_report_merges_watch_diagnostics(self) -> None:
         local_input = self._local_input(

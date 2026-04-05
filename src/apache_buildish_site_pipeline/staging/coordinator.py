@@ -297,9 +297,7 @@ def _worker_spec_for_unit(
         localization = LocalizationWire(
             default_locale=component.localization.default_locale,
             supported_locales=tuple(component.localization.supported_locales or ()),
-            route_mode=component.localization.route_mode.value
-            if component.localization.route_mode is not None
-            else None,
+            route_mode=component.localization.route_mode,
         )
     component_publication = PagePublicationWire(
         path=component.publication.component_path,

@@ -16,12 +16,21 @@
 
 from __future__ import annotations
 
+import io
 import json
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
 
-from apache_buildish_site_pipeline.schema_export import schema_exports, write_schema_files
+from apache_buildish_site_pipeline.schema_export import (
+    _build_parser,
+    authored_schema_exports,
+    main,
+    schema_exports,
+    write_authored_schema_files,
+    write_schema_files,
+)
 
 
 class SchemaExportTests(unittest.TestCase):
@@ -82,6 +91,42 @@ class SchemaExportTests(unittest.TestCase):
                     json.loads((checked_in_dir / name).read_text(encoding="utf-8")),
                     json.loads((generated_dir / name).read_text(encoding="utf-8")),
                 )
+
+    def test_authored_export_inventory_and_alias_writer_cover_current_contract(self) -> None:
+        authored_exports = authored_schema_exports()
+
+        self.assertEqual(
+            [export.filename for export in authored_exports],
+            [
+                "site-pipeline-catalog-v1.schema.json",
+                "site-pipeline-component-v1.schema.json",
+            ],
+        )
+
+        with tempfile.TemporaryDirectory() as tempdir:
+            written_paths = write_authored_schema_files(Path(tempdir))
+
+        self.assertEqual(
+            [path.name for path in written_paths],
+            [export.filename for export in schema_exports()],
+        )
+
+    def test_main_uses_parser_defaults_and_prints_written_paths(self) -> None:
+        parser = _build_parser()
+        namespace = parser.parse_args([])
+
+        self.assertEqual(namespace.output_dir, "schemas")
+
+        with tempfile.TemporaryDirectory() as tempdir:
+            stdout = io.StringIO()
+            with redirect_stdout(stdout):
+                exit_code = main(["--output-dir", tempdir])
+
+            written_lines = [line for line in stdout.getvalue().splitlines() if line.strip()]
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(len(written_lines), len(schema_exports()))
+        self.assertTrue(written_lines[0].endswith("site-pipeline-catalog-v1.schema.json"))
 
 
 if __name__ == "__main__":

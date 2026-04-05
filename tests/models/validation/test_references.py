@@ -44,4 +44,14 @@ class ReferenceValidationTests(unittest.TestCase):
             "component:Spark",
         ):
             with self.subTest(value=value), self.assertRaises(ValueError):
-                    validate_reference_string(value)
+                validate_reference_string(value)
+
+    def test_rejects_missing_typed_separator_or_empty_payload(self) -> None:
+        for value in ("component", "component:"):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                validate_reference_string(value)
+
+    def test_rejects_line_and_release_references_with_empty_qualifier(self) -> None:
+        for value in ("line:spark/runtime@", "release:spark/runtime@"):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                validate_reference_string(value)

@@ -17,7 +17,9 @@
 from __future__ import annotations
 
 import io
+import importlib
 import json
+import logging
 import sys
 import tempfile
 import unittest
@@ -25,11 +27,25 @@ from pathlib import Path
 from unittest import mock
 
 from apache_buildish_site_pipeline.cli import _run
-from apache_buildish_site_pipeline.cli.contract import WatchCycleFailedEvent, WatchCycleSucceededEvent, WatchReadyEvent
+from apache_buildish_site_pipeline.cli import main as cli_main, parse_invocation
+from apache_buildish_site_pipeline.cli.contract import (
+    ReportFormat,
+    ReportRequest,
+    RepositoryLayout,
+    WatchCycleFailedEvent,
+    WatchCycleSucceededEvent,
+    WatchEventFormat,
+    WatchEventRequest,
+    WatchInvocation,
+    WatchReadyEvent,
+)
 from apache_buildish_site_pipeline.cli.dispatch import dispatch_command as _dispatch_command
-from apache_buildish_site_pipeline.cli.errors import CommandExecutionError
-from apache_buildish_site_pipeline.models.enums import RunStatus
+from apache_buildish_site_pipeline.cli.errors import CommandExecutionError, InvocationError, SitePipelineCliError
+from apache_buildish_site_pipeline.models.enums import CheckFailureThreshold, RunStatus
 from tests.support.workspace import _cwd, _fake_watch_event_stream_factory, _workspace
+
+
+cli_main_module = importlib.import_module("apache_buildish_site_pipeline.cli.main")
 
 
 class CliTests(unittest.TestCase):
@@ -1010,3 +1026,117 @@ class CliTests(unittest.TestCase):
 
 def _parse_jsonl(text: str) -> list[dict[str, object]]:
     return [json.loads(line) for line in text.splitlines() if line.strip()]
+
+
+class CliInternalTests(unittest.TestCase):
+    def test_parse_invocation_raises_invocation_error_for_missing_command(self) -> None:
+        with self.assertRaises(InvocationError):
+            parse_invocation([])
+
+    def test_main_delegates_to_run_with_process_streams(self) -> None:
+        stdout = object()
+        stderr = object()
+
+        with (
+            mock.patch.object(cli_main_module, "sys", mock.Mock(stdout=stdout, stderr=stderr)),
+            mock.patch("apache_buildish_site_pipeline.cli.main._run", return_value=7) as run_mock,
+        ):
+            self.assertEqual(cli_main(["plan"]), 7)
+
+        run_mock.assert_called_once_with(argv=["plan"], stdout=stdout, stderr=stderr)
+
+    def test_run_rejects_event_and_report_output_collisions_after_revalidation(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            cwd = Path(tempdir)
+            layout = RepositoryLayout(
+                cwd=cwd,
+                workspace_root=cwd,
+                catalog_path=cwd / "site/components.yaml",
+                site_root=cwd / "site",
+                stage_root=cwd / "site/.stage",
+                work_root=cwd / "site/.site-pipeline-work",
+            )
+            invocation = WatchInvocation(
+                layout=layout,
+                fail_on_severity=CheckFailureThreshold.ERROR,
+                report_request=ReportRequest(
+                    report_format=ReportFormat.TEXT,
+                    schema_version=None,
+                    output_path=cwd / "reports/watch.txt",
+                ),
+                unstable_event_request=WatchEventRequest(
+                    event_format=WatchEventFormat.JSONL,
+                    output_path=cwd / "events/watch.jsonl",
+                ),
+            )
+            shared_output = cwd / "shared/output.txt"
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+
+            with (
+                mock.patch("apache_buildish_site_pipeline.cli.main.parse_invocation", return_value=invocation),
+                mock.patch(
+                    "apache_buildish_site_pipeline.cli.main.revalidate_report_request",
+                    return_value=ReportRequest(
+                        report_format=ReportFormat.TEXT,
+                        schema_version=None,
+                        output_path=shared_output,
+                    ),
+                ),
+                mock.patch(
+                    "apache_buildish_site_pipeline.cli.main.revalidate_watch_event_request",
+                    return_value=WatchEventRequest(
+                        event_format=WatchEventFormat.JSONL,
+                        output_path=shared_output,
+                    ),
+                ),
+            ):
+                exit_code = _run(argv=["watch"], stdout=stdout, stderr=stderr)
+
+        self.assertEqual(exit_code, 2)
+        self.assertIn("must differ from --report-output", stderr.getvalue())
+
+    def test_run_maps_generic_cli_errors_to_internal_failures(self) -> None:
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+
+        with (
+            mock.patch("apache_buildish_site_pipeline.cli.main.parse_invocation", return_value=object()),
+            mock.patch(
+                "apache_buildish_site_pipeline.cli.main.dispatch_command",
+                side_effect=SitePipelineCliError("generic cli failure"),
+            ),
+        ):
+            exit_code = _run(argv=["plan"], stdout=stdout, stderr=stderr)
+
+        self.assertEqual(exit_code, 3)
+        self.assertIn("generic cli failure", stderr.getvalue())
+
+    def test_resolve_cli_path_joins_relative_paths_against_cwd(self) -> None:
+        cwd = Path.cwd() / "site-pipeline-tests"
+        self.assertEqual(
+            cli_main_module._resolve_cli_path(cwd=cwd, raw_path="reports/out.json"),  # noqa: SLF001
+            cwd / "reports/out.json",
+        )
+
+    def test_emit_error_falls_back_to_stderr_when_logging_is_unconfigured(self) -> None:
+        class _FlushTrackingStringIO(io.StringIO):
+            def __init__(self) -> None:
+                super().__init__()
+                self.flushed = False
+
+            def flush(self) -> None:
+                self.flushed = True
+                super().flush()
+
+        stderr = _FlushTrackingStringIO()
+        root_logger = logging.getLogger()
+        original_handlers = list(root_logger.handlers)
+        try:
+            root_logger.handlers.clear()
+            cli_main_module._emit_error("broken", stderr=stderr)  # noqa: SLF001
+        finally:
+            root_logger.handlers[:] = original_handlers
+
+        self.assertEqual(stderr.getvalue(), "site-pipeline: broken\n")
+        self.assertTrue(stderr.flushed)

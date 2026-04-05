@@ -22,10 +22,12 @@ import unittest
 from pydantic import ValidationError
 
 from apache_buildish_site_pipeline.models.aggregates import (
+    CompatibilityAggregateEntry,
     ComponentsDataEntry,
     ContentIndexEntry,
     MountAggregateEntry,
     ProvidersDataEntry,
+    RedirectAggregateEntry,
     RefAggregateEntry,
     ReleaseAggregateEntry,
     RouteAggregateEntry,
@@ -169,6 +171,17 @@ class AggregateModelTests(unittest.TestCase):
             )
 
         with self.assertRaises(ValidationError):
+            RedirectAggregateEntry.model_validate(
+                {
+                    "fromUrl": "https://docs.example.org/spark/",
+                    "toUrl": "https://docs.example.org/spark/latest/",
+                    "status": 303,
+                },
+                by_alias=True,
+                by_name=False,
+            )
+
+        with self.assertRaises(ValidationError):
             TranslationSetAggregateEntry.model_validate(
                 {
                     "translationKey": "spark-overview",
@@ -177,6 +190,18 @@ class AggregateModelTests(unittest.TestCase):
                         {"locale": "en", "url": "https://docs.example.org/spark/"},
                         {"locale": "en", "url": "https://docs.example.org/en/spark/"},
                     ],
+                },
+                by_alias=True,
+                by_name=False,
+            )
+
+        with self.assertRaises(ValidationError):
+            CompatibilityAggregateEntry.model_validate(
+                {
+                    "subjectId": "component:spark",
+                    "targetId": "component:flink",
+                    "relation": "supports",
+                    "evidence": ["matrix", "matrix"],
                 },
                 by_alias=True,
                 by_name=False,
@@ -196,6 +221,62 @@ class AggregateModelTests(unittest.TestCase):
                 by_alias=True,
                 by_name=False,
             )
+
+    def test_rejects_release_redirect_field_combinations_and_accepts_valid_small_metadata(self) -> None:
+        with self.assertRaises(ValidationError):
+            ReleaseAggregateEntry.model_validate(
+                {
+                    "componentSlug": "spark",
+                    "artifactKey": "runtime",
+                    "version": "4.0.0",
+                    "redirectTarget": "route:/spark/latest/",
+                },
+                by_alias=True,
+                by_name=False,
+            )
+
+        with self.assertRaises(ValidationError):
+            ReleaseAggregateEntry.model_validate(
+                {
+                    "componentSlug": "spark",
+                    "artifactKey": "runtime",
+                    "version": "4.0.0",
+                    "publicationState": "published",
+                    "withdrawalBehavior": "notice",
+                },
+                by_alias=True,
+                by_name=False,
+            )
+
+        with self.assertRaises(ValidationError):
+            ReleaseAggregateEntry.model_validate(
+                {
+                    "componentSlug": "spark",
+                    "artifactKey": "runtime",
+                    "version": "4.0.0",
+                    "publicationState": "withdrawn",
+                    "withdrawalBehavior": "notice",
+                    "redirectTarget": "route:/spark/latest/",
+                },
+                by_alias=True,
+                by_name=False,
+            )
+
+        mount = MountAggregateEntry.model_validate(
+            {
+                "mountId": "spark-api",
+                "ownerId": "component:spark",
+                "kind": "generatedApi",
+                "trustClass": "passive",
+                "publicPath": "/spark/api/",
+                "sourceRef": "generated:api",
+                "metadata": {"summary": "small"},
+            },
+            by_alias=True,
+            by_name=False,
+        )
+
+        self.assertEqual(mount.metadata, {"summary": "small"})
 
     def test_rejects_duplicate_content_index_ancestors(self) -> None:
         with self.assertRaises(ValidationError):

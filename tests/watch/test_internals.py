@@ -17,24 +17,63 @@
 from __future__ import annotations
 
 import io
+import json
+import logging
+import signal
 import tempfile
 import threading
 import unittest
+from datetime import UTC, datetime
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
+import apache_buildish_site_pipeline.commands.watch as watch_command
 from apache_buildish_site_pipeline.cli import _run
+from apache_buildish_site_pipeline.cli.contract import (
+    ReportFormat,
+    ReportRequest,
+    RepositoryLayout,
+    WatchEventFormat,
+    WatchEventRequest,
+    WatchInvocation,
+)
+from apache_buildish_site_pipeline.cli.errors import InvocationError, StageIntegrityError
 from apache_buildish_site_pipeline.commands.watch import (
+    TrustedStageState,
+    _WatchIo,
     _WatchEventStream,
     _coalesce_dirty_paths,
     _derive_watch_roots,
+    _dirty_component_unit_id,
     _dirty_unit_ids_for_paths,
+    _emit_cycle_report,
+    _failed_cycle_outcome,
+    _graceful_watch_shutdown,
     _is_pipeline_owned_path,
     _load_trusted_stage,
+    _open_watch_event_output,
+    _run_follow_up_cycle,
+    _run_watch_cycle,
     _select_incremental_build,
+    _stage_path_is_claimed,
+    run_watch,
 )
 from apache_buildish_site_pipeline.commands.shared import load_workspace_inputs
-from apache_buildish_site_pipeline.models.enums import PlanningTarget
+from apache_buildish_site_pipeline.models.enums import (
+    CheckFailureThreshold,
+    DiagnosticSeverity,
+    DocumentFormat,
+    PlanningTarget,
+    RunStatus,
+    StageCommand,
+)
+from apache_buildish_site_pipeline.models.loading import load_stage_manifest
+from apache_buildish_site_pipeline.models.planning_stage_contract import (
+    PipelineDiagnosticEntry,
+    StageRunReportV1,
+    StageRunSummary,
+)
 from apache_buildish_site_pipeline.planning import evaluate_planning
 from apache_buildish_site_pipeline.staging.ownership import build_owned_units
 from tests.support.staging import _expand_workspace_for_multiple_owned_units
@@ -375,6 +414,681 @@ class WatchInternalTests(unittest.TestCase):
 
         self.assertEqual(dirty_paths, (noisy_grandparent.resolve(strict=False),))
 
+    @mock.patch.dict("os.environ", {"WATCHFILES_FORCE_POLLING": "1"}, clear=False)
+    def test_watch_event_stream_returns_empty_tuple_for_poll_timeout_after_startup(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            fake_events = iter((set(),))
+            with mock.patch("apache_buildish_site_pipeline.commands.watch.watch", return_value=fake_events):
+                stream = _WatchEventStream(
+                    watch_roots=(workspace_root,),
+                    stage_root=workspace_root / "site/.stage",
+                    work_root=workspace_root / ".buildish/work",
+                    report_output=None,
+                    event_output=None,
+                    stop_event=threading.Event(),
+                )
+                try:
+                    dirty_paths = stream.collect_dirty_paths(wait_for_first=False)
+                finally:
+                    stream.close()
+
+        self.assertEqual(dirty_paths, ())
+
+    @mock.patch.dict("os.environ", {"WATCHFILES_FORCE_POLLING": "1"}, clear=False)
+    def test_watch_event_stream_returns_none_when_shutdown_is_already_requested(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            stop_event = threading.Event()
+            stop_event.set()
+            with mock.patch("apache_buildish_site_pipeline.commands.watch.watch", return_value=iter(())):
+                stream = _WatchEventStream(
+                    watch_roots=(workspace_root,),
+                    stage_root=workspace_root / "site/.stage",
+                    work_root=workspace_root / ".buildish/work",
+                    report_output=None,
+                    event_output=None,
+                    stop_event=stop_event,
+                )
+                try:
+                    dirty_paths = stream.collect_dirty_paths(wait_for_first=True)
+                finally:
+                    stream.close()
+
+        self.assertIsNone(dirty_paths)
+
+    @mock.patch.dict("os.environ", {"WATCHFILES_FORCE_POLLING": "1"}, clear=False)
+    def test_watch_event_stream_close_closes_the_underlying_iterator(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            raw_events = mock.Mock()
+            with mock.patch("apache_buildish_site_pipeline.commands.watch.watch", return_value=raw_events):
+                stream = _WatchEventStream(
+                    watch_roots=(workspace_root,),
+                    stage_root=workspace_root / "site/.stage",
+                    work_root=workspace_root / ".buildish/work",
+                    report_output=None,
+                    event_output=None,
+                    stop_event=threading.Event(),
+                )
+                stream.close()
+
+        raw_events.close.assert_called_once_with()
+
+    def test_watch_event_output_supports_disabled_stdout_and_file_sinks(self) -> None:
+        stdout = io.StringIO()
+
+        with _open_watch_event_output(request=None, stdout=stdout) as sink:
+            self.assertIsNone(sink)
+
+        with _open_watch_event_output(
+            request=WatchEventRequest(
+                event_format=WatchEventFormat.JSONL,
+                output_path=None,
+            ),
+            stdout=stdout,
+        ) as sink:
+            if sink is None:
+                self.fail("expected stdout-backed event sink")
+            sink.write("stdout-event\n")
+
+        with tempfile.TemporaryDirectory() as tempdir:
+            output_path = Path(tempdir) / "events.jsonl"
+            with _open_watch_event_output(
+                request=WatchEventRequest(
+                    event_format=WatchEventFormat.JSONL,
+                    output_path=output_path,
+                ),
+                stdout=stdout,
+            ) as sink:
+                if sink is None:
+                    self.fail("expected file-backed event sink")
+                sink.write("file-event\n")
+
+            self.assertEqual(output_path.read_text(encoding="utf-8"), "file-event\n")
+
+        self.assertEqual(stdout.getvalue(), "stdout-event\n")
+
+    def test_watch_event_output_requires_a_path_for_file_backed_sinks(self) -> None:
+        request = SimpleNamespace(writes_to_stdout=False, output_path=None)
+
+        with self.assertRaisesRegex(AssertionError, "must exist for file-backed sinks"):
+            with _open_watch_event_output(request=request, stdout=io.StringIO()):
+                pass
+
+    def test_watch_io_emits_jsonl_cycle_and_ready_events(self) -> None:
+        sink = io.StringIO()
+        watch_io = _WatchIo(
+            event_request=WatchEventRequest(
+                event_format=WatchEventFormat.JSONL,
+                output_path=None,
+            ),
+            event_sink=sink,
+        )
+        successful_report = _watch_report(cycle=2)
+        failed_report = _watch_report(
+            cycle=3,
+            succeeded=False,
+            wrote_stage=False,
+            stage_usable=True,
+            status=RunStatus.ERRORS,
+            error_count=1,
+        )
+
+        watch_io.emit_cycle_event(successful_report)
+        watch_io.emit_cycle_event(failed_report)
+        watch_io.emit_ready(successful_report)
+
+        payloads = [json.loads(line) for line in sink.getvalue().splitlines()]
+        self.assertEqual(
+            [payload["event"] for payload in payloads],
+            ["cycle-succeeded", "cycle-failed", "ready"],
+        )
+        self.assertEqual(payloads[0]["cycle"], 2)
+        self.assertEqual(payloads[1]["errorCount"], 1)
+
+    def test_watch_io_rejects_missing_sink_and_unknown_event_format(self) -> None:
+        ready_report = _watch_report(cycle=4)
+        missing_sink_io = _WatchIo(
+            event_request=WatchEventRequest(
+                event_format=WatchEventFormat.JSONL,
+                output_path=None,
+            ),
+            event_sink=None,
+        )
+        unsupported_format_io = _WatchIo(
+            event_request=SimpleNamespace(event_format="yaml"),
+            event_sink=io.StringIO(),
+        )
+
+        with self.assertRaisesRegex(AssertionError, "sink must exist"):
+            missing_sink_io.emit_ready(ready_report)
+
+        with self.assertRaisesRegex(AssertionError, "Unsupported watch event format"):
+            unsupported_format_io.emit_ready(ready_report)
+
+    def test_watch_io_emit_cycle_log_records_initial_scan_summary(self) -> None:
+        watch_io = _WatchIo(event_request=None, event_sink=None)
+
+        with self.assertLogs(logging.getLogger(watch_command.__name__), level="INFO") as captured:
+            watch_io.emit_cycle_log(
+                report=_watch_report(cycle=1),
+                dirty_paths=(),
+                watch_roots=(Path("/workspace"),),
+            )
+
+        output = "\n".join(captured.output)
+        self.assertIn("watch cycle 1:", output)
+        self.assertIn("watch dirty path count: <initial scan>", output)
+        self.assertIn("watch root count: 1", output)
+        self.assertNotIn("watch debug dirty paths", output)
+
+    def test_watch_io_emit_cycle_log_records_debug_dirty_paths_and_roots(self) -> None:
+        watch_io = _WatchIo(event_request=None, event_sink=None)
+
+        with self.assertLogs(logging.getLogger(watch_command.__name__), level="DEBUG") as captured:
+            watch_io.emit_cycle_log(
+                report=_watch_report(cycle=5),
+                dirty_paths=(Path("/workspace/site/components.yaml"),),
+                watch_roots=(Path("/workspace"), Path("/catalog")),
+            )
+
+        output = "\n".join(captured.output)
+        self.assertIn("watch dirty path count: 1", output)
+        self.assertIn("watch debug dirty paths: /workspace/site/components.yaml", output)
+        self.assertIn("watch debug roots: /workspace, /catalog", output)
+
+    def test_graceful_watch_shutdown_marks_stop_event_and_restores_handlers(self) -> None:
+        previous_sigint = signal.getsignal(signal.SIGINT)
+
+        with _graceful_watch_shutdown() as controller:
+            current_sigint = signal.getsignal(signal.SIGINT)
+            self.assertIsNot(current_sigint, previous_sigint)
+            current_sigint(signal.SIGINT, None)
+            self.assertTrue(controller.shutdown_requested)
+            self.assertTrue(controller.stop_event.is_set())
+
+        self.assertIs(signal.getsignal(signal.SIGINT), previous_sigint)
+
+    def test_emit_cycle_report_skips_revalidation_when_no_output_path_is_configured(self) -> None:
+        invocation = _watch_invocation(Path("/workspace"))
+
+        with mock.patch.object(watch_command, "revalidate_report_request") as revalidate, mock.patch.object(
+            watch_command,
+            "emit_report",
+        ) as emit:
+            _emit_cycle_report(
+                invocation=invocation,
+                report=_watch_report(cycle=1),
+                stdout=io.StringIO(),
+            )
+
+        revalidate.assert_not_called()
+        emit.assert_not_called()
+
+    def test_emit_cycle_report_revalidates_and_emits_file_backed_reports(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            invocation = _watch_invocation(
+                workspace_root,
+                report_output=workspace_root / "watch-report.json",
+            )
+            report = _watch_report(cycle=2)
+            stdout = io.StringIO()
+
+            with mock.patch.object(
+                watch_command,
+                "revalidate_report_request",
+                return_value=invocation.report_request,
+            ) as revalidate, mock.patch.object(
+                watch_command,
+                "emit_report",
+            ) as emit, mock.patch.object(
+                watch_command,
+                "render_text_report",
+                return_value="watch rendered",
+            ) as render:
+                _emit_cycle_report(invocation=invocation, report=report, stdout=stdout)
+
+        revalidate.assert_called_once_with(
+            cwd=invocation.layout.cwd,
+            request=invocation.report_request,
+            forbidden_roots=(invocation.layout.stage_root, invocation.layout.work_root),
+        )
+        render.assert_called_once_with(report)
+        emit.assert_called_once_with(
+            request=invocation.report_request,
+            report=report,
+            text_output="watch rendered",
+            stdout=stdout,
+        )
+
+    def test_failed_cycle_outcome_reuses_prior_trusted_stage_metadata(self) -> None:
+        trusted_stage = SimpleNamespace(
+            stage_root=Path("/workspace/site/.stage"),
+            manifest_path=Path("/workspace/site/.stage/manifest.json"),
+        )
+        diagnostics = (
+            PipelineDiagnosticEntry(
+                severity=DiagnosticSeverity.ERROR,
+                code="watch.failure",
+                message="broken",
+            ),
+        )
+
+        outcome = _failed_cycle_outcome(
+            cycle_number=7,
+            trusted_stage=trusted_stage,
+            prior_watch_roots=(Path("/workspace"),),
+            diagnostics=diagnostics,
+        )
+
+        self.assertTrue(outcome.report.summary.stage_usable)
+        self.assertEqual(outcome.report.stage_root_path, str(trusted_stage.stage_root))
+        self.assertEqual(outcome.watch_roots, (Path("/workspace"),))
+
+    def test_run_follow_up_cycle_raises_when_cycle_leaves_no_trusted_stage(self) -> None:
+        invocation = _watch_invocation(Path("/workspace"))
+        prior_stage = SimpleNamespace(
+            stage_root=Path("/workspace/site/.stage"),
+            manifest_path=Path("/workspace/site/.stage/manifest.json"),
+        )
+        failed_outcome = SimpleNamespace(
+            report=_watch_report(
+                cycle=2,
+                succeeded=False,
+                wrote_stage=False,
+                stage_usable=False,
+                status=RunStatus.ERRORS,
+                error_count=1,
+            ),
+            trusted_stage=None,
+            watch_roots=(Path("/workspace"),),
+        )
+        watch_io = mock.Mock()
+
+        with mock.patch.object(watch_command, "_run_watch_cycle", return_value=failed_outcome):
+            with self.assertRaisesRegex(StageIntegrityError, "left no trustworthy stage"):
+                _run_follow_up_cycle(
+                    invocation=invocation,
+                    cycle_number=1,
+                    trusted_stage=prior_stage,
+                    last_watch_roots=(Path("/workspace"),),
+                    dirty_paths=(Path("/workspace/site/components.yaml"),),
+                    stdout=io.StringIO(),
+                    watch_io=watch_io,
+                )
+
+        watch_io.emit_cycle_event.assert_called_once_with(failed_outcome.report)
+        watch_io.emit_cycle_log.assert_called_once()
+
+    def test_stage_path_is_claimed_handles_exact_and_nested_claims(self) -> None:
+        self.assertTrue(
+            _stage_path_is_claimed(
+                "content/components/spark/index.md",
+                {"content/components/spark"},
+                set(),
+            ),
+        )
+        self.assertTrue(
+            _stage_path_is_claimed(
+                "content/components",
+                set(),
+                {"content/components/spark/index.md"},
+            ),
+        )
+        self.assertFalse(
+            _stage_path_is_claimed(
+                "content/components/flink/index.md",
+                {"content/components/spark"},
+                set(),
+            ),
+        )
+
+    def test_run_watch_rejects_same_report_and_event_output_path(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            output_path = workspace_root / "watch-output.json"
+            invocation = WatchInvocation(
+                layout=_watch_invocation(workspace_root).layout,
+                fail_on_severity=CheckFailureThreshold.ERROR,
+                report_request=ReportRequest(
+                    report_format=ReportFormat.JSON,
+                    schema_version=1,
+                    output_path=output_path,
+                ),
+                unstable_event_request=WatchEventRequest(
+                    event_format=WatchEventFormat.JSONL,
+                    output_path=output_path,
+                ),
+            )
+
+            with self.assertRaisesRegex(InvocationError, "must differ"):
+                run_watch(invocation, stdout=io.StringIO())
+
+    def test_run_watch_cycle_returns_failed_report_when_stage_gate_blocks_build(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            invocation = _watch_invocation(workspace_root)
+            prior_watch_roots = (workspace_root,)
+            trusted_stage = _trusted_stage(workspace_root / "site/.stage")
+            planning = SimpleNamespace(watch_plan=None)
+            evaluation = SimpleNamespace(
+                stage_gate=SimpleNamespace(allowed=False),
+                build_plan=None,
+                diagnostics=(
+                    PipelineDiagnosticEntry(
+                        severity=DiagnosticSeverity.ERROR,
+                        code="watch.blocked",
+                        message="blocked",
+                    ),
+                ),
+            )
+            loaded_inputs = SimpleNamespace(
+                catalog=object(),
+                provider_snapshot=object(),
+                component_documents=object(),
+            )
+
+            with mock.patch.object(
+                watch_command,
+                "load_workspace_inputs",
+                return_value=loaded_inputs,
+            ), mock.patch.object(
+                watch_command,
+                "evaluate_planning",
+                return_value=planning,
+            ), mock.patch.object(
+                watch_command,
+                "run_evaluation",
+                return_value=evaluation,
+            ), mock.patch.object(
+                watch_command,
+                "build_stage_run_report",
+                return_value=_watch_report(
+                    cycle=3,
+                    succeeded=False,
+                    wrote_stage=False,
+                    stage_usable=True,
+                    status=RunStatus.ERRORS,
+                    error_count=1,
+                ),
+            ):
+                outcome = _run_watch_cycle(
+                    invocation=invocation,
+                    cycle_number=3,
+                    trusted_stage=trusted_stage,
+                    prior_watch_roots=prior_watch_roots,
+                    dirty_paths=(),
+                )
+
+        self.assertIs(outcome.trusted_stage, trusted_stage)
+        self.assertEqual(outcome.watch_roots, prior_watch_roots)
+        self.assertFalse(outcome.report.summary.succeeded)
+
+    def test_run_watch_cycle_returns_failed_outcome_when_build_raises_stage_integrity_error(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            _expand_workspace_for_multiple_owned_units(workspace_root)
+            invocation = _watch_invocation(workspace_root)
+            build_plan = _build_plan(workspace_root)
+            planning = SimpleNamespace(watch_plan=None)
+            evaluation = SimpleNamespace(
+                stage_gate=SimpleNamespace(allowed=True),
+                build_plan=build_plan,
+                diagnostics=(),
+            )
+            loaded_inputs = SimpleNamespace(
+                catalog=object(),
+                provider_snapshot=object(),
+                component_documents=object(),
+                catalog_path=workspace_root / "site/components.yaml",
+                provider_snapshot_path=workspace_root / "provider-snapshot.json",
+            )
+            sentinel = SimpleNamespace(report=_watch_report(cycle=4), trusted_stage=None, watch_roots=(workspace_root,))
+
+            with mock.patch.object(
+                watch_command,
+                "load_workspace_inputs",
+                return_value=loaded_inputs,
+            ), mock.patch.object(
+                watch_command,
+                "evaluate_planning",
+                return_value=planning,
+            ), mock.patch.object(
+                watch_command,
+                "run_evaluation",
+                return_value=evaluation,
+            ), mock.patch.object(
+                watch_command,
+                "_select_incremental_build",
+                return_value=watch_command.IncrementalBuildSelection(),
+            ), mock.patch.object(
+                watch_command,
+                "run_build",
+                side_effect=StageIntegrityError("boom"),
+            ), mock.patch.object(
+                watch_command,
+                "_failed_cycle_outcome",
+                return_value=sentinel,
+            ) as failed_outcome:
+                outcome = _run_watch_cycle(
+                    invocation=invocation,
+                    cycle_number=4,
+                    trusted_stage=None,
+                    prior_watch_roots=(workspace_root,),
+                    dirty_paths=(workspace_root / "site/content/index.md",),
+                )
+
+        self.assertIs(outcome, sentinel)
+        failed_outcome.assert_called_once()
+
+    def test_run_watch_cycle_returns_failed_outcome_when_published_stage_is_not_trusted(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            _expand_workspace_for_multiple_owned_units(workspace_root)
+            invocation = _watch_invocation(workspace_root)
+            build_plan = _build_plan(workspace_root)
+            planning = SimpleNamespace(watch_plan=None)
+            evaluation = SimpleNamespace(
+                stage_gate=SimpleNamespace(allowed=True),
+                build_plan=build_plan,
+                diagnostics=(),
+            )
+            loaded_inputs = SimpleNamespace(
+                catalog=object(),
+                provider_snapshot=object(),
+                component_documents=object(),
+                catalog_path=workspace_root / "site/components.yaml",
+                provider_snapshot_path=workspace_root / "provider-snapshot.json",
+            )
+            build_outcome = SimpleNamespace(
+                layout=SimpleNamespace(next_stage_root=workspace_root / "site/.stage.next"),
+            )
+            publication = SimpleNamespace(stage_root=workspace_root / "site/.stage", manifest_path=workspace_root / "site/.stage/manifest.json")
+            sentinel = SimpleNamespace(report=_watch_report(cycle=5), trusted_stage=None, watch_roots=(workspace_root,))
+
+            with mock.patch.object(
+                watch_command,
+                "load_workspace_inputs",
+                return_value=loaded_inputs,
+            ), mock.patch.object(
+                watch_command,
+                "evaluate_planning",
+                return_value=planning,
+            ), mock.patch.object(
+                watch_command,
+                "run_evaluation",
+                return_value=evaluation,
+            ), mock.patch.object(
+                watch_command,
+                "_select_incremental_build",
+                return_value=watch_command.IncrementalBuildSelection(),
+            ), mock.patch.object(
+                watch_command,
+                "run_build",
+                return_value=build_outcome,
+            ), mock.patch.object(
+                watch_command,
+                "finalize_stage_publication",
+                return_value=publication,
+            ), mock.patch.object(
+                watch_command,
+                "cleanup_after_publication",
+            ), mock.patch.object(
+                watch_command.shutil,
+                "rmtree",
+            ), mock.patch.object(
+                watch_command,
+                "_load_trusted_stage",
+                return_value=None,
+            ), mock.patch.object(
+                watch_command,
+                "_failed_cycle_outcome",
+                return_value=sentinel,
+            ) as failed_outcome:
+                outcome = _run_watch_cycle(
+                    invocation=invocation,
+                    cycle_number=5,
+                    trusted_stage=None,
+                    prior_watch_roots=(workspace_root,),
+                    dirty_paths=(workspace_root / "site/content/index.md",),
+                )
+
+        self.assertIs(outcome, sentinel)
+        failed_outcome.assert_called_once()
+
+    def test_dirty_unit_ids_detect_site_vendor_and_component_inputs(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            _expand_workspace_for_multiple_owned_units(workspace_root)
+            build_plan = _build_plan(workspace_root)
+            units = build_owned_units(build_plan)
+            vendor_asset = build_plan.site.vendor_assets[0].source_path
+            component = build_plan.site.components[0]
+
+            self.assertEqual(
+                _dirty_unit_ids_for_paths(
+                    build_plan=build_plan,
+                    units=units,
+                    dirty_paths=(build_plan.site.site_pages_root / "index.md",),
+                    workspace_root=workspace_root,
+                    site_root=workspace_root / "site",
+                    catalog_path=workspace_root / "site/components.yaml",
+                    provider_snapshot_path=None,
+                ),
+                frozenset({"site-pages"}),
+            )
+            self.assertEqual(
+                _dirty_unit_ids_for_paths(
+                    build_plan=build_plan,
+                    units=units,
+                    dirty_paths=(build_plan.site.site_assets_root / "robots.txt",),
+                    workspace_root=workspace_root,
+                    site_root=workspace_root / "site",
+                    catalog_path=workspace_root / "site/components.yaml",
+                    provider_snapshot_path=None,
+                ),
+                frozenset({"site-assets"}),
+            )
+            self.assertEqual(
+                _dirty_unit_ids_for_paths(
+                    build_plan=build_plan,
+                    units=units,
+                    dirty_paths=(vendor_asset,),
+                    workspace_root=workspace_root,
+                    site_root=workspace_root / "site",
+                    catalog_path=workspace_root / "site/components.yaml",
+                    provider_snapshot_path=None,
+                ),
+                frozenset({"vendor-assets"}),
+            )
+            self.assertEqual(
+                _dirty_unit_ids_for_paths(
+                    build_plan=build_plan,
+                    units=units,
+                    dirty_paths=(component.content_source.local_dir / "README.md",),
+                    workspace_root=workspace_root,
+                    site_root=workspace_root / "site",
+                    catalog_path=workspace_root / "site/components.yaml",
+                    provider_snapshot_path=None,
+                ),
+                frozenset({f"component:{component.slug}"}),
+            )
+
+    def test_dirty_unit_ids_return_all_units_for_site_or_workspace_root_changes(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            _expand_workspace_for_multiple_owned_units(workspace_root)
+            build_plan = _build_plan(workspace_root)
+            units = build_owned_units(build_plan)
+            current_unit_ids = frozenset(unit.unit_id for unit in units)
+            site_root = workspace_root / "site"
+
+            self.assertEqual(
+                _dirty_unit_ids_for_paths(
+                    build_plan=build_plan,
+                    units=units,
+                    dirty_paths=(site_root,),
+                    workspace_root=workspace_root,
+                    site_root=site_root,
+                    catalog_path=workspace_root / "site/components.yaml",
+                    provider_snapshot_path=None,
+                ),
+                current_unit_ids,
+            )
+            self.assertEqual(
+                _dirty_unit_ids_for_paths(
+                    build_plan=build_plan,
+                    units=units,
+                    dirty_paths=(workspace_root,),
+                    workspace_root=workspace_root,
+                    site_root=site_root,
+                    catalog_path=workspace_root / "site/components.yaml",
+                    provider_snapshot_path=None,
+                ),
+                current_unit_ids,
+            )
+
+    def test_dirty_component_unit_id_returns_none_for_unmatched_paths(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            _expand_workspace_for_multiple_owned_units(workspace_root)
+            build_plan = _build_plan(workspace_root)
+
+            self.assertIsNone(
+                _dirty_component_unit_id(
+                    build_plan=build_plan,
+                    dirty_path=workspace_root / "README.md",
+                ),
+            )
+
+    def test_is_pipeline_owned_path_detects_exact_report_output_and_optional_event_output(self) -> None:
+        stage_root = Path("/workspace/site/.stage")
+        work_root = Path("/workspace/site/.site-pipeline-work")
+        report_output = Path("/workspace/watch-report.json")
+
+        self.assertTrue(
+            _is_pipeline_owned_path(
+                path=report_output,
+                stage_root=stage_root,
+                work_root=work_root,
+                report_output=report_output,
+                event_output=None,
+            ),
+        )
+        self.assertFalse(
+            _is_pipeline_owned_path(
+                path=Path("/workspace/site/content/index.md"),
+                stage_root=stage_root,
+                work_root=work_root,
+                report_output=None,
+                event_output=None,
+            ),
+        )
+
+    def test_load_trusted_stage_returns_none_when_manifest_is_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            stage_root = Path(tempdir) / "stage"
+            stage_root.mkdir()
+
+            self.assertIsNone(_load_trusted_stage(stage_root))
+
 
 def _write_stage_manifest(stage_root: Path, *, manifest_path: Path | None = None) -> None:
     target_path = manifest_path if manifest_path is not None else stage_root / "manifest.json"
@@ -400,3 +1114,76 @@ def _build_plan(workspace_root: Path):
         work_root=workspace_root / ".buildish/work",
     )
     return planning.build_plan_candidate
+
+
+def _watch_invocation(
+    workspace_root: Path,
+    *,
+    report_output: Path | None = None,
+) -> WatchInvocation:
+    site_root = workspace_root / "site"
+    return WatchInvocation(
+        layout=RepositoryLayout(
+            cwd=workspace_root,
+            workspace_root=workspace_root,
+            catalog_path=site_root / "components.yaml",
+            site_root=site_root,
+            stage_root=site_root / ".stage",
+            work_root=site_root / ".site-pipeline-work",
+        ),
+        fail_on_severity=CheckFailureThreshold.ERROR,
+        report_request=ReportRequest(
+            report_format=ReportFormat.TEXT,
+            schema_version=None,
+            output_path=report_output,
+        ),
+        unstable_event_request=None,
+    )
+
+
+def _trusted_stage(stage_root: Path) -> TrustedStageState:
+    stage_root.mkdir(parents=True, exist_ok=True)
+    _write_stage_manifest(stage_root)
+    manifest_path = stage_root / "manifest.json"
+    manifest = load_stage_manifest(
+        manifest_path.read_text(encoding="utf-8"),
+        document_format=DocumentFormat.JSON,
+        source_name=str(manifest_path),
+    )
+    return TrustedStageState(
+        stage_root=stage_root,
+        manifest_path=manifest_path,
+        manifest=manifest,
+        incremental_state=None,
+    )
+
+
+def _watch_report(
+    *,
+    cycle: int,
+    succeeded: bool = True,
+    wrote_stage: bool = True,
+    stage_usable: bool = True,
+    status: RunStatus = RunStatus.CLEAN,
+    error_count: int = 0,
+    warning_count: int = 0,
+    info_count: int = 0,
+) -> StageRunReportV1:
+    return StageRunReportV1(
+        schema_version=1,
+        generated_at=datetime(2026, 4, 5, tzinfo=UTC),
+        command=StageCommand.WATCH,
+        summary=StageRunSummary(
+            status=status,
+            succeeded=succeeded,
+            wrote_stage=wrote_stage,
+            stage_usable=stage_usable,
+            error_count=error_count,
+            warning_count=warning_count,
+            info_count=info_count,
+        ),
+        stage_root_path="/workspace/site/.stage" if stage_usable else None,
+        manifest_path="/workspace/site/.stage/manifest.json" if stage_usable else None,
+        cycle=cycle,
+        diagnostics=[],
+    )

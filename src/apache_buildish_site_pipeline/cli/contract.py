@@ -110,7 +110,10 @@ class WatchCycleEvent(WatchEvent, ABC):
     info_count: int
 
     def to_json_payload(self) -> dict[str, object | None]:
-        payload = super().to_json_payload()
+        # Use explicit two-argument ``super`` here because Python 3.13 can raise
+        # ``TypeError`` for zero-argument ``super()`` inside slotted dataclass
+        # inheritance trees like this watch-event hierarchy.
+        payload = super(WatchCycleEvent, self).to_json_payload()
         payload.update(
             {
                 "status": self.status.value,

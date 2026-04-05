@@ -154,6 +154,21 @@ class AggregateModelTests(unittest.TestCase):
             )
 
         with self.assertRaises(ValidationError):
+            RouteAggregateEntry.model_validate(
+                {
+                    "originKey": "docs",
+                    "baseUrl": "https://docs.example.org",
+                    "path": "/spark/",
+                    "url": "https://docs.example.org/spark/",
+                    "componentSlug": "spark",
+                    "redirectTargetUrl": "https://docs.example.org/new-spark/",
+                    "redirectStatus": 302,
+                },
+                by_alias=True,
+                by_name=False,
+            )
+
+        with self.assertRaises(ValidationError):
             TranslationSetAggregateEntry.model_validate(
                 {
                     "translationKey": "spark-overview",

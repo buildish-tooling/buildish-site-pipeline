@@ -271,8 +271,6 @@ class RouteAggregateEntry(SitePipelineBaseModel):
     canonical: bool | None = None
     route_kind: NonEmptyString | None = None
     target_id: NonEmptyString | None = None
-    redirect_target_url: UrlString | None = None
-    redirect_status: int | None = Field(default=None, strict=True)
     label: NonEmptyString | None = None
     locale: NonEmptyString | None = None
 
@@ -280,16 +278,6 @@ class RouteAggregateEntry(SitePipelineBaseModel):
     def ensure_route_urls_are_consistent(self) -> Self:
         if self.url != _build_expected_url(self.base_url, self.path):
             raise ValueError("Route url must equal baseUrl joined with path")
-
-        if self.redirect_status is None:
-            if self.redirect_target_url is not None:
-                raise ValueError("redirectTargetUrl requires redirectStatus")
-            return self
-
-        if self.redirect_status not in _ALLOWED_REDIRECT_STATUS_CODES:
-            raise ValueError("Redirect status must be one of 301, 302, 307, or 308")
-        if self.redirect_target_url is None:
-            raise ValueError("redirectStatus requires redirectTargetUrl")
         return self
 
 

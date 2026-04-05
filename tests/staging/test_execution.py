@@ -33,6 +33,7 @@ from apache_buildish_site_pipeline.staging.coordinator import publish_stage
 from apache_buildish_site_pipeline.staging.publication import finalize_stage_publication
 from apache_buildish_site_pipeline.staging.types import WorkRootLayout
 from apache_buildish_site_pipeline.staging.worker_protocol import ContributionFileRefs, UnitContributionManifestWire, WorkerResultWire, write_unit_manifest
+from apache_buildish_site_pipeline.staging.workdirs import prepare_next_stage_root
 from tests.support.workspace import _workspace
 
 
@@ -239,6 +240,36 @@ class StagingExecutionTests(unittest.TestCase):
 
         self.assertEqual(publication.stage_root, stage_root.resolve(strict=False))
         fsync_published_stage.assert_called_once_with(stage_root.resolve(strict=False))
+
+    def test_candidate_stage_root_preparation_rejects_symlink(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            real_root = workspace_root / "real-stage"
+            real_root.mkdir(parents=True, exist_ok=True)
+            symlink_root = workspace_root / "candidate-stage"
+            symlink_root.symlink_to(real_root, target_is_directory=True)
+
+            with self.assertRaises(StageIntegrityError) as raised:
+                prepare_next_stage_root(symlink_root)
+
+        self.assertIn("must not be a symlink", str(raised.exception))
+
+    def test_candidate_stage_root_preparation_rejects_non_directory_and_non_empty_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            file_root = workspace_root / "candidate-stage-file"
+            file_root.write_text("not a directory\n", encoding="utf-8")
+            non_empty_root = workspace_root / "candidate-stage-dir"
+            non_empty_root.mkdir(parents=True, exist_ok=True)
+            (non_empty_root / "manifest.json").write_text("{}\n", encoding="utf-8")
+
+            with self.assertRaises(StageIntegrityError) as file_error:
+                prepare_next_stage_root(file_root)
+            with self.assertRaises(StageIntegrityError) as directory_error:
+                prepare_next_stage_root(non_empty_root)
+
+        self.assertIn("must be a directory", str(file_error.exception))
+        self.assertIn("must be absent or empty", str(directory_error.exception))
 
     def test_replacement_publication_syncs_published_stage_before_returning(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:

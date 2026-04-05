@@ -19,6 +19,7 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
+from ..source_tree import iter_source_tree_files
 from ..worker_protocol import WorkerResultWire, WorkerSpecWire
 
 
@@ -55,10 +56,8 @@ def run_vendor_assets_unit(spec: WorkerSpecWire) -> WorkerResultWire:
 
 def _copy_tree(source_root: Path, target_root: Path) -> int:
     count = 0
-    for source_path in sorted(source_root.rglob("*")):
-        if source_path.is_dir():
-            continue
-        destination_path = target_root / source_path.relative_to(source_root)
+    for source_path, relative_path in iter_source_tree_files(source_root=source_root):
+        destination_path = target_root / relative_path
         destination_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source_path, destination_path)
         count += 1

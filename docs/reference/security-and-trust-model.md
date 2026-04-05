@@ -52,6 +52,8 @@ The pipeline must:
 - validate report-output and stage-finalization destinations before writing
 - reject output targets whose final write path resolves through a symlink or
   escapes the owned output root
+- require candidate stage roots to be real directories that are absent or empty,
+  never symlinks and never pre-populated with leftover content
 - avoid publishing symlink escapes into the staged tree
 
 This protects against accidental workspace leakage and straightforward path

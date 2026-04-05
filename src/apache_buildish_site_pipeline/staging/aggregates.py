@@ -60,6 +60,8 @@ from apache_buildish_site_pipeline.planning.types import (
     IndexedProviderRecord,
     ResolvedArtifactConfig,
     ResolvedComponentConfig,
+    ResolvedOrigin,
+    ResolvedPublicationPolicy,
     SelectedVersionContext,
 )
 
@@ -441,12 +443,14 @@ def _build_artifacts_entries(
 
 
 def _build_route_entries(build_plan: EffectiveBuildPlan) -> list[RouteAggregateEntry]:
+    origins_by_key = build_plan.site.origins
     component_by_slug = {
         component.slug: component for component in build_plan.site.components
     }
     entries: list[RouteAggregateEntry] = []
     for component in build_plan.site.components:
         publication = component.publication
+        canonical_path = publication.canonical_path or publication.component_path
         entries.extend(
             [
                 _route_entry(
@@ -455,8 +459,9 @@ def _build_route_entries(build_plan: EffectiveBuildPlan) -> list[RouteAggregateE
                     publication.origin.base_url,
                     publication.component_path,
                     section="component",
+                    route_kind="published",
                     target_id=f"component:{component.slug}",
-                    canonical=publication.component_path == publication.canonical_path,
+                    canonical=publication.component_path == canonical_path,
                 ),
                 _route_entry(
                     component.slug,
@@ -464,6 +469,7 @@ def _build_route_entries(build_plan: EffectiveBuildPlan) -> list[RouteAggregateE
                     publication.origin.base_url,
                     publication.development_path,
                     section="development",
+                    route_kind="published",
                     target_id=f"development:{component.slug}",
                 ),
                 _route_entry(
@@ -472,6 +478,7 @@ def _build_route_entries(build_plan: EffectiveBuildPlan) -> list[RouteAggregateE
                     publication.origin.base_url,
                     publication.assets_path,
                     section="assets",
+                    route_kind="published",
                     target_id=f"assets:{component.slug}",
                 ),
             ],
@@ -484,19 +491,27 @@ def _build_route_entries(build_plan: EffectiveBuildPlan) -> list[RouteAggregateE
                     publication.origin.base_url,
                     publication.docs_path,
                     section="docs",
+                    route_kind="published",
                     target_id=f"docs:{component.slug}",
                 ),
             )
         for alias in publication.aliases:
+            alias_origin = _required_origin(
+                origins_by_key, alias.origin or publication.origin.key
+            )
             entries.append(
                 _route_entry(
                     component.slug,
-                    alias.origin or publication.origin.key,
-                    publication.origin.base_url,
+                    alias_origin.key,
+                    alias_origin.base_url,
                     alias.path,
                     target_id=f"route-alias:{component.slug}:{alias.path}",
-                    canonical=False,
+                    canonical=(
+                        alias_origin.key == publication.origin.key
+                        and alias.path == canonical_path
+                    ),
                     label=alias.label,
+                    route_kind="alias",
                 ),
             )
     for context in build_plan.selected_versions:
@@ -509,6 +524,7 @@ def _build_route_entries(build_plan: EffectiveBuildPlan) -> list[RouteAggregateE
                 public_path_for_context(publication=publication, context=context),
                 artifact_key=context.artifact_key,
                 section=context.kind.value,
+                route_kind="context",
                 target_id=target_id_for_context(context),
             ),
         )
@@ -518,25 +534,184 @@ def _build_route_entries(build_plan: EffectiveBuildPlan) -> list[RouteAggregateE
 def _build_redirect_entries(
     build_plan: EffectiveBuildPlan,
 ) -> list[RedirectAggregateEntry]:
+    origins_by_key = build_plan.site.origins
+    component_by_slug = {
+        component.slug: component for component in build_plan.site.components
+    }
+    routes_by_lookup_key, targets_by_reference = _build_redirect_resolution_index(
+        build_plan
+    )
     entries: list[RedirectAggregateEntry] = []
     for component in build_plan.site.components:
-        origin = component.publication.origin
         for redirect in component.publication.redirects:
-            to_url = (
-                redirect.target
-                if str(redirect.target).startswith("http")
-                else f"{origin.base_url.rstrip('/')}{redirect.target}"
-            )
+            source_origin_key = redirect.from_origin or component.publication.origin.key
+            source_origin = _required_origin(origins_by_key, source_origin_key)
             entries.append(
                 RedirectAggregateEntry(
-                    from_url=f"{origin.base_url.rstrip('/')}{redirect.from_path}",
-                    to_url=to_url,
+                    from_url=f"{source_origin.base_url.rstrip('/')}{redirect.from_path}",
+                    to_url=_resolve_redirect_target_url(
+                        target=str(redirect.target),
+                        source_origin_key=source_origin_key,
+                        routes_by_lookup_key=routes_by_lookup_key,
+                        targets_by_reference=targets_by_reference,
+                        origins_by_key=origins_by_key,
+                    ),
                     status=redirect.status or 302,
                     reason=redirect.reason,
                     source_kind="catalog",
                 ),
             )
+    for context in build_plan.selected_versions:
+        if (
+            context.kind is not RecordKind.RELEASED
+            or context.withdrawal_behavior != "redirect"
+            or context.redirect_target is None
+        ):
+            continue
+        publication = component_by_slug[context.component_slug].publication
+        origin = publication.origin
+        entries.append(
+            RedirectAggregateEntry(
+                from_url=(
+                    f"{origin.base_url.rstrip('/')}{public_path_for_context(publication, context)}"
+                ),
+                to_url=_resolve_redirect_target_url(
+                    target=context.redirect_target,
+                    source_origin_key=origin.key,
+                    routes_by_lookup_key=routes_by_lookup_key,
+                    targets_by_reference=targets_by_reference,
+                    origins_by_key=origins_by_key,
+                ),
+                status=302,
+                source_kind="withdrawal",
+            ),
+        )
     return entries
+
+
+def _build_redirect_resolution_index(
+    build_plan: EffectiveBuildPlan,
+) -> tuple[dict[tuple[str, str], tuple[str, str]], dict[str, tuple[str, str]]]:
+    routes_by_lookup_key: dict[tuple[str, str], tuple[str, str]] = {}
+    targets_by_reference: dict[str, tuple[str, str]] = {}
+    component_by_slug = {
+        component.slug: component for component in build_plan.site.components
+    }
+
+    for component in build_plan.site.components:
+        publication = component.publication
+        _index_redirect_route(
+            routes_by_lookup_key,
+            origin_key=publication.origin.key,
+            path_value=publication.component_path,
+        )
+        _index_redirect_route(
+            routes_by_lookup_key,
+            origin_key=publication.origin.key,
+            path_value=publication.development_path,
+        )
+        _index_redirect_route(
+            routes_by_lookup_key,
+            origin_key=publication.origin.key,
+            path_value=publication.assets_path,
+        )
+        if publication.docs_path != publication.development_path:
+            _index_redirect_route(
+                routes_by_lookup_key,
+                origin_key=publication.origin.key,
+                path_value=publication.docs_path,
+            )
+        for alias in publication.aliases:
+            _index_redirect_route(
+                routes_by_lookup_key,
+                origin_key=alias.origin or publication.origin.key,
+                path_value=alias.path,
+            )
+        targets_by_reference[f"component:{component.slug}"] = (
+            _preferred_component_redirect_route(
+                publication=publication,
+                routes_by_lookup_key=routes_by_lookup_key,
+            )
+        )
+
+    for context in build_plan.selected_versions:
+        publication = component_by_slug[context.component_slug].publication
+        resolved_route = (
+            publication.origin.key,
+            public_path_for_context(publication=publication, context=context),
+        )
+        _index_redirect_route(
+            routes_by_lookup_key,
+            origin_key=resolved_route[0],
+            path_value=resolved_route[1],
+        )
+        if context.release_line is not None:
+            targets_by_reference[
+                f"line:{context.component_slug}/{context.artifact_key}@{context.release_line}"
+            ] = resolved_route
+        if context.version is not None:
+            targets_by_reference[
+                f"release:{context.component_slug}/{context.artifact_key}@{context.version}"
+            ] = resolved_route
+    return routes_by_lookup_key, targets_by_reference
+
+
+def _index_redirect_route(
+    routes_by_lookup_key: dict[tuple[str, str], tuple[str, str]],
+    *,
+    origin_key: str,
+    path_value: str,
+) -> None:
+    routes_by_lookup_key[(origin_key, path_value.lower())] = (origin_key, path_value)
+
+
+def _preferred_component_redirect_route(
+    *,
+    publication: ResolvedPublicationPolicy,
+    routes_by_lookup_key: dict[tuple[str, str], tuple[str, str]],
+) -> tuple[str, str]:
+    canonical_path = publication.canonical_path
+    if canonical_path is not None:
+        preferred_route = routes_by_lookup_key.get(
+            (publication.origin.key, canonical_path.lower())
+        )
+        if preferred_route is not None:
+            return preferred_route
+    return (publication.origin.key, publication.component_path)
+
+
+def _resolve_redirect_target_url(
+    *,
+    target: str,
+    source_origin_key: str,
+    routes_by_lookup_key: dict[tuple[str, str], tuple[str, str]],
+    targets_by_reference: dict[str, tuple[str, str]],
+    origins_by_key: Mapping[str, ResolvedOrigin],
+) -> str:
+    if target.startswith(("http://", "https://")):
+        return target
+    prefix, separator, payload = target.partition(":")
+    resolved_route = (
+        routes_by_lookup_key.get((source_origin_key, payload.lower()))
+        if prefix == "route" and separator != ""
+        else targets_by_reference.get(target)
+    )
+    if resolved_route is None:
+        raise StageIntegrityError(
+            f"Redirect target could not be resolved while writing aggregates: {target}"
+        )
+    origin_key, path_value = resolved_route
+    origin = _required_origin(origins_by_key, origin_key)
+    return f"{origin.base_url.rstrip('/')}{path_value}"
+
+
+def _required_origin(
+    origins_by_key: Mapping[str, ResolvedOrigin], origin_key: str
+) -> ResolvedOrigin:
+    try:
+        return origins_by_key[origin_key]
+    except KeyError as exc:
+        raise StageIntegrityError(f"Unknown publication origin referenced by redirect: {origin_key}") from exc
 
 
 def _build_provider_entries(
@@ -1111,6 +1286,7 @@ def _route_entry(
     target_id: str | None = None,
     canonical: bool | None = None,
     label: str | None = None,
+    route_kind: str | None = None,
 ) -> RouteAggregateEntry:
     return RouteAggregateEntry(
         origin_key=origin_key,
@@ -1121,7 +1297,7 @@ def _route_entry(
         artifact_key=artifact_key,
         section=section,
         canonical=canonical,
-        route_kind=section,
+        route_kind=route_kind or section,
         target_id=target_id,
         label=label,
     )

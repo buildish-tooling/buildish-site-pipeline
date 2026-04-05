@@ -45,6 +45,8 @@ The recommended top-level layout is:
 - `content/site/...` for consumer-authored site pages staged by the pipeline
 - `content/components/<slug>/...` for component-owned staged pages and docs
 - `static/site/...` for consumer-authored site assets staged by the pipeline
+- `static/site/vendor/<stable-key>/...` for top-level vendor asset trees staged by
+  the pipeline
 - `static/components/<slug>/...` for component assets and opaque static mounts
 - `data/*.json` for aggregate metadata
 
@@ -121,6 +123,26 @@ The broader aggregate set may also include:
 
 The manifest records which of those files are present for a given stage root.
 
+When `data/content-index.json` includes `sourcePath`, that path must be a
+repo-relative authored source path. Generated or imported staged content that has
+no workspace-authored source file should omit `sourcePath` instead of exposing a
+machine-local path.
+
+For route and redirect consumers, the key distinction is:
+
+- `data/routes.json` describes the public route surface the stage owns
+- `data/redirects.json` describes concrete redirect responses that should be
+  emitted for incoming requests
+
+Within `data/routes.json`, `section` identifies the publication surface such as
+`component`, `development`, `docs`, or `released`, while `routeKind`
+identifies the route class such as `published`, `context`, or `alias`. The
+separate `canonical` flag identifies the preferred published route for a target.
+
+Concrete redirect behavior does not live on route rows. It is emitted in
+`data/redirects.json` with resolved `fromUrl`, `toUrl`, `status`, optional
+`reason`, and optional `sourceKind` metadata.
+
 ## Diagnostics
 
 Fatal validation errors stop the build instead of producing a partial stage.
@@ -149,6 +171,10 @@ directly without producing a stage tree.
 `site-pipeline build` and `site-pipeline watch` may also emit machine-readable
 run reports when requested, but those reports are operator/automation aids on
 top of the stage contract rather than substitutes for it.
+
+Public aggregate files and machine-readable reports must not leak private
+machine-local paths. Workspace-authored paths may be rewritten to repo-relative
+form, while private work or stage roots must be redacted.
 
 ## Consumer integration patterns
 

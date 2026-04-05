@@ -234,6 +234,11 @@ It should:
     path represented in the effective plan
   - that includes active top-level site pages, site assets, and vendor asset
     trees when they participate in the current build plan
+  - candidate roots that overlap the current stage root, work root, or selected
+    machine-report output path must be excluded and surfaced as planning
+    diagnostics instead of being watched
+  - if no safe watch roots remain after that filtering, the watch bridge is not
+    ready and the command must not pretend there is a usable watch plan
   - one watch root is not necessarily one component; one component may
     contribute multiple roots and multiple components may share one root
 - filter irrelevant file changes

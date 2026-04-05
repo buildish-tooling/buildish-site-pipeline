@@ -130,6 +130,11 @@ Recommended precedence rules:
 Provider data must not silently redefine consumer-owned URLs or artifact
 identity.
 
+Planning should reject snapshots whose records point at component/artifact
+identities that do not exist in the resolved site config. It should also reject
+snapshots that exceed the planning ceilings of 50,000 normalized records or 16
+MiB of encoded snapshot input.
+
 Intentional publication of named refs remains authored in the catalog or artifact
 metadata. Provider data may enrich those refs, but it does not define which named
 refs exist as public version contexts.

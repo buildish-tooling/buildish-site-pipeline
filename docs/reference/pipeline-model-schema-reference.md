@@ -1260,10 +1260,8 @@ Entry in `data/routes.json`.
 | `artifactKey` | `ArtifactKey` | no | Related artifact when the route is artifact-specific. |
 | `section` | `String` | no | Section such as `component`, `development`, `docs`, or `assets`. |
 | `canonical` | `Boolean` | no | Whether the route is canonical for this published target. |
-| `routeKind` | `String` | no | Route kind such as `canonical`, `alias`, or `redirect`. |
+| `routeKind` | `String` | no | Route class such as `published`, `context`, or `alias`. Use `canonical` to identify the preferred published route. Concrete redirects are emitted separately in `data/redirects.json`. |
 | `targetId` | `String` | no | Stable identifier for the published target represented by this route. |
-| `redirectTargetUrl` | `UrlString` | no | Redirect destination when this route is a redirect. |
-| `redirectStatus` | `Integer` | no | Redirect status such as `301`, `302`, `307`, or `308`. |
 | `label` | `String` | no | Optional human-facing label such as `latest`. |
 | `locale` | `String` | no | Locale associated with the route when locale-aware publication is used. |
 
@@ -1278,7 +1276,7 @@ Entry in `data/redirects.json` derived from resolved route metadata.
 | `toUrl` | `UrlString` | yes | Fully resolved redirect destination URL. |
 | `status` | `Integer` | yes | Redirect status such as `301`, `302`, `307`, or `308`. |
 | `reason` | `String` | no | Optional human-facing explanation. |
-| `sourceKind` | `String` | no | Why the redirect exists, such as `legacy`, `moving-label`, or `host-migration`. |
+| `sourceKind` | `String` | no | Why the redirect exists. The built-in staging flow currently emits `catalog` for authored publication redirects and `withdrawal` for withdrawn-release redirects. Consumers should treat other values as extension-friendly strings rather than a closed enum. |
 
 <a id="translationsetaggregateentry"></a>
 ## TranslationSetAggregateEntry

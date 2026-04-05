@@ -181,6 +181,7 @@ site/.stage/
     components.json
     content-index.json
     routes.json
+    redirects.json
   manifest.json
 ```
 
@@ -241,7 +242,7 @@ paths:
   layout, config shape, and first command sequence
 - [create a tiny site](how-to/create-a-tiny-site.md) for the first working flow
 - [staged output and consumers](concepts/staged-output-and-consumers.md) for
-  manifest, front matter, and content-index examples
+  manifest, route/redirect, front matter, and content-index examples
 - [inspect staged output and routes](how-to/inspect-staged-output-and-routes.md)
   to see what the pipeline actually emits
 - [staged output contract](reference/staged-output-contract.md) for the stable

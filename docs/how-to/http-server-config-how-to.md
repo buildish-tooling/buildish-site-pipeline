@@ -68,7 +68,8 @@ stage root, normal host-native filesystem access rules apply.
 - which origin a route belongs to
 - the resolved public `path`
 - the fully qualified `url`
-- whether a route is canonical, an alias, or a redirect
+- whether a route is one of the published, context, or alias route classes
+- which published route is canonical via the separate `canonical` flag
 
 `redirects.json` gives the resolved redirect inventory. It is the main input for
 emitting concrete redirect rules because each entry already contains:
@@ -89,7 +90,8 @@ Use `routes.json` to understand route ownership and origin grouping. Use
 3. Group route entries by `originKey`, `baseUrl`, hostname, or another
    deployment unit that matches your hosting platform.
 4. Use `routes.json` to determine which public paths belong to each published
-   origin and which paths are canonical versus aliases.
+   origin and which paths are canonical versus aliases. Do not expect concrete
+   redirect rules to appear there.
 5. Use `redirects.json` to emit concrete redirect rules for the matching host or
    origin.
 6. Preserve the resolved redirect `status` exactly. Do not silently rewrite a

@@ -153,6 +153,28 @@ class EvaluationExecutionTests(unittest.TestCase):
         self.assertFalse(result.stage_gate.allowed)
         self.assertTrue(any(diagnostic.code == "publication-canonical-invalid" for diagnostic in result.diagnostics))
 
+    def test_alias_canonical_path_allows_stage(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            planning = _planning_eval(
+                Path(tempdir),
+                catalog=_catalog(
+                    shared_mount_path=False,
+                    spark_publication={
+                        "canonicalPath": "/spark/stable/",
+                        "aliases": [{"path": "/spark/stable/", "label": "stable"}],
+                    },
+                ),
+            )
+            result = run_evaluation(
+                request=EvaluationRequest(mode=EvaluationMode.BUILD),
+                planning=planning,
+            )
+
+        self.assertTrue(result.stage_gate.allowed)
+        self.assertFalse(
+            any(diagnostic.code == "publication-canonical-invalid" for diagnostic in result.diagnostics)
+        )
+
     def test_release_redirect_target_resolves_and_allows_stage(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             planning = _planning_eval(
@@ -177,6 +199,89 @@ class EvaluationExecutionTests(unittest.TestCase):
         self.assertTrue(result.stage_gate.allowed)
         self.assertFalse(any(diagnostic.code.startswith("redirect-") for diagnostic in result.diagnostics))
 
+    def test_line_redirect_target_does_not_fall_back_to_released_context(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            planning = _planning_eval(
+                Path(tempdir),
+                catalog=_catalog(
+                    shared_mount_path=False,
+                    spark_publication={
+                        "redirects": [
+                            {
+                                "fromPath": "/spark/docs/current/",
+                                "target": "line:spark/runtime@4.0",
+                            },
+                        ],
+                    },
+                    spark_artifact={
+                        "publicationSelection": {
+                            "development": True,
+                            "lineHeads": {"mode": "none"},
+                            "releases": {"mode": "latestPerLine"},
+                        },
+                    },
+                ),
+            )
+            result = run_evaluation(
+                request=EvaluationRequest(mode=EvaluationMode.BUILD),
+                planning=planning,
+            )
+
+        self.assertFalse(result.stage_gate.allowed)
+        self.assertTrue(any(diagnostic.code == "redirect-target-unknown" for diagnostic in result.diagnostics))
+
+    def test_release_redirect_target_does_not_fall_back_to_candidate_context(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            _prepare_workspace(workspace_root)
+            (workspace_root / "components/runtime/docs/candidates/4.1.0").mkdir(
+                parents=True,
+                exist_ok=True,
+            )
+            planning = evaluate_planning(
+                target=PlanningTarget.BUILD,
+                catalog=_catalog(
+                    shared_mount_path=False,
+                    spark_publication={
+                        "redirects": [
+                            {
+                                "fromPath": "/spark/releases/latest-preview/",
+                                "target": "release:spark/runtime@4.1.0",
+                            },
+                        ],
+                    },
+                    spark_artifact={
+                        "publicationSelection": {
+                            "development": True,
+                            "lineHeads": {"mode": "allAuthored"},
+                            "releases": {"mode": "latestPerLine"},
+                            "candidates": {"mode": "latest"},
+                        },
+                    },
+                ),
+                provider_snapshot=_provider_snapshot(
+                    extra_records=[
+                        {
+                            "provider": "github",
+                            "kind": "candidate",
+                            "componentSlug": "spark",
+                            "artifactKey": "runtime",
+                            "version": "4.1.0",
+                            "displayVersion": "4.1.0-rc1",
+                            "candidateSequence": 1,
+                        },
+                    ],
+                ),
+                workspace_root=workspace_root,
+            )
+            result = run_evaluation(
+                request=EvaluationRequest(mode=EvaluationMode.BUILD),
+                planning=planning,
+            )
+
+        self.assertFalse(result.stage_gate.allowed)
+        self.assertTrue(any(diagnostic.code == "redirect-target-unknown" for diagnostic in result.diagnostics))
+
     def test_malformed_front_matter_blocks_stage(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             workspace_root = Path(tempdir)
@@ -198,6 +303,27 @@ class EvaluationExecutionTests(unittest.TestCase):
 
         self.assertFalse(result.stage_gate.allowed)
         self.assertTrue(any(diagnostic.code == "page-front-matter-invalid" for diagnostic in result.diagnostics))
+
+    def test_unreadable_page_file_blocks_stage(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            _prepare_workspace(workspace_root)
+            (workspace_root / "components/runtime/docs/releases/4.0.0/bad.md").write_bytes(
+                b"\xff\xfe\xfa"
+            )
+            planning = evaluate_planning(
+                target=PlanningTarget.BUILD,
+                catalog=_catalog(shared_mount_path=False),
+                provider_snapshot=_provider_snapshot(),
+                workspace_root=workspace_root,
+            )
+            result = run_evaluation(
+                request=EvaluationRequest(mode=EvaluationMode.BUILD),
+                planning=planning,
+            )
+
+        self.assertFalse(result.stage_gate.allowed)
+        self.assertTrue(any(diagnostic.code == "page-read-failed" for diagnostic in result.diagnostics))
 
     def test_reserved_pipeline_namespace_blocks_stage(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
@@ -335,6 +461,72 @@ class EvaluationExecutionTests(unittest.TestCase):
         self.assertFalse(result.stage_gate.allowed)
         self.assertTrue(any(diagnostic.code == "translation-route-inconsistent" for diagnostic in result.diagnostics))
 
+    def test_translation_without_supported_locale_prefix_blocks_stage(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            _prepare_workspace(workspace_root)
+            release_root = workspace_root / "components/runtime/docs/releases/4.0.0"
+            (release_root / "guide.md").write_text(
+                "---\ntranslationKey: guide\n---\nbody\n",
+                encoding="utf-8",
+            )
+            planning = evaluate_planning(
+                target=PlanningTarget.BUILD,
+                catalog=_catalog(
+                    shared_mount_path=False,
+                    spark_localization={
+                        "supportedLocales": ["en", "de"],
+                        "defaultLocale": "en",
+                        "routeMode": "prefixAll",
+                    },
+                ),
+                provider_snapshot=_provider_snapshot(),
+                workspace_root=workspace_root,
+            )
+            result = run_evaluation(
+                request=EvaluationRequest(mode=EvaluationMode.BUILD),
+                planning=planning,
+            )
+
+        locale_diagnostic = next(
+            diagnostic
+            for diagnostic in result.diagnostics
+            if diagnostic.code == "translation-locale-unresolved"
+        )
+        self.assertFalse(result.stage_gate.allowed)
+        self.assertEqual(locale_diagnostic.details["translationKey"], "guide")
+        self.assertEqual(locale_diagnostic.details["supportedLocales"], ["en", "de"])
+
+    def test_invalid_prefix_all_localization_policy_blocks_stage(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            _prepare_workspace(workspace_root)
+            planning = evaluate_planning(
+                target=PlanningTarget.BUILD,
+                catalog=_catalog(
+                    shared_mount_path=False,
+                    spark_localization={
+                        "supportedLocales": ["en", "de"],
+                        "routeMode": "prefixAll",
+                    },
+                ),
+                provider_snapshot=_provider_snapshot(),
+                workspace_root=workspace_root,
+            )
+            result = run_evaluation(
+                request=EvaluationRequest(mode=EvaluationMode.BUILD),
+                planning=planning,
+            )
+
+        policy_diagnostic = next(
+            diagnostic
+            for diagnostic in result.diagnostics
+            if diagnostic.code == "localization-policy-invalid"
+        )
+        self.assertFalse(result.stage_gate.allowed)
+        self.assertIn("defaultLocale", json.dumps(policy_diagnostic.details, sort_keys=True))
+        self.assertIn("requires defaultLocale", policy_diagnostic.message)
+
     def test_unknown_exact_release_reference_blocks_stage(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             planning = _planning_eval(
@@ -380,6 +572,70 @@ class EvaluationExecutionTests(unittest.TestCase):
 
         self.assertFalse(result.stage_gate.allowed)
         self.assertTrue(any(diagnostic.code == "compatibility-reference-unknown" for diagnostic in result.diagnostics))
+
+    def test_route_reference_must_resolve_uniquely_across_origins(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            planning = _planning_eval(
+                Path(tempdir),
+                catalog=_catalog(
+                    shared_mount_path=False,
+                    extra_origins={"archive": {"baseUrl": "https://archive.example.org"}},
+                    flink_publication={"origin": "archive", "mountPath": "/spark"},
+                    spark_artifact={
+                        "compatibility": [
+                            {
+                                "subjectRef": "artifact:spark/runtime",
+                                "targetRef": "route:/spark/latest/",
+                                "relation": "supports",
+                            },
+                        ],
+                    },
+                ),
+            )
+            result = run_evaluation(
+                request=EvaluationRequest(mode=EvaluationMode.BUILD),
+                planning=planning,
+            )
+
+        ambiguity_diagnostic = next(
+            diagnostic
+            for diagnostic in result.diagnostics
+            if diagnostic.code == "compatibility-reference-unknown"
+            and diagnostic.details.get("reference") == "route:/spark/latest/"
+        )
+        self.assertFalse(result.stage_gate.allowed)
+        self.assertEqual(ambiguity_diagnostic.details["reference"], "route:/spark/latest/")
+
+    def test_unknown_release_line_reference_blocks_stage(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            planning = _planning_eval(
+                Path(tempdir),
+                catalog=_catalog(
+                    shared_mount_path=False,
+                    spark_artifact={
+                        "compatibility": [
+                            {
+                                "subjectRef": "artifact:spark/runtime",
+                                "targetRef": "line:spark/runtime@9.x",
+                                "relation": "supports",
+                            },
+                        ],
+                    },
+                ),
+            )
+            result = run_evaluation(
+                request=EvaluationRequest(mode=EvaluationMode.BUILD),
+                planning=planning,
+            )
+
+        line_diagnostic = next(
+            diagnostic
+            for diagnostic in result.diagnostics
+            if diagnostic.code == "compatibility-reference-unknown"
+            and diagnostic.details.get("reference") == "line:spark/runtime@9.x"
+        )
+        self.assertFalse(result.stage_gate.allowed)
+        self.assertEqual(line_diagnostic.details["reference"], "line:spark/runtime@9.x")
 
     def test_named_ref_provider_ambiguity_blocks_stage(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
@@ -512,6 +768,7 @@ def _planning_eval(
 def _catalog(
     *,
     shared_mount_path: bool,
+    extra_origins: dict[str, object] | None = None,
     spark_publication: dict[str, object] | None = None,
     flink_publication: dict[str, object] | None = None,
     spark_localization: dict[str, object] | None = None,
@@ -527,7 +784,10 @@ def _catalog(
                 "publication": {"origin": "docs"},
             },
             "site": {},
-            "origins": {"docs": {"baseUrl": "https://docs.example.org"}},
+            "origins": {
+                "docs": {"baseUrl": "https://docs.example.org"},
+                **(extra_origins or {}),
+            },
             "sources": {
                 "runtime": {"localDir": "components/runtime"},
                 "runtime-two": {"localDir": "components/runtime-two"},

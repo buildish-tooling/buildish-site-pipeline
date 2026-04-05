@@ -255,7 +255,8 @@ Recommended entry fields include:
   or `generated`
 - optional `watchEligible` for `plan --for build`; required for every entry in
   `plan --for watch`
-- optional `reason`
+- optional `reason`, for example `pathMissing`, `staleIdentityMismatch`,
+  `invalidMarker`, `expectedDirectory`, or `pathOutsideDeclaredRoot`
 
 For planning targeted at `watch`, every entry should carry an explicit
 `watchEligible` value. Mutable workspace-backed inputs should

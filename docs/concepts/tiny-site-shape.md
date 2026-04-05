@@ -101,6 +101,7 @@ site/.stage/
   data/components.json
   data/content-index.json
   data/routes.json
+  data/redirects.json
   manifest.json
 ```
 
@@ -108,8 +109,8 @@ That output is the important boundary:
 
 - authored files stay in your repos
 - staged files become consumer input for renderers and deployment adapters
-- aggregate JSON files tell downstream tools which public routes, pages, and
-  metadata the stage owns
+- aggregate JSON files tell downstream tools which public routes, redirects,
+  pages, and metadata the stage owns
 
 ## What matters at this size
 

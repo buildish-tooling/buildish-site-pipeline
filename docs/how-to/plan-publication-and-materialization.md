@@ -38,6 +38,8 @@ local tree is a materialization strategy, not a publication concept.
 1. decide which publication contexts should exist for the target build or watch
    cycle
 2. use the planning step to resolve which local inputs are required
+   - these can include top-level site pages, top-level site assets, top-level
+     vendor asset roots, and the selected component docs trees
 3. materialize those inputs using the consumer's chosen strategy
 4. run `check` to validate the resolved inputs and authored metadata
 5. run `build` or `watch` once the local trees are ready

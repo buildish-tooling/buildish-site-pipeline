@@ -182,6 +182,9 @@ Recommended meanings are:
 - `--quiet`: suppress lifecycle/info/debug logs while still allowing
   warnings/errors on `stderr`
 
+When callers pass conflicting verbosity flags, the CLI should prefer the most
+informative mode: `--debug` over `--verbose`, and `--verbose` over `--quiet`.
+
 The CLI should configure this logging policy centrally so future diagnostics do
 not require each command to manage its own `stdout` versus `stderr` rules.
 

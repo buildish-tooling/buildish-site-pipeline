@@ -39,6 +39,7 @@ For a tiny `spark` example, the important part looks like this:
   "dataFiles": {
     "components": "data/components.json",
     "routes": "data/routes.json",
+    "redirects": "data/redirects.json",
     "contentIndex": "data/content-index.json"
   }
 }
@@ -77,10 +78,31 @@ One concrete `routes.json` item looks like this:
   "url": "https://docs.example.org/spark/releases/4.0.0/",
   "componentSlug": "spark",
   "artifactKey": "runtime",
-  "routeKind": "released",
+  "section": "released",
+  "routeKind": "context",
   "targetId": "released:spark:runtime:4.0.0"
 }
 ```
+
+`section` tells you which publication surface the route belongs to. `routeKind`
+is the route class, such as `published`, `context`, or `alias`. The separate
+`canonical` flag tells you which published route is preferred when more than one
+route points at the same target.
+
+One concrete `redirects.json` item looks like this:
+
+```json
+{
+  "fromUrl": "https://docs.example.org/spark/development/docs/",
+  "toUrl": "https://docs.example.org/spark/releases/4.0.0/",
+  "status": 302,
+  "sourceKind": "catalog"
+}
+```
+
+`sourceKind` tells you why the redirect exists. The built-in staging flow uses
+values such as `catalog` for authored publication redirects and `withdrawal` for
+withdrawn-release redirects.
 
 ## Inspect one staged page
 

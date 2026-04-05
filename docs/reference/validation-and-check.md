@@ -51,10 +51,15 @@ The command boundary is that `check` stops before:
 In practice, that means validating at least:
 
 - authored config shape and cross-reference integrity
-- effective publication resolution and route uniqueness
+- effective publication resolution, route uniqueness, and unique resolution of
+  internal `route:` references
 - redirect safety and internal-target validity
-- localization and translation-link consistency
-- provider snapshot shape and provider-to-authored merge assumptions
+- page readability plus front matter parse and namespace rules
+- localization policy shape, locale-prefix placement, and translation-link
+  consistency
+- provider snapshot shape, provider-to-authored merge assumptions, authored
+  publication-selection references, authored release-line parent chains, and
+  provider planning ceilings
 - reserved front matter namespace rules such as authored `pipeline` collisions
 - local input readiness that is necessary to say whether the current workspace is
   buildable

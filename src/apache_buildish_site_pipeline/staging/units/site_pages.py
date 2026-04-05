@@ -20,6 +20,7 @@ import shutil
 from pathlib import Path
 
 from ..front_matter import is_page_path, stage_authored_page
+from ..source_tree import iter_source_tree_files
 from ..worker_protocol import ContributionFileRefs, WorkerResultWire, WorkerSpecWire
 
 
@@ -30,10 +31,7 @@ def run_site_pages_unit(spec: WorkerSpecWire) -> WorkerResultWire:
     target_root = Path(spec.stage_meta.content_roots[0])
     files_written = 0
     page_files_written = 0
-    for source_path in sorted(source_root.rglob("*")):
-        if source_path.is_dir():
-            continue
-        relative_path = source_path.relative_to(source_root)
+    for source_path, relative_path in iter_source_tree_files(source_root=source_root):
         destination_path = target_root / relative_path
         if is_page_path(source_path):
             stage_authored_page(

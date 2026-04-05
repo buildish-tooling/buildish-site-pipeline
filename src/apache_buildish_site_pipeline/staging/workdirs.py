@@ -66,12 +66,12 @@ class RunWorkspace:
 def prepare_next_stage_root(stage_root: Path) -> Path:
     """Ensure one candidate stage root exists and is empty before materialization."""
 
+    if stage_root.is_symlink():
+        raise StageIntegrityError(
+            f"Candidate stage root must not be a symlink: {stage_root.resolve(strict=False)}"
+        )
     normalized_stage_root = stage_root.resolve(strict=False)
     if normalized_stage_root.exists():
-        if normalized_stage_root.is_symlink():
-            raise StageIntegrityError(
-                f"Candidate stage root must not be a symlink: {normalized_stage_root}"
-            )
         if not normalized_stage_root.is_dir():
             raise StageIntegrityError(
                 f"Candidate stage root must be a directory: {normalized_stage_root}"

@@ -20,6 +20,7 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import frontmatter
 
@@ -28,9 +29,18 @@ from apache_buildish_site_pipeline.cli import _run
 from apache_buildish_site_pipeline.commands.shared import load_workspace_inputs
 from apache_buildish_site_pipeline.models.enums import PlanningTarget
 from apache_buildish_site_pipeline.planning import evaluate_planning
+from apache_buildish_site_pipeline.staging.aggregates import _build_redirect_entries
 from apache_buildish_site_pipeline.staging.file_writes import write_utf8_text_file
 from apache_buildish_site_pipeline.staging.ownership import OwnedUnit, OwnedUnitKind, _validate_output_ownership, build_owned_units
+from tests.support.staging import _expand_workspace_for_multiple_owned_units
 from tests.support.workspace import _cwd, _workspace
+
+
+def _replace_file_text_once(path: Path, old_text: str, new_text: str) -> None:
+    contents = path.read_text(encoding="utf-8")
+    if old_text not in contents:
+        raise AssertionError(f"Expected snippet not found in {path}: {old_text}")
+    path.write_text(contents.replace(old_text, new_text, 1), encoding="utf-8")
 
 
 class StagingPipelineTests(unittest.TestCase):
@@ -91,6 +101,24 @@ class StagingPipelineTests(unittest.TestCase):
                 self.assertIsNotNone(relative_path)
                 self.assertTrue((stage_root / relative_path).is_file(), key)
 
+    def test_build_stages_site_and_vendor_static_assets(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            _expand_workspace_for_multiple_owned_units(workspace_root)
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            with _cwd(workspace_root):
+                exit_code = _run(argv=["build"], stdout=stdout, stderr=stderr)
+            stage_root = workspace_root / "site/.stage"
+            site_css = (stage_root / "static/site/site.css").read_text(encoding="utf-8")
+            vendor_logo = (stage_root / "static/site/vendor/vendorAssets:0/logo.svg").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(stderr.getvalue(), "")
+        self.assertEqual(site_css, "body {}\n")
+        self.assertEqual(vendor_logo, "<svg/>")
+
     def test_output_ownership_rejects_case_only_stage_path_collisions(self) -> None:
         with self.assertRaises(StageIntegrityError) as raised:
             _validate_output_ownership(
@@ -127,6 +155,10 @@ class StagingPipelineTests(unittest.TestCase):
         self.assertEqual(release_page.metadata["pipeline"]["page"]["provider"]["key"], "github")
         self.assertEqual(release_page.metadata["pipeline"]["page"]["version"]["kind"], "released")
         self.assertEqual(release_entry["path"], "/spark/releases/4.0.0")
+        self.assertEqual(
+            release_entry["sourcePath"],
+            "components/runtime/docs/releases/4.0.0/index.md",
+        )
         self.assertEqual(release_entry["provider"], "github")
         self.assertEqual(release_entry["versionKind"], "released")
 
@@ -140,6 +172,212 @@ class StagingPipelineTests(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         self.assertEqual(components[0]["slug"], "spark")
         self.assertEqual(components[0]["weight"], 100)
+
+    def test_build_resolves_internal_and_withdrawn_redirects_in_redirect_inventory(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            components_path = workspace_root / "site/components.yaml"
+            provider_snapshot_path = workspace_root / "site/provider-snapshot.json"
+            _replace_file_text_once(
+                components_path,
+                "    publication:\n      mountPath: /spark/\n",
+                "    publication:\n      mountPath: /spark/\n      redirects:\n        - fromPath: /spark/development/docs/\n          target: release:spark/runtime@4.0.0\n          reason: Current docs live on the latest release route.\n",
+            )
+            _replace_file_text_once(
+                components_path,
+                "          releases:\n            - version: '4.0.0'\n",
+                "          releases:\n            - version: '4.0.0'\n              publicationState: withdrawn\n              withdrawalBehavior: redirect\n              redirectTarget: route:/spark/\n",
+            )
+            provider_snapshot = json.loads(provider_snapshot_path.read_text(encoding="utf-8"))
+            provider_snapshot["records"][2]["publicationState"] = "withdrawn"
+            provider_snapshot_path.write_text(
+                json.dumps(provider_snapshot) + "\n", encoding="utf-8"
+            )
+
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            with _cwd(workspace_root):
+                exit_code = _run(argv=["build"], stdout=stdout, stderr=stderr)
+            stage_root = workspace_root / "site/.stage"
+            redirects = json.loads((stage_root / "data/redirects.json").read_text(encoding="utf-8"))["items"]
+            redirects_by_source = {entry["fromUrl"]: entry for entry in redirects}
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(stderr.getvalue(), "")
+        self.assertEqual(
+            redirects_by_source["https://docs.example.org/spark/development/docs/"]["toUrl"],
+            "https://docs.example.org/spark/releases/4.0.0/",
+        )
+        self.assertEqual(
+            redirects_by_source["https://docs.example.org/spark/development/docs/"]["sourceKind"],
+            "catalog",
+        )
+        self.assertEqual(
+            redirects_by_source["https://docs.example.org/spark/development/docs/"]["reason"],
+            "Current docs live on the latest release route.",
+        )
+        self.assertEqual(
+            redirects_by_source["https://docs.example.org/spark/releases/4.0.0/"]["toUrl"],
+            "https://docs.example.org/spark/",
+        )
+        self.assertEqual(
+            redirects_by_source["https://docs.example.org/spark/releases/4.0.0/"]["sourceKind"],
+            "withdrawal",
+        )
+
+    def test_build_emits_multi_origin_alias_routes_and_origin_scoped_redirects(
+        self,
+    ) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            components_path = workspace_root / "site/components.yaml"
+            _replace_file_text_once(
+                components_path,
+                "origins:\n  docs:\n    baseUrl: https://docs.example.org\n",
+                "origins:\n  docs:\n    baseUrl: https://docs.example.org\n  archive:\n    baseUrl: https://archive.example.org\n",
+            )
+            _replace_file_text_once(
+                components_path,
+                "    publication:\n      mountPath: /spark/\n",
+                "    publication:\n      mountPath: /spark/\n      aliases:\n        - path: /spark/archive/\n          origin: archive\n          label: archive\n      redirects:\n        - fromOrigin: archive\n          fromPath: /spark/archive/latest/\n          target: route:/spark/archive/\n",
+            )
+
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            with _cwd(workspace_root):
+                exit_code = _run(argv=["build"], stdout=stdout, stderr=stderr)
+            stage_root = workspace_root / "site/.stage"
+            routes = json.loads(
+                (stage_root / "data/routes.json").read_text(encoding="utf-8")
+            )["items"]
+            component_route = next(
+                entry for entry in routes if entry["targetId"] == "component:spark"
+            )
+            released_route = next(
+                entry
+                for entry in routes
+                if entry["targetId"] == "released:spark:runtime:4.0.0"
+            )
+            redirects = json.loads(
+                (stage_root / "data/redirects.json").read_text(encoding="utf-8")
+            )["items"]
+            alias_route = next(
+                entry
+                for entry in routes
+                if entry["originKey"] == "archive"
+                and entry["path"] == "/spark/archive/"
+            )
+            redirect_entry = next(
+                entry
+                for entry in redirects
+                if entry["fromUrl"]
+                == "https://archive.example.org/spark/archive/latest/"
+            )
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(stderr.getvalue(), "")
+        self.assertEqual(component_route["section"], "component")
+        self.assertTrue(component_route["canonical"])
+        self.assertEqual(component_route["routeKind"], "published")
+        self.assertEqual(released_route["section"], "released")
+        self.assertEqual(released_route["routeKind"], "context")
+        self.assertEqual(alias_route["baseUrl"], "https://archive.example.org")
+        self.assertEqual(alias_route["url"], "https://archive.example.org/spark/archive/")
+        self.assertEqual(alias_route["label"], "archive")
+        self.assertEqual(alias_route["routeKind"], "alias")
+        self.assertEqual(
+            redirect_entry["toUrl"], "https://archive.example.org/spark/archive/"
+        )
+        self.assertEqual(redirect_entry["sourceKind"], "catalog")
+
+    def test_build_marks_alias_route_as_canonical_when_canonical_path_uses_alias(
+        self,
+    ) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            components_path = workspace_root / "site/components.yaml"
+            _replace_file_text_once(
+                components_path,
+                "    publication:\n      mountPath: /spark/\n",
+                "    publication:\n      mountPath: /spark/\n      canonicalPath: /spark/stable/\n      aliases:\n        - path: /spark/stable/\n          label: stable\n",
+            )
+
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            with _cwd(workspace_root):
+                exit_code = _run(argv=["build"], stdout=stdout, stderr=stderr)
+            stage_root = workspace_root / "site/.stage"
+            routes = json.loads(
+                (stage_root / "data/routes.json").read_text(encoding="utf-8")
+            )["items"]
+            component_route = next(
+                entry for entry in routes if entry["targetId"] == "component:spark"
+            )
+            alias_route = next(entry for entry in routes if entry["path"] == "/spark/stable/")
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(stderr.getvalue(), "")
+        self.assertFalse(component_route.get("canonical", False))
+        self.assertTrue(alias_route["canonical"])
+        self.assertEqual(alias_route["routeKind"], "alias")
+        self.assertEqual(alias_route["label"], "stable")
+
+    def test_component_redirect_uses_canonical_alias_route_when_present(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            components_path = workspace_root / "site/components.yaml"
+            _replace_file_text_once(
+                components_path,
+                "    publication:\n      mountPath: /spark/\n",
+                "    publication:\n      mountPath: /spark/\n      canonicalPath: /spark/stable/\n      aliases:\n        - path: /spark/stable/\n          label: stable\n      redirects:\n        - fromPath: /spark/landing/\n          target: component:spark\n",
+            )
+
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            with _cwd(workspace_root):
+                exit_code = _run(argv=["build"], stdout=stdout, stderr=stderr)
+            stage_root = workspace_root / "site/.stage"
+            redirects = json.loads(
+                (stage_root / "data/redirects.json").read_text(encoding="utf-8")
+            )["items"]
+            redirect_entry = next(
+                entry
+                for entry in redirects
+                if entry["fromUrl"] == "https://docs.example.org/spark/landing/"
+            )
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(stderr.getvalue(), "")
+        self.assertEqual(
+            redirect_entry["toUrl"],
+            "https://docs.example.org/spark/stable/",
+        )
+
+    def test_redirect_aggregate_rejects_line_reference_without_selected_line_head(
+        self,
+    ) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            components_path = workspace_root / "site/components.yaml"
+            _replace_file_text_once(
+                components_path,
+                "    publication:\n      mountPath: /spark/\n",
+                "    publication:\n      mountPath: /spark/\n      redirects:\n        - fromPath: /spark/docs/current/\n          target: line:spark/runtime@4.0\n",
+            )
+            _replace_file_text_once(
+                components_path,
+                "          lineHeads:\n            mode: allAuthored\n",
+                "          lineHeads:\n            mode: none\n",
+            )
+            loaded_inputs = load_workspace_inputs(workspace_root)
+            planning = evaluate_planning(
+                target=PlanningTarget.BUILD,
+                catalog=loaded_inputs.catalog,
+                provider_snapshot=loaded_inputs.provider_snapshot,
+                workspace_root=workspace_root,
+                component_documents=loaded_inputs.component_documents,
+                stage_root=workspace_root / "site/.stage",
+                work_root=workspace_root / ".buildish/work",
+            )
+
+        self.assertIsNotNone(planning.build_plan_candidate)
+        with self.assertRaises(StageIntegrityError):
+            _build_redirect_entries(planning.build_plan_candidate)
 
     def test_write_utf8_text_file_preserves_mtime_for_identical_bytes(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
@@ -164,6 +402,36 @@ class StagingPipelineTests(unittest.TestCase):
 
             self.assertTrue(changed)
             self.assertNotEqual(target_path.stat().st_mtime_ns, 1_234_567_890)
+
+    def test_write_utf8_text_file_rejects_symlink_destination(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            real_target = workspace_root / "real.json"
+            real_target.write_text('{"trusted": true}\n', encoding="utf-8")
+            symlink_target = workspace_root / "data.json"
+            symlink_target.symlink_to(real_target)
+
+            with self.assertRaises(StageIntegrityError) as raised:
+                write_utf8_text_file(symlink_target, '{"items": []}\n')
+
+        self.assertIn("normal file", str(raised.exception))
+
+    def test_write_utf8_text_file_cleans_temp_file_when_replace_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            target_path = workspace_root / "data.json"
+            target_path.write_text('{"trusted": true}\n', encoding="utf-8")
+
+            def _fail_replace(self: Path, target: Path) -> Path:
+                del self, target
+                raise OSError("replace blocked")
+
+            with mock.patch("pathlib.Path.replace", new=_fail_replace), self.assertRaises(StageIntegrityError) as raised:
+                write_utf8_text_file(target_path, '{"items": []}\n')
+
+            self.assertIn("Could not write stage text file", str(raised.exception))
+            self.assertEqual(target_path.read_text(encoding="utf-8"), '{"trusted": true}\n')
+            self.assertEqual(list(target_path.parent.glob(".data.json.*.tmp")), [])
 
 
 if __name__ == "__main__":

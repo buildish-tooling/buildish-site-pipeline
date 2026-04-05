@@ -57,8 +57,6 @@ def validate_routes(
     for target in publication_index.targets:
         route = route_from_published_target(target)
         routes_by_lookup_key[_route_lookup_key(route.origin_key, route.path)] = route
-        if target.target_id.startswith("component:"):
-            targets_by_reference[target.target_id] = route
 
     for context in planning.selected_versions.contexts:
         component = component_by_slug[context.component_slug]
@@ -80,15 +78,21 @@ def validate_routes(
             targets_by_reference[reference] = route
 
     for component in planning.site.components:
+        _register_aliases(
+            component=component,
+            collector=collector,
+            routes_by_lookup_key=routes_by_lookup_key,
+        )
         _validate_canonical_path(
             component=component,
             routes_by_lookup_key=routes_by_lookup_key,
             collector=collector,
         )
-        _register_aliases(
-            component=component,
-            collector=collector,
-            routes_by_lookup_key=routes_by_lookup_key,
+        targets_by_reference[f"component:{component.slug}"] = (
+            _preferred_component_reference_route(
+                component=component,
+                routes_by_lookup_key=routes_by_lookup_key,
+            )
         )
 
     for component in planning.site.components:
@@ -212,6 +216,30 @@ def _register_redirect_sources(
         _register_route(
             route=route, collector=collector, routes_by_lookup_key=routes_by_lookup_key
         )
+
+
+def _preferred_component_reference_route(
+    *,
+    component: ResolvedComponentConfig,
+    routes_by_lookup_key: dict[tuple[str, str], KnownRoute],
+) -> KnownRoute:
+    canonical_path = component.publication.canonical_path
+    if canonical_path is not None:
+        preferred_route = routes_by_lookup_key.get(
+            _route_lookup_key(component.publication.origin.key, canonical_path)
+        )
+        if (
+            preferred_route is not None
+            and preferred_route.component_slug == component.slug
+            and preferred_route.route_kind != "redirect"
+        ):
+            return preferred_route
+    return routes_by_lookup_key[
+        _route_lookup_key(
+            component.publication.origin.key,
+            component.publication.component_path,
+        )
+    ]
 
 
 def _register_route(

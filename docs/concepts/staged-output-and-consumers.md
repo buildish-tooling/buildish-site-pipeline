@@ -39,6 +39,7 @@ where the important stage roots and aggregate files live:
   "dataFiles": {
     "components": "data/components.json",
     "routes": "data/routes.json",
+    "redirects": "data/redirects.json",
     "contentIndex": "data/content-index.json"
   }
 }

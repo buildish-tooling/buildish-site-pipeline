@@ -82,31 +82,6 @@
             "title": "Path",
             "type": "string"
           },
-          "redirectStatus": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "title": "Redirectstatus"
-          },
-          "redirectTargetUrl": {
-            "anyOf": [
-              {
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "title": "Redirecttargeturl"
-          },
           "routeKind": {
             "anyOf": [
               {

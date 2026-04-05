@@ -34,6 +34,7 @@ from ..front_matter import (
     public_page_url,
     stage_authored_page,
 )
+from ..source_tree import iter_source_tree_files
 from ..worker_protocol import (
     ContributionFileRefs,
     StagedPageContributionWire,
@@ -154,10 +155,7 @@ def _stage_pages_tree(
     contributions: list[StagedPageContributionWire] = []
     files_written = 0
     page_files_written = 0
-    for source_path in sorted(source_root.rglob("*")):
-        if source_path.is_dir():
-            continue
-        relative_path = source_path.relative_to(source_root)
+    for source_path, relative_path in iter_source_tree_files(source_root=source_root):
         destination_path = destination_root / relative_path
         if not is_page_path(source_path):
             destination_path.parent.mkdir(parents=True, exist_ok=True)
@@ -213,10 +211,8 @@ def _stage_pages_tree(
 
 def _copy_tree(source_root: Path, target_root: Path) -> int:
     count = 0
-    for source_path in sorted(source_root.rglob("*")):
-        if source_path.is_dir():
-            continue
-        destination_path = target_root / source_path.relative_to(source_root)
+    for source_path, relative_path in iter_source_tree_files(source_root=source_root):
+        destination_path = target_root / relative_path
         destination_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source_path, destination_path)
         count += 1

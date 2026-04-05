@@ -174,15 +174,25 @@ def load_retained_stage_incremental_state(
 
 
 def _resolve_stage_file(*, stage_root: Path, stage_relative_path: str) -> Path:
-    candidate = (stage_root / Path(stage_relative_path)).resolve(strict=False)
+    raw_candidate = stage_root / Path(stage_relative_path)
+    candidate = raw_candidate.resolve(strict=False)
     normalized_stage_root = stage_root.resolve(strict=False)
     if (
         not candidate.is_relative_to(normalized_stage_root)
         or not candidate.is_file()
-        or candidate.is_symlink()
+        or _contains_symlink(raw_candidate)
     ):
         raise ValueError(f"Invalid retained stage metadata path: {stage_relative_path}")
     return candidate
+
+
+def _contains_symlink(candidate: Path) -> bool:
+    current = candidate
+    while current.name:
+        if current.is_symlink():
+            return True
+        current = current.parent
+    return False
 
 
 def _coordinator_owned_stage_paths(

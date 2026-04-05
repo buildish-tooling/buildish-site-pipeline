@@ -21,6 +21,7 @@ import shutil
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 from apache_buildish_site_pipeline.commands.stage_report import build_stage_run_report
 from apache_buildish_site_pipeline.models.enums import DiagnosticSeverity, StageCommand
@@ -28,7 +29,7 @@ from apache_buildish_site_pipeline.models.planning_stage_contract import Pipelin
 from apache_buildish_site_pipeline.staging.aggregates import _build_content_index_entries, _write_aggregate_files
 from apache_buildish_site_pipeline.staging.coordinator import cleanup_after_publication, run_build
 from apache_buildish_site_pipeline.staging.ownership import OwnedUnit, OwnedUnitKind, build_owned_units
-from apache_buildish_site_pipeline.staging.public_safety import REDACTED_LOCAL_PATH
+from apache_buildish_site_pipeline.staging.public_safety import REDACTED_LOCAL_PATH, sanitize_public_diagnostics
 from apache_buildish_site_pipeline.staging.worker_entrypoint import execute_worker_spec
 from apache_buildish_site_pipeline.staging.worker_protocol import StagedPageContributionWire, WorkerSpecWire
 from apache_buildish_site_pipeline.staging.workdirs import RunWorkspace
@@ -37,6 +38,12 @@ from tests.support.workspace import _workspace
 
 
 class StagingWorkerTests(unittest.TestCase):
+    def _assert_symlink_escape_failure(self, result) -> None:
+        self.assertFalse(result.succeeded)
+        self.assertIsNotNone(result.failure)
+        self.assertEqual(result.failure.category, "StageIntegrityError")
+        self.assertIn("escapes declared root", result.failure.message)
+
     def test_run_workspace_derives_private_unit_paths(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             workspace_root = Path(tempdir)
@@ -74,6 +81,95 @@ class StagingWorkerTests(unittest.TestCase):
         self.assertFalse(result.succeeded)
         self.assertIsNotNone(result.failure)
         self.assertEqual(result.failure.category, "unknownUnitKind")
+
+    def test_worker_entrypoint_rejects_site_pages_symlink_escape(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            source_root = workspace_root / "site/content"
+            source_root.mkdir(parents=True, exist_ok=True)
+            outside_path = workspace_root / "outside-page.txt"
+            outside_path.write_text("outside", encoding="utf-8")
+            (source_root / "escape.txt").symlink_to(outside_path)
+
+            result = execute_worker_spec(
+                WorkerSpecWire(
+                    unit_id="site-pages",
+                    unit_kind="site-pages",
+                    owner_id="site-pages",
+                    workspace_root=str(workspace_root),
+                    fragment_path=str(workspace_root / ".work/fragments/site-pages.json"),
+                    site_pages_source=str(source_root),
+                    stage_meta={
+                        "content_roots": (str(workspace_root / "site/.stage/content"),),
+                    },
+                ),
+            )
+
+        self._assert_symlink_escape_failure(result)
+
+    def test_worker_entrypoint_rejects_site_assets_symlink_escape(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            source_root = workspace_root / "site/assets"
+            source_root.mkdir(parents=True, exist_ok=True)
+            outside_path = workspace_root / "outside-asset.bin"
+            outside_path.write_text("outside", encoding="utf-8")
+            (source_root / "escape.bin").symlink_to(outside_path)
+
+            result = execute_worker_spec(
+                WorkerSpecWire(
+                    unit_id="site-assets",
+                    unit_kind="site-assets",
+                    owner_id="site-assets",
+                    workspace_root=str(workspace_root),
+                    fragment_path=str(workspace_root / ".work/fragments/site-assets.json"),
+                    site_assets_source=str(source_root),
+                    stage_meta={
+                        "static_roots": (str(workspace_root / "site/.stage/static"),),
+                    },
+                ),
+            )
+
+        self._assert_symlink_escape_failure(result)
+
+    def test_worker_entrypoint_rejects_component_pages_symlink_escape(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            source_root = workspace_root / "components/runtime/docs"
+            source_root.mkdir(parents=True, exist_ok=True)
+            outside_path = workspace_root / "outside-component.txt"
+            outside_path.write_text("outside", encoding="utf-8")
+            (source_root / "escape.txt").symlink_to(outside_path)
+
+            result = execute_worker_spec(
+                WorkerSpecWire(
+                    unit_id="component:spark",
+                    unit_kind="component",
+                    owner_id="component:spark",
+                    workspace_root=str(workspace_root),
+                    unit_root=str(workspace_root / ".work/units/component_spark"),
+                    fragment_path=str(workspace_root / ".work/fragments/component_spark.json"),
+                    component_slug="spark",
+                    component_pages_source=str(source_root),
+                    component_pages_stage_root=str(
+                        workspace_root / "site/.stage/content/components/spark"
+                    ),
+                    component_publication={
+                        "path": "/spark/",
+                        "url": "https://docs.example.org/spark/",
+                        "component_path": "/spark/",
+                        "component_url": "https://docs.example.org/spark/",
+                        "origin_key": "docs",
+                    },
+                    stage_meta={
+                        "content_roots": (
+                            str(workspace_root / "site/.stage/content/components/spark"),
+                        ),
+                    },
+                ),
+            )
+
+        self._assert_symlink_escape_failure(result)
 
     def test_build_outputs_are_equivalent_for_pool_sizes_one_and_two(self) -> None:
         with _workspace(with_content_file=True) as workspace_root:
@@ -154,6 +250,65 @@ class StagingWorkerTests(unittest.TestCase):
 
         self.assertEqual(diagnostics_payload[0]["details"]["expectedLocalPath"], "components/runtime/docs")
         self.assertEqual(diagnostics_payload[0]["details"]["fragmentPath"], REDACTED_LOCAL_PATH)
+
+    def test_public_diagnostic_sanitizer_handles_nested_path_details(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            sanitized = sanitize_public_diagnostics(
+                (
+                    PipelineDiagnosticEntry(
+                        severity=DiagnosticSeverity.WARNING,
+                        code="demo.warning",
+                        message="demo",
+                        details={
+                            "items": [
+                                {"sourcePath": str(workspace_root / "components/runtime/docs/index.md")},
+                                {"fragmentPath": str(workspace_root / ".work/fragments/component.json")},
+                                {"externalUrl": "https://docs.example.org/spark/"},
+                            ],
+                            "manifestPath": str(workspace_root / "site/.stage/manifest.json"),
+                        },
+                    ),
+                ),
+                workspace_root=workspace_root,
+                private_roots=(workspace_root / ".work", workspace_root / "site/.stage"),
+            )
+
+        self.assertEqual(sanitized[0].details["items"][0]["sourcePath"], "components/runtime/docs/index.md")
+        self.assertEqual(sanitized[0].details["items"][1]["fragmentPath"], REDACTED_LOCAL_PATH)
+        self.assertEqual(sanitized[0].details["items"][2]["externalUrl"], "https://docs.example.org/spark/")
+        self.assertEqual(sanitized[0].details["manifestPath"], REDACTED_LOCAL_PATH)
+
+    def test_stage_run_report_uses_planning_workspace_root_when_build_plan_is_absent(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            report = build_stage_run_report(
+                command=StageCommand.BUILD,
+                evaluation=SimpleNamespace(
+                    build_plan=None,
+                    planning=SimpleNamespace(site=SimpleNamespace(workspace_root=workspace_root)),
+                ),
+                diagnostics=(
+                    PipelineDiagnosticEntry(
+                        severity=DiagnosticSeverity.WARNING,
+                        code="demo.warning",
+                        message="demo",
+                        details={
+                            "expectedLocalPath": str(workspace_root / "components/runtime/docs"),
+                            "fragmentPath": str(workspace_root / ".work/fragments/component.json"),
+                        },
+                    ),
+                ),
+                succeeded=False,
+                wrote_stage=False,
+                stage_usable=False,
+                stage_root_path=None,
+                manifest_path=None,
+                private_roots=(workspace_root / ".work",),
+            )
+
+        self.assertEqual(report.diagnostics[0].details["expectedLocalPath"], "components/runtime/docs")
+        self.assertEqual(report.diagnostics[0].details["fragmentPath"], REDACTED_LOCAL_PATH)
 
     def test_content_index_omits_outside_workspace_source_paths(self) -> None:
         with _workspace(with_content_file=True) as workspace_root:

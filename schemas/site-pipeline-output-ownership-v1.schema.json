@@ -1,0 +1,69 @@
+{
+  "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
+  "$defs": {
+    "OutputOwnershipClaimV1": {
+      "additionalProperties": false,
+      "description": "One exact published file or directory root together with its logical owner.",
+      "properties": {
+        "ownerId": {
+          "title": "Ownerid",
+          "type": "string"
+        },
+        "pathKind": {
+          "enum": [
+            "directory",
+            "file"
+          ],
+          "title": "Pathkind",
+          "type": "string"
+        },
+        "stageRelativePath": {
+          "minLength": 1,
+          "title": "Stagerelativepath",
+          "type": "string"
+        },
+        "unitId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unitid"
+        }
+      },
+      "required": [
+        "ownerId",
+        "pathKind",
+        "stageRelativePath"
+      ],
+      "title": "OutputOwnershipClaimV1",
+      "type": "object"
+    }
+  },
+  "$id": "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-output-ownership-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Published ownership inventory used to prune retained stages safely.",
+  "properties": {
+    "claims": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/OutputOwnershipClaimV1"
+      },
+      "title": "Claims",
+      "type": "array"
+    },
+    "schemaVersion": {
+      "const": 1,
+      "default": 1,
+      "title": "Schemaversion",
+      "type": "integer"
+    }
+  },
+  "title": "Site Pipeline data/_pipeline/output-ownership.json v1",
+  "type": "object"
+}

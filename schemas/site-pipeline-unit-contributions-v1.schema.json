@@ -1,0 +1,250 @@
+{
+  "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
+  "$defs": {
+    "StagedPageContributionWire": {
+      "additionalProperties": false,
+      "description": "Metadata emitted by one page-staging worker for later aggregation.",
+      "properties": {
+        "artifactKey": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Artifactkey"
+        },
+        "canonicalUrl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Canonicalurl"
+        },
+        "componentPath": {
+          "title": "Componentpath",
+          "type": "string"
+        },
+        "componentSlug": {
+          "title": "Componentslug",
+          "type": "string"
+        },
+        "componentUrl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Componenturl"
+        },
+        "defaultLocale": {
+          "default": false,
+          "title": "Defaultlocale",
+          "type": "boolean"
+        },
+        "linkTitle": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Linktitle"
+        },
+        "locale": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Locale"
+        },
+        "originKey": {
+          "title": "Originkey",
+          "type": "string"
+        },
+        "pageKind": {
+          "title": "Pagekind",
+          "type": "string"
+        },
+        "publicPath": {
+          "title": "Publicpath",
+          "type": "string"
+        },
+        "publicUrl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Publicurl"
+        },
+        "section": {
+          "title": "Section",
+          "type": "string"
+        },
+        "sourcePath": {
+          "title": "Sourcepath",
+          "type": "string"
+        },
+        "stageRelativePath": {
+          "title": "Stagerelativepath",
+          "type": "string"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
+        },
+        "translationKey": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Translationkey"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version"
+        },
+        "versionContext": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Versioncontext"
+        },
+        "versionKind": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Versionkind"
+        },
+        "versionRef": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Versionref"
+        }
+      },
+      "required": [
+        "stageRelativePath",
+        "componentSlug",
+        "section",
+        "pageKind",
+        "publicPath",
+        "componentPath",
+        "originKey",
+        "sourcePath"
+      ],
+      "title": "StagedPageContributionWire",
+      "type": "object"
+    },
+    "UnitContributionManifestWire": {
+      "additionalProperties": false,
+      "description": "Worker-emitted contribution fragment consumed by the coordinator.",
+      "properties": {
+        "pages": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/StagedPageContributionWire"
+          },
+          "title": "Pages",
+          "type": "array"
+        },
+        "unitId": {
+          "title": "Unitid",
+          "type": "string"
+        }
+      },
+      "required": [
+        "unitId"
+      ],
+      "title": "UnitContributionManifestWire",
+      "type": "object"
+    }
+  },
+  "$id": "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-unit-contributions-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Stable per-unit page contribution manifests retained in the visible stage.",
+  "properties": {
+    "schemaVersion": {
+      "const": 1,
+      "default": 1,
+      "title": "Schemaversion",
+      "type": "integer"
+    },
+    "units": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/UnitContributionManifestWire"
+      },
+      "title": "Units",
+      "type": "array"
+    }
+  },
+  "title": "Site Pipeline data/_pipeline/unit-contributions.json v1",
+  "type": "object"
+}

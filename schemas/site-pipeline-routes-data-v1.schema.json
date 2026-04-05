@@ -1,0 +1,174 @@
+{
+  "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
+  "$id": "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-routes-data-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Public staged aggregate file at ``data/routes.json``.",
+  "properties": {
+    "items": {
+      "description": "Route aggregate entries emitted into `data/routes.json`.",
+      "items": {
+        "additionalProperties": false,
+        "description": "Entry in ``data/routes.json``.",
+        "properties": {
+          "artifactKey": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Artifactkey"
+          },
+          "baseUrl": {
+            "minLength": 1,
+            "title": "Baseurl",
+            "type": "string"
+          },
+          "canonical": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Canonical"
+          },
+          "componentSlug": {
+            "minLength": 1,
+            "title": "Componentslug",
+            "type": "string"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Label"
+          },
+          "locale": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Locale"
+          },
+          "originKey": {
+            "minLength": 1,
+            "title": "Originkey",
+            "type": "string"
+          },
+          "path": {
+            "minLength": 1,
+            "title": "Path",
+            "type": "string"
+          },
+          "redirectStatus": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Redirectstatus"
+          },
+          "redirectTargetUrl": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Redirecttargeturl"
+          },
+          "routeKind": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Routekind"
+          },
+          "section": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Section"
+          },
+          "targetId": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Targetid"
+          },
+          "url": {
+            "minLength": 1,
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "originKey",
+          "baseUrl",
+          "path",
+          "url",
+          "componentSlug"
+        ],
+        "title": "RouteAggregateEntry",
+        "type": "object"
+      },
+      "title": "Items",
+      "type": "array"
+    }
+  },
+  "required": [
+    "items"
+  ],
+  "title": "Site Pipeline data/routes.json v1",
+  "type": "object"
+}

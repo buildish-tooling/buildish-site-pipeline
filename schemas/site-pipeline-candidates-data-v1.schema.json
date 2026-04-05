@@ -1,0 +1,313 @@
+{
+  "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
+  "$defs": {
+    "ProviderAsset": {
+      "additionalProperties": false,
+      "description": "Optional file-level metadata attached to a provider record.",
+      "properties": {
+        "checksums": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "propertyNames": {
+                "minLength": 1
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Checksums"
+        },
+        "kind": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Kind"
+        },
+        "mediaType": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mediatype"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "provenanceUrl": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provenanceurl"
+        },
+        "sbomUrl": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sbomurl"
+        },
+        "signatureUrl": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Signatureurl"
+        },
+        "size": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Size"
+        },
+        "url": {
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "url"
+      ],
+      "title": "ProviderAsset",
+      "type": "object"
+    }
+  },
+  "$id": "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-candidates-data-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Public staged aggregate file at ``data/candidates.json``.",
+  "properties": {
+    "items": {
+      "description": "Candidate-version aggregate entries emitted into `data/candidates.json`.",
+      "items": {
+        "additionalProperties": false,
+        "description": "Entry in ``data/candidates.json``.",
+        "properties": {
+          "artifactKey": {
+            "minLength": 1,
+            "title": "Artifactkey",
+            "type": "string"
+          },
+          "assets": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/$defs/ProviderAsset"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Assets"
+          },
+          "candidateSequence": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Candidatesequence"
+          },
+          "componentSlug": {
+            "minLength": 1,
+            "title": "Componentslug",
+            "type": "string"
+          },
+          "createdAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Createdat"
+          },
+          "displayVersion": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Displayversion"
+          },
+          "externalId": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Externalid"
+          },
+          "externalUrl": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Externalurl"
+          },
+          "maturity": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Maturity"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Provider"
+          },
+          "publishedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Publishedat"
+          },
+          "releaseLine": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Releaseline"
+          },
+          "version": {
+            "minLength": 1,
+            "title": "Version",
+            "type": "string"
+          },
+          "voteStatus": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Votestatus"
+          }
+        },
+        "required": [
+          "componentSlug",
+          "artifactKey",
+          "version"
+        ],
+        "title": "CandidateAggregateEntry",
+        "type": "object"
+      },
+      "title": "Items",
+      "type": "array"
+    }
+  },
+  "required": [
+    "items"
+  ],
+  "title": "Site Pipeline data/candidates.json v1",
+  "type": "object"
+}

@@ -1,0 +1,486 @@
+{
+  "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
+  "$defs": {
+    "ArtifactFrontMatterSummary": {
+      "additionalProperties": false,
+      "description": "Compact artifact summary embedded in component front matter.",
+      "properties": {
+        "displayName": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Displayname"
+        },
+        "key": {
+          "minLength": 1,
+          "title": "Key",
+          "type": "string"
+        },
+        "latestStable": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lateststable"
+        },
+        "releaseLines": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ReleaseLineSummary"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Releaselines"
+        }
+      },
+      "required": [
+        "key"
+      ],
+      "title": "ArtifactFrontMatterSummary",
+      "type": "object"
+    },
+    "ReleaseLineSummary": {
+      "additionalProperties": false,
+      "description": "Compact release-line summary embedded into front matter.",
+      "properties": {
+        "aliases": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Aliases"
+        },
+        "headRef": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Headref"
+        },
+        "key": {
+          "minLength": 1,
+          "title": "Key",
+          "type": "string"
+        },
+        "latest": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Latest"
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent"
+        },
+        "supportStatus": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Supportstatus"
+        },
+        "supportWindow": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SupportWindow"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "key"
+      ],
+      "title": "ReleaseLineSummary",
+      "type": "object"
+    },
+    "ResolvedOrigin": {
+      "additionalProperties": false,
+      "description": "Resolved publication origin information.",
+      "properties": {
+        "baseUrl": {
+          "minLength": 1,
+          "title": "Baseurl",
+          "type": "string"
+        },
+        "hostname": {
+          "minLength": 1,
+          "title": "Hostname",
+          "type": "string"
+        },
+        "key": {
+          "minLength": 1,
+          "title": "Key",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "baseUrl",
+        "hostname"
+      ],
+      "title": "ResolvedOrigin",
+      "type": "object"
+    },
+    "ResolvedPathSet": {
+      "additionalProperties": false,
+      "description": "Resolved public paths for one component.",
+      "properties": {
+        "assets": {
+          "minLength": 1,
+          "title": "Assets",
+          "type": "string"
+        },
+        "component": {
+          "minLength": 1,
+          "title": "Component",
+          "type": "string"
+        },
+        "development": {
+          "minLength": 1,
+          "title": "Development",
+          "type": "string"
+        },
+        "docs": {
+          "minLength": 1,
+          "title": "Docs",
+          "type": "string"
+        }
+      },
+      "required": [
+        "component",
+        "development",
+        "docs",
+        "assets"
+      ],
+      "title": "ResolvedPathSet",
+      "type": "object"
+    },
+    "ResolvedPublication": {
+      "additionalProperties": false,
+      "description": "Resolved route and URL bundle for one component.",
+      "properties": {
+        "origin": {
+          "$ref": "#/$defs/ResolvedOrigin"
+        },
+        "paths": {
+          "$ref": "#/$defs/ResolvedPathSet"
+        },
+        "urls": {
+          "$ref": "#/$defs/ResolvedUrlSet"
+        }
+      },
+      "required": [
+        "origin",
+        "paths",
+        "urls"
+      ],
+      "title": "ResolvedPublication",
+      "type": "object"
+    },
+    "ResolvedUrlSet": {
+      "additionalProperties": false,
+      "description": "Resolved fully qualified URLs for one component.",
+      "properties": {
+        "assets": {
+          "minLength": 1,
+          "title": "Assets",
+          "type": "string"
+        },
+        "component": {
+          "minLength": 1,
+          "title": "Component",
+          "type": "string"
+        },
+        "development": {
+          "minLength": 1,
+          "title": "Development",
+          "type": "string"
+        },
+        "docs": {
+          "minLength": 1,
+          "title": "Docs",
+          "type": "string"
+        }
+      },
+      "required": [
+        "component",
+        "development",
+        "docs",
+        "assets"
+      ],
+      "title": "ResolvedUrlSet",
+      "type": "object"
+    },
+    "SupportWindow": {
+      "additionalProperties": false,
+      "description": "Structured support-window metadata for a line or exact release.",
+      "properties": {
+        "endOfActiveSupportDate": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Endofactivesupportdate"
+        },
+        "endOfLifeDate": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Endoflifedate"
+        },
+        "endOfSupportDate": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Endofsupportdate"
+        },
+        "maintenancePhase": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maintenancephase"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notes"
+        },
+        "releaseDate": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Releasedate"
+        },
+        "supportPolicyUrl": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Supportpolicyurl"
+        }
+      },
+      "title": "SupportWindow",
+      "type": "object"
+    }
+  },
+  "$id": "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-components-data-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Public staged aggregate file at ``data/components.json``.",
+  "properties": {
+    "items": {
+      "description": "Component aggregate entries emitted into `data/components.json`.",
+      "items": {
+        "additionalProperties": false,
+        "description": "Entry in ``data/components.json``.",
+        "properties": {
+          "artifacts": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/$defs/ArtifactFrontMatterSummary"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Artifacts"
+          },
+          "displayName": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Displayname"
+          },
+          "group": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Group"
+          },
+          "originKey": {
+            "minLength": 1,
+            "title": "Originkey",
+            "type": "string"
+          },
+          "providerKeys": {
+            "anyOf": [
+              {
+                "items": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Providerkeys"
+          },
+          "publication": {
+            "$ref": "#/$defs/ResolvedPublication"
+          },
+          "slug": {
+            "minLength": 1,
+            "title": "Slug",
+            "type": "string"
+          },
+          "weight": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional ordering hint copied from the authored catalog for consumer-rendered component lists.",
+            "title": "Weight"
+          }
+        },
+        "required": [
+          "slug",
+          "originKey",
+          "publication"
+        ],
+        "title": "ComponentsDataEntry",
+        "type": "object"
+      },
+      "title": "Items",
+      "type": "array"
+    }
+  },
+  "required": [
+    "items"
+  ],
+  "title": "Site Pipeline data/components.json v1",
+  "type": "object"
+}

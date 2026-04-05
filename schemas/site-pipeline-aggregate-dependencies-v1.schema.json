@@ -1,0 +1,51 @@
+{
+  "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
+  "$defs": {
+    "AggregateDependencyEntryV1": {
+      "additionalProperties": false,
+      "description": "One coordinator-owned aggregate and the units that may change its payload.",
+      "properties": {
+        "dependentUnitIds": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Dependentunitids",
+          "type": "array"
+        },
+        "stageRelativePath": {
+          "minLength": 1,
+          "title": "Stagerelativepath",
+          "type": "string"
+        }
+      },
+      "required": [
+        "stageRelativePath"
+      ],
+      "title": "AggregateDependencyEntryV1",
+      "type": "object"
+    }
+  },
+  "$id": "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-aggregate-dependencies-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Shared-output dependency map for the current first-wave coordinator outputs.",
+  "properties": {
+    "entries": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/AggregateDependencyEntryV1"
+      },
+      "title": "Entries",
+      "type": "array"
+    },
+    "schemaVersion": {
+      "const": 1,
+      "default": 1,
+      "title": "Schemaversion",
+      "type": "integer"
+    }
+  },
+  "title": "Site Pipeline data/_pipeline/aggregate-dependencies.json v1",
+  "type": "object"
+}

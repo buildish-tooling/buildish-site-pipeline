@@ -30,9 +30,9 @@ procedure, read [../concepts/](../concepts/) first.
 ## Authoring and editor guides
 
 Use these guides when you want faster feedback while editing catalogs and
-component metadata:
+component metadata or when you need the generated file-contract schemas:
 
-- [use JSON Schema for YAML authoring help](use-json-schema-for-yaml-authoring.md)
+- [use JSON Schema for Site Pipeline file contracts](use-json-schema-for-yaml-authoring.md)
 
 ## Renderer integration guides
 

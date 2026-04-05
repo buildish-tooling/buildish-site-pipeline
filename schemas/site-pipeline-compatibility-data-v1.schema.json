@@ -1,0 +1,102 @@
+{
+  "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
+  "$id": "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-compatibility-data-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Public staged aggregate file at ``data/compatibility.json``.",
+  "properties": {
+    "items": {
+      "description": "Compatibility aggregate entries emitted into `data/compatibility.json`.",
+      "items": {
+        "additionalProperties": false,
+        "description": "Entry in ``data/compatibility.json``.",
+        "properties": {
+          "confidence": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Confidence"
+          },
+          "evidence": {
+            "anyOf": [
+              {
+                "items": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Evidence"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Notes"
+          },
+          "relation": {
+            "minLength": 1,
+            "title": "Relation",
+            "type": "string"
+          },
+          "scope": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Scope"
+          },
+          "subjectId": {
+            "minLength": 1,
+            "title": "Subjectid",
+            "type": "string"
+          },
+          "targetId": {
+            "minLength": 1,
+            "title": "Targetid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "subjectId",
+          "targetId",
+          "relation"
+        ],
+        "title": "CompatibilityAggregateEntry",
+        "type": "object"
+      },
+      "title": "Items",
+      "type": "array"
+    }
+  },
+  "required": [
+    "items"
+  ],
+  "title": "Site Pipeline data/compatibility.json v1",
+  "type": "object"
+}

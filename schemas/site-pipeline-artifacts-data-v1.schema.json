@@ -1,0 +1,836 @@
+{
+  "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
+  "$defs": {
+    "ArtifactVersioningConfig": {
+      "additionalProperties": false,
+      "description": "Artifact-specific version-discovery configuration.",
+      "properties": {
+        "developmentRef": {
+          "minLength": 1,
+          "title": "Developmentref",
+          "type": "string"
+        },
+        "maintenanceRefPattern": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maintenancerefpattern"
+        },
+        "namedRefs": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/NamedRefConfig"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Namedrefs"
+        },
+        "tagPattern": {
+          "minLength": 1,
+          "title": "Tagpattern",
+          "type": "string"
+        }
+      },
+      "required": [
+        "developmentRef",
+        "tagPattern"
+      ],
+      "title": "ArtifactVersioningConfig",
+      "type": "object"
+    },
+    "LatestCandidateSummary": {
+      "additionalProperties": false,
+      "description": "Compact latest-candidate summary embedded in artifact aggregates.",
+      "properties": {
+        "candidateSequence": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Candidatesequence"
+        },
+        "displayVersion": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Displayversion"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version"
+        },
+        "voteStatus": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Votestatus"
+        }
+      },
+      "title": "LatestCandidateSummary",
+      "type": "object"
+    },
+    "LatestReleaseSummary": {
+      "additionalProperties": false,
+      "description": "Compact latest-release summary embedded in artifact aggregates.",
+      "properties": {
+        "displayVersion": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Displayversion"
+        },
+        "publicationState": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PublicationState"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "publishedAt": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Publishedat"
+        },
+        "tag": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tag"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "version"
+      ],
+      "title": "LatestReleaseSummary",
+      "type": "object"
+    },
+    "NamedRefConfig": {
+      "additionalProperties": false,
+      "description": "Authored named ref intentionally exposed as a publishable version context.",
+      "properties": {
+        "description": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "displayName": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Displayname"
+        },
+        "key": {
+          "minLength": 1,
+          "title": "Key",
+          "type": "string"
+        },
+        "maturity": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maturity"
+        },
+        "ref": {
+          "minLength": 1,
+          "title": "Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "ref"
+      ],
+      "title": "NamedRefConfig",
+      "type": "object"
+    },
+    "PublicationState": {
+      "description": "Observed provider-side publication state.",
+      "enum": [
+        "published",
+        "hidden",
+        "withdrawn",
+        "tombstoned"
+      ],
+      "title": "PublicationState",
+      "type": "string"
+    },
+    "RecordKind": {
+      "description": "Normalized provider record lifecycle kind.",
+      "enum": [
+        "development",
+        "released",
+        "candidate",
+        "namedRef",
+        "lineHead"
+      ],
+      "title": "RecordKind",
+      "type": "string"
+    },
+    "RefAggregateEntry": {
+      "additionalProperties": false,
+      "description": "Entry in ``data/refs.json``.",
+      "properties": {
+        "artifactKey": {
+          "minLength": 1,
+          "title": "Artifactkey",
+          "type": "string"
+        },
+        "componentSlug": {
+          "minLength": 1,
+          "title": "Componentslug",
+          "type": "string"
+        },
+        "displayVersion": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Displayversion"
+        },
+        "externalId": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Externalid"
+        },
+        "externalUrl": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Externalurl"
+        },
+        "kind": {
+          "$ref": "#/$defs/RecordKind"
+        },
+        "maturity": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maturity"
+        },
+        "namedRefKey": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Namedrefkey"
+        },
+        "provider": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provider"
+        },
+        "ref": {
+          "minLength": 1,
+          "title": "Ref",
+          "type": "string"
+        },
+        "releaseLine": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Releaseline"
+        }
+      },
+      "required": [
+        "componentSlug",
+        "artifactKey",
+        "kind",
+        "ref"
+      ],
+      "title": "RefAggregateEntry",
+      "type": "object"
+    },
+    "ReleaseLineSummary": {
+      "additionalProperties": false,
+      "description": "Compact release-line summary embedded into front matter.",
+      "properties": {
+        "aliases": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Aliases"
+        },
+        "headRef": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Headref"
+        },
+        "key": {
+          "minLength": 1,
+          "title": "Key",
+          "type": "string"
+        },
+        "latest": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Latest"
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent"
+        },
+        "supportStatus": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Supportstatus"
+        },
+        "supportWindow": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SupportWindow"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "key"
+      ],
+      "title": "ReleaseLineSummary",
+      "type": "object"
+    },
+    "SupportStatusDefinition": {
+      "additionalProperties": false,
+      "description": "Definition of one support-status vocabulary entry.",
+      "properties": {
+        "defaultMaintenancePhase": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Defaultmaintenancephase"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "displayName": {
+          "minLength": 1,
+          "title": "Displayname",
+          "type": "string"
+        },
+        "order": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Order"
+        }
+      },
+      "required": [
+        "displayName"
+      ],
+      "title": "SupportStatusDefinition",
+      "type": "object"
+    },
+    "SupportWindow": {
+      "additionalProperties": false,
+      "description": "Structured support-window metadata for a line or exact release.",
+      "properties": {
+        "endOfActiveSupportDate": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Endofactivesupportdate"
+        },
+        "endOfLifeDate": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Endoflifedate"
+        },
+        "endOfSupportDate": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Endofsupportdate"
+        },
+        "maintenancePhase": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maintenancephase"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notes"
+        },
+        "releaseDate": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Releasedate"
+        },
+        "supportPolicyUrl": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Supportpolicyurl"
+        }
+      },
+      "title": "SupportWindow",
+      "type": "object"
+    }
+  },
+  "$id": "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-artifacts-data-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Public staged aggregate file at ``data/artifacts.json``.",
+  "properties": {
+    "items": {
+      "description": "Artifact aggregate entries emitted into `data/artifacts.json`.",
+      "items": {
+        "additionalProperties": false,
+        "description": "Entry in ``data/artifacts.json``.",
+        "properties": {
+          "componentSlug": {
+            "minLength": 1,
+            "title": "Componentslug",
+            "type": "string"
+          },
+          "displayName": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Displayname"
+          },
+          "docsRoot": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Docsroot"
+          },
+          "key": {
+            "minLength": 1,
+            "title": "Key",
+            "type": "string"
+          },
+          "latestCandidate": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/LatestCandidateSummary"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "latestRelease": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/LatestReleaseSummary"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "latestStable": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Lateststable"
+          },
+          "namedRefs": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/$defs/RefAggregateEntry"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Namedrefs"
+          },
+          "providerKeys": {
+            "anyOf": [
+              {
+                "items": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Providerkeys"
+          },
+          "releaseLines": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/$defs/ReleaseLineSummary"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Releaselines"
+          },
+          "sourceKey": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Sourcekey"
+          },
+          "supportPolicyUrl": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Supportpolicyurl"
+          },
+          "supportStatusVocabulary": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/$defs/SupportStatusDefinition"
+                },
+                "propertyNames": {
+                  "minLength": 1
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Supportstatusvocabulary"
+          },
+          "versioning": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ArtifactVersioningConfig"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "componentSlug",
+          "key"
+        ],
+        "title": "ArtifactsDataEntry",
+        "type": "object"
+      },
+      "title": "Items",
+      "type": "array"
+    }
+  },
+  "required": [
+    "items"
+  ],
+  "title": "Site Pipeline data/artifacts.json v1",
+  "type": "object"
+}

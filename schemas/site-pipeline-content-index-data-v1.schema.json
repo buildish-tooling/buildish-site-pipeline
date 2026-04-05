@@ -1,0 +1,399 @@
+{
+  "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
+  "$defs": {
+    "PublicationState": {
+      "description": "Observed provider-side publication state.",
+      "enum": [
+        "published",
+        "hidden",
+        "withdrawn",
+        "tombstoned"
+      ],
+      "title": "PublicationState",
+      "type": "string"
+    },
+    "RecordKind": {
+      "description": "Normalized provider record lifecycle kind.",
+      "enum": [
+        "development",
+        "released",
+        "candidate",
+        "namedRef",
+        "lineHead"
+      ],
+      "title": "RecordKind",
+      "type": "string"
+    }
+  },
+  "$id": "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-content-index-data-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Public staged aggregate file at ``data/content-index.json``.",
+  "properties": {
+    "items": {
+      "description": "Content-index entries emitted into `data/content-index.json`.",
+      "items": {
+        "additionalProperties": false,
+        "description": "Entry in ``data/content-index.json``.",
+        "properties": {
+          "ancestorIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Ancestorids"
+          },
+          "artifactKey": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Artifactkey"
+          },
+          "candidateSequence": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Candidatesequence"
+          },
+          "canonicalUrl": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Canonicalurl"
+          },
+          "componentSlug": {
+            "minLength": 1,
+            "title": "Componentslug",
+            "type": "string"
+          },
+          "defaultLocale": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Defaultlocale"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "externalId": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Externalid"
+          },
+          "id": {
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "linkTitle": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Linktitle"
+          },
+          "locale": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Locale"
+          },
+          "maturity": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Maturity"
+          },
+          "originKey": {
+            "minLength": 1,
+            "title": "Originkey",
+            "type": "string"
+          },
+          "pageKind": {
+            "minLength": 1,
+            "title": "Pagekind",
+            "type": "string"
+          },
+          "parentId": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Parentid"
+          },
+          "path": {
+            "minLength": 1,
+            "title": "Path",
+            "type": "string"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Provider"
+          },
+          "publicationState": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/PublicationState"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "releaseLine": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Releaseline"
+          },
+          "section": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Section"
+          },
+          "sourcePath": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Sourcepath"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Summary"
+          },
+          "supportStatus": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Supportstatus"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Title"
+          },
+          "translationKey": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Translationkey"
+          },
+          "url": {
+            "minLength": 1,
+            "title": "Url",
+            "type": "string"
+          },
+          "versionKind": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/RecordKind"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "versionLabel": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Versionlabel"
+          },
+          "voteStatus": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Votestatus"
+          },
+          "weight": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Weight"
+          }
+        },
+        "required": [
+          "id",
+          "componentSlug",
+          "pageKind",
+          "originKey",
+          "path",
+          "url"
+        ],
+        "title": "ContentIndexEntry",
+        "type": "object"
+      },
+      "title": "Items",
+      "type": "array"
+    }
+  },
+  "required": [
+    "items"
+  ],
+  "title": "Site Pipeline data/content-index.json v1",
+  "type": "object"
+}

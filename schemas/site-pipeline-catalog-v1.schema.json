@@ -1,4 +1,5 @@
 {
+  "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
   "$defs": {
     "ArtifactConfig": {
       "additionalProperties": false,
@@ -2043,6 +2044,7 @@
       "type": "string"
     }
   },
+  "$id": "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-catalog-v1.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "Consumer-authored component catalog document.",

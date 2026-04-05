@@ -1,0 +1,284 @@
+{
+  "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
+  "$defs": {
+    "StageCommand": {
+      "description": "Stable stage-producing command modes.",
+      "enum": [
+        "build",
+        "watch"
+      ],
+      "title": "StageCommand",
+      "type": "string"
+    },
+    "StageDataFiles": {
+      "additionalProperties": false,
+      "description": "Inventory of aggregate metadata files present in a stage tree.",
+      "properties": {
+        "aggregateDependencies": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Aggregatedependencies"
+        },
+        "artifacts": {
+          "minLength": 1,
+          "title": "Artifacts",
+          "type": "string"
+        },
+        "candidates": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Candidates"
+        },
+        "compatibility": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Compatibility"
+        },
+        "components": {
+          "minLength": 1,
+          "title": "Components",
+          "type": "string"
+        },
+        "contentIndex": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Contentindex"
+        },
+        "diagnostics": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Diagnostics"
+        },
+        "mounts": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mounts"
+        },
+        "outputOwnership": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Outputownership"
+        },
+        "providers": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Providers"
+        },
+        "redirects": {
+          "minLength": 1,
+          "title": "Redirects",
+          "type": "string"
+        },
+        "refs": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Refs"
+        },
+        "releases": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Releases"
+        },
+        "routes": {
+          "minLength": 1,
+          "title": "Routes",
+          "type": "string"
+        },
+        "translations": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Translations"
+        },
+        "unitContributions": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unitcontributions"
+        }
+      },
+      "required": [
+        "components",
+        "artifacts",
+        "routes",
+        "redirects"
+      ],
+      "title": "StageDataFiles",
+      "type": "object"
+    },
+    "StageRoots": {
+      "additionalProperties": false,
+      "description": "Top-level directory roots within a stage tree.",
+      "properties": {
+        "content": {
+          "minLength": 1,
+          "title": "Content",
+          "type": "string"
+        },
+        "data": {
+          "minLength": 1,
+          "title": "Data",
+          "type": "string"
+        },
+        "static": {
+          "minLength": 1,
+          "title": "Static",
+          "type": "string"
+        }
+      },
+      "required": [
+        "content",
+        "static",
+        "data"
+      ],
+      "title": "StageRoots",
+      "type": "object"
+    }
+  },
+  "$id": "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-stage-manifest-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Authoritative entry-point document for a staged output tree.",
+  "properties": {
+    "aggregateFormat": {
+      "const": "json",
+      "title": "Aggregateformat",
+      "type": "string"
+    },
+    "command": {
+      "$ref": "#/$defs/StageCommand"
+    },
+    "dataFiles": {
+      "$ref": "#/$defs/StageDataFiles"
+    },
+    "frontMatterFormat": {
+      "const": "yaml",
+      "title": "Frontmatterformat",
+      "type": "string"
+    },
+    "generatedAt": {
+      "format": "date-time",
+      "title": "Generatedat",
+      "type": "string"
+    },
+    "roots": {
+      "$ref": "#/$defs/StageRoots"
+    },
+    "schemaVersion": {
+      "const": 1,
+      "title": "Schemaversion",
+      "type": "integer"
+    },
+    "stageLayoutVersion": {
+      "minimum": 1,
+      "title": "Stagelayoutversion",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "stageLayoutVersion",
+    "generatedAt",
+    "command",
+    "frontMatterFormat",
+    "aggregateFormat",
+    "roots",
+    "dataFiles"
+  ],
+  "title": "Site Pipeline Stage Manifest v1",
+  "type": "object"
+}

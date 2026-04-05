@@ -1,0 +1,72 @@
+{
+  "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
+  "$id": "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-redirects-data-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Public staged aggregate file at ``data/redirects.json``.",
+  "properties": {
+    "items": {
+      "description": "Redirect aggregate entries emitted into `data/redirects.json`.",
+      "items": {
+        "additionalProperties": false,
+        "description": "Entry in ``data/redirects.json``.",
+        "properties": {
+          "fromUrl": {
+            "minLength": 1,
+            "title": "Fromurl",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Reason"
+          },
+          "sourceKind": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Sourcekind"
+          },
+          "status": {
+            "title": "Status",
+            "type": "integer"
+          },
+          "toUrl": {
+            "minLength": 1,
+            "title": "Tourl",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fromUrl",
+          "toUrl",
+          "status"
+        ],
+        "title": "RedirectAggregateEntry",
+        "type": "object"
+      },
+      "title": "Items",
+      "type": "array"
+    }
+  },
+  "required": [
+    "items"
+  ],
+  "title": "Site Pipeline data/redirects.json v1",
+  "type": "object"
+}

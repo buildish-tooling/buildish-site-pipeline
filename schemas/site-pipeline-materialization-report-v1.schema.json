@@ -1,0 +1,398 @@
+{
+  "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
+  "$defs": {
+    "DiagnosticSeverity": {
+      "description": "Severity level for pipeline diagnostics.",
+      "enum": [
+        "info",
+        "warning",
+        "error"
+      ],
+      "title": "DiagnosticSeverity",
+      "type": "string"
+    },
+    "MaterializationInputKind": {
+      "description": "Planning/build/watch local-input category.",
+      "enum": [
+        "sitePages",
+        "siteAssets",
+        "vendorAssets",
+        "development",
+        "namedRef",
+        "lineHead",
+        "candidate",
+        "released"
+      ],
+      "title": "MaterializationInputKind",
+      "type": "string"
+    },
+    "MaterializationStatus": {
+      "description": "Readiness state of a required local input.",
+      "enum": [
+        "present",
+        "missing",
+        "stale",
+        "unresolved"
+      ],
+      "title": "MaterializationStatus",
+      "type": "string"
+    },
+    "PipelineDiagnosticEntry": {
+      "additionalProperties": false,
+      "description": "Structured pipeline diagnostic entry.",
+      "properties": {
+        "artifactKey": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Artifactkey"
+        },
+        "code": {
+          "minLength": 1,
+          "title": "Code",
+          "type": "string"
+        },
+        "componentSlug": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Componentslug"
+        },
+        "details": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReducedDiagnosticDetailsSummary"
+            },
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Details"
+        },
+        "message": {
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "severity": {
+          "$ref": "#/$defs/DiagnosticSeverity"
+        },
+        "targetId": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Targetid"
+        }
+      },
+      "required": [
+        "severity",
+        "code",
+        "message"
+      ],
+      "title": "PipelineDiagnosticEntry",
+      "type": "object"
+    },
+    "PlanningTarget": {
+      "description": "Planning intent for later staging behavior.",
+      "enum": [
+        "build",
+        "watch"
+      ],
+      "title": "PlanningTarget",
+      "type": "string"
+    },
+    "ReducedDiagnosticDetailsSummary": {
+      "additionalProperties": false,
+      "description": "Bounded replacement object for oversized diagnostic details.",
+      "properties": {
+        "actualBytes": {
+          "exclusiveMinimum": 0,
+          "title": "Actualbytes",
+          "type": "integer"
+        },
+        "fingerprint": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fingerprint"
+        },
+        "limitBytes": {
+          "exclusiveMinimum": 0,
+          "title": "Limitbytes",
+          "type": "integer"
+        },
+        "omitted": {
+          "const": true,
+          "title": "Omitted",
+          "type": "boolean"
+        },
+        "reason": {
+          "const": "sizeLimitExceeded",
+          "title": "Reason",
+          "type": "string"
+        },
+        "summary": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Summary"
+        }
+      },
+      "required": [
+        "omitted",
+        "reason",
+        "actualBytes",
+        "limitBytes"
+      ],
+      "title": "ReducedDiagnosticDetailsSummary",
+      "type": "object"
+    },
+    "ResolvedMaterializationEntry": {
+      "additionalProperties": false,
+      "description": "One required local input discovered by planning.",
+      "properties": {
+        "artifactKey": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Artifactkey"
+        },
+        "commitSha": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Commitsha"
+        },
+        "componentSlug": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Componentslug"
+        },
+        "expectedLocalPath": {
+          "minLength": 1,
+          "title": "Expectedlocalpath",
+          "type": "string"
+        },
+        "inputKind": {
+          "$ref": "#/$defs/MaterializationInputKind"
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provenance"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason"
+        },
+        "ref": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ref"
+        },
+        "releaseLine": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Releaseline"
+        },
+        "sourceKey": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sourcekey"
+        },
+        "status": {
+          "$ref": "#/$defs/MaterializationStatus"
+        },
+        "tag": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tag"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version"
+        },
+        "watchEligible": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Watcheligible"
+        }
+      },
+      "required": [
+        "inputKind",
+        "expectedLocalPath",
+        "status"
+      ],
+      "title": "ResolvedMaterializationEntry",
+      "type": "object"
+    }
+  },
+  "$id": "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-materialization-report-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Machine-readable planning report for required local inputs.",
+  "properties": {
+    "diagnostics": {
+      "items": {
+        "$ref": "#/$defs/PipelineDiagnosticEntry"
+      },
+      "title": "Diagnostics",
+      "type": "array"
+    },
+    "entries": {
+      "items": {
+        "$ref": "#/$defs/ResolvedMaterializationEntry"
+      },
+      "title": "Entries",
+      "type": "array"
+    },
+    "generatedAt": {
+      "format": "date-time",
+      "title": "Generatedat",
+      "type": "string"
+    },
+    "schemaVersion": {
+      "const": 1,
+      "title": "Schemaversion",
+      "type": "integer"
+    },
+    "target": {
+      "$ref": "#/$defs/PlanningTarget"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "target",
+    "entries"
+  ],
+  "title": "Site Pipeline Materialization Report v1",
+  "type": "object"
+}

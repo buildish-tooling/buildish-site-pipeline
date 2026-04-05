@@ -1,0 +1,121 @@
+{
+  "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
+  "$defs": {
+    "IndexBehavior": {
+      "description": "Renderer hint for version/ref index visibility.",
+      "enum": [
+        "full",
+        "metadataOnly",
+        "none"
+      ],
+      "title": "IndexBehavior",
+      "type": "string"
+    },
+    "TrustClass": {
+      "description": "Trust posture of a mounted content subtree.",
+      "enum": [
+        "passive",
+        "active"
+      ],
+      "title": "TrustClass",
+      "type": "string"
+    }
+  },
+  "$id": "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-mounts-data-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Public staged aggregate file at ``data/mounts.json``.",
+  "properties": {
+    "items": {
+      "description": "Mount aggregate entries emitted into `data/mounts.json`.",
+      "items": {
+        "additionalProperties": false,
+        "description": "Entry in ``data/mounts.json``.",
+        "properties": {
+          "indexBehavior": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/IndexBehavior"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "kind": {
+            "minLength": 1,
+            "title": "Kind",
+            "type": "string"
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Metadata"
+          },
+          "mountId": {
+            "minLength": 1,
+            "title": "Mountid",
+            "type": "string"
+          },
+          "ownerId": {
+            "minLength": 1,
+            "title": "Ownerid",
+            "type": "string"
+          },
+          "publicPath": {
+            "minLength": 1,
+            "title": "Publicpath",
+            "type": "string"
+          },
+          "sourceRef": {
+            "minLength": 1,
+            "title": "Sourceref",
+            "type": "string"
+          },
+          "trustClass": {
+            "$ref": "#/$defs/TrustClass"
+          },
+          "versionContext": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Versioncontext"
+          }
+        },
+        "required": [
+          "mountId",
+          "ownerId",
+          "kind",
+          "trustClass",
+          "publicPath",
+          "sourceRef"
+        ],
+        "title": "MountAggregateEntry",
+        "type": "object"
+      },
+      "title": "Items",
+      "type": "array"
+    }
+  },
+  "required": [
+    "items"
+  ],
+  "title": "Site Pipeline data/mounts.json v1",
+  "type": "object"
+}

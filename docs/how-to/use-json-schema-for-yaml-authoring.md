@@ -1,5 +1,5 @@
 ---
-title: Use JSON Schema for YAML authoring help
+title: Use JSON Schema for Site Pipeline file contracts
 weight: 23
 ---
 
@@ -20,17 +20,30 @@ limitations under the License.
 -->
 
 Use the checked-in JSON Schema files under `schemas/` to get field completion,
-required-field validation, and hover help while editing authored YAML files.
+required-field validation, hover help for authored YAML, and machine-readable
+contract files for staged outputs and reports.
 
-The schema files are generated from the same Pydantic models that validate
-`site/components.yaml` and `site/component.yaml`. That means model docstrings
-and Python `Field(description=...)` metadata are the source of truth for IDE
+The schema files are generated from the same Pydantic models that validate or
+emit the pipeline's public file contracts. That means model docstrings and
+Python `Field(description=...)` metadata are the source of truth for schema
 help text.
 
 ## Available schema files
 
+The generated files now cover:
+
+- authored inputs such as `site/components.yaml`, `site/component.yaml`, and `site/provider-snapshot.json`
+- machine-readable CLI reports such as the materialization, check, and stage-run JSON reports
+- staged output contracts such as `manifest.json`, `data/*.json`, and `data/_pipeline/*.json`
+- the reserved `pipeline` front matter namespace embedded into staged Markdown pages
+
+Examples:
+
 - `schemas/site-pipeline-catalog-v1.schema.json` for `site/components.yaml`
 - `schemas/site-pipeline-component-v1.schema.json` for `site/component.yaml`
+- `schemas/site-pipeline-stage-manifest-v1.schema.json` for `site/.stage/manifest.json`
+- `schemas/site-pipeline-components-data-v1.schema.json` for `site/.stage/data/components.json`
+- `schemas/site-pipeline-front-matter-namespace-v1.schema.json` for the staged page `pipeline` front matter namespace
 
 ## Regenerate the schema files
 
@@ -41,6 +54,15 @@ Run:
 This rewrites the checked-in files under `schemas/` from the current Python
 model definitions.
 
+Each generated schema file also carries a canonical published `$id` under:
+
+- `https://buildish.apache.org/components/site-pipeline/schemas/<filename>`
+
+That same stable HTTPS path is also a good default for authored YAML
+`yaml-language-server` schema hints. Local relative `$schema` refs still work
+for local-only development, but the published URL is the stable contract
+identifier that can be shared across repositories.
+
 ## Wire the schemas into your editor
 
 For VS Code or other `yaml-language-server` based editors, map the schema files
@@ -50,11 +72,12 @@ the same checkout, point the mapping at this repository's `schemas/` directory.
 You can also use a per-file schema hint comment when your editor supports it,
 for example with `yaml-language-server`:
 
-- `# yaml-language-server: $schema=../buildish-site-pipeline/schemas/site-pipeline-catalog-v1.schema.json`
-- `# yaml-language-server: $schema=../buildish-site-pipeline/schemas/site-pipeline-component-v1.schema.json`
+- `# yaml-language-server: $schema=https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-catalog-v1.schema.json`
+- `# yaml-language-server: $schema=https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-component-v1.schema.json`
 
 ## What the JSON Schema does not replace
 
-The JSON Schema helps with local authoring feedback, but it does not replace
-`site-pipeline check`. Cross-reference validation, duplicate detection, and
-higher-order planning rules still require the normal pipeline validation pass.
+The JSON Schema helps with local authoring feedback and downstream contract
+inspection, but it does not replace `site-pipeline check`. Cross-reference
+validation, duplicate detection, and higher-order planning rules still require
+the normal pipeline validation pass.

@@ -1,0 +1,547 @@
+{
+  "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
+  "$defs": {
+    "ProviderAsset": {
+      "additionalProperties": false,
+      "description": "Optional file-level metadata attached to a provider record.",
+      "properties": {
+        "checksums": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "propertyNames": {
+                "minLength": 1
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Checksums"
+        },
+        "kind": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Kind"
+        },
+        "mediaType": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mediatype"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "provenanceUrl": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provenanceurl"
+        },
+        "sbomUrl": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sbomurl"
+        },
+        "signatureUrl": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Signatureurl"
+        },
+        "size": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Size"
+        },
+        "url": {
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "url"
+      ],
+      "title": "ProviderAsset",
+      "type": "object"
+    },
+    "ProviderDescriptor": {
+      "additionalProperties": false,
+      "description": "Descriptor for one loaded provider.",
+      "properties": {
+        "baseUrl": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Baseurl"
+        },
+        "displayName": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Displayname"
+        },
+        "fetchedAt": {
+          "format": "date-time",
+          "title": "Fetchedat",
+          "type": "string"
+        },
+        "key": {
+          "minLength": 1,
+          "title": "Key",
+          "type": "string"
+        },
+        "type": {
+          "minLength": 1,
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "type",
+        "fetchedAt"
+      ],
+      "title": "ProviderDescriptor",
+      "type": "object"
+    },
+    "ProviderRecord": {
+      "additionalProperties": false,
+      "description": "Normalized release, candidate, or ref record from a provider.",
+      "properties": {
+        "artifactKey": {
+          "minLength": 1,
+          "title": "Artifactkey",
+          "type": "string"
+        },
+        "assets": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ProviderAsset"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Assets"
+        },
+        "candidateSequence": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Candidatesequence"
+        },
+        "commitSha": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Commitsha"
+        },
+        "componentSlug": {
+          "minLength": 1,
+          "title": "Componentslug",
+          "type": "string"
+        },
+        "createdAt": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Createdat"
+        },
+        "displayVersion": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Displayversion"
+        },
+        "externalId": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Externalid"
+        },
+        "externalUrl": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Externalurl"
+        },
+        "kind": {
+          "$ref": "#/$defs/RecordKind"
+        },
+        "maturity": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maturity"
+        },
+        "namedRefKey": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Namedrefkey"
+        },
+        "provider": {
+          "minLength": 1,
+          "title": "Provider",
+          "type": "string"
+        },
+        "publicationState": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PublicationState"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "publishedAt": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Publishedat"
+        },
+        "ref": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ref"
+        },
+        "releaseLine": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Releaseline"
+        },
+        "releaseLineAncestors": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Releaselineancestors"
+        },
+        "sourceKey": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sourcekey"
+        },
+        "supportStatus": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Supportstatus"
+        },
+        "tag": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tag"
+        },
+        "updatedAt": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Updatedat"
+        },
+        "urls": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "propertyNames": {
+                "minLength": 1
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Urls"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version"
+        },
+        "voteStatus": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Votestatus"
+        }
+      },
+      "required": [
+        "provider",
+        "kind",
+        "componentSlug",
+        "artifactKey"
+      ],
+      "title": "ProviderRecord",
+      "type": "object"
+    },
+    "PublicationState": {
+      "description": "Observed provider-side publication state.",
+      "enum": [
+        "published",
+        "hidden",
+        "withdrawn",
+        "tombstoned"
+      ],
+      "title": "PublicationState",
+      "type": "string"
+    },
+    "RecordKind": {
+      "description": "Normalized provider record lifecycle kind.",
+      "enum": [
+        "development",
+        "released",
+        "candidate",
+        "namedRef",
+        "lineHead"
+      ],
+      "title": "RecordKind",
+      "type": "string"
+    }
+  },
+  "$id": "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-provider-snapshot-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Normalized external release-provider input.",
+  "properties": {
+    "providers": {
+      "items": {
+        "$ref": "#/$defs/ProviderDescriptor"
+      },
+      "title": "Providers",
+      "type": "array"
+    },
+    "records": {
+      "items": {
+        "$ref": "#/$defs/ProviderRecord"
+      },
+      "title": "Records",
+      "type": "array"
+    },
+    "schemaVersion": {
+      "const": 1,
+      "title": "Schemaversion",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "providers",
+    "records"
+  ],
+  "title": "Site Pipeline Provider Snapshot v1",
+  "type": "object"
+}

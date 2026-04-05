@@ -1,0 +1,501 @@
+{
+  "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
+  "$defs": {
+    "ProviderAsset": {
+      "additionalProperties": false,
+      "description": "Optional file-level metadata attached to a provider record.",
+      "properties": {
+        "checksums": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "propertyNames": {
+                "minLength": 1
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Checksums"
+        },
+        "kind": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Kind"
+        },
+        "mediaType": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mediatype"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "provenanceUrl": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provenanceurl"
+        },
+        "sbomUrl": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sbomurl"
+        },
+        "signatureUrl": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Signatureurl"
+        },
+        "size": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Size"
+        },
+        "url": {
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "url"
+      ],
+      "title": "ProviderAsset",
+      "type": "object"
+    },
+    "PublicationState": {
+      "description": "Observed provider-side publication state.",
+      "enum": [
+        "published",
+        "hidden",
+        "withdrawn",
+        "tombstoned"
+      ],
+      "title": "PublicationState",
+      "type": "string"
+    },
+    "SupportWindow": {
+      "additionalProperties": false,
+      "description": "Structured support-window metadata for a line or exact release.",
+      "properties": {
+        "endOfActiveSupportDate": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Endofactivesupportdate"
+        },
+        "endOfLifeDate": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Endoflifedate"
+        },
+        "endOfSupportDate": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Endofsupportdate"
+        },
+        "maintenancePhase": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maintenancephase"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notes"
+        },
+        "releaseDate": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Releasedate"
+        },
+        "supportPolicyUrl": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Supportpolicyurl"
+        }
+      },
+      "title": "SupportWindow",
+      "type": "object"
+    },
+    "WithdrawalBehavior": {
+      "description": "Author-directed behavior for a withdrawn release.",
+      "enum": [
+        "notice",
+        "redirect",
+        "omit"
+      ],
+      "title": "WithdrawalBehavior",
+      "type": "string"
+    }
+  },
+  "$id": "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-releases-data-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Public staged aggregate file at ``data/releases.json``.",
+  "properties": {
+    "items": {
+      "description": "Released-version aggregate entries emitted into `data/releases.json`.",
+      "items": {
+        "additionalProperties": false,
+        "description": "Entry in ``data/releases.json``.",
+        "properties": {
+          "artifactKey": {
+            "minLength": 1,
+            "title": "Artifactkey",
+            "type": "string"
+          },
+          "assets": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/$defs/ProviderAsset"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Assets"
+          },
+          "componentSlug": {
+            "minLength": 1,
+            "title": "Componentslug",
+            "type": "string"
+          },
+          "displayVersion": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Displayversion"
+          },
+          "externalId": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Externalid"
+          },
+          "externalUrl": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Externalurl"
+          },
+          "maturity": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Maturity"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Provider"
+          },
+          "publicationState": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/PublicationState"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "publishedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Publishedat"
+          },
+          "redirectTarget": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Redirecttarget"
+          },
+          "releaseLine": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Releaseline"
+          },
+          "releaseLineAncestors": {
+            "anyOf": [
+              {
+                "items": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Releaselineancestors"
+          },
+          "supportStatus": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Supportstatus"
+          },
+          "supportWindow": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/SupportWindow"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "tag": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Tag"
+          },
+          "urls": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "propertyNames": {
+                  "minLength": 1
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Urls"
+          },
+          "version": {
+            "minLength": 1,
+            "title": "Version",
+            "type": "string"
+          },
+          "withdrawalBehavior": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/WithdrawalBehavior"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "componentSlug",
+          "artifactKey",
+          "version"
+        ],
+        "title": "ReleaseAggregateEntry",
+        "type": "object"
+      },
+      "title": "Items",
+      "type": "array"
+    }
+  },
+  "required": [
+    "items"
+  ],
+  "title": "Site Pipeline data/releases.json v1",
+  "type": "object"
+}

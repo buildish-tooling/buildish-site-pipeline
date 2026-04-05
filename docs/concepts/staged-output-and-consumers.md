@@ -63,7 +63,7 @@ pipeline:
     slug: spark
   page:
     kind: release-page
-    path: /spark/development/docs/releases/4.0.0
+    path: /spark/releases/4.0.0
     provider:
       key: github
     version:
@@ -91,8 +91,8 @@ For example, one `content-index.json` item looks like this:
   "componentSlug": "spark",
   "artifactKey": "runtime",
   "pageKind": "release-page",
-  "path": "/spark/development/docs/releases/4.0.0",
-  "canonicalUrl": "https://docs.example.org/spark/development/docs/releases/4.0.0/",
+  "path": "/spark/releases/4.0.0",
+  "canonicalUrl": "https://docs.example.org/spark/releases/4.0.0/",
   "sourcePath": "components/runtime/docs/releases/4.0.0/index.md",
   "versionKind": "released",
   "versionLabel": "4.0.0",

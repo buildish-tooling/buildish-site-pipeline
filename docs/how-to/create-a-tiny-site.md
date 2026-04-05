@@ -156,7 +156,7 @@ pipeline:
     slug: spark
   page:
     kind: release-page
-    path: /spark/development/docs/releases/4.0.0
+    path: /spark/releases/4.0.0
     provider:
       key: github
     version:

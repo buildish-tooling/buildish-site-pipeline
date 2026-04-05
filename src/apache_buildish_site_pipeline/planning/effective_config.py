@@ -33,8 +33,8 @@ from .types import (
     ResolvedVendorAsset,
 )
 
-_DEFAULT_DEVELOPMENT_SEGMENT = "development"
-_DEFAULT_DOCS_SEGMENT = "docs"
+_DEFAULT_DEVELOPMENT_SEGMENT = "latest"
+_DEFAULT_DOCS_SEGMENT: str | None = None
 _DEFAULT_ASSETS_SEGMENT = "assets"
 
 
@@ -255,8 +255,14 @@ def _resolve_publication(
     docs_segment = defaults.docs_segment if defaults and defaults.docs_segment else _DEFAULT_DOCS_SEGMENT
     assets_segment = defaults.assets_segment if defaults and defaults.assets_segment else _DEFAULT_ASSETS_SEGMENT
     development_path = str(publication.development_path) if publication and publication.development_path is not None else _join_public_path(component_path, development_segment)
-    docs_path = str(publication.docs_path) if publication and publication.docs_path is not None else _join_public_path(development_path, docs_segment)
-    assets_path = str(publication.assets_path) if publication and publication.assets_path is not None else _join_public_path(development_path, assets_segment)
+    docs_path = (
+        str(publication.docs_path)
+        if publication and publication.docs_path is not None
+        else _join_public_path(development_path, docs_segment)
+        if docs_segment is not None
+        else development_path
+    )
+    assets_path = str(publication.assets_path) if publication and publication.assets_path is not None else _join_public_path(component_path, assets_segment)
     origin = origins[origin_key]
     return ResolvedPublicationPolicy(
         origin=origin,

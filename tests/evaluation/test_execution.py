@@ -102,7 +102,7 @@ class EvaluationExecutionTests(unittest.TestCase):
                 catalog=_catalog(
                     shared_mount_path=False,
                     spark_publication={
-                        "redirects": [{"fromPath": "/spark/latest/", "target": "route:/spark/missing/"}],
+                        "redirects": [{"fromPath": "/spark/development/docs/", "target": "route:/spark/missing/"}],
                     },
                 ),
             )
@@ -122,8 +122,8 @@ class EvaluationExecutionTests(unittest.TestCase):
                     shared_mount_path=False,
                     spark_publication={
                         "redirects": [
-                            {"fromPath": "/spark/latest/", "target": "route:/spark/archive/"},
-                            {"fromPath": "/spark/archive/", "target": "route:/spark/latest/"},
+                            {"fromPath": "/spark/development/docs/", "target": "route:/spark/archive/"},
+                            {"fromPath": "/spark/archive/", "target": "route:/spark/development/docs/"},
                         ],
                     },
                 ),
@@ -162,7 +162,7 @@ class EvaluationExecutionTests(unittest.TestCase):
                     spark_publication={
                         "redirects": [
                             {
-                                "fromPath": "/spark/latest/",
+                                "fromPath": "/spark/development/docs/",
                                 "target": "release:spark/runtime@4.0.0",
                             }
                         ],

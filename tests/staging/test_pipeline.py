@@ -126,7 +126,7 @@ class StagingPipelineTests(unittest.TestCase):
         self.assertEqual(release_page.metadata["pipeline"]["page"]["kind"], "release-page")
         self.assertEqual(release_page.metadata["pipeline"]["page"]["provider"]["key"], "github")
         self.assertEqual(release_page.metadata["pipeline"]["page"]["version"]["kind"], "released")
-        self.assertEqual(release_entry["path"], "/spark/development/docs/releases/4.0.0")
+        self.assertEqual(release_entry["path"], "/spark/releases/4.0.0")
         self.assertEqual(release_entry["provider"], "github")
         self.assertEqual(release_entry["versionKind"], "released")
 

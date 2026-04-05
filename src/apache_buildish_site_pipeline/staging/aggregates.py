@@ -296,10 +296,13 @@ def _build_route_entries(build_plan: EffectiveBuildPlan) -> list[RouteAggregateE
             [
                 _route_entry(component.slug, publication.origin.key, publication.origin.base_url, publication.component_path, section="component", target_id=f"component:{component.slug}", canonical=publication.component_path == publication.canonical_path),
                 _route_entry(component.slug, publication.origin.key, publication.origin.base_url, publication.development_path, section="development", target_id=f"development:{component.slug}"),
-                _route_entry(component.slug, publication.origin.key, publication.origin.base_url, publication.docs_path, section="docs", target_id=f"docs:{component.slug}"),
                 _route_entry(component.slug, publication.origin.key, publication.origin.base_url, publication.assets_path, section="assets", target_id=f"assets:{component.slug}"),
             ],
         )
+        if publication.docs_path != publication.development_path:
+            entries.append(
+                _route_entry(component.slug, publication.origin.key, publication.origin.base_url, publication.docs_path, section="docs", target_id=f"docs:{component.slug}"),
+            )
         for alias in publication.aliases:
             entries.append(
                 _route_entry(

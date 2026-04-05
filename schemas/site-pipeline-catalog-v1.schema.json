@@ -1174,7 +1174,7 @@
             }
           ],
           "default": null,
-          "description": "Explicit public path for static assets below the component publication surface.",
+          "description": "Explicit public path for static assets below the component root.",
           "title": "Assetspath"
         },
         "canonicalPath": {
@@ -1216,7 +1216,7 @@
             }
           ],
           "default": null,
-          "description": "Explicit public path for development-context content.",
+          "description": "Explicit public path for the moving latest/development docs surface.",
           "title": "Developmentpath"
         },
         "docsPath": {
@@ -1230,7 +1230,7 @@
             }
           ],
           "default": null,
-          "description": "Explicit public path for docs content below the component publication surface.",
+          "description": "Explicit public docs landing path exposed to downstream consumers; defaults to the development/latest path unless an additional docs segment or override is configured.",
           "title": "Docspath"
         },
         "mountPath": {
@@ -1310,7 +1310,7 @@
             }
           ],
           "default": null,
-          "description": "Default path segment appended below the development root for assets content.",
+          "description": "Default path segment appended below the component root for static assets.",
           "title": "Assetssegment"
         },
         "developmentSegment": {
@@ -1324,7 +1324,7 @@
             }
           ],
           "default": null,
-          "description": "Default path segment appended below the component root for development content.",
+          "description": "Default path segment appended below the component root for moving development/latest docs.",
           "title": "Developmentsegment"
         },
         "docsSegment": {
@@ -1338,7 +1338,7 @@
             }
           ],
           "default": null,
-          "description": "Default path segment appended below the development root for docs content.",
+          "description": "Optional extra path segment appended below the latest docs root when docs should live under an additional nested path.",
           "title": "Docssegment"
         },
         "origin": {

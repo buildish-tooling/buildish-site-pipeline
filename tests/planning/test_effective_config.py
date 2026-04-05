@@ -34,12 +34,7 @@ class EffectiveConfigResolutionTests(unittest.TestCase):
                     "pagesRoot": "site/pages",
                     "docsRoot": "site/docs",
                     "assetsRoot": "site/assets",
-                    "publication": {
-                        "origin": "docs",
-                        "developmentSegment": "development",
-                        "docsSegment": "docs",
-                        "assetsSegment": "assets",
-                    },
+                    "publication": {"origin": "docs"},
                 },
                 "site": {
                     "pagesRoot": "site/root-pages",
@@ -88,10 +83,48 @@ class EffectiveConfigResolutionTests(unittest.TestCase):
         component = site.components[0]
         artifact = component.artifacts[0]
         self.assertEqual(component.publication.component_path, "/streaming/spark/")
-        self.assertEqual(component.publication.docs_url, "https://docs.example.org/streaming/spark/development/docs/")
+        self.assertEqual(component.publication.development_url, "https://docs.example.org/streaming/spark/latest/")
+        self.assertEqual(component.publication.docs_url, "https://docs.example.org/streaming/spark/latest/")
+        self.assertEqual(component.publication.assets_url, "https://docs.example.org/streaming/spark/assets/")
         self.assertEqual(component.pages_root.name, "pages")
         self.assertEqual(component.docs_root.name, "rendered")
         self.assertEqual(artifact.docs_root.name, "rendered")
+
+    def test_preserves_explicit_nested_publication_segments(self) -> None:
+        catalog = CatalogDocumentV1.model_validate(
+            {
+                "schemaVersion": 1,
+                "defaults": {
+                    "publication": {
+                        "origin": "docs",
+                        "developmentSegment": "development",
+                        "docsSegment": "docs",
+                        "assetsSegment": "assets",
+                    }
+                },
+                "site": {},
+                "origins": {"docs": {"baseUrl": "https://docs.example.org"}},
+                "sources": {"runtime": {"localDir": "components/runtime"}},
+                "components": [
+                    {
+                        "slug": "spark",
+                        "content": {"source": "runtime"},
+                        "publication": {"mountPath": "/spark/"},
+                        "artifacts": [],
+                    }
+                ],
+            },
+            by_alias=True,
+            by_name=False,
+        )
+
+        with tempfile.TemporaryDirectory() as tempdir:
+            site = resolve_site_config(catalog=catalog, workspace_root=Path(tempdir))
+
+        publication = site.components[0].publication
+        self.assertEqual(publication.development_path, "/spark/development/")
+        self.assertEqual(publication.docs_path, "/spark/development/docs/")
+        self.assertEqual(publication.assets_path, "/spark/assets/")
 
     def test_rejects_unresolvable_component_publication_path(self) -> None:
         catalog = CatalogDocumentV1.model_validate(

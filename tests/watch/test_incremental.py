@@ -101,7 +101,7 @@ class WatchIncrementalTests(unittest.TestCase):
                     replacements=(
                         (
                             "    publication:\n      mountPath: /spark/\n",
-                            "    publication:\n      mountPath: /spark/\n      aliases:\n        - path: /spark/latest/\n",
+                            "    publication:\n      mountPath: /spark/\n      aliases:\n        - path: /spark/development/docs/\n",
                         ),
                     ),
                 )
@@ -126,7 +126,7 @@ class WatchIncrementalTests(unittest.TestCase):
                     replacements=(
                         (
                             "    publication:\n      mountPath: /spark/\n",
-                            "    publication:\n      mountPath: /spark/\n      redirects:\n        - fromPath: /spark/latest/\n          target: route:/spark/\n",
+                            "    publication:\n      mountPath: /spark/\n      redirects:\n        - fromPath: /spark/development/docs/\n          target: route:/spark/\n",
                         ),
                     ),
                 )
@@ -151,7 +151,7 @@ class WatchIncrementalTests(unittest.TestCase):
                     replacements=(
                         (
                             "    publication:\n      mountPath: /spark/\n",
-                            "    publication:\n      mountPath: /spark/\n      canonicalPath: /spark/development/\n",
+                            "    publication:\n      mountPath: /spark/\n      canonicalPath: /spark/latest/\n",
                         ),
                     ),
                 )

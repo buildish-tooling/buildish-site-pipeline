@@ -98,9 +98,9 @@ class PublicationDefaults(SitePipelineBaseModel):
     """Default routing segments used to derive publication paths."""
 
     origin: OriginKey | None = Field(default=None, description="Default publication origin used for component routes when no nearer override is present.")
-    development_segment: NonEmptyString | None = Field(default=None, description="Default path segment appended below the component root for development content.")
-    docs_segment: NonEmptyString | None = Field(default=None, description="Default path segment appended below the development root for docs content.")
-    assets_segment: NonEmptyString | None = Field(default=None, description="Default path segment appended below the development root for assets content.")
+    development_segment: NonEmptyString | None = Field(default=None, description="Default path segment appended below the component root for moving development/latest docs.")
+    docs_segment: NonEmptyString | None = Field(default=None, description="Optional extra path segment appended below the latest docs root when docs should live under an additional nested path.")
+    assets_segment: NonEmptyString | None = Field(default=None, description="Default path segment appended below the component root for static assets.")
 
 
 class LocalizationConfig(SitePipelineBaseModel):
@@ -187,9 +187,9 @@ class PublicationConfig(SitePipelineBaseModel):
     path_segment: NonEmptyString | None = Field(default=None, description="Path segment appended below an inherited path prefix or mount root.")
     mount_path: PublicPath | None = Field(default=None, description="Explicit public root path for the component publication surface.")
     component_path: PublicPath | None = Field(default=None, description="Explicit public path for the component landing page or overview root.")
-    development_path: PublicPath | None = Field(default=None, description="Explicit public path for development-context content.")
-    docs_path: PublicPath | None = Field(default=None, description="Explicit public path for docs content below the component publication surface.")
-    assets_path: PublicPath | None = Field(default=None, description="Explicit public path for static assets below the component publication surface.")
+    development_path: PublicPath | None = Field(default=None, description="Explicit public path for the moving latest/development docs surface.")
+    docs_path: PublicPath | None = Field(default=None, description="Explicit public docs landing path exposed to downstream consumers; defaults to the development/latest path unless an additional docs segment or override is configured.")
+    assets_path: PublicPath | None = Field(default=None, description="Explicit public path for static assets below the component root.")
     canonical_path: PublicPath | None = Field(default=None, description="Optional canonical public path used when aliases or multiple origins are present.")
     aliases: list[RouteAliasConfig] | None = Field(default=None, description="Additional public aliases that should resolve to the same published target.")
     redirects: list[RedirectRuleConfig] | None = Field(default=None, description="Redirect rules to emit for legacy or moved routes.")

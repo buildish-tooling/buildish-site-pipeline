@@ -157,8 +157,7 @@ defaults:
   assetsRoot: site/assets
   publication:
     origin: main
-    developmentSegment: development
-    docsSegment: docs
+    developmentSegment: latest
     assetsSegment: assets
 site:
   pagesRoot: site/root-pages
@@ -630,8 +629,9 @@ When only `origin` and `mountPath` are provided, the pipeline should derive:
 
 - `componentPath = mountPath`
 - `developmentPath = componentPath + <developmentSegment>/`
-- `docsPath = developmentPath + <docsSegment>/`
-- `assetsPath = developmentPath + <assetsSegment>/`
+- `docsPath = developmentPath` unless an explicit `docsPath` or extra
+  `docsSegment` override is configured
+- `assetsPath = componentPath + <assetsSegment>/`
 
 It should also derive fully qualified URLs by joining each path to the resolved
 origin `baseUrl`.
@@ -1053,8 +1053,8 @@ pipeline:
     displayName: Apache Spark
     publication:
       origin: { key: spark, baseUrl: https://spark.example.org, hostname: spark.example.org }
-      paths: { component: /, development: /development/, docs: /development/docs/, assets: /development/assets/ }
-      urls: { component: https://spark.example.org/, development: https://spark.example.org/development/, docs: https://spark.example.org/development/docs/, assets: https://spark.example.org/development/assets/ }
+      paths: { component: /, development: /latest/, docs: /latest/, assets: /assets/ }
+      urls: { component: https://spark.example.org/, development: https://spark.example.org/latest/, docs: https://spark.example.org/latest/, assets: https://spark.example.org/assets/ }
     artifacts:
       - { key: runtime, displayName: Spark Runtime, latestStable: 4.0.0, releaseLines: [{ key: 4.x, latest: 4.0.0, supportStatus: active }] }
       - { key: kubernetes-operator, displayName: Spark Kubernetes Operator, latestStable: 1.3.0 }
@@ -1068,9 +1068,9 @@ pipeline:
     kind: docsPage
     section: docs
     artifactKey: runtime
-    path: /development/docs/sql/
-    url: https://spark.example.org/development/docs/sql/
-    canonicalUrl: https://spark.example.org/development/docs/sql/
+    path: /releases/4.0.0/sql/
+    url: https://spark.example.org/releases/4.0.0/sql/
+    canonicalUrl: https://spark.example.org/releases/4.0.0/sql/
     locale: en
     defaultLocale: true
     translationKey: runtime-sql-overview
@@ -1081,11 +1081,11 @@ pipeline:
       label: 4.0.0
       path: /releases/4.0.0/
       url: https://spark.example.org/releases/4.0.0/
-      docsPath: /releases/4.0.0/docs/
-      docsUrl: https://spark.example.org/releases/4.0.0/docs/
+      docsPath: /releases/4.0.0/
+      docsUrl: https://spark.example.org/releases/4.0.0/
       publicationState: published
       releaseLine: { key: 4.x, supportStatus: active, ancestors: [], supportWindow: { maintenancePhase: active, endOfSupportDate: 2027-06-30T00:00:00Z } }
-    translations: [{ locale: fr, url: https://spark.example.org/fr/releases/4.0.0/docs/sql/ }]
+    translations: [{ locale: fr, url: https://spark.example.org/fr/releases/4.0.0/sql/ }]
 ```
 
 ### Front matter attribute guidance

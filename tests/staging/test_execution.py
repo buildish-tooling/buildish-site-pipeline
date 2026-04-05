@@ -60,11 +60,11 @@ class StagingExecutionTests(unittest.TestCase):
                 del src, dst
                 raise OSError("replace blocked")
 
-            with mock.patch("apache_buildish_site_pipeline.staging.aggregates.os.replace", side_effect=_fail_replace):
+            with mock.patch("apache_buildish_site_pipeline.staging.file_writes.os.replace", side_effect=_fail_replace):
                 with self.assertRaises(StageIntegrityError) as raised:
                     _write_json_file(json_path, [_JsonStub('{"componentId":"runtime"}')])
 
-            self.assertIn("Could not write stage JSON file", str(raised.exception))
+            self.assertIn("Could not write stage text file", str(raised.exception))
             self.assertEqual(json_path.read_text(encoding="utf-8"), "trusted\n")
             self.assertEqual(list(json_path.parent.glob(".components.json.*.tmp")), [])
 

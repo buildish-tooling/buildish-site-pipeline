@@ -149,7 +149,7 @@ and how the schema layer relates to planning, evaluation, and staging, see
 | `RepoRelativePath` | `String` | Repository-relative normalized POSIX path such as `site/docs` or `docs/runtime`. Contract values must use forward slashes. |
 | `LocalPathString` | `String` | Consumer-local filesystem path used during staging or materialization. These values are machine-local and follow the host operating system's native path rules rather than the pipeline's POSIX-only contract-path rules. |
 | `MountSourceRef` | `String` | Stable mount source reference such as a path, generator output key, or bundle identifier. |
-| `PublicPath` | `String` | Resolved normalized POSIX public path such as `/development/docs/`. Contract values must use forward slashes. |
+| `PublicPath` | `String` | Resolved normalized POSIX public path such as `/spark/latest/`. Contract values must use forward slashes. |
 | `StageRelativePath` | `String` | Stage-root-relative normalized POSIX path such as `data/routes.json`. Contract values must use forward slashes. |
 | `UrlString` | `String` | Absolute URL such as `https://spark.example.org/`. |
 | `HostnameString` | `String` | Hostname derived from an origin URL. |
@@ -294,9 +294,9 @@ Default routing segments used to derive publication paths.
 | Field | Type | Req | Description |
 | --- | --- | --- | --- |
 | `origin` | `OriginKey` | no | Default origin for components that do not override it. |
-| `developmentSegment` | `String` | no | Segment appended to the component mount for development content. |
-| `docsSegment` | `String` | no | Segment appended under the development path for docs. |
-| `assetsSegment` | `String` | no | Segment appended under the development path for assets. |
+| `developmentSegment` | `String` | no | Segment appended to the component mount for moving latest/development docs. |
+| `docsSegment` | `String` | no | Optional extra segment appended under the latest docs path when docs should live one level deeper. |
+| `assetsSegment` | `String` | no | Segment appended to the component mount for assets. |
 
 <a id="localizationconfig"></a>
 ## LocalizationConfig
@@ -394,9 +394,9 @@ Explicit publication configuration or inherited publication defaults.
 | `pathSegment` | `String` | no | Relative segment used with a group path prefix. |
 | `mountPath` | `PublicPath` | no | Component mount path under the resolved origin. |
 | `componentPath` | `PublicPath` | no | Fully explicit component home path override. |
-| `developmentPath` | `PublicPath` | no | Fully explicit development path override. |
-| `docsPath` | `PublicPath` | no | Fully explicit docs path override. |
-| `assetsPath` | `PublicPath` | no | Fully explicit assets path override. |
+| `developmentPath` | `PublicPath` | no | Fully explicit latest/development docs path override. |
+| `docsPath` | `PublicPath` | no | Fully explicit docs landing path override. |
+| `assetsPath` | `PublicPath` | no | Fully explicit component asset path override. |
 | `canonicalPath` | `PublicPath` | no | Preferred canonical path when it differs from the derived route. |
 | `aliases` | Array<[RouteAliasConfig](#routealiasconfig)> | no | Additional non-redirecting routes for the same published target. |
 | `redirects` | Array<[RedirectRuleConfig](#redirectruleconfig)> | no | Redirect routes to generate for legacy or moving paths. |
@@ -978,9 +978,9 @@ Resolved public paths.
 | Field | Type | Req | Description |
 | --- | --- | --- | --- |
 | `component` | `PublicPath` | yes | Component home path. |
-| `development` | `PublicPath` | yes | Development content path. |
-| `docs` | `PublicPath` | yes | Development docs path. |
-| `assets` | `PublicPath` | yes | Development assets path. |
+| `development` | `PublicPath` | yes | Latest/development docs path. |
+| `docs` | `PublicPath` | yes | Docs landing path, often the same as `development`. |
+| `assets` | `PublicPath` | yes | Component asset path. |
 
 <a id="resolvedurlset"></a>
 ## ResolvedUrlSet

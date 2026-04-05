@@ -51,7 +51,8 @@ def public_path_for_context(publication: ResolvedPublicationPolicy, context: Sel
         return f"{publication.docs_path}{context.release_line}/"
     if context.kind is RecordKind.CANDIDATE:
         return f"{publication.docs_path}candidates/{context.version}/"
-    return f"{publication.docs_path}releases/{context.version}/"
+    release_base_path = publication.component_path if publication.docs_path == publication.development_path else publication.docs_path
+    return f"{release_base_path}releases/{context.version}/"
 
 
 def build_publication_index(planning: PlanningEvaluation) -> PublicationIndex:
@@ -64,10 +65,11 @@ def build_publication_index(planning: PlanningEvaluation) -> PublicationIndex:
             [
                 PublishedTarget(component.slug, f"component:{component.slug}", publication.origin.key, publication.component_path),
                 PublishedTarget(component.slug, f"development:{component.slug}", publication.origin.key, publication.development_path),
-                PublishedTarget(component.slug, f"docs:{component.slug}", publication.origin.key, publication.docs_path),
                 PublishedTarget(component.slug, f"assets:{component.slug}", publication.origin.key, publication.assets_path),
             ]
         )
+        if publication.docs_path != publication.development_path:
+            targets.append(PublishedTarget(component.slug, f"docs:{component.slug}", publication.origin.key, publication.docs_path))
     return PublicationIndex(targets=tuple(targets))
 
 

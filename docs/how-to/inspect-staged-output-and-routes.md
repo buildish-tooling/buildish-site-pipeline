@@ -73,8 +73,8 @@ One concrete `routes.json` item looks like this:
 {
   "originKey": "docs",
   "baseUrl": "https://docs.example.org",
-  "path": "/spark/development/docs/releases/4.0.0/",
-  "url": "https://docs.example.org/spark/development/docs/releases/4.0.0/",
+  "path": "/spark/releases/4.0.0/",
+  "url": "https://docs.example.org/spark/releases/4.0.0/",
   "componentSlug": "spark",
   "artifactKey": "runtime",
   "routeKind": "released",
@@ -93,8 +93,8 @@ pipeline:
     slug: spark
   page:
     kind: release-page
-    path: /spark/development/docs/releases/4.0.0
-    canonicalUrl: https://docs.example.org/spark/development/docs/releases/4.0.0/
+    path: /spark/releases/4.0.0
+    canonicalUrl: https://docs.example.org/spark/releases/4.0.0/
     version:
       kind: released
       label: 4.0.0
@@ -112,7 +112,7 @@ scanning the whole content tree:
   "componentSlug": "spark",
   "artifactKey": "runtime",
   "pageKind": "release-page",
-  "path": "/spark/development/docs/releases/4.0.0",
+  "path": "/spark/releases/4.0.0",
   "sourcePath": "components/runtime/docs/releases/4.0.0/index.md",
   "versionKind": "released",
   "versionLabel": "4.0.0",

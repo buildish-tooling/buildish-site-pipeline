@@ -69,6 +69,48 @@
           "title": "Defaultlocale",
           "type": "boolean"
         },
+        "derivedDescription": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Body-derived page description inferred from authored content during staging, if present.",
+          "title": "Deriveddescription"
+        },
+        "derivedTitle": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Body-derived page title inferred from authored content during staging, if present.",
+          "examples": [
+            "Getting Started"
+          ],
+          "title": "Derivedtitle"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Primary page description extracted or derived during staging, if present.",
+          "title": "Description"
+        },
         "linkTitle": {
           "anyOf": [
             {

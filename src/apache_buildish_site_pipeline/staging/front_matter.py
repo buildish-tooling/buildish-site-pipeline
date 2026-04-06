@@ -17,7 +17,9 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from dataclasses import dataclass
 from pathlib import Path
+import re
 import frontmatter
 
 from apache_buildish_site_pipeline.cli.errors import StageIntegrityError
@@ -61,6 +63,31 @@ from apache_buildish_site_pipeline.staging.publication_paths import (
 from apache_buildish_site_pipeline.staging.worker_protocol import (
     StagedPageContributionWire,
 )
+
+_MARKDOWN_TITLE_EXTENSIONS = frozenset({".md", ".markdown", ".mdx"})
+_ASCIIDOC_TITLE_EXTENSIONS = frozenset({".adoc", ".asciidoc"})
+_MARKDOWN_ATX_TITLE_PATTERN = re.compile(r"^\s{0,3}#\s+(?P<title>.+?)\s*#*\s*$")
+_MARKDOWN_SETEXT_TITLE_PATTERN = re.compile(r"^\s{0,3}=+\s*$")
+_MARKDOWN_ORDERED_LIST_PATTERN = re.compile(r"^\s{0,3}[0-9]+\.\s+")
+_ASCIIDOC_TITLE_PATTERN = re.compile(r"^=\s+(?P<title>.+?)\s*$")
+_ASCIIDOC_ATTRIBUTE_PATTERN = re.compile(r"^:[A-Za-z0-9_-]+:\s*")
+_ASCIIDOC_BLOCK_DELIMITER_PATTERN = re.compile(r"^(?:----|====|____|\+\+\+\+|\.\.\.\.|\*\*\*\*)\s*$")
+
+
+@dataclass(frozen=True, slots=True)
+class _DerivedPageMetadata:
+    """Small body-derived page metadata inferred from authored text content."""
+
+    title: str | None = None
+    description: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class StagedAuthoredPage:
+    """Result of staging one authored page without mutating authored metadata."""
+
+    authored_metadata: Mapping[str, object]
+    derived_metadata: _DerivedPageMetadata
 
 
 def is_page_path(path: Path) -> bool:
@@ -209,19 +236,24 @@ def stage_authored_page(
     source_path: Path,
     destination_path: Path,
     namespace: PipelineFrontMatterNamespace | None,
-) -> Mapping[str, object]:
+) -> StagedAuthoredPage:
     """Copy one page source into the private stage and merge pipeline metadata."""
 
     post = _load_authored_post(source_path=source_path, allow_existing_pipeline=False)
-    metadata = dict(post.metadata)
+    authored_metadata = dict(post.metadata)
+    stored_metadata = dict(authored_metadata)
     if namespace is not None:
-        metadata["pipeline"] = namespace.model_dump(
+        stored_metadata["pipeline"] = namespace.model_dump(
             mode="json", by_alias=True, exclude_none=True
         )
+    derived_metadata = _derive_page_metadata(source_path=source_path, content=post.content)
     destination_path.parent.mkdir(parents=True, exist_ok=True)
-    rendered_post = frontmatter.Post(post.content, **metadata)
+    rendered_post = frontmatter.Post(post.content, **stored_metadata)
     write_utf8_text_file(destination_path, frontmatter.dumps(rendered_post))
-    return metadata
+    return StagedAuthoredPage(
+        authored_metadata=authored_metadata,
+        derived_metadata=derived_metadata,
+    )
 
 
 def finalize_staged_page(
@@ -277,6 +309,197 @@ def authored_link_title(metadata: Mapping[str, object]) -> str | None:
         if isinstance(value, str) and value.strip():
             return value.strip()
     return None
+
+
+def authored_description(metadata: Mapping[str, object]) -> str | None:
+    """Return one authored description string when present."""
+
+    value = metadata.get("description")
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+    return None
+
+
+def effective_page_title(page: StagedAuthoredPage) -> str | None:
+    """Return the best available page title without mutating authored metadata."""
+
+    return authored_title(page.authored_metadata) or page.derived_metadata.title
+
+
+def effective_page_description(page: StagedAuthoredPage) -> str | None:
+    """Return the best available description without mutating authored metadata."""
+
+    return authored_description(page.authored_metadata) or page.derived_metadata.description
+
+
+def _derive_page_metadata(*, source_path: Path, content: str) -> _DerivedPageMetadata:
+    """Return small body-derived metadata for supported authored page formats."""
+
+    suffix = source_path.suffix.lower()
+    if suffix in _MARKDOWN_TITLE_EXTENSIONS:
+        return _derive_markdown_page_metadata(content)
+    if suffix in _ASCIIDOC_TITLE_EXTENSIONS:
+        return _derive_asciidoc_page_metadata(content)
+    return _DerivedPageMetadata()
+
+
+def _derive_markdown_page_metadata(content: str) -> _DerivedPageMetadata:
+    """Infer a title and description from simple Markdown heading conventions."""
+
+    lines = content.splitlines()
+    title: str | None = None
+    body_start = 0
+    in_comment = False
+    in_fence = False
+    for index, line in enumerate(lines[:80]):
+        stripped = line.strip()
+        if in_comment:
+            if "-->" in stripped:
+                in_comment = False
+            continue
+        if stripped.startswith("<!--"):
+            if "-->" not in stripped:
+                in_comment = True
+            continue
+        if stripped.startswith(("```", "~~~")):
+            in_fence = not in_fence
+            continue
+        if in_fence or not stripped:
+            continue
+        title_match = _MARKDOWN_ATX_TITLE_PATTERN.match(line)
+        if title_match is not None:
+            title = _normalize_extracted_text(title_match.group("title"))
+            body_start = index + 1
+            break
+        if (
+            index + 1 < len(lines)
+            and stripped
+            and _MARKDOWN_SETEXT_TITLE_PATTERN.match(lines[index + 1]) is not None
+        ):
+            title = _normalize_extracted_text(stripped)
+            body_start = index + 2
+            break
+    if title is None:
+        return _DerivedPageMetadata()
+    return _DerivedPageMetadata(
+        title=title,
+        description=_first_markdown_paragraph(lines, start_index=body_start),
+    )
+
+
+def _derive_asciidoc_page_metadata(content: str) -> _DerivedPageMetadata:
+    """Infer a title and description from simple AsciiDoc document conventions."""
+
+    lines = content.splitlines()
+    title: str | None = None
+    body_start = 0
+    for index, line in enumerate(lines[:80]):
+        stripped = line.strip()
+        if not stripped or stripped.startswith("//"):
+            continue
+        if _ASCIIDOC_ATTRIBUTE_PATTERN.match(stripped) is not None:
+            continue
+        title_match = _ASCIIDOC_TITLE_PATTERN.match(stripped)
+        if title_match is None:
+            break
+        title = _normalize_extracted_text(title_match.group("title"))
+        body_start = index + 1
+        break
+    if title is None:
+        return _DerivedPageMetadata()
+    return _DerivedPageMetadata(
+        title=title,
+        description=_first_asciidoc_paragraph(lines, start_index=body_start),
+    )
+
+
+def _first_markdown_paragraph(lines: list[str], *, start_index: int) -> str | None:
+    """Return the first plain-text paragraph after the detected Markdown title."""
+
+    in_comment = False
+    in_fence = False
+    paragraph: list[str] = []
+    for line in lines[start_index:]:
+        stripped = line.strip()
+        if in_comment:
+            if "-->" in stripped:
+                in_comment = False
+            continue
+        if stripped.startswith("<!--"):
+            if "-->" not in stripped:
+                in_comment = True
+            continue
+        if stripped.startswith(("```", "~~~")):
+            in_fence = not in_fence
+            paragraph.clear()
+            continue
+        if in_fence:
+            continue
+        if not stripped:
+            if paragraph:
+                return _normalize_extracted_text(" ".join(paragraph))
+            continue
+        if _looks_like_markdown_structure(stripped):
+            if paragraph:
+                return _normalize_extracted_text(" ".join(paragraph))
+            continue
+        paragraph.append(stripped)
+    if not paragraph:
+        return None
+    return _normalize_extracted_text(" ".join(paragraph))
+
+
+def _first_asciidoc_paragraph(lines: list[str], *, start_index: int) -> str | None:
+    """Return the first plain-text paragraph after the detected AsciiDoc title."""
+
+    paragraph: list[str] = []
+    in_block = False
+    active_delimiter: str | None = None
+    for line in lines[start_index:]:
+        stripped = line.strip()
+        if in_block:
+            if stripped == active_delimiter:
+                in_block = False
+                active_delimiter = None
+            continue
+        if not stripped:
+            if paragraph:
+                return _normalize_extracted_text(" ".join(paragraph))
+            continue
+        if stripped.startswith("//") or _ASCIIDOC_ATTRIBUTE_PATTERN.match(stripped) is not None:
+            continue
+        if _ASCIIDOC_BLOCK_DELIMITER_PATTERN.match(stripped) is not None:
+            in_block = True
+            active_delimiter = stripped
+            paragraph.clear()
+            continue
+        if stripped.startswith("[") and stripped.endswith("]"):
+            continue
+        if stripped.startswith("="):
+            if paragraph:
+                return _normalize_extracted_text(" ".join(paragraph))
+            continue
+        paragraph.append(stripped)
+    if not paragraph:
+        return None
+    return _normalize_extracted_text(" ".join(paragraph))
+
+
+def _looks_like_markdown_structure(line: str) -> bool:
+    """Return whether one Markdown line is structural instead of descriptive prose."""
+
+    return (
+        line.startswith(("#", ">", "|", "```", "~~~", "<!--", "- ", "* ", "+ "))
+        or line in {"---", "***", "___"}
+        or _MARKDOWN_ORDERED_LIST_PATTERN.match(line) is not None
+    )
+
+
+def _normalize_extracted_text(value: str) -> str | None:
+    """Collapse internal whitespace and drop empty derived text snippets."""
+
+    normalized = " ".join(value.strip().split())
+    return normalized or None
 
 
 def detect_locale(
@@ -351,6 +574,8 @@ def build_page_front_matter(
         if contribution.locale is not None
         else None,
         translation_key=contribution.translation_key,
+        derived_title=contribution.derived_title,
+        derived_description=contribution.derived_description,
         translations=translations or None,
         component_path=contribution.component_path,
         component_url=component_url,

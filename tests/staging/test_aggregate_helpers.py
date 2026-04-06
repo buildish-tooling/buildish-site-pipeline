@@ -436,6 +436,7 @@ class AggregateHelperTests(unittest.TestCase):
                 build_plan=build_plan,
                 page_contributions=(
                     self._contribution(
+                        description="Install the runtime guide.",
                         source_path=str(source_path),
                         version_context={
                             "provider": {
@@ -451,6 +452,7 @@ class AggregateHelperTests(unittest.TestCase):
             )
 
         self.assertEqual(entries[0].source_path, "components/runtime/docs/guide.md")
+        self.assertEqual(entries[0].description, "Install the runtime guide.")
         self.assertEqual((entries[0].provider, entries[0].external_id), ("github", "123"))
         self.assertEqual(entries[0].version_kind, RecordKind.RELEASED)
         self.assertIsNone(_provider_mapping({"provider": "github"}))

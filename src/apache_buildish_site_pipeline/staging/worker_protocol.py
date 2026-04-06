@@ -190,6 +190,9 @@ class StagedPageContributionWire(SitePipelineBaseModel):
     translation_key: str | None = Field(default=None, description="Shared key that ties translated sibling pages together.", examples=["spark-overview"])
     title: str | None = Field(default=None, description="Primary page title extracted during staging.", examples=["Getting Started"])
     link_title: str | None = Field(default=None, description="Shorter link title extracted during staging, if present.", examples=["Start"])
+    description: str | None = Field(default=None, description="Primary page description extracted or derived during staging, if present.")
+    derived_title: str | None = Field(default=None, description="Body-derived page title inferred from authored content during staging, if present.", examples=["Getting Started"])
+    derived_description: str | None = Field(default=None, description="Body-derived page description inferred from authored content during staging, if present.")
     source_path: str = Field(description="Source file path that produced the staged page.", examples=["docs/runtime/getting-started.md"])
     canonical_url: str | None = Field(default=None, description="Explicit canonical URL for the page when it should differ from `publicUrl`.")
 

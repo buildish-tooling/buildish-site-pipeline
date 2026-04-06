@@ -26,8 +26,9 @@ from apache_buildish_site_pipeline.models.emitted.staged_front_matter import (
 
 from ..front_matter import (
     authored_link_title,
-    authored_title,
     detect_locale,
+    effective_page_description,
+    effective_page_title,
     extract_page_translation_key,
     is_page_path,
     public_page_path,
@@ -169,7 +170,7 @@ def _stage_pages_tree(
         public_url = public_page_url(
             base_publication.url, public_path, route_base_path=base_publication.path
         )
-        metadata = stage_authored_page(
+        staged_page = stage_authored_page(
             source_path=source_path,
             destination_path=destination_path,
             namespace=PipelineFrontMatterNamespace(
@@ -197,9 +198,14 @@ def _stage_pages_tree(
                 version=version,
                 locale=locale,
                 default_locale=default_locale,
-                translation_key=extract_page_translation_key(metadata),
-                title=authored_title(metadata),
-                link_title=authored_link_title(metadata),
+                translation_key=extract_page_translation_key(
+                    staged_page.authored_metadata
+                ),
+                title=effective_page_title(staged_page),
+                link_title=authored_link_title(staged_page.authored_metadata),
+                description=effective_page_description(staged_page),
+                derived_title=staged_page.derived_metadata.title,
+                derived_description=staged_page.derived_metadata.description,
                 source_path=source_path.as_posix(),
                 canonical_url=public_url,
             ),

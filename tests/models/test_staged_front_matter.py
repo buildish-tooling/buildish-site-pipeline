@@ -69,6 +69,8 @@ class StagedFrontMatterTests(unittest.TestCase):
                     "canonicalUrl": "https://docs.example.org/spark/development/sql/",
                     "alternateUrls": ["https://docs.example.org/spark/archive/sql/"],
                     "translationKey": "runtime-sql-overview",
+                    "derivedTitle": "SQL Guide",
+                    "derivedDescription": "Install the package and run the quickstart.",
                     "translations": [
                         {
                             "locale": "de",
@@ -96,6 +98,11 @@ class StagedFrontMatterTests(unittest.TestCase):
         payload = front_matter.model_dump(by_alias=True, exclude_none=True)
         self.assertIn("canonicalUrl", payload["page"])
         self.assertIn("componentUrl", payload["page"])
+        self.assertEqual(payload["page"]["derivedTitle"], "SQL Guide")
+        self.assertEqual(
+            payload["page"]["derivedDescription"],
+            "Install the package and run the quickstart.",
+        )
         self.assertEqual(payload["component"]["latestStable"], "4.0.0")
         self.assertNotIn("component_url", json.dumps(payload))
 

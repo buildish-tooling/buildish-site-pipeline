@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 
+import frontmatter
 from pathlib import Path
 import tempfile
 from types import SimpleNamespace
@@ -95,6 +96,77 @@ class FrontMatterHelpersTests(unittest.TestCase):
         self.assertEqual(authored_title({"linkTitle": "  Quickstart  "}), "Quickstart")
         self.assertEqual(authored_link_title({"link_title": "  Install  "}), "Install")
         self.assertIsNone(authored_link_title({"title": "Guide"}))
+
+    def test_stage_authored_page_extracts_markdown_title_and_description(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            source_path = Path(tempdir) / "guide.md"
+            destination_path = Path(tempdir) / "staged.md"
+            source_path.write_text(
+                "# Getting Started\n\nInstall the package and run the quickstart.\n",
+                encoding="utf-8",
+            )
+
+            staged_page = stage_authored_page(
+                source_path=source_path,
+                destination_path=destination_path,
+                namespace=None,
+            )
+            staged_post = frontmatter.load(destination_path)
+
+            self.assertEqual(staged_page.derived_metadata.title, "Getting Started")
+            self.assertEqual(
+                staged_page.derived_metadata.description,
+                "Install the package and run the quickstart.",
+            )
+            self.assertNotIn("title", staged_post.metadata)
+            self.assertNotIn("description", staged_post.metadata)
+
+    def test_stage_authored_page_extracts_asciidoc_title_and_description(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            source_path = Path(tempdir) / "guide.adoc"
+            destination_path = Path(tempdir) / "staged.adoc"
+            source_path.write_text(
+                "= Getting Started\n\nInstall the package and run the quickstart.\n",
+                encoding="utf-8",
+            )
+
+            staged_page = stage_authored_page(
+                source_path=source_path,
+                destination_path=destination_path,
+                namespace=None,
+            )
+            staged_post = frontmatter.load(destination_path)
+
+            self.assertEqual(staged_page.derived_metadata.title, "Getting Started")
+            self.assertEqual(
+                staged_page.derived_metadata.description,
+                "Install the package and run the quickstart.",
+            )
+            self.assertNotIn("title", staged_post.metadata)
+            self.assertNotIn("description", staged_post.metadata)
+
+    def test_stage_authored_page_preserves_authored_title_and_description(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            source_path = Path(tempdir) / "guide.md"
+            destination_path = Path(tempdir) / "staged.md"
+            source_path.write_text(
+                "---\ntitle: Authored Title\ndescription: Authored description\n---\n# Ignored\n\nBody.\n",
+                encoding="utf-8",
+            )
+
+            staged_page = stage_authored_page(
+                source_path=source_path,
+                destination_path=destination_path,
+                namespace=None,
+            )
+            staged_post = frontmatter.load(destination_path)
+
+            self.assertEqual(staged_page.authored_metadata["title"], "Authored Title")
+            self.assertEqual(
+                staged_page.authored_metadata["description"], "Authored description"
+            )
+            self.assertEqual(staged_post["title"], "Authored Title")
+            self.assertEqual(staged_post["description"], "Authored description")
 
     def test_detect_locale_strips_supported_locale_prefixes(self) -> None:
         locale, is_default, relative = detect_locale(
@@ -244,6 +316,8 @@ class FrontMatterHelpersTests(unittest.TestCase):
                 locale="en",
                 default_locale=True,
                 translation_key="guide.install",
+                derived_title="Guide",
+                derived_description="Install the guide.",
                 version_context={
                     "kind": RecordKind.RELEASED,
                     "label": "4.0.0",
@@ -289,6 +363,8 @@ class FrontMatterHelpersTests(unittest.TestCase):
         )
         self.assertEqual(page.provider.key, "github")
         self.assertEqual(page.provider.external_id, "123")
+        self.assertEqual(page.derived_title, "Guide")
+        self.assertEqual(page.derived_description, "Install the guide.")
 
     def test_build_page_front_matter_requires_public_url(self) -> None:
         with self.assertRaisesRegex(StageIntegrityError, "missing a public URL"):

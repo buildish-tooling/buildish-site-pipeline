@@ -398,6 +398,16 @@ class PipelinePageFrontMatter(SitePipelineBaseModel):
         description="Shared key that ties translated sibling pages together across locales.",
         examples=["spark-overview"],
     )
+    derived_title: NonEmptyString | None = Field(
+        default=None,
+        description="Body-derived page title inferred from authored content when the pipeline can detect one.",
+        examples=["Getting Started"],
+    )
+    derived_description: NonEmptyString | None = Field(
+        default=None,
+        description="Body-derived page description inferred from authored content when the pipeline can detect one.",
+        examples=["Install the package and run the quickstart."],
+    )
     translations: list[TranslationLinkSummary] | None = Field(
         default=None,
         description="Compact links to translated sibling pages in other locales."

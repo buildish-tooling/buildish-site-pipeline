@@ -1608,6 +1608,8 @@ Page-local pipeline metadata injected into staged page front matter.
 | <a id="pipelinepagefrontmatter-locale"></a>`locale` | [NonEmptyString](#nonemptystring) | no | Locale key for this page when it participates in localization. |
 | <a id="pipelinepagefrontmatter-defaultlocale"></a>`defaultLocale` | bool | no | Whether this page represents the default locale within its translation group. |
 | <a id="pipelinepagefrontmatter-translationkey"></a>`translationKey` | [NonEmptyString](#nonemptystring) | no | Shared key that ties translated sibling pages together across locales. |
+| <a id="pipelinepagefrontmatter-derivedtitle"></a>`derivedTitle` | [NonEmptyString](#nonemptystring) | no | Body-derived page title inferred from authored content when the pipeline can detect one. |
+| <a id="pipelinepagefrontmatter-deriveddescription"></a>`derivedDescription` | [NonEmptyString](#nonemptystring) | no | Body-derived page description inferred from authored content when the pipeline can detect one. |
 | <a id="pipelinepagefrontmatter-translations"></a>`translations` | list[[TranslationLinkSummary](#translationlinksummary)] | no | Compact links to translated sibling pages in other locales. |
 | <a id="pipelinepagefrontmatter-componentpath"></a>`componentPath` | [PublicPath](#publicpath) | yes | Public root path for the owning component. |
 | <a id="pipelinepagefrontmatter-componenturl"></a>`componentUrl` | [UrlString](#urlstring) | yes | Absolute URL for the owning component root. |
@@ -1622,6 +1624,8 @@ Page-local pipeline metadata injected into staged page front matter.
 - `path`: Example: `"/spark/4.0.0/docs/getting-started/"`
 - `locale`: Example: `"en"`
 - `translationKey`: Example: `"spark-overview"`
+- `derivedTitle`: Example: `"Getting Started"`
+- `derivedDescription`: Example: `"Install the package and run the quickstart."`
 - `componentPath`: Example: `"/spark/"`
 
 <a id="providerprovenance"></a>
@@ -2471,6 +2475,9 @@ Metadata emitted by one page-staging worker for later aggregation.
 | <a id="stagedpagecontributionwire-translationkey"></a>`translationKey` | str | no | Shared key that ties translated sibling pages together. |
 | <a id="stagedpagecontributionwire-title"></a>`title` | str | no | Primary page title extracted during staging. |
 | <a id="stagedpagecontributionwire-linktitle"></a>`linkTitle` | str | no | Shorter link title extracted during staging, if present. |
+| <a id="stagedpagecontributionwire-description"></a>`description` | str | no | Primary page description extracted or derived during staging, if present. |
+| <a id="stagedpagecontributionwire-derivedtitle"></a>`derivedTitle` | str | no | Body-derived page title inferred from authored content during staging, if present. |
+| <a id="stagedpagecontributionwire-deriveddescription"></a>`derivedDescription` | str | no | Body-derived page description inferred from authored content during staging, if present. |
 | <a id="stagedpagecontributionwire-sourcepath"></a>`sourcePath` | str | yes | Source file path that produced the staged page. |
 | <a id="stagedpagecontributionwire-canonicalurl"></a>`canonicalUrl` | str | no | Explicit canonical URL for the page when it should differ from `publicUrl`. |
 
@@ -2491,6 +2498,7 @@ Metadata emitted by one page-staging worker for later aggregation.
 - `translationKey`: Example: `"spark-overview"`
 - `title`: Example: `"Getting Started"`
 - `linkTitle`: Example: `"Start"`
+- `derivedTitle`: Example: `"Getting Started"`
 - `sourcePath`: Example: `"docs/runtime/getting-started.md"`
 
 <a id="unitcontributionmanifestwire"></a>

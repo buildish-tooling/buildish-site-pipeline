@@ -67,7 +67,7 @@ class ComponentAndSitePageUnitTests(unittest.TestCase):
             (component_docs / "robots.txt").write_text("allow\n", encoding="utf-8")
             (component_assets / "logo.svg").write_text("<svg/>\n", encoding="utf-8")
             (context_docs / "guide.md").write_text(
-                "---\ntitle: Version Guide\n---\nbody\n",
+                "# Version Guide\n\nInstall the runtime guide.\n",
                 encoding="utf-8",
             )
             (context_assets / "download.zip").write_bytes(b"zip")
@@ -150,7 +150,19 @@ class ComponentAndSitePageUnitTests(unittest.TestCase):
             self.assertEqual(manifest.pages[0].translation_key, "home")
             self.assertEqual(manifest.pages[0].title, "Spark Home")
             self.assertEqual(manifest.pages[0].link_title, "Home")
+            self.assertEqual(manifest.pages[1].title, "Version Guide")
+            self.assertEqual(
+                manifest.pages[1].description, "Install the runtime guide."
+            )
+            self.assertEqual(manifest.pages[1].derived_title, "Version Guide")
+            self.assertEqual(
+                manifest.pages[1].derived_description,
+                "Install the runtime guide.",
+            )
             self.assertEqual(manifest.pages[1].version, "4.0.0")
+            staged_post = frontmatter.load(context_stage_root / "guide.md")
+            self.assertNotIn("title", staged_post.metadata)
+            self.assertNotIn("description", staged_post.metadata)
 
     def test_component_worker_stages_component_owned_development_docs_without_artifact(self) -> None:
         with TemporaryDirectory() as temp_dir:
@@ -239,7 +251,7 @@ class ComponentAndSitePageUnitTests(unittest.TestCase):
                 encoding="utf-8",
             )
             (source_root / "guide.adoc").write_text(
-                "---\ntitle: Guide\ntranslationKey: guide\n---\n= Guide\n",
+                "---\ntranslationKey: guide\n---\n= Guide\n\nInstall the guide.\n",
                 encoding="utf-8",
             )
             (source_root / "search.json").write_text("{}\n", encoding="utf-8")
@@ -265,9 +277,10 @@ class ComponentAndSitePageUnitTests(unittest.TestCase):
                 "{}\n",
             )
             staged_post = frontmatter.load(target_root / "guide.adoc")
-            self.assertEqual(staged_post["title"], "Guide")
             self.assertEqual(staged_post["translationKey"], "guide")
-            self.assertEqual(staged_post.content, "= Guide")
+            self.assertEqual(staged_post.content, "= Guide\n\nInstall the guide.")
+            self.assertNotIn("title", staged_post.metadata)
+            self.assertNotIn("description", staged_post.metadata)
 
     def test_require_success_raises_for_worker_failure_payloads(self) -> None:
         with self.assertRaisesRegex(Exception, "boom"):

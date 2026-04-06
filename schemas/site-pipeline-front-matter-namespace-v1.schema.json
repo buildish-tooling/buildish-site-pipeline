@@ -226,6 +226,40 @@
           "description": "Whether this page represents the default locale within its translation group.",
           "title": "Defaultlocale"
         },
+        "derivedDescription": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Body-derived page description inferred from authored content when the pipeline can detect one.",
+          "examples": [
+            "Install the package and run the quickstart."
+          ],
+          "title": "Deriveddescription"
+        },
+        "derivedTitle": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Body-derived page title inferred from authored content when the pipeline can detect one.",
+          "examples": [
+            "Getting Started"
+          ],
+          "title": "Derivedtitle"
+        },
         "kind": {
           "description": "Short page kind label used by renderers to distinguish landing pages, docs pages, release notes, and similar page families.",
           "examples": [

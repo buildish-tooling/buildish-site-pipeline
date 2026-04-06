@@ -931,6 +931,7 @@ def _build_content_index_entries(
                 or contribution.link_title
                 or contribution.public_path,
                 link_title=contribution.link_title,
+                description=contribution.description,
                 path=contribution.public_path,
                 url=page_url,
                 canonical_url=contribution.canonical_url,

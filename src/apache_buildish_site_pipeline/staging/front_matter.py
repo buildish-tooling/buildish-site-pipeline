@@ -101,7 +101,8 @@ def build_component_front_matter(
     publication = component.publication
     return PipelineComponentFrontMatter(
         slug=component.slug,
-        display_name=component.authored.display_name,
+        display_name=_component_display_name(component),
+        latest_stable=_component_latest_stable(component),
         publication=ResolvedPublication(
             origin=ResolvedOrigin(
                 key=publication.origin.key,
@@ -424,6 +425,24 @@ def _load_authored_post(
 def _artifact_display_name(artifact: ResolvedArtifactConfig) -> str | None:
     display_name = getattr(artifact.authored, "display_name", None)
     return display_name if isinstance(display_name, str) else None
+
+
+def _component_display_name(component: ResolvedComponentConfig) -> str | None:
+    display_name = getattr(component.authored, "display_name", None)
+    if isinstance(display_name, str):
+        return display_name
+
+    repository_document = getattr(component, "repository_document", None)
+    repository_component = getattr(repository_document, "component", None)
+    repository_display_name = getattr(repository_component, "display_name", None)
+    return repository_display_name if isinstance(repository_display_name, str) else None
+
+
+def _component_latest_stable(component: ResolvedComponentConfig) -> str | None:
+    repository_document = getattr(component, "repository_document", None)
+    repository_lifecycle = getattr(repository_document, "lifecycle", None)
+    latest_stable = getattr(repository_lifecycle, "latest_stable", None)
+    return latest_stable if isinstance(latest_stable, str) else None
 
 
 def _artifact_lifecycle(

@@ -31,6 +31,9 @@ from apache_buildish_site_pipeline.models.authored.site_catalog import (
     ReleaseLineConfig,
     SupportWindow,
 )
+from apache_buildish_site_pipeline.models.authored.component_metadata import (
+    SupportStatusDefinition,
+)
 from apache_buildish_site_pipeline.models.enums import (
     IndexBehavior,
     PublicationState,
@@ -47,7 +50,9 @@ from apache_buildish_site_pipeline.staging.aggregates import (
     _artifact_for_context,
     _build_candidate_entries,
     _build_compatibility_entries,
+    _build_components_entries,
     _build_content_index_entries,
+    _build_artifacts_entries,
     _build_ref_entries,
     _build_mount_entries,
     _build_redirect_resolution_index,
@@ -251,6 +256,64 @@ class AggregateHelperTests(unittest.TestCase):
         entries = _build_ref_entries(build_plan)
 
         self.assertEqual(entries, [])
+
+    def test_component_and_artifact_entries_preserve_repository_metadata(self) -> None:
+        publication = SimpleNamespace(
+            origin=SimpleNamespace(
+                key="docs",
+                base_url="https://docs.example.org",
+                hostname="docs.example.org",
+            ),
+            component_path="/spark/",
+            development_path="/spark/development/",
+            docs_path="/spark/development/",
+            assets_path="/spark/assets/",
+            component_url="https://docs.example.org/spark/",
+            development_url="https://docs.example.org/spark/development/",
+            docs_url="https://docs.example.org/spark/development/",
+            assets_url="https://docs.example.org/spark/assets/",
+        )
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            component = SimpleNamespace(
+                slug="spark",
+                authored=SimpleNamespace(display_name=None, weight=100, group="data-platform"),
+                repository_document=SimpleNamespace(
+                    component=SimpleNamespace(display_name="Apache Spark"),
+                    lifecycle=SimpleNamespace(latest_stable="4.0.0"),
+                ),
+                publication=publication,
+                artifacts=(
+                    SimpleNamespace(
+                        key="runtime",
+                        authored=SimpleNamespace(display_name="Runtime", docs_root=Path("docs/runtime")),
+                        source_binding=SimpleNamespace(key="apache-spark"),
+                        docs_root=workspace_root / "generated/runtime-docs",
+                        versioning=None,
+                        lifecycle=SimpleNamespace(
+                            latest_stable="4.0.0",
+                            support_policy_url="https://docs.example.org/support",
+                            release_lines=None,
+                            releases=None,
+                        ),
+                        support_status_vocabulary={
+                            "active": SupportStatusDefinition(display_name="Active", order=10),
+                        },
+                    ),
+                ),
+            )
+            build_plan = SimpleNamespace(
+                workspace_root=workspace_root,
+                site=SimpleNamespace(components=(component,)),
+                selected_versions=(),
+            )
+
+            component_entries = _build_components_entries(build_plan)
+            artifact_entries = _build_artifacts_entries(build_plan)
+
+        self.assertEqual(component_entries[0].display_name, "Apache Spark")
+        self.assertEqual(component_entries[0].latest_stable, "4.0.0")
+        self.assertEqual(artifact_entries[0].support_status_vocabulary["active"].display_name, "Active")
 
     def test_candidate_entries_and_latest_summaries_choose_highest_signal_context(self) -> None:
         candidate_one = self._context(

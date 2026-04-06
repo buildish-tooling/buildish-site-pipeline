@@ -368,6 +368,7 @@ def _front_matter_namespace_example_document() -> PipelineFrontMatterNamespace:
             "component": {
                 "slug": "spark",
                 "displayName": "Apache Spark",
+                "latestStable": "4.0.0",
                 "publication": {
                     "origin": {
                         "key": "archive",

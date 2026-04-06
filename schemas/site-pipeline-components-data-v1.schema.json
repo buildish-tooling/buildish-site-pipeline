@@ -532,6 +532,23 @@
             ],
             "title": "Group"
           },
+          "latestStable": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Most recent stable version recommended for the component as a whole when one shared release line is enough.",
+            "examples": [
+              "4.0.1"
+            ],
+            "title": "Lateststable"
+          },
           "originKey": {
             "description": "Origin key selected for this component's primary published route set.",
             "examples": [

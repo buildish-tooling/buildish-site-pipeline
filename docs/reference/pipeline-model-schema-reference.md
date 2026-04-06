@@ -1527,6 +1527,7 @@ Component-level pipeline metadata injected into staged page front matter.
 | --- | --- | --- | --- |
 | <a id="pipelinecomponentfrontmatter-slug"></a>`slug` | [Slug](#slug) | yes | Stable component slug for the owning component. |
 | <a id="pipelinecomponentfrontmatter-displayname"></a>`displayName` | [NonEmptyString](#nonemptystring) | no | Human-readable component name shown in page chrome or navigation. |
+| <a id="pipelinecomponentfrontmatter-lateststable"></a>`latestStable` | [VersionString](#versionstring) | no | Most recent stable version recommended for the component as a whole when one shared release line is enough. |
 | <a id="pipelinecomponentfrontmatter-publication"></a>`publication` | [ResolvedPublication](#resolvedpublication) | yes | Resolved publication roots and URLs for the owning component. |
 | <a id="pipelinecomponentfrontmatter-artifacts"></a>`artifacts` | list[[ArtifactFrontMatterSummary](#artifactfrontmattersummary)] | no | Compact artifact summaries that pages can use for version navigation or page chrome. |
 
@@ -1534,6 +1535,7 @@ Component-level pipeline metadata injected into staged page front matter.
 
 - `slug`: Example: `"spark"`
 - `displayName`: Example: `"Apache Spark"`
+- `latestStable`: Example: `"4.0.1"`
 
 <a id="pipelinefrontmatternamespace"></a>
 ### PipelineFrontMatterNamespace
@@ -1555,6 +1557,7 @@ Reserved top-level front matter namespace that the pipeline injects into staged 
 component:
   slug: spark
   displayName: Apache Spark
+  latestStable: 4.0.0
   publication:
     origin:
       key: archive
@@ -1950,6 +1953,7 @@ Entry in `data/components.json`.
 | --- | --- | --- | --- |
 | <a id="componentsdataentry-slug"></a>`slug` | [Slug](#slug) | yes | Stable component slug used by routes, aggregates, and typed references. |
 | <a id="componentsdataentry-displayname"></a>`displayName` | [NonEmptyString](#nonemptystring) | no | Human-readable component name shown in navigation, listings, and generated metadata. |
+| <a id="componentsdataentry-lateststable"></a>`latestStable` | [VersionString](#versionstring) | no | Most recent stable version recommended for the component as a whole when one shared release line is enough. |
 | <a id="componentsdataentry-weight"></a>`weight` | int | no | Optional ordering hint copied from the authored catalog for consumer-rendered component lists. |
 | <a id="componentsdataentry-group"></a>`group` | [Identifier](#identifier) | no | Optional group key copied from the authored catalog to support grouped rendering or filtering. |
 | <a id="componentsdataentry-originkey"></a>`originKey` | [OriginKey](#originkey) | yes | Origin key selected for this component's primary published route set. |
@@ -1961,6 +1965,7 @@ Entry in `data/components.json`.
 
 - `slug`: Example: `"spark"`
 - `displayName`: Example: `"Apache Spark"`
+- `latestStable`: Example: `"4.0.1"`
 - `group`: Example: `"data-platform"`
 - `originKey`: Example: `"archive"`
 - `providerKeys`: Example: `["github-releases"]`

@@ -22,6 +22,7 @@ import unittest
 from pydantic import ValidationError
 
 from apache_buildish_site_pipeline.models.emitted.aggregates import (
+    ArtifactsDataEntry,
     CompatibilityAggregateEntry,
     ComponentsDataEntry,
     ContentIndexEntry,
@@ -38,7 +39,7 @@ from apache_buildish_site_pipeline.models.emitted.aggregates import (
 class AggregateModelTests(unittest.TestCase):
     """Validate the public staged aggregate entry contract."""
 
-    def test_serializes_valid_component_and_provider_entries(self) -> None:
+    def test_serializes_valid_component_artifact_and_provider_entries(self) -> None:
         provider = ProvidersDataEntry.model_validate(
             {
                 "key": "github-releases",
@@ -52,6 +53,8 @@ class AggregateModelTests(unittest.TestCase):
         component = ComponentsDataEntry.model_validate(
             {
                 "slug": "spark",
+                "displayName": "Apache Spark",
+                "latestStable": "4.0.0",
                 "weight": 100,
                 "originKey": "docs",
                 "publication": {
@@ -78,12 +81,31 @@ class AggregateModelTests(unittest.TestCase):
             by_alias=True,
             by_name=False,
         )
+        artifact = ArtifactsDataEntry.model_validate(
+            {
+                "componentSlug": "spark",
+                "key": "runtime",
+                "displayName": "Runtime",
+                "latestStable": "4.0.0",
+                "supportStatusVocabulary": {
+                    "active": {"displayName": "Active", "order": 10}
+                },
+            },
+            by_alias=True,
+            by_name=False,
+        )
 
         provider_payload = provider.model_dump(by_alias=True, exclude_none=True)
         component_payload = component.model_dump(by_alias=True, exclude_none=True)
+        artifact_payload = artifact.model_dump(by_alias=True, exclude_none=True)
         self.assertIn("fetchedAt", provider_payload)
         self.assertIn("providerKeys", component_payload)
         self.assertEqual(component_payload["weight"], 100)
+        self.assertEqual(component_payload["latestStable"], "4.0.0")
+        self.assertEqual(
+            artifact_payload["supportStatusVocabulary"]["active"]["displayName"],
+            "Active",
+        )
         self.assertNotIn("provider_keys", json.dumps(component_payload))
 
     def test_rejects_inconsistent_origin_redirect_and_ref_kinds(self) -> None:

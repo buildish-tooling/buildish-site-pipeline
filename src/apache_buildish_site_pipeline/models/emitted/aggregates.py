@@ -117,6 +117,11 @@ class ComponentsDataEntry(SitePipelineBaseModel):
         description="Human-readable component name shown in navigation, listings, and generated metadata.",
         examples=["Apache Spark"],
     )
+    latest_stable: VersionString | None = Field(
+        default=None,
+        description="Most recent stable version recommended for the component as a whole when one shared release line is enough.",
+        examples=["4.0.1"],
+    )
     weight: int | None = Field(
         default=None,
         strict=True,

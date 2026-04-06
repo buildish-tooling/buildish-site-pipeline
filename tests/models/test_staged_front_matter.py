@@ -40,6 +40,7 @@ class StagedFrontMatterTests(unittest.TestCase):
             {
                 "component": {
                     "slug": "spark",
+                    "latestStable": "4.0.0",
                     "publication": {
                         "origin": {
                             "key": "docs",
@@ -95,6 +96,7 @@ class StagedFrontMatterTests(unittest.TestCase):
         payload = front_matter.model_dump(by_alias=True, exclude_none=True)
         self.assertIn("canonicalUrl", payload["page"])
         self.assertIn("componentUrl", payload["page"])
+        self.assertEqual(payload["component"]["latestStable"], "4.0.0")
         self.assertNotIn("component_url", json.dumps(payload))
 
     def test_rejects_mismatched_origin_hostname(self) -> None:

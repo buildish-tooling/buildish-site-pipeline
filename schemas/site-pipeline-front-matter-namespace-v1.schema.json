@@ -108,6 +108,23 @@
           ],
           "title": "Displayname"
         },
+        "latestStable": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Most recent stable version recommended for the component as a whole when one shared release line is enough.",
+          "examples": [
+            "4.0.1"
+          ],
+          "title": "Lateststable"
+        },
         "publication": {
           "$ref": "#/$defs/ResolvedPublication",
           "description": "Resolved publication roots and URLs for the owning component."
@@ -1175,6 +1192,7 @@
     {
       "component": {
         "displayName": "Apache Spark",
+        "latestStable": "4.0.0",
         "publication": {
           "origin": {
             "baseUrl": "https://archive.apache.org/dist/spark",

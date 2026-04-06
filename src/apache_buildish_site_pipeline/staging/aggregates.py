@@ -341,23 +341,23 @@ def _build_components_entries(
             )
     entries = []
     for component in build_plan.site.components:
+        component_front_matter = build_component_front_matter(
+            component, build_plan.selected_versions
+        )
         entries.append(
             ComponentsDataEntry(
                 slug=component.slug,
-                display_name=component.authored.display_name,
+                display_name=component_front_matter.display_name,
+                latest_stable=component_front_matter.latest_stable,
                 weight=component.authored.weight,
                 group=component.authored.group,
                 origin_key=component.publication.origin.key,
-                publication=build_component_front_matter(
-                    component, build_plan.selected_versions
-                ).publication,
+                publication=component_front_matter.publication,
                 provider_keys=sorted(
                     provider_keys_by_component.get(component.slug) or ()
                 )
                 or None,
-                artifacts=build_component_front_matter(
-                    component, build_plan.selected_versions
-                ).artifacts,
+                artifacts=component_front_matter.artifacts,
             ),
         )
     return entries
@@ -437,9 +437,7 @@ def _build_artifacts_entries(
                         _ref_entry(component, context) for context in named_refs
                     ]
                     or None,
-                    support_status_vocabulary=artifact.lifecycle.support_status_vocabulary
-                    if artifact.lifecycle is not None
-                    else None,
+                    support_status_vocabulary=artifact.support_status_vocabulary or None,
                     support_policy_url=artifact.lifecycle.support_policy_url
                     if artifact.lifecycle is not None
                     else None,

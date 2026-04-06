@@ -189,7 +189,42 @@ class FrontMatterHelpersTests(unittest.TestCase):
         )
 
         self.assertEqual(front_matter.slug, "spark")
+        self.assertEqual(front_matter.display_name, "Spark")
         self.assertIsNone(front_matter.artifacts[0].release_lines[0].head_ref)
+
+    def test_build_component_front_matter_falls_back_to_repository_display_name(self) -> None:
+        component = SimpleNamespace(
+            slug="spark",
+            authored=SimpleNamespace(display_name=None),
+            repository_document=SimpleNamespace(
+                component=SimpleNamespace(display_name="Apache Spark"),
+                lifecycle=SimpleNamespace(latest_stable="4.0.0"),
+            ),
+            artifacts=(),
+            publication=SimpleNamespace(
+                origin=SimpleNamespace(
+                    key="docs",
+                    base_url="https://docs.example.org",
+                    hostname="docs.example.org",
+                ),
+                component_path="/spark/",
+                development_path="/spark/main/",
+                docs_path="/spark/docs/",
+                assets_path="/spark/assets/",
+                component_url="https://docs.example.org/spark/",
+                development_url="https://docs.example.org/spark/main/",
+                docs_url="https://docs.example.org/spark/docs/",
+                assets_url="https://docs.example.org/spark/assets/",
+            ),
+        )
+
+        front_matter = build_component_front_matter(
+            component=component,
+            selected_versions=(),
+        )
+
+        self.assertEqual(front_matter.display_name, "Apache Spark")
+        self.assertEqual(front_matter.latest_stable, "4.0.0")
 
     def test_build_page_front_matter_populates_alternate_urls_and_provider_provenance(self) -> None:
         page = build_page_front_matter(

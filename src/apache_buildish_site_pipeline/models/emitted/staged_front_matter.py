@@ -442,6 +442,11 @@ class PipelineComponentFrontMatter(SitePipelineBaseModel):
         description="Human-readable component name shown in page chrome or navigation.",
         examples=["Apache Spark"],
     )
+    latest_stable: VersionString | None = Field(
+        default=None,
+        description="Most recent stable version recommended for the component as a whole when one shared release line is enough.",
+        examples=["4.0.1"],
+    )
     publication: ResolvedPublication = Field(
         description="Resolved publication roots and URLs for the owning component."
     )

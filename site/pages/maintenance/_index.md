@@ -30,3 +30,6 @@ expectations.
   should stay visible during nearby implementation work
 - [user-facing-docs-strategy.md](user-facing-docs-strategy.md) defines the
   target shape of the public documentation site
+- [pipeline-model-reference-generation.md](pipeline-model-reference-generation.md)
+  records how model docstrings and field metadata should become the single
+  source of truth for JSON Schema and schema reference output

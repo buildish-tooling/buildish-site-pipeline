@@ -48,6 +48,7 @@ from apache_buildish_site_pipeline.staging.aggregates import (
     _build_candidate_entries,
     _build_compatibility_entries,
     _build_content_index_entries,
+    _build_ref_entries,
     _build_mount_entries,
     _build_redirect_resolution_index,
     _build_route_entries,
@@ -231,6 +232,25 @@ class AggregateHelperTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(StageIntegrityError, "Unknown publication origin"):
             _required_origin({}, "missing")
+
+    def test_build_ref_entries_skips_component_owned_development_contexts_without_artifacts(self) -> None:
+        build_plan = SimpleNamespace(
+            site=SimpleNamespace(
+                components=(SimpleNamespace(slug="spark"),),
+            ),
+            selected_versions=(
+                self._context(
+                    kind=RecordKind.DEVELOPMENT,
+                    artifact_key=None,
+                    ref=None,
+                    provider_record=None,
+                ),
+            ),
+        )
+
+        entries = _build_ref_entries(build_plan)
+
+        self.assertEqual(entries, [])
 
     def test_candidate_entries_and_latest_summaries_choose_highest_signal_context(self) -> None:
         candidate_one = self._context(

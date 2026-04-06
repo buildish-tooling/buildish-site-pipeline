@@ -31,6 +31,7 @@ from ..models.emitted.planning_stage_contract import (
     StageManifestV1,
     StageRelativePath,
 )
+from ..path_trust import path_resolves_through_symlink
 from .ownership import OwnedUnit
 from .worker_protocol import UnitContributionManifestWire
 
@@ -242,19 +243,10 @@ def _resolve_stage_file(*, stage_root: Path, stage_relative_path: str) -> Path:
     if (
         not candidate.is_relative_to(normalized_stage_root)
         or not candidate.is_file()
-        or _contains_symlink(raw_candidate)
+        or path_resolves_through_symlink(raw_candidate)
     ):
         raise ValueError(f"Invalid retained stage metadata path: {stage_relative_path}")
     return candidate
-
-
-def _contains_symlink(candidate: Path) -> bool:
-    current = candidate
-    while current.name:
-        if current.is_symlink():
-            return True
-        current = current.parent
-    return False
 
 
 def _coordinator_owned_stage_paths(

@@ -26,6 +26,7 @@ from apache_buildish_site_pipeline.cli.errors import (
     RetainedStageError,
     StageIntegrityError,
 )
+from apache_buildish_site_pipeline.path_trust import path_resolves_through_symlink
 from apache_buildish_site_pipeline.models.enums import DocumentFormat
 from apache_buildish_site_pipeline.models.loading import load_stage_manifest
 
@@ -84,7 +85,7 @@ def validate_visible_stage_target_path(stage_root: Path) -> None:
         stage_root if stage_root.is_absolute() else stage_root.absolute()
     )
     parent_path = absolute_stage_root.parent
-    if _contains_symlink(parent_path):
+    if path_resolves_through_symlink(parent_path):
         raise StageIntegrityError(
             f"Stage root parent directory resolves through a symlink: {parent_path}"
         )
@@ -301,17 +302,6 @@ def _validate_publication_filesystems(
 
 def _stat_device_id(path: Path) -> int:
     return path.stat().st_dev
-
-
-def _contains_symlink(path: Path) -> bool:
-    current = Path(path.anchor) if path.is_absolute() else Path()
-    for part in path.parts:
-        if current == Path(path.anchor) and part == path.anchor:
-            continue
-        current = current / part if current != Path() else Path(part)
-        if current.exists() and current.is_symlink():
-            return True
-    return False
 
 
 def _replace_stage_root(

@@ -25,6 +25,7 @@ from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import
     CheckReportV1,
     ResolvedMaterializationReportV1,
 )
+from apache_buildish_site_pipeline.path_trust import path_resolves_through_symlink
 
 from .contract import (
     ReportFormat,
@@ -228,7 +229,7 @@ def _validate_safe_output_path(
         raise InvocationError(
             f"{path_label} parent directory does not exist: {parent_path}"
         )
-    if _contains_symlink(parent_path):
+    if path_resolves_through_symlink(parent_path):
         raise InvocationError(
             f"{path_label} parent directory resolves through a symlink: {parent_path}"
         )
@@ -252,21 +253,10 @@ def _absolute_path(*, cwd: Path, raw_path: Path) -> Path:
     return raw_path if raw_path.is_absolute() else cwd / raw_path
 
 
-def _contains_symlink(path: Path) -> bool:
-    current = Path(path.anchor) if path.is_absolute() else Path()
-    for part in path.parts:
-        if current == Path(path.anchor) and part == path.anchor:
-            continue
-        current = current / part if current != Path() else Path(part)
-        if current.exists() and current.is_symlink():
-            return True
-    return False
-
-
 def _write_report_file(*, path: Path, content: str) -> None:
     absolute_path = _absolute_path(cwd=Path.cwd(), raw_path=path)
     parent_path = absolute_path.parent
-    if _contains_symlink(parent_path):
+    if path_resolves_through_symlink(parent_path):
         raise ReportWriteError(
             f"Report output parent directory resolves through a symlink: {parent_path}"
         )

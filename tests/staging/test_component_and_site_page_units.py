@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 
+import frontmatter
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -237,6 +238,10 @@ class ComponentAndSitePageUnitTests(unittest.TestCase):
                 "---\ntitle: Site Home\n---\nbody\n",
                 encoding="utf-8",
             )
+            (source_root / "guide.adoc").write_text(
+                "---\ntitle: Guide\ntranslationKey: guide\n---\n= Guide\n",
+                encoding="utf-8",
+            )
             (source_root / "search.json").write_text("{}\n", encoding="utf-8")
 
             result = execute_worker_spec(
@@ -251,13 +256,18 @@ class ComponentAndSitePageUnitTests(unittest.TestCase):
                 )
             )
             self.assertTrue(result.succeeded)
-            self.assertEqual(result.files_written, 2)
-            self.assertEqual(result.page_files_written, 1)
+            self.assertEqual(result.files_written, 3)
+            self.assertEqual(result.page_files_written, 2)
             self.assertTrue((target_root / "index.md").is_file())
+            self.assertTrue((target_root / "guide.adoc").is_file())
             self.assertEqual(
                 (target_root / "search.json").read_text(encoding="utf-8"),
                 "{}\n",
             )
+            staged_post = frontmatter.load(target_root / "guide.adoc")
+            self.assertEqual(staged_post["title"], "Guide")
+            self.assertEqual(staged_post["translationKey"], "guide")
+            self.assertEqual(staged_post.content, "= Guide")
 
     def test_require_success_raises_for_worker_failure_payloads(self) -> None:
         with self.assertRaisesRegex(Exception, "boom"):

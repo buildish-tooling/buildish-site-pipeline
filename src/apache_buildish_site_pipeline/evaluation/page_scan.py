@@ -23,6 +23,7 @@ from apache_buildish_site_pipeline.models.enums import (
     MaterializationInputKind,
     MaterializationStatus,
 )
+from apache_buildish_site_pipeline.page_support import is_supported_page_path
 from apache_buildish_site_pipeline.models.loading import LoadingError, load_yaml_mapping
 from apache_buildish_site_pipeline.models.authored.page_metadata import (
     PageTranslationMetadata,
@@ -37,7 +38,6 @@ from . import diagnostic_codes
 from .collector import DiagnosticCollector
 from .types import PageScanResult, ScannedPage
 
-_PAGE_EXTENSIONS = {".htm", ".html", ".md", ".markdown", ".mdx"}
 _PAGE_INPUT_KINDS = {
     MaterializationInputKind.SITE_PAGES,
     MaterializationInputKind.DEVELOPMENT,
@@ -109,7 +109,7 @@ def _scan_local_input(
             if entry.is_dir():
                 stack.append(entry)
                 continue
-            if entry.suffix.lower() not in _PAGE_EXTENSIONS:
+            if not is_supported_page_path(entry):
                 continue
             pages.append(
                 _scan_page_file(

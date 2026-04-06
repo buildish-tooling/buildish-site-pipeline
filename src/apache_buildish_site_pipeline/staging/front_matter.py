@@ -29,6 +29,10 @@ from apache_buildish_site_pipeline.models.authored.site_catalog import (
 from apache_buildish_site_pipeline.models.authored.page_metadata import (
     PageTranslationMetadata,
 )
+from apache_buildish_site_pipeline.page_support import (
+    is_supported_page_path,
+    strips_suffix_in_pretty_route,
+)
 from apache_buildish_site_pipeline.models.emitted.staged_front_matter import (
     ArtifactFrontMatterSummary,
     PipelineComponentFrontMatter,
@@ -58,13 +62,11 @@ from apache_buildish_site_pipeline.staging.worker_protocol import (
     StagedPageContributionWire,
 )
 
-_PAGE_EXTENSIONS = {".md", ".markdown", ".mdx", ".html", ".htm"}
-
 
 def is_page_path(path: Path) -> bool:
     """Return whether one source file should be treated as a content page."""
 
-    return path.suffix.lower() in _PAGE_EXTENSIONS
+    return is_supported_page_path(path)
 
 
 def build_component_front_matter(
@@ -384,7 +386,7 @@ def public_page_path(base_path: str, relative_path: Path) -> str:
     if stem == "index":
         parent = relative_path.parent.as_posix().strip(".")
         return _join_public_path(base_path, parent)
-    if relative_path.suffix.lower() in {".md", ".markdown", ".mdx"}:
+    if strips_suffix_in_pretty_route(relative_path):
         without_suffix = relative_path.with_suffix("").as_posix().strip("/")
         return _join_public_path(base_path, without_suffix)
     return _join_public_path(base_path, normalized_relative)

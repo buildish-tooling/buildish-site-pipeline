@@ -1,5 +1,4 @@
 ---
-title: How to integrate Site Pipeline with Hugo
 weight: 38
 ---
 

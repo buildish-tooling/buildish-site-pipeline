@@ -67,6 +67,20 @@ The serialization contract is:
 Optional YAML mirrors for aggregate metadata are outside the core contract. When
 they exist, `manifest.json` and `data/*.json` remain authoritative.
 
+## Page input detection and routed paths
+
+Page input support is extension allow-list based.
+
+The pipeline currently treats files ending in `.md`, `.markdown`, `.mdx`,
+`.htm`, `.html`, `.adoc`, or `.asciidoc` as authored page inputs. Those files
+are handled generically as text content plus optional YAML front matter. The
+pipeline does not validate renderer-specific Markdown or AsciiDoc syntax.
+
+For routed public paths, `index.<supported-page-extension>` is treated as the
+directory index page. For non-index pages, the pipeline drops the suffix for
+`.md`, `.markdown`, `.mdx`, `.adoc`, and `.asciidoc`, while `.htm` and `.html`
+keep their filename suffix in the routed public path.
+
 ## Front matter rules
 
 Authored page front matter remains authored metadata.

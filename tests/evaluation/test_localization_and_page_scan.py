@@ -142,6 +142,11 @@ class LocalizationAndPageScanTests(unittest.TestCase):
             docs_root = root / "docs"
             docs_root.mkdir()
             (docs_root / "Guide.MDX").write_text("body\n", encoding="utf-8")
+            (docs_root / "Install.adoc").write_text(
+                "---\ntranslationKey: install\n---\n= Install\n",
+                encoding="utf-8",
+            )
+            (docs_root / "Reference.asciidoc").write_text("= Reference\n", encoding="utf-8")
             (docs_root / "ignored.txt").write_text("body\n", encoding="utf-8")
             assets_root = root / "assets"
             assets_root.mkdir()
@@ -169,7 +174,19 @@ class LocalizationAndPageScanTests(unittest.TestCase):
 
         self.assertEqual(
             scanned.pages,
-            (self._page("Guide.MDX", None, input_id="development:spark:runtime"),),
+            (
+                self._page("Guide.MDX", None, input_id="development:spark:runtime"),
+                self._page(
+                    "Install.adoc",
+                    "install",
+                    input_id="development:spark:runtime",
+                ),
+                self._page(
+                    "Reference.asciidoc",
+                    None,
+                    input_id="development:spark:runtime",
+                ),
+            ),
         )
 
     def test_validate_page_scan_reports_root_escape_and_read_failures(self) -> None:

@@ -75,6 +75,8 @@ class FrontMatterHelpersTests(unittest.TestCase):
 
     def test_is_page_path_recognizes_supported_extensions_case_insensitively(self) -> None:
         self.assertTrue(is_page_path(Path("guide.MD")))
+        self.assertTrue(is_page_path(Path("guide.aDoC")))
+        self.assertTrue(is_page_path(Path("guide.AsciiDoc")))
         self.assertTrue(is_page_path(Path("guide.htm")))
         self.assertFalse(is_page_path(Path("logo.svg")))
 
@@ -146,6 +148,16 @@ class FrontMatterHelpersTests(unittest.TestCase):
                 route_base_path="/spark/docs/",
             ),
             "https://docs.example.org/spark/docs/guide",
+        )
+
+    def test_public_page_path_treats_asciidoc_like_markdown_for_pretty_routes(self) -> None:
+        self.assertEqual(
+            public_page_path("/spark/docs/", Path("guide/install.adoc")),
+            "/spark/docs/guide/install",
+        )
+        self.assertEqual(
+            public_page_path("/spark/docs/", Path("guide/reference.asciidoc")),
+            "/spark/docs/guide/reference",
         )
 
     def test_build_component_front_matter_ignores_selected_versions_from_other_components(self) -> None:

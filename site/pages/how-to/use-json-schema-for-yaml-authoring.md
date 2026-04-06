@@ -35,7 +35,7 @@ The generated files now cover:
 - authored inputs such as `site/catalog.yaml`, `site/component.yaml`, and `site/provider-snapshot.json`
 - machine-readable CLI reports such as the materialization, check, and stage-run JSON reports
 - staged output contracts such as `manifest.json`, `data/*.json`, and `data/_pipeline/*.json`
-- the reserved `pipeline` front matter namespace embedded into staged Markdown pages
+- the reserved `pipeline` front matter namespace embedded into staged page files
 
 Examples:
 

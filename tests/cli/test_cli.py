@@ -699,6 +699,58 @@ class CliTests(unittest.TestCase):
         self.assertIn("32 watch-root ceiling", report["diagnostics"][-1]["message"])
         self.assertIn("Initial watch cycle failed", stderr.getvalue())
 
+    def test_watch_stages_component_owned_latest_without_artifacts(self) -> None:
+        with _workspace(with_content_file=True, topology="component_only_latest") as workspace_root:
+            report_path = workspace_root / "watch-report.json"
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            with mock.patch(
+                "apache_buildish_site_pipeline.commands.watch._open_watch_event_stream",
+                new=_fake_watch_event_stream_factory(responses=[(True, None)]),
+            ):
+                with _cwd(workspace_root):
+                    exit_code = _run(
+                        argv=[
+                            "watch",
+                            "--quiet",
+                            "--report-format",
+                            "json",
+                            "--report-schema-version",
+                            "1",
+                            "--report-output",
+                            str(report_path),
+                        ],
+                        stdout=stdout,
+                        stderr=stderr,
+                    )
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+            stage_root = workspace_root / "site/.stage"
+            routes = json.loads((stage_root / "data/routes.json").read_text(encoding="utf-8"))["items"]
+            content_index = json.loads((stage_root / "data/content-index.json").read_text(encoding="utf-8"))["items"]
+            staged_latest_exists = (
+                stage_root / "content/components/site-pipeline/contexts/development/index.md"
+            ).is_file()
+            latest_route = next(
+                entry
+                for entry in routes
+                if entry["targetId"] == "development:site-pipeline:component"
+            )
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(report["command"], "watch")
+        self.assertEqual(report["cycle"], 1)
+        self.assertTrue(report["summary"]["succeeded"])
+        self.assertTrue(report["summary"]["wroteStage"])
+        self.assertTrue(report["summary"]["stageUsable"])
+        self.assertEqual(latest_route["path"], "/components/site-pipeline/latest/")
+        self.assertIn(
+            "/components/site-pipeline/latest",
+            {entry["path"] for entry in content_index},
+        )
+        self.assertTrue(staged_latest_exists)
+        self.assertEqual(stdout.getvalue(), "")
+        self.assertEqual(stderr.getvalue(), "")
+
     def test_watch_retains_last_trusted_stage_on_later_cycle_failure(self) -> None:
         with _workspace(with_content_file=True) as workspace_root:
             report_path = workspace_root / "watch-report.json"

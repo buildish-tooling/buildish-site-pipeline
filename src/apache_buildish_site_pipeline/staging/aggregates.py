@@ -751,7 +751,7 @@ def _build_release_entries(
                 external_id=provider_record.external_id,
                 external_url=provider_record.external_url,
                 component_slug=context.component_slug,
-                artifact_key=context.artifact_key,
+                artifact_key=_required_context_artifact_key(context),
                 version=_required_context_version(context),
                 display_version=provider_record.display_version,
                 release_line=provider_record.release_line,
@@ -789,7 +789,7 @@ def _build_candidate_entries(
                 external_id=provider_record.external_id,
                 external_url=provider_record.external_url,
                 component_slug=context.component_slug,
-                artifact_key=context.artifact_key,
+                artifact_key=_required_context_artifact_key(context),
                 version=_required_context_version(context),
                 display_version=provider_record.display_version,
                 candidate_sequence=provider_record.candidate_sequence,
@@ -833,7 +833,7 @@ def _ref_entry(
         external_id=provider_record.external_id,
         external_url=provider_record.external_url,
         component_slug=context.component_slug,
-        artifact_key=context.artifact_key,
+        artifact_key=_required_context_artifact_key(context),
         ref=_required_context_ref(context),
         named_ref_key=context.named_ref_key,
         kind=context.kind,
@@ -1151,6 +1151,14 @@ def _required_context_version(context: SelectedVersionContext) -> str:
             f"Selected version context is missing version: {context.component_slug}:{context.artifact_key}"
         )
     return context.version
+
+
+def _required_context_artifact_key(context: SelectedVersionContext) -> str:
+    if context.artifact_key is None:
+        raise StageIntegrityError(
+            f"Selected version context is missing artifact key: {context.component_slug}:{context.kind.value}"
+        )
+    return context.artifact_key
 
 
 def _required_context_ref(context: SelectedVersionContext) -> str:

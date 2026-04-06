@@ -173,6 +173,137 @@ class StagingPipelineTests(unittest.TestCase):
         self.assertEqual(components[0]["slug"], "spark")
         self.assertEqual(components[0]["weight"], 100)
 
+    def test_build_stages_component_owned_latest_docs_without_artifacts(self) -> None:
+        with _workspace(with_content_file=True, topology="component_only_latest") as workspace_root:
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            with _cwd(workspace_root):
+                exit_code = _run(argv=["build"], stdout=stdout, stderr=stderr)
+            stage_root = workspace_root / "site/.stage"
+            routes = json.loads((stage_root / "data/routes.json").read_text(encoding="utf-8"))["items"]
+            content_index = json.loads((stage_root / "data/content-index.json").read_text(encoding="utf-8"))["items"]
+            staged_latest_exists = (
+                stage_root / "content/components/site-pipeline/contexts/development/index.md"
+            ).is_file()
+            latest_route = next(
+                entry
+                for entry in routes
+                if entry["targetId"] == "development:site-pipeline:component"
+            )
+            latest_entry = next(
+                entry
+                for entry in content_index
+                if entry["path"] == "/components/site-pipeline/latest"
+            )
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(stderr.getvalue(), "")
+        self.assertEqual(latest_route["path"], "/components/site-pipeline/latest/")
+        self.assertEqual(latest_route["section"], "development")
+        self.assertTrue(staged_latest_exists)
+        self.assertEqual(latest_entry["sourcePath"], "components/site-pipeline/docs/index.md")
+        self.assertEqual(latest_entry["pageKind"], "development-page")
+
+    def test_build_stages_two_artifact_component_through_shared_component_routes(self) -> None:
+        with _workspace(with_content_file=True, topology="two_artifacts") as workspace_root:
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            with _cwd(workspace_root):
+                exit_code = _run(argv=["build"], stdout=stdout, stderr=stderr)
+            stage_root = workspace_root / "site/.stage"
+            routes = json.loads((stage_root / "data/routes.json").read_text(encoding="utf-8"))["items"]
+            content_paths = {
+                entry["path"]: entry["sourcePath"]
+                for entry in json.loads(
+                    (stage_root / "data/content-index.json").read_text(encoding="utf-8")
+                )["items"]
+            }
+            released_target_ids = {
+                entry["targetId"]
+                for entry in routes
+                if entry["path"] == "/spark/releases/4.0.0/"
+            }
+            development_target_ids = {
+                entry["targetId"]
+                for entry in routes
+                if entry["path"] == "/spark/latest/"
+            }
+            staged_development_guide_exists = (
+                stage_root / "content/components/spark/contexts/development/guide/index.md"
+            ).is_file()
+            staged_development_reference_exists = (
+                stage_root / "content/components/spark/contexts/development/reference/index.md"
+            ).is_file()
+            staged_release_guide_exists = (
+                stage_root / "content/components/spark/contexts/releases/4.0.0/guide/index.md"
+            ).is_file()
+            staged_release_reference_exists = (
+                stage_root / "content/components/spark/contexts/releases/4.0.0/reference/index.md"
+            ).is_file()
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(stderr.getvalue(), "")
+        self.assertEqual(
+            released_target_ids,
+            {"released:spark:api:4.0.0", "released:spark:runtime:4.0.0"},
+        )
+        self.assertEqual(
+            development_target_ids,
+            {"development:spark", "development:spark:api", "development:spark:runtime"},
+        )
+        self.assertEqual(
+            content_paths["/spark/latest/guide"],
+            "components/runtime/docs/runtime/guide/index.md",
+        )
+        self.assertEqual(
+            content_paths["/spark/latest/reference"],
+            "components/api/docs/reference/index.md",
+        )
+        self.assertEqual(
+            content_paths["/spark/releases/4.0.0/guide"],
+            "components/runtime/docs/runtime/releases/4.0.0/guide/index.md",
+        )
+        self.assertEqual(
+            content_paths["/spark/releases/4.0.0/reference"],
+            "components/api/docs/releases/4.0.0/reference/index.md",
+        )
+        self.assertTrue(staged_development_guide_exists)
+        self.assertTrue(staged_development_reference_exists)
+        self.assertTrue(staged_release_guide_exists)
+        self.assertTrue(staged_release_reference_exists)
+
+    def test_build_stages_rich_lifecycle_matrix_into_routes_and_aggregates(self) -> None:
+        with _workspace(with_content_file=True, topology="rich_lifecycle") as workspace_root:
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            with _cwd(workspace_root):
+                exit_code = _run(argv=["build"], stdout=stdout, stderr=stderr)
+            stage_root = workspace_root / "site/.stage"
+            routes = json.loads((stage_root / "data/routes.json").read_text(encoding="utf-8"))["items"]
+            artifacts = json.loads((stage_root / "data/artifacts.json").read_text(encoding="utf-8"))["items"]
+            candidates = json.loads((stage_root / "data/candidates.json").read_text(encoding="utf-8"))["items"]
+            route_paths = {entry["targetId"]: entry["path"] for entry in routes}
+            artifact_entry = artifacts[0]
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(stderr.getvalue(), "")
+        self.assertEqual(route_paths["development:spark:runtime"], "/spark/latest/")
+        self.assertEqual(route_paths["line-head:spark:runtime:4.0"], "/spark/latest/4.0/")
+        self.assertEqual(route_paths["line-head:spark:runtime:4.1"], "/spark/latest/4.1/")
+        self.assertEqual(
+            route_paths["candidate:spark:runtime:4.2.0-rc2"],
+            "/spark/latest/candidates/4.2.0-rc2/",
+        )
+        self.assertEqual(route_paths["released:spark:runtime:4.0.2"], "/spark/releases/4.0.2/")
+        self.assertEqual(route_paths["released:spark:runtime:4.1.0"], "/spark/releases/4.1.0/")
+        self.assertEqual([entry["version"] for entry in candidates], ["4.2.0-rc2"])
+        self.assertEqual(artifact_entry["latestRelease"]["version"], "4.1.0")
+        self.assertEqual(artifact_entry["latestCandidate"]["version"], "4.2.0-rc2")
+        self.assertEqual(
+            [(entry["key"], entry["latest"]) for entry in artifact_entry["releaseLines"]],
+            [("4.1", "4.1.0"), ("4.0", "4.0.2")],
+        )
+
     def test_build_resolves_internal_and_withdrawn_redirects_in_redirect_inventory(self) -> None:
         with _workspace(with_content_file=True) as workspace_root:
             components_path = workspace_root / "site/components.yaml"

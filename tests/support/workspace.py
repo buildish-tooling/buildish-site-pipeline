@@ -24,14 +24,39 @@ from pathlib import Path
 
 
 @contextmanager
-def _workspace(*, with_content_file: bool = False):
+def _workspace(*, with_content_file: bool = False, topology: str = "default"):
     with tempfile.TemporaryDirectory() as tempdir:
         workspace_root = Path(tempdir)
-        _write_workspace_inputs(workspace_root, with_content_file=with_content_file)
+        _write_workspace_inputs(
+            workspace_root,
+            with_content_file=with_content_file,
+            topology=topology,
+        )
         yield workspace_root
 
 
-def _write_workspace_inputs(workspace_root: Path, *, with_content_file: bool) -> None:
+def _write_workspace_inputs(
+    workspace_root: Path, *, with_content_file: bool, topology: str
+) -> None:
+    if topology == "default":
+        _write_default_workspace_inputs(workspace_root, with_content_file=with_content_file)
+        return
+    if topology == "component_only_latest":
+        _write_component_only_latest_workspace_inputs(
+            workspace_root,
+            with_content_file=with_content_file,
+        )
+        return
+    if topology == "two_artifacts":
+        _write_two_artifact_workspace_inputs(workspace_root, with_content_file=with_content_file)
+        return
+    if topology == "rich_lifecycle":
+        _write_rich_lifecycle_workspace_inputs(workspace_root, with_content_file=with_content_file)
+        return
+    raise AssertionError(f"Unknown test workspace topology: {topology}")
+
+
+def _write_default_workspace_inputs(workspace_root: Path, *, with_content_file: bool) -> None:
     (workspace_root / "site").mkdir(parents=True, exist_ok=True)
     (workspace_root / "site/components.yaml").write_text(
         """
@@ -123,6 +148,380 @@ components:
     if with_content_file:
         (workspace_root / "components/runtime/docs/releases/4.0.0/index.md").write_text(
             "hello\n",
+            encoding="utf-8",
+        )
+
+
+def _write_component_only_latest_workspace_inputs(
+    workspace_root: Path, *, with_content_file: bool
+) -> None:
+    (workspace_root / "site").mkdir(parents=True, exist_ok=True)
+    (workspace_root / "site/components.yaml").write_text(
+        """
+schemaVersion: 1
+defaults:
+  docsRoot: docs
+  publication:
+    origin: docs
+site: {}
+origins:
+  docs:
+    baseUrl: https://docs.example.org
+sources:
+  site-pipeline:
+    localDir: components/site-pipeline
+components:
+  - slug: site-pipeline
+    content:
+      source: site-pipeline
+    publication:
+      mountPath: /components/site-pipeline/
+      developmentPath: /components/site-pipeline/latest/
+      docsPath: /components/site-pipeline/latest/
+    artifacts: []
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+    (workspace_root / "site/provider-snapshot.json").write_text(
+        json.dumps({"schemaVersion": 1, "providers": [], "records": []}) + "\n",
+        encoding="utf-8",
+    )
+    (workspace_root / "components/site-pipeline/docs").mkdir(parents=True, exist_ok=True)
+    if with_content_file:
+        (workspace_root / "components/site-pipeline/docs/index.md").write_text(
+            "component latest\n",
+            encoding="utf-8",
+        )
+
+
+def _write_two_artifact_workspace_inputs(
+    workspace_root: Path, *, with_content_file: bool
+) -> None:
+    (workspace_root / "site").mkdir(parents=True, exist_ok=True)
+    (workspace_root / "site/components.yaml").write_text(
+        """
+schemaVersion: 1
+defaults:
+  docsRoot: docs
+  publication:
+    origin: docs
+site: {}
+origins:
+  docs:
+    baseUrl: https://docs.example.org
+sources:
+  runtime:
+    localDir: components/runtime
+  api:
+    localDir: components/api
+components:
+  - slug: spark
+    content:
+      source: runtime
+    publication:
+      mountPath: /spark/
+    artifacts:
+      - key: runtime
+        source: runtime
+        docsRoot: docs/runtime
+        versioning:
+          developmentRef: main
+          tagPattern: ^v.*$
+        publicationSelection:
+          development: true
+          releases:
+            mode: latestPerLine
+        lifecycle:
+          releaseLines:
+            - key: '4.0'
+              maintenanceRef: maintenance/4.0
+              latest: '4.0.0'
+          releases:
+            - version: '4.0.0'
+      - key: api
+        source: api
+        docsRoot: docs
+        versioning:
+          developmentRef: main
+          tagPattern: ^api-v.*$
+        publicationSelection:
+          development: true
+          releases:
+            mode: latestPerLine
+        lifecycle:
+          releaseLines:
+            - key: '4.0'
+              maintenanceRef: maintenance/4.0
+              latest: '4.0.0'
+          releases:
+            - version: '4.0.0'
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+    (workspace_root / "site/provider-snapshot.json").write_text(
+        json.dumps(
+            {
+                "schemaVersion": 1,
+                "providers": [
+                    {
+                        "key": "github",
+                        "type": "githubReleases",
+                        "fetchedAt": "2026-04-03T00:00:00Z",
+                    },
+                ],
+                "records": [
+                    {
+                        "provider": "github",
+                        "kind": "development",
+                        "componentSlug": "spark",
+                        "artifactKey": "runtime",
+                        "ref": "main",
+                    },
+                    {
+                        "provider": "github",
+                        "kind": "released",
+                        "componentSlug": "spark",
+                        "artifactKey": "runtime",
+                        "version": "4.0.0",
+                        "tag": "v4.0.0",
+                    },
+                    {
+                        "provider": "github",
+                        "kind": "development",
+                        "componentSlug": "spark",
+                        "artifactKey": "api",
+                        "ref": "main",
+                    },
+                    {
+                        "provider": "github",
+                        "kind": "released",
+                        "componentSlug": "spark",
+                        "artifactKey": "api",
+                        "version": "4.0.0",
+                        "tag": "api-v4.0.0",
+                    },
+                ],
+            },
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (workspace_root / "components/runtime/docs/runtime/releases/4.0.0/guide").mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+    (workspace_root / "components/api/docs/releases/4.0.0/reference").mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+    if with_content_file:
+        (workspace_root / "components/runtime/docs/runtime/guide").mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+        (workspace_root / "components/api/docs/reference").mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+        (workspace_root / "components/runtime/docs/runtime/guide/index.md").write_text(
+            "runtime latest guide\n",
+            encoding="utf-8",
+        )
+        (workspace_root / "components/runtime/docs/runtime/releases/4.0.0/guide/index.md").write_text(
+            "runtime release guide\n",
+            encoding="utf-8",
+        )
+        (workspace_root / "components/api/docs/reference/index.md").write_text(
+            "api latest reference\n",
+            encoding="utf-8",
+        )
+        (workspace_root / "components/api/docs/releases/4.0.0/reference/index.md").write_text(
+            "api release reference\n",
+            encoding="utf-8",
+        )
+
+
+def _write_rich_lifecycle_workspace_inputs(
+    workspace_root: Path, *, with_content_file: bool
+) -> None:
+    (workspace_root / "site").mkdir(parents=True, exist_ok=True)
+    (workspace_root / "site/components.yaml").write_text(
+        """
+schemaVersion: 1
+defaults:
+  docsRoot: docs
+  publication:
+    origin: docs
+site: {}
+origins:
+  docs:
+    baseUrl: https://docs.example.org
+sources:
+  runtime:
+    localDir: components/runtime
+components:
+  - slug: spark
+    content:
+      source: runtime
+    publication:
+      mountPath: /spark/
+    artifacts:
+      - key: runtime
+        source: runtime
+        versioning:
+          developmentRef: main
+          tagPattern: ^v.*$
+        publicationSelection:
+          development: true
+          lineHeads:
+            mode: allAuthored
+          releases:
+            mode: latestPerLine
+          candidates:
+            mode: latest
+        lifecycle:
+          releaseLines:
+            - key: '4.1'
+              maintenanceRef: maintenance/4.1
+              latest: '4.1.0'
+            - key: '4.0'
+              maintenanceRef: maintenance/4.0
+              latest: '4.0.2'
+          releases:
+            - version: '4.1.0'
+            - version: '4.0.2'
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+    (workspace_root / "site/provider-snapshot.json").write_text(
+        json.dumps(
+            {
+                "schemaVersion": 1,
+                "providers": [
+                    {
+                        "key": "github",
+                        "type": "githubReleases",
+                        "fetchedAt": "2026-04-03T00:00:00Z",
+                    },
+                ],
+                "records": [
+                    {
+                        "provider": "github",
+                        "kind": "development",
+                        "componentSlug": "spark",
+                        "artifactKey": "runtime",
+                        "ref": "main",
+                    },
+                    {
+                        "provider": "github",
+                        "kind": "lineHead",
+                        "componentSlug": "spark",
+                        "artifactKey": "runtime",
+                        "releaseLine": "4.1",
+                        "ref": "maintenance/4.1",
+                    },
+                    {
+                        "provider": "github",
+                        "kind": "lineHead",
+                        "componentSlug": "spark",
+                        "artifactKey": "runtime",
+                        "releaseLine": "4.0",
+                        "ref": "maintenance/4.0",
+                    },
+                    {
+                        "provider": "github",
+                        "kind": "released",
+                        "componentSlug": "spark",
+                        "artifactKey": "runtime",
+                        "version": "4.1.0",
+                        "tag": "v4.1.0",
+                    },
+                    {
+                        "provider": "github",
+                        "kind": "released",
+                        "componentSlug": "spark",
+                        "artifactKey": "runtime",
+                        "version": "4.0.2",
+                        "tag": "v4.0.2",
+                    },
+                    {
+                        "provider": "github",
+                        "kind": "candidate",
+                        "componentSlug": "spark",
+                        "artifactKey": "runtime",
+                        "version": "4.2.0-rc1",
+                        "tag": "v4.2.0-rc1",
+                        "candidateSequence": 1,
+                    },
+                    {
+                        "provider": "github",
+                        "kind": "candidate",
+                        "componentSlug": "spark",
+                        "artifactKey": "runtime",
+                        "version": "4.2.0-rc2",
+                        "tag": "v4.2.0-rc2",
+                        "candidateSequence": 2,
+                    },
+                ],
+            },
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (workspace_root / "components/runtime/docs/maintenance/4.1").mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+    (workspace_root / "components/runtime/docs/maintenance/4.0").mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+    (workspace_root / "components/runtime/docs/releases/4.1.0").mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+    (workspace_root / "components/runtime/docs/releases/4.0.2").mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+    (workspace_root / "components/runtime/docs/candidates/4.2.0-rc1").mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+    (workspace_root / "components/runtime/docs/candidates/4.2.0-rc2").mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+    if with_content_file:
+        (workspace_root / "components/runtime/docs/index.md").write_text(
+            "latest docs\n",
+            encoding="utf-8",
+        )
+        (workspace_root / "components/runtime/docs/maintenance/4.1/index.md").write_text(
+            "maintenance 4.1\n",
+            encoding="utf-8",
+        )
+        (workspace_root / "components/runtime/docs/maintenance/4.0/index.md").write_text(
+            "maintenance 4.0\n",
+            encoding="utf-8",
+        )
+        (workspace_root / "components/runtime/docs/releases/4.1.0/index.md").write_text(
+            "release 4.1.0\n",
+            encoding="utf-8",
+        )
+        (workspace_root / "components/runtime/docs/releases/4.0.2/index.md").write_text(
+            "release 4.0.2\n",
+            encoding="utf-8",
+        )
+        (workspace_root / "components/runtime/docs/candidates/4.2.0-rc1/index.md").write_text(
+            "candidate 4.2.0-rc1\n",
+            encoding="utf-8",
+        )
+        (workspace_root / "components/runtime/docs/candidates/4.2.0-rc2/index.md").write_text(
+            "candidate 4.2.0-rc2\n",
             encoding="utf-8",
         )
 

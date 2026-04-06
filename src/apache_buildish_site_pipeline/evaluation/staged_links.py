@@ -16,7 +16,6 @@
 
 from __future__ import annotations
 
-import posixpath
 import re
 from collections.abc import Iterable
 from pathlib import Path, PurePosixPath
@@ -27,6 +26,7 @@ from mistletoe import Document
 from mistletoe.span_token import AutoLink, Link
 
 from apache_buildish_site_pipeline.models.enums import DiagnosticSeverity, LinkCheckMode
+from apache_buildish_site_pipeline.public_paths import normalize_public_path
 from apache_buildish_site_pipeline.staging.front_matter import public_page_path
 
 from . import diagnostic_codes
@@ -126,13 +126,13 @@ def _resolve_link_target(*, page: InventoryPage, href: str, policy) -> str | Non
     if parsed.path.startswith("/"):
         if not policy.check_root_absolute:
             return None
-        resolved = _normalize_public_path(parsed.path, mode=policy.mode)
+        resolved = _normalize_public_path(parsed.path)
         if not _matches_internal_prefix(resolved, policy.internal_prefixes):
             return None
         return resolved
     base_path = _resolution_base_path(page=page, mode=policy.mode)
     resolved = urlsplit(urljoin(f"https://buildish.invalid{base_path}", parsed.path)).path
-    return _normalize_public_path(resolved, mode=policy.mode)
+    return _normalize_public_path(resolved)
 
 
 def _page_public_path(page: InventoryPage, *, mode: LinkCheckMode) -> str:
@@ -140,11 +140,9 @@ def _page_public_path(page: InventoryPage, *, mode: LinkCheckMode) -> str:
     if mode is LinkCheckMode.DIRECTORY:
         return _normalize_public_path(
             public_page_path(page.base_public_path, relative_path),
-            mode=mode,
         )
     return _normalize_public_path(
         _file_html_public_path(page.base_public_path, relative_path),
-        mode=mode,
     )
 
 
@@ -172,18 +170,11 @@ def _looks_like_page_target(path: str) -> bool:
 
 def _matches_internal_prefix(path: str, internal_prefixes: tuple[str, ...]) -> bool:
     for prefix in internal_prefixes:
-        normalized_prefix = _normalize_public_path(prefix, mode=LinkCheckMode.DIRECTORY)
+        normalized_prefix = _normalize_public_path(prefix)
         if path == normalized_prefix or path.startswith(f"{normalized_prefix}/"):
             return True
     return False
 
 
-def _normalize_public_path(path: str, *, mode: LinkCheckMode) -> str:
-    normalized = posixpath.normpath(path or "/")
-    if not normalized.startswith("/"):
-        normalized = f"/{normalized}"
-    if normalized.startswith("//"):
-        normalized = f"/{normalized.lstrip('/')}"
-    if mode is LinkCheckMode.DIRECTORY and normalized != "/":
-        normalized = normalized.rstrip("/")
-    return normalized or "/"
+def _normalize_public_path(path: str) -> str:
+    return normalize_public_path(path, trailing_slash=False)

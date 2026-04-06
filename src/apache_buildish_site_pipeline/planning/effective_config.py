@@ -28,6 +28,7 @@ from apache_buildish_site_pipeline.models.authored.component_metadata import (
 from apache_buildish_site_pipeline.models.validation.urls import (
     extract_hostname_from_url,
 )
+from apache_buildish_site_pipeline.public_paths import join_public_path
 
 from .types import (
     ResolvedArtifactConfig,
@@ -448,11 +449,7 @@ def _resolve_link_checks(
 
 
 def _join_public_path(base_path: str, segment: str) -> str:
-    stripped_base = base_path.rstrip("/")
-    stripped_segment = segment.strip("/")
-    if stripped_base == "":
-        return f"/{stripped_segment}/"
-    return f"{stripped_base}/{stripped_segment}/"
+    return join_public_path(base_path, segment, trailing_slash=True)
 
 
 def _join_public_url(base_url: str, path: str) -> str:

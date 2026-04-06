@@ -35,6 +35,7 @@ from apache_buildish_site_pipeline.page_support import (
     is_supported_page_path,
     strips_suffix_in_pretty_route,
 )
+from apache_buildish_site_pipeline.public_paths import join_public_path
 from apache_buildish_site_pipeline.models.emitted.staged_front_matter import (
     ArtifactFrontMatterSummary,
     PipelineComponentFrontMatter,
@@ -766,10 +767,4 @@ def _public_url_for_path(base_url: str, public_path: str) -> str:
 
 
 def _join_public_path(base_path: str, suffix: str) -> str:
-    normalized_base = "/" + base_path.strip("/") if base_path.strip("/") else "/"
-    normalized_suffix = suffix.strip("/")
-    if not normalized_suffix:
-        return normalized_base if normalized_base != "" else "/"
-    if normalized_base == "/":
-        return f"/{normalized_suffix}"
-    return f"{normalized_base.rstrip('/')}/{normalized_suffix}"
+    return join_public_path(base_path, suffix, trailing_slash=False)

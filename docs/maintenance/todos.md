@@ -71,36 +71,6 @@ Until that lands, the supported multi-repository shape is:
   inputs
 - a caller-provided `--catalog` that points at the authored site catalog
 
-## Explain the ownership split between component metadata and consumer catalog
-
-The current contract intentionally splits authored truth across two files, but
-the reason is not yet explained clearly enough for readers who are new to the
-project:
-
-- `site/component.yaml` is component-owned and should describe stable component
-  identity plus repository-owned content roots such as `pagesRoot`, `docsRoot`,
-  and `assetsRoot`
-- `site/catalog.yaml` is consumer-owned and should describe inventory,
-  source bindings, publication policy, artifact decomposition, and version
-  selection for one concrete site build
-
-That split is initially surprising, especially because artifacts live in the
-consumer catalog instead of the component repository. The docs need one clear,
-beginner-friendly explanation of why that is intentional rather than accidental.
-
-Any future write-up should explain, with concrete examples, that:
-
-- one repository may be published differently by different consumer sites
-- source bindings and local checkout layout are consumer/workspace concerns
-- release, ref, and publication selection are consumer policy rather than
-  immutable repository truth
-- a component can start with only repository-owned `docsRoot` content and later
-  gain consumer-modeled artifacts when independent versioning becomes relevant
-
-The missing piece is a single place in the docs that connects those ideas in a
-plain language narrative, ideally with a small "before artifacts" versus "after
-adding artifacts" example that unfamiliar maintainers can understand quickly.
-
 ## Gentler watch updates for downstream renderers
 
 The current incremental watch implementation already narrows worker rebuilds to

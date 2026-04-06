@@ -88,6 +88,39 @@ the consumer resolves that component to `/components/site-pipeline/development/`
 component-owned `docsRoot` should populate that `/development/` tree without first
 inventing an artifact in `site/catalog.yaml`.
 
+### Why the contract is split across two files
+
+New maintainers often expect one authored file to own everything. The pipeline
+intentionally does not work that way.
+
+`site/component.yaml` answers "what is true about this repository no matter who
+consumes it?" It owns stable component identity, repository-local content roots,
+and optional lifecycle hints that remain meaningful across consuming sites.
+
+`site/catalog.yaml` answers "what does this specific site want to publish from
+the available repositories and sources?" It owns workspace source bindings,
+publication layout, release or ref selection, artifact decomposition, and other
+policy that can legitimately differ from one consumer site to another.
+
+That split matters because one repository can be published in more than one way.
+One site might publish Apache Spark docs under `/components/spark/`, while
+another site might group the same repository under `/analytics/spark/` and only
+publish two selected release lines. Neither site should require the repository
+itself to rewrite its metadata just to fit one consumer's layout or selection
+policy.
+
+The same rule applies to source bindings. A local checkout path, a workspace
+overlay, or a consumer-specific source alias is not repository truth. Those are
+properties of the current build workspace, so they belong in the consumer
+catalog rather than in component-owned metadata.
+
+Artifacts also stay in the consumer catalog on purpose. A component can begin
+with only repository-owned `docsRoot` content, which lets one consumer publish a
+single development surface immediately. Later, if a consumer needs independent
+version selection, release visibility, or publication routing for multiple docs
+surfaces, that consumer can model artifacts in `site/catalog.yaml` without
+forcing every other consumer of the repository to adopt the same artifact split.
+
 ### Consumer catalog contract
 
 The consumer catalog should define both inventory and publication.

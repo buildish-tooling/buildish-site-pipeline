@@ -201,3 +201,48 @@ Questions worth answering before implementation:
 
 This should be treated as optional publish-quality assistance for consumers, not
 as a reason to make the shared authored contract renderer-specific by default.
+
+## Verify and finish AsciiDoc page support
+
+The project docs already describe site-pipeline as renderer-adjacent rather than
+Markdown-only, but the current implementation still has a few direct Markdown
+assumptions in the staged-page path.
+
+So the honest current answer is: AsciiDoc might work in some simple cases, but
+the code is not yet explicit or well-tested enough to claim that `.adoc` or
+`.asciidoc` page inputs work reliably.
+
+Known gaps to close before making that claim:
+
+- page detection currently hard-codes Markdown and HTML extensions in
+  `staging/front_matter.py` and `evaluation/page_scan.py`; AsciiDoc extensions
+  are not recognized as page inputs yet
+- public path generation currently strips Markdown suffixes explicitly when
+  deriving pretty staged paths; the equivalent AsciiDoc behavior is not defined
+  or tested yet
+- the authored-page load/write path uses the `frontmatter` library; that likely
+  works for generic text-plus-YAML-front-matter inputs, but AsciiDoc-specific
+  round-trip behavior needs an explicit regression test before it is trusted
+- validation and staging tests are almost entirely Markdown-shaped today, so the
+  pipeline has no regression coverage for `.adoc` or `.asciidoc` inputs
+- the public contract docs should say clearly whether page support is extension
+  allow-list based, renderer-profile based, or intentionally generic
+
+Any future implementation should answer these design questions explicitly:
+
+- should AsciiDoc support be unconditional for known extensions, or declared via
+  consumer policy / renderer profile
+- should pretty-URL derivation treat `.adoc` the same way as Markdown pages and
+  drop the suffix for routed public paths
+- are there any front-matter or page-header conventions that differ enough
+  across renderers that site-pipeline must validate less or delegate more
+
+The likely first safe slice is:
+
+- extend page detection to include AsciiDoc extensions
+- add targeted tests for page scan, staged page rewriting, and public-path
+  derivation with `.adoc` inputs
+- update the contract docs only after those tests prove the behavior
+
+Until then, AsciiDoc should be treated as a plausible future-compatible input
+format, not as a guaranteed supported page format.

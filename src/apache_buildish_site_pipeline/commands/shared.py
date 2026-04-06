@@ -19,22 +19,22 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from apache_buildish_site_pipeline.models import ProviderSnapshotV1
-from apache_buildish_site_pipeline.models.catalog import CatalogDocumentV1
-from apache_buildish_site_pipeline.models.component_repository import (
-    ComponentRepositoryDocumentV1,
+from apache_buildish_site_pipeline.models import ProviderSnapshotDocumentV1
+from apache_buildish_site_pipeline.models.authored.site_catalog import SiteCatalogDocumentV1
+from apache_buildish_site_pipeline.models.authored.component_metadata import (
+    ComponentMetadataDocumentV1,
 )
 from apache_buildish_site_pipeline.models.enums import DocumentFormat
 from apache_buildish_site_pipeline.models.loading import (
     LoadingError,
-    load_catalog_document,
-    load_component_repository_document,
-    load_provider_snapshot,
+    load_component_metadata_document,
+    load_provider_snapshot_document,
+    load_site_catalog_document,
 )
 
 from ..cli.errors import InvocationError
 
-_DEFAULT_CATALOG_PATH = Path("site/components.yaml")
+_DEFAULT_CATALOG_PATH = Path("site/catalog.yaml")
 _PROVIDER_SNAPSHOT_CANDIDATE_NAMES = (
     "provider-snapshot.yaml",
     "provider-snapshot.yml",
@@ -46,9 +46,9 @@ _PROVIDER_SNAPSHOT_CANDIDATE_NAMES = (
 class LoadedWorkspaceInputs:
     """Fully loaded repository inputs for planning/evaluation."""
 
-    catalog: CatalogDocumentV1
-    provider_snapshot: ProviderSnapshotV1
-    component_documents: dict[str, ComponentRepositoryDocumentV1]
+    catalog: SiteCatalogDocumentV1
+    provider_snapshot: ProviderSnapshotDocumentV1
+    component_documents: dict[str, ComponentMetadataDocumentV1]
     catalog_path: Path
     provider_snapshot_path: Path | None
 
@@ -69,7 +69,7 @@ def load_workspace_inputs(
     site_root = resolved_catalog_path.parent
 
     try:
-        catalog = load_catalog_document(
+        catalog = load_site_catalog_document(
             _read_utf8(resolved_catalog_path),
             document_format=_infer_document_format(resolved_catalog_path),
             source_name=str(resolved_catalog_path),
@@ -89,7 +89,9 @@ def load_workspace_inputs(
     )
 
 
-def _load_provider_snapshot(site_root: Path) -> tuple[ProviderSnapshotV1, Path | None]:
+def _load_provider_snapshot(
+    site_root: Path,
+) -> tuple[ProviderSnapshotDocumentV1, Path | None]:
     found_paths = [
         (site_root / candidate_name).resolve(strict=False)
         for candidate_name in _PROVIDER_SNAPSHOT_CANDIDATE_NAMES
@@ -101,10 +103,10 @@ def _load_provider_snapshot(site_root: Path) -> tuple[ProviderSnapshotV1, Path |
             f"{', '.join(str(path) for path in found_paths)}",
         )
     if not found_paths:
-        return ProviderSnapshotV1(schema_version=1, providers=[], records=[]), None
+        return ProviderSnapshotDocumentV1(schema_version=1, providers=[], records=[]), None
     provider_snapshot_path = found_paths[0]
     return (
-        load_provider_snapshot(
+        load_provider_snapshot_document(
             _read_utf8(provider_snapshot_path),
             document_format=_infer_document_format(provider_snapshot_path),
             source_name=str(provider_snapshot_path),
@@ -115,9 +117,9 @@ def _load_provider_snapshot(site_root: Path) -> tuple[ProviderSnapshotV1, Path |
 
 def _load_component_documents(
     repo_root: Path,
-    catalog: CatalogDocumentV1,
-) -> dict[str, ComponentRepositoryDocumentV1]:
-    component_documents: dict[str, ComponentRepositoryDocumentV1] = {}
+    catalog: SiteCatalogDocumentV1,
+) -> dict[str, ComponentMetadataDocumentV1]:
+    component_documents: dict[str, ComponentMetadataDocumentV1] = {}
     default_metadata_file = (
         catalog.defaults.metadata_file if catalog.defaults is not None else None
     )
@@ -144,7 +146,7 @@ def _load_component_documents(
             )
         if not metadata_path.exists():
             continue
-        component_documents[component.slug] = load_component_repository_document(
+        component_documents[component.slug] = load_component_metadata_document(
             _read_utf8(metadata_path),
             document_format=_infer_document_format(metadata_path),
             source_name=str(metadata_path),

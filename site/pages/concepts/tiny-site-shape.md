@@ -26,7 +26,7 @@ docs.
 
 ```text
 site/
-  components.yaml
+  catalog.yaml
   provider-snapshot.json
 components/
   runtime/
@@ -36,7 +36,7 @@ components/
           index.md
 ```
 
-`site/components.yaml` is the consumer-owned entry point. One minimal versioned
+`site/catalog.yaml` is the consumer-owned entry point. One minimal versioned
 example looks like this:
 
 ```yaml

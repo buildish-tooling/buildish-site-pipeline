@@ -394,5 +394,10 @@
     "entries"
   ],
   "title": "Site Pipeline Materialization Report v1",
-  "type": "object"
+  "type": "object",
+  "x-buildish-contract": {
+    "category": "emitted",
+    "ownership": "pipeline-derived",
+    "summary": "Pipeline-emitted materialization report."
+  }
 }

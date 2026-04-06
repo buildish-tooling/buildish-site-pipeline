@@ -32,14 +32,14 @@ help text.
 
 The generated files now cover:
 
-- authored inputs such as `site/components.yaml`, `site/component.yaml`, and `site/provider-snapshot.json`
+- authored inputs such as `site/catalog.yaml`, `site/component.yaml`, and `site/provider-snapshot.json`
 - machine-readable CLI reports such as the materialization, check, and stage-run JSON reports
 - staged output contracts such as `manifest.json`, `data/*.json`, and `data/_pipeline/*.json`
 - the reserved `pipeline` front matter namespace embedded into staged Markdown pages
 
 Examples:
 
-- `schemas/site-pipeline-catalog-v1.schema.json` for `site/components.yaml`
+- `schemas/site-pipeline-catalog-v1.schema.json` for `site/catalog.yaml`
 - `schemas/site-pipeline-component-v1.schema.json` for `site/component.yaml`
 - `schemas/site-pipeline-stage-manifest-v1.schema.json` for `site/.stage/manifest.json`
 - `schemas/site-pipeline-components-data-v1.schema.json` for `site/.stage/data/components.json`

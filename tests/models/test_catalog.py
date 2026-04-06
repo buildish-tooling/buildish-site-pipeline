@@ -22,12 +22,11 @@ from copy import deepcopy
 
 from pydantic import ValidationError
 
-from apache_buildish_site_pipeline.models.catalog import (
+from apache_buildish_site_pipeline.models.authored.site_catalog import (
     ArtifactConfig,
     ArtifactLifecycleConfig,
     ArtifactVersioningConfig,
     CandidateSelectionPolicy,
-    CatalogDocumentV1,
     ComponentCatalogEntry,
     ExactReleaseConfig,
     LineHeadSelectionPolicy,
@@ -36,6 +35,7 @@ from apache_buildish_site_pipeline.models.catalog import (
     PublicationSelectionPolicy,
     ReleaseLineConfig,
     ReleaseSelectionPolicy,
+    SiteCatalogDocumentV1,
     SourceConfig,
 )
 from apache_buildish_site_pipeline.models.enums import (
@@ -49,7 +49,10 @@ from apache_buildish_site_pipeline.models.enums import (
     TrustClass,
     WithdrawalBehavior,
 )
-from apache_buildish_site_pipeline.models.loading import DocumentValidationFailure, load_catalog_document
+from apache_buildish_site_pipeline.models.loading import (
+    DocumentValidationFailure,
+    load_site_catalog_document,
+)
 
 
 def _build_valid_catalog_document() -> dict[str, object]:
@@ -158,13 +161,13 @@ class CatalogDocumentTests(unittest.TestCase):
     """Validate the consumer catalog document contract."""
 
     def test_loads_valid_catalog_document(self) -> None:
-        document = load_catalog_document(
+        document = load_site_catalog_document(
             json.dumps(_build_valid_catalog_document()),
             document_format=DocumentFormat.JSON,
             source_name="site/components.json",
         )
 
-        self.assertIsInstance(document, CatalogDocumentV1)
+        self.assertIsInstance(document, SiteCatalogDocumentV1)
         self.assertEqual(document.components[0].slug, "spark")
         self.assertEqual(document.components[0].weight, 100)
         self.assertEqual(document.defaults.localization.route_mode, RouteMode.PREFIX_ALL)
@@ -174,7 +177,7 @@ class CatalogDocumentTests(unittest.TestCase):
         document = _build_valid_catalog_document()
         document["components"][0]["group"] = "missing"
         with self.assertRaises(DocumentValidationFailure):
-            load_catalog_document(
+            load_site_catalog_document(
                 json.dumps(document),
                 document_format=DocumentFormat.JSON,
                 source_name="site/components.json",
@@ -183,7 +186,7 @@ class CatalogDocumentTests(unittest.TestCase):
         document = _build_valid_catalog_document()
         document["components"][0]["content"]["source"] = "missing"
         with self.assertRaises(DocumentValidationFailure):
-            load_catalog_document(
+            load_site_catalog_document(
                 json.dumps(document),
                 document_format=DocumentFormat.JSON,
                 source_name="site/components.json",
@@ -192,7 +195,7 @@ class CatalogDocumentTests(unittest.TestCase):
         document = _build_valid_catalog_document()
         document["components"][0]["publication"]["origin"] = "missing"
         with self.assertRaises(DocumentValidationFailure):
-            load_catalog_document(
+            load_site_catalog_document(
                 json.dumps(document),
                 document_format=DocumentFormat.JSON,
                 source_name="site/components.json",
@@ -203,7 +206,7 @@ class CatalogDocumentTests(unittest.TestCase):
         duplicate_artifact = deepcopy(document["components"][0]["artifacts"][0])
         document["components"][0]["artifacts"].append(duplicate_artifact)
         with self.assertRaises(DocumentValidationFailure):
-            load_catalog_document(
+            load_site_catalog_document(
                 json.dumps(document),
                 document_format=DocumentFormat.JSON,
                 source_name="site/components.json",
@@ -212,7 +215,7 @@ class CatalogDocumentTests(unittest.TestCase):
         document = _build_valid_catalog_document()
         document["components"][0]["artifacts"][0]["publicationSelection"]["namedRefs"] = ["missing"]
         with self.assertRaises(DocumentValidationFailure):
-            load_catalog_document(
+            load_site_catalog_document(
                 json.dumps(document),
                 document_format=DocumentFormat.JSON,
                 source_name="site/components.json",
@@ -221,7 +224,7 @@ class CatalogDocumentTests(unittest.TestCase):
         document = _build_valid_catalog_document()
         document["components"][0]["artifacts"][0]["publicationSelection"]["lineHeads"]["keys"] = ["5.x"]
         with self.assertRaises(DocumentValidationFailure):
-            load_catalog_document(
+            load_site_catalog_document(
                 json.dumps(document),
                 document_format=DocumentFormat.JSON,
                 source_name="site/components.json",
@@ -231,7 +234,7 @@ class CatalogDocumentTests(unittest.TestCase):
         document = _build_valid_catalog_document()
         document["components"][0]["publication"]["redirects"][0]["status"] = 303
         with self.assertRaises(DocumentValidationFailure):
-            load_catalog_document(
+            load_site_catalog_document(
                 json.dumps(document),
                 document_format=DocumentFormat.JSON,
                 source_name="site/components.json",
@@ -240,7 +243,7 @@ class CatalogDocumentTests(unittest.TestCase):
         document = _build_valid_catalog_document()
         document["components"][0]["artifacts"][0]["lifecycle"]["releases"][0].pop("redirectTarget")
         with self.assertRaises(DocumentValidationFailure):
-            load_catalog_document(
+            load_site_catalog_document(
                 json.dumps(document),
                 document_format=DocumentFormat.JSON,
                 source_name="site/components.json",
@@ -253,7 +256,7 @@ class CatalogDocumentTests(unittest.TestCase):
             "endOfSupportDate": "2024-01-01T00:00:00Z",
         }
         with self.assertRaises(DocumentValidationFailure):
-            load_catalog_document(
+            load_site_catalog_document(
                 json.dumps(document),
                 document_format=DocumentFormat.JSON,
                 source_name="site/components.json",
@@ -265,7 +268,7 @@ class CatalogDocumentTests(unittest.TestCase):
             {"key": "5.x", "parent": "4.x", "latest": "5.0.0"},
         ]
         with self.assertRaises(DocumentValidationFailure):
-            load_catalog_document(
+            load_site_catalog_document(
                 json.dumps(document),
                 document_format=DocumentFormat.JSON,
                 source_name="site/components.json",
@@ -274,7 +277,7 @@ class CatalogDocumentTests(unittest.TestCase):
         document = _build_valid_catalog_document()
         document["components"][0]["artifacts"][0]["versioning"]["tagPattern"] = "["
         with self.assertRaises(DocumentValidationFailure):
-            load_catalog_document(
+            load_site_catalog_document(
                 json.dumps(document),
                 document_format=DocumentFormat.JSON,
                 source_name="site/components.json",
@@ -285,7 +288,7 @@ class CatalogDocumentTests(unittest.TestCase):
         document["components"][0]["artifacts"][0]["mounts"][0]["metadata"] = {"blob": "x" * (16 * 1024)}
 
         with self.assertRaises(DocumentValidationFailure):
-            load_catalog_document(
+            load_site_catalog_document(
                 json.dumps(document),
                 document_format=DocumentFormat.JSON,
                 source_name="site/components.json",
@@ -410,7 +413,7 @@ class CatalogDocumentTests(unittest.TestCase):
             )
 
     def test_catalog_document_allows_optional_publication_and_selection_fields(self) -> None:
-        document = CatalogDocumentV1(
+        document = SiteCatalogDocumentV1(
             schema_version=1,
             sources={"consumer": SourceConfig(local_dir="components/spark")},
             components=[
@@ -444,7 +447,7 @@ class CatalogDocumentTests(unittest.TestCase):
         document["components"][0]["artifacts"][0]["source"] = "missing"
 
         with self.assertRaises(DocumentValidationFailure):
-            load_catalog_document(
+            load_site_catalog_document(
                 json.dumps(document),
                 document_format=DocumentFormat.JSON,
                 source_name="site/components.json",

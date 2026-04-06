@@ -26,7 +26,7 @@ from apache_buildish_site_pipeline.models.enums import (
     PlanningTarget,
     RunStatus,
 )
-from apache_buildish_site_pipeline.models.planning_stage_contract import (
+from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
     CheckReportV1,
     ResolvedMaterializationReportV1,
     StageRunReportV1,

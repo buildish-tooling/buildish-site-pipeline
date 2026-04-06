@@ -23,7 +23,7 @@ from types import SimpleNamespace
 import unittest
 
 from apache_buildish_site_pipeline.cli.errors import StageIntegrityError
-from apache_buildish_site_pipeline.models.catalog import (
+from apache_buildish_site_pipeline.models.authored.site_catalog import (
     ArtifactLifecycleConfig,
     CompatibilityAssertionConfig,
     ExactReleaseConfig,

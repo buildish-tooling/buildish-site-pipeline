@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from apache_buildish_site_pipeline.models.planning_stage_contract import (
+from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
     PipelineDiagnosticEntry,
     ReducedDiagnosticDetailsSummary,
 )

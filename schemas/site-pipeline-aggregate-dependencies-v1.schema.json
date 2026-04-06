@@ -47,5 +47,11 @@
     }
   },
   "title": "Site Pipeline data/_pipeline/aggregate-dependencies.json v1",
-  "type": "object"
+  "type": "object",
+  "x-buildish-contract": {
+    "category": "emitted",
+    "filePath": "data/_pipeline/aggregate-dependencies.json",
+    "ownership": "pipeline-derived",
+    "summary": "Pipeline-emitted aggregate dependency map."
+  }
 }

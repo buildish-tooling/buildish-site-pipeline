@@ -22,13 +22,15 @@ from types import SimpleNamespace
 import unittest
 
 from apache_buildish_site_pipeline.cli.errors import StageIntegrityError
-from apache_buildish_site_pipeline.models.catalog import (
+from apache_buildish_site_pipeline.models.authored.site_catalog import (
     ArtifactLifecycleConfig,
     ExactReleaseConfig,
     ReleaseLineConfig,
 )
 from apache_buildish_site_pipeline.models.enums import RecordKind, RouteMode
-from apache_buildish_site_pipeline.models.staged_front_matter import TranslationLinkSummary
+from apache_buildish_site_pipeline.models.emitted.staged_front_matter import (
+    TranslationLinkSummary,
+)
 from apache_buildish_site_pipeline.planning.types import ResolvedLocalizationPolicy
 from apache_buildish_site_pipeline.staging.front_matter import (
     _artifact_lifecycle,

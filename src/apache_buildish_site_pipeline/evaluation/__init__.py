@@ -18,7 +18,9 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from apache_buildish_site_pipeline.models.planning_stage_contract import CheckReportV1
+from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
+    CheckReportV1,
+)
 
 from .execution import run_evaluation
 from .types import EvaluationMode, EvaluationRequest, EvaluationResult

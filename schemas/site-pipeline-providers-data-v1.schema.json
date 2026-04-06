@@ -69,5 +69,11 @@
     "items"
   ],
   "title": "Site Pipeline data/providers.json v1",
-  "type": "object"
+  "type": "object",
+  "x-buildish-contract": {
+    "category": "emitted",
+    "filePath": "data/providers.json",
+    "ownership": "pipeline-derived",
+    "summary": "Pipeline-emitted provider summary aggregate file."
+  }
 }

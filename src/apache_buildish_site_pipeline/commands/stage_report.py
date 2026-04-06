@@ -25,7 +25,7 @@ from apache_buildish_site_pipeline.evaluation.types import (
     EvaluationResult,
 )
 from apache_buildish_site_pipeline.models.enums import DiagnosticSeverity, StageCommand
-from apache_buildish_site_pipeline.models.planning_stage_contract import (
+from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
     PipelineDiagnosticEntry,
     StageRunReportV1,
     StageRunSummary,

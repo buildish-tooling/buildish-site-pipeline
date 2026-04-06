@@ -237,7 +237,7 @@ main source of truth when artifacts are present.
 <a id="catalogdocument"></a>
 ## CatalogDocument
 
-Consumer-owned catalog, typically `site/components.yaml`.
+Consumer-owned catalog, typically `site/catalog.yaml`.
 
 | Field | Type | Req | Description |
 | --- | --- | --- | --- |

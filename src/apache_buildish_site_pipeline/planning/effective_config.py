@@ -18,12 +18,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from apache_buildish_site_pipeline.models.catalog import (
-    CatalogDocumentV1,
+from apache_buildish_site_pipeline.models.authored.site_catalog import (
     ComponentCatalogEntry,
+    SiteCatalogDocumentV1,
 )
-from apache_buildish_site_pipeline.models.component_repository import (
-    ComponentRepositoryDocumentV1,
+from apache_buildish_site_pipeline.models.authored.component_metadata import (
+    ComponentMetadataDocumentV1,
 )
 from apache_buildish_site_pipeline.models.validation.urls import (
     extract_hostname_from_url,
@@ -47,9 +47,9 @@ _DEFAULT_ASSETS_SEGMENT = "assets"
 
 def resolve_site_config(
     *,
-    catalog: CatalogDocumentV1,
+    catalog: SiteCatalogDocumentV1,
     workspace_root: Path,
-    component_documents: dict[str, ComponentRepositoryDocumentV1] | None = None,
+    component_documents: dict[str, ComponentMetadataDocumentV1] | None = None,
 ) -> ResolvedSiteConfig:
     """Resolve defaults, groups, and component/artifact projections for planning."""
 
@@ -140,9 +140,9 @@ def resolve_site_config(
 
 def _resolve_component(
     *,
-    catalog: CatalogDocumentV1,
+    catalog: SiteCatalogDocumentV1,
     component: ComponentCatalogEntry,
-    component_document: ComponentRepositoryDocumentV1 | None,
+    component_document: ComponentMetadataDocumentV1 | None,
     origins: dict[str, ResolvedOrigin],
     sources: dict[str, ResolvedSourceBinding],
     workspace_root: Path,
@@ -269,7 +269,7 @@ def _resolve_component_content_source(
 
 def _resolve_publication(
     *,
-    catalog: CatalogDocumentV1,
+    catalog: SiteCatalogDocumentV1,
     component: ComponentCatalogEntry,
     group_path_prefix: str | None,
     origins: dict[str, ResolvedOrigin],
@@ -366,7 +366,7 @@ def _resolve_publication(
 
 def _resolve_component_content_path(
     source_binding: ResolvedSourceBinding | None,
-    component_document: ComponentRepositoryDocumentV1 | None,
+    component_document: ComponentMetadataDocumentV1 | None,
     field_name: str,
     default_relpath: str | None,
 ) -> Path | None:
@@ -386,7 +386,7 @@ def _resolve_component_content_path(
 
 def _resolve_localization(
     *,
-    catalog: CatalogDocumentV1,
+    catalog: SiteCatalogDocumentV1,
     component: ComponentCatalogEntry,
 ) -> ResolvedLocalizationPolicy:
     defaults = catalog.defaults.localization if catalog.defaults is not None else None

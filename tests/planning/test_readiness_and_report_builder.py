@@ -28,7 +28,9 @@ from apache_buildish_site_pipeline.models.enums import (
     MaterializationStatus,
     PlanningTarget,
 )
-from apache_buildish_site_pipeline.models.planning_stage_contract import PipelineDiagnosticEntry
+from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
+    PipelineDiagnosticEntry,
+)
 from apache_buildish_site_pipeline.planning.readiness import classify_input_readiness
 from apache_buildish_site_pipeline.planning.report_builder import build_resolved_materialization_report
 from apache_buildish_site_pipeline.planning.types import (

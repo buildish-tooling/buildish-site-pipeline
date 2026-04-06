@@ -19,7 +19,7 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
-from apache_buildish_site_pipeline.models.staged_front_matter import (
+from apache_buildish_site_pipeline.models.emitted.staged_front_matter import (
     PipelineComponentFrontMatter,
     PipelineFrontMatterNamespace,
 )

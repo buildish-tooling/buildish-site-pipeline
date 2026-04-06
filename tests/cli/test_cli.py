@@ -183,8 +183,8 @@ class CliTests(unittest.TestCase):
             runner_root = Path(runner_dir)
             catalog_site_root = Path(catalog_dir)
             authored_site_root = workspace_root / "site"
-            (catalog_site_root / "components.yaml").write_text(
-                (authored_site_root / "components.yaml").read_text(encoding="utf-8"),
+            (catalog_site_root / "catalog.yaml").write_text(
+                (authored_site_root / "catalog.yaml").read_text(encoding="utf-8"),
                 encoding="utf-8",
             )
             (catalog_site_root / "provider-snapshot.json").write_text(
@@ -200,7 +200,7 @@ class CliTests(unittest.TestCase):
                         "--workspace-root",
                         str(workspace_root),
                         "--catalog",
-                        str(catalog_site_root / "components.yaml"),
+                        str(catalog_site_root / "catalog.yaml"),
                         "--report-format",
                         "json",
                         "--report-schema-version",
@@ -423,7 +423,7 @@ class CliTests(unittest.TestCase):
             stderr = io.StringIO()
 
             def _break_catalog_then_trigger_cycle():
-                (workspace_root / "site/components.yaml").unlink()
+                (workspace_root / "site/catalog.yaml").unlink()
                 return (watched_file,)
 
             with mock.patch(
@@ -639,7 +639,7 @@ class CliTests(unittest.TestCase):
 
     def test_watch_initial_failure_without_trusted_stage_exits_three(self) -> None:
         with _workspace(with_content_file=True) as workspace_root:
-            (workspace_root / "site/components.yaml").unlink()
+            (workspace_root / "site/catalog.yaml").unlink()
             report_path = workspace_root / "watch-report.json"
             stdout = io.StringIO()
             stderr = io.StringIO()
@@ -761,7 +761,7 @@ class CliTests(unittest.TestCase):
             stderr = io.StringIO()
 
             def _break_catalog_then_trigger_cycle():
-                (workspace_root / "site/components.yaml").unlink()
+                (workspace_root / "site/catalog.yaml").unlink()
                 return (watched_file,)
 
             with mock.patch(
@@ -806,7 +806,7 @@ class CliTests(unittest.TestCase):
     def test_watch_retains_last_trusted_stage_on_catalog_dirty_path_failure(self) -> None:
         with _workspace(with_content_file=True) as workspace_root:
             report_path = workspace_root / "watch-report.json"
-            catalog_path = workspace_root / "site/components.yaml"
+            catalog_path = workspace_root / "site/catalog.yaml"
             manifest_path = workspace_root / "site/.stage/manifest.json"
             staged_file = workspace_root / "site/.stage/content/components/spark/contexts/releases/4.0.0/index.md"
             stdout = io.StringIO()
@@ -851,7 +851,7 @@ class CliTests(unittest.TestCase):
         self.assertTrue(report["summary"]["stageUsable"])
         self.assertTrue(manifest_exists)
         self.assertTrue(staged_file_exists)
-        self.assertIn("site/components.yaml", report["diagnostics"][-1]["message"])
+        self.assertIn("site/catalog.yaml", report["diagnostics"][-1]["message"])
         self.assertEqual(stdout.getvalue(), "")
         self.assertEqual(stderr.getvalue(), "")
 
@@ -993,7 +993,7 @@ class CliTests(unittest.TestCase):
         with _workspace(with_content_file=True) as workspace_root:
             observed_calls: list[tuple[str, str, str]] = []
             expected_workspace_root = str(workspace_root)
-            expected_catalog_path = str(workspace_root / "site/components.yaml")
+            expected_catalog_path = str(workspace_root / "site/catalog.yaml")
             expected_stage_root = str(workspace_root / "site/.stage")
             expected_work_root = str(workspace_root / "site/.site-pipeline-work")
 
@@ -1103,7 +1103,7 @@ class CliInternalTests(unittest.TestCase):
             layout = RepositoryLayout(
                 cwd=cwd,
                 workspace_root=cwd,
-                catalog_path=cwd / "site/components.yaml",
+                catalog_path=cwd / "site/catalog.yaml",
                 site_root=cwd / "site",
                 stage_root=cwd / "site/.stage",
                 work_root=cwd / "site/.site-pipeline-work",

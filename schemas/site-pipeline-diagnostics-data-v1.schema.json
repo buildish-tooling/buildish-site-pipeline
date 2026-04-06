@@ -160,5 +160,11 @@
     "$ref": "#/$defs/PipelineDiagnosticEntry"
   },
   "title": "Site Pipeline data/diagnostics.json v1",
-  "type": "array"
+  "type": "array",
+  "x-buildish-contract": {
+    "category": "emitted",
+    "filePath": "data/diagnostics.json",
+    "ownership": "pipeline-derived",
+    "summary": "Pipeline-emitted diagnostics file."
+  }
 }

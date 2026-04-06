@@ -19,7 +19,7 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 
-from apache_buildish_site_pipeline.models.catalog import (
+from apache_buildish_site_pipeline.models.authored.site_catalog import (
     CandidateSelectionPolicy,
     LineHeadSelectionPolicy,
     PublicationSelectionPolicy,

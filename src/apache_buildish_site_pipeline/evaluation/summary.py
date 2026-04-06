@@ -17,7 +17,9 @@
 from __future__ import annotations
 
 from apache_buildish_site_pipeline.models.enums import CheckFailureThreshold, RunStatus
-from apache_buildish_site_pipeline.models.planning_stage_contract import CheckSummary
+from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
+    CheckSummary,
+)
 
 from .types import DiagnosticCounts
 

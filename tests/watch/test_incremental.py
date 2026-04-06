@@ -74,7 +74,7 @@ class WatchIncrementalTests(unittest.TestCase):
     def test_catalog_mount_path_edit_matches_fresh_clean_build(self) -> None:
         with _workspace(with_content_file=True) as workspace_root:
             _expand_workspace_for_multiple_owned_units(workspace_root)
-            catalog_path = workspace_root / "site/components.yaml"
+            catalog_path = workspace_root / "site/catalog.yaml"
 
             def _mutate_catalog_mount_path():
                 catalog_text = catalog_path.read_text(encoding="utf-8")
@@ -93,7 +93,7 @@ class WatchIncrementalTests(unittest.TestCase):
     def test_catalog_alias_route_edit_matches_fresh_clean_build(self) -> None:
         with _workspace(with_content_file=True) as workspace_root:
             _expand_workspace_for_multiple_owned_units(workspace_root)
-            catalog_path = workspace_root / "site/components.yaml"
+            catalog_path = workspace_root / "site/catalog.yaml"
 
             def _mutate_catalog_alias_route():
                 return _rewrite_catalog(
@@ -118,7 +118,7 @@ class WatchIncrementalTests(unittest.TestCase):
     def test_catalog_redirect_edit_matches_fresh_clean_build(self) -> None:
         with _workspace(with_content_file=True) as workspace_root:
             _expand_workspace_for_multiple_owned_units(workspace_root)
-            catalog_path = workspace_root / "site/components.yaml"
+            catalog_path = workspace_root / "site/catalog.yaml"
 
             def _mutate_catalog_redirect():
                 return _rewrite_catalog(
@@ -143,7 +143,7 @@ class WatchIncrementalTests(unittest.TestCase):
     def test_catalog_canonical_path_edit_matches_fresh_clean_build(self) -> None:
         with _workspace(with_content_file=True) as workspace_root:
             _expand_workspace_for_multiple_owned_units(workspace_root)
-            catalog_path = workspace_root / "site/components.yaml"
+            catalog_path = workspace_root / "site/catalog.yaml"
 
             def _mutate_catalog_canonical_path():
                 return _rewrite_catalog(
@@ -168,7 +168,7 @@ class WatchIncrementalTests(unittest.TestCase):
     def test_catalog_origin_edit_matches_fresh_clean_build(self) -> None:
         with _workspace(with_content_file=True) as workspace_root:
             _expand_workspace_for_multiple_owned_units(workspace_root)
-            catalog_path = workspace_root / "site/components.yaml"
+            catalog_path = workspace_root / "site/catalog.yaml"
 
             def _mutate_catalog_origin():
                 return _rewrite_catalog(
@@ -197,7 +197,7 @@ class WatchIncrementalTests(unittest.TestCase):
     def test_catalog_trust_class_edit_matches_fresh_clean_build(self) -> None:
         with _workspace(with_content_file=True) as workspace_root:
             _expand_workspace_for_multiple_owned_units(workspace_root)
-            catalog_path = workspace_root / "site/components.yaml"
+            catalog_path = workspace_root / "site/catalog.yaml"
             _install_artifact_mount(catalog_path)
             (workspace_root / "generated/api").mkdir(parents=True, exist_ok=True)
             (workspace_root / "generated/api/index.json").write_text("{}\n", encoding="utf-8")

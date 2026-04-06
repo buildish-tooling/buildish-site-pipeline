@@ -29,7 +29,9 @@ from unittest import mock
 from apache_buildish_site_pipeline.cli.errors import RetainedStageError, StageIntegrityError
 from apache_buildish_site_pipeline.commands.stage_report import build_stage_run_report
 from apache_buildish_site_pipeline.models.enums import DiagnosticSeverity, RecordKind, StageCommand
-from apache_buildish_site_pipeline.models.planning_stage_contract import PipelineDiagnosticEntry
+from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
+    PipelineDiagnosticEntry,
+)
 from apache_buildish_site_pipeline.staging.aggregates import _build_content_index_entries, _write_aggregate_files
 from apache_buildish_site_pipeline.staging.coordinator import (
     _context_wire,

@@ -2047,7 +2047,7 @@
   "$id": "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-catalog-v1.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "Consumer-authored component catalog document.",
+  "description": "Consumer-authored site catalog from ``site/catalog.yaml``.",
   "properties": {
     "components": {
       "description": "Participating components in this consumer-authored catalog.",
@@ -2150,5 +2150,11 @@
     "components"
   ],
   "title": "Site Pipeline Catalog v1",
-  "type": "object"
+  "type": "object",
+  "x-buildish-contract": {
+    "category": "authored",
+    "filePath": "site/catalog.yaml",
+    "ownership": "consumer-owned",
+    "summary": "Consumer-authored site catalog input."
+  }
 }

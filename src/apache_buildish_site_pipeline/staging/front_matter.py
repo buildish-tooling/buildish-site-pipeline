@@ -21,13 +21,15 @@ from pathlib import Path
 import frontmatter
 
 from apache_buildish_site_pipeline.cli.errors import StageIntegrityError
-from apache_buildish_site_pipeline.models.catalog import (
+from apache_buildish_site_pipeline.models.authored.site_catalog import (
     ArtifactLifecycleConfig,
     ExactReleaseConfig,
     ReleaseLineConfig,
 )
-from apache_buildish_site_pipeline.models.page_metadata import PageTranslationMetadata
-from apache_buildish_site_pipeline.models.staged_front_matter import (
+from apache_buildish_site_pipeline.models.authored.page_metadata import (
+    PageTranslationMetadata,
+)
+from apache_buildish_site_pipeline.models.emitted.staged_front_matter import (
     ArtifactFrontMatterSummary,
     PipelineComponentFrontMatter,
     PipelineFrontMatterNamespace,

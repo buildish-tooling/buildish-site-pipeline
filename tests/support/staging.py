@@ -61,7 +61,7 @@ def _build_request(workspace_root: Path, *, pool_size: int) -> BuildRequest:
 
 
 def _expand_workspace_for_multiple_owned_units(workspace_root: Path) -> None:
-    components_path = workspace_root / "site/components.yaml"
+    components_path = workspace_root / "site/catalog.yaml"
     authored = components_path.read_text(encoding="utf-8")
     components_path.write_text(
         authored.replace(

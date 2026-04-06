@@ -117,5 +117,11 @@
     "items"
   ],
   "title": "Site Pipeline data/mounts.json v1",
-  "type": "object"
+  "type": "object",
+  "x-buildish-contract": {
+    "category": "emitted",
+    "filePath": "data/mounts.json",
+    "ownership": "pipeline-derived",
+    "summary": "Pipeline-emitted mount aggregate file."
+  }
 }

@@ -21,7 +21,7 @@ import json
 from typing import cast
 
 from apache_buildish_site_pipeline.models.enums import DiagnosticSeverity
-from apache_buildish_site_pipeline.models.planning_stage_contract import (
+from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
     ExtensionsObject,
     PipelineDiagnosticEntry,
     ReducedDiagnosticDetailsSummary,

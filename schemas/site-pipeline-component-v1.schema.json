@@ -223,5 +223,11 @@
     "component"
   ],
   "title": "Site Pipeline Component Metadata v1",
-  "type": "object"
+  "type": "object",
+  "x-buildish-contract": {
+    "category": "authored",
+    "filePath": "site/component.yaml",
+    "ownership": "component-owned",
+    "summary": "Component-owned metadata input."
+  }
 }

@@ -37,7 +37,7 @@ from apache_buildish_site_pipeline.evaluation.reference_index import (
     validate_references,
 )
 from apache_buildish_site_pipeline.evaluation.types import PublishedTarget
-from apache_buildish_site_pipeline.models.catalog import (
+from apache_buildish_site_pipeline.models.authored.site_catalog import (
     ArtifactLifecycleConfig,
     ArtifactVersioningConfig,
     CandidateSelectionPolicy,

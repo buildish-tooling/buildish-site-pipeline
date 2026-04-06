@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Any
 
 from apache_buildish_site_pipeline.cli.errors import StageIntegrityError
-from apache_buildish_site_pipeline.models.aggregates import (
+from apache_buildish_site_pipeline.models.emitted.aggregates import (
     ArtifactsDataEntry,
     CandidateAggregateEntry,
     CompatibilityAggregateEntry,
@@ -39,20 +39,24 @@ from apache_buildish_site_pipeline.models.aggregates import (
     RouteAggregateEntry,
     TranslationSetAggregateEntry,
 )
-from apache_buildish_site_pipeline.models.catalog import (
+from apache_buildish_site_pipeline.models.authored.site_catalog import (
     CompatibilityAssertionConfig,
     MountConfig,
 )
 from apache_buildish_site_pipeline.models.enums import RecordKind
-from apache_buildish_site_pipeline.models.planning_stage_contract import (
+from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
     PipelineDiagnosticEntry,
     StageDataFiles,
     StageManifestV1,
     StageRoots,
 )
-from apache_buildish_site_pipeline.models.planning_stage_contract import StageCommand
-from apache_buildish_site_pipeline.models.provider_snapshot import ProviderSnapshotV1
-from apache_buildish_site_pipeline.models.staged_front_matter import (
+from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
+    StageCommand,
+)
+from apache_buildish_site_pipeline.models.provider.provider_snapshot import (
+    ProviderSnapshotDocumentV1,
+)
+from apache_buildish_site_pipeline.models.emitted.staged_front_matter import (
     PipelineComponentFrontMatter,
     TranslationLinkSummary,
 )
@@ -95,7 +99,7 @@ def finalize_pages_and_write_aggregates(
     command: StageCommand,
     build_plan: EffectiveBuildPlan,
     diagnostics: tuple[Any, ...],
-    provider_snapshot: ProviderSnapshotV1,
+    provider_snapshot: ProviderSnapshotDocumentV1,
     worker_results: tuple[WorkerResultWire, ...],
     retained_unit_manifests: tuple[UnitContributionManifestWire, ...] = (),
     owned_units: tuple[OwnedUnit, ...] | None = None,
@@ -204,7 +208,7 @@ def _write_aggregate_files(
     layout: WorkRootLayout,
     build_plan: EffectiveBuildPlan,
     diagnostics: tuple[PipelineDiagnosticEntry, ...],
-    provider_snapshot: ProviderSnapshotV1,
+    provider_snapshot: ProviderSnapshotDocumentV1,
     page_contributions: tuple[StagedPageContributionWire, ...],
     unit_contribution_manifests: tuple[UnitContributionManifestWire, ...],
     owned_units: tuple[OwnedUnit, ...],
@@ -717,7 +721,7 @@ def _required_origin(
 
 
 def _build_provider_entries(
-    provider_snapshot: ProviderSnapshotV1,
+    provider_snapshot: ProviderSnapshotDocumentV1,
 ) -> list[ProvidersDataEntry]:
     return [
         ProvidersDataEntry(

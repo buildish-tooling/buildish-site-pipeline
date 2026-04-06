@@ -497,5 +497,11 @@
     "items"
   ],
   "title": "Site Pipeline data/releases.json v1",
-  "type": "object"
+  "type": "object",
+  "x-buildish-contract": {
+    "category": "emitted",
+    "filePath": "data/releases.json",
+    "ownership": "pipeline-derived",
+    "summary": "Pipeline-emitted release aggregate file."
+  }
 }

@@ -19,9 +19,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from apache_buildish_site_pipeline.models import ProviderSnapshotV1
+from apache_buildish_site_pipeline.models import ProviderSnapshotDocumentV1
 from apache_buildish_site_pipeline.models.enums import PlanningTarget
-from apache_buildish_site_pipeline.models.planning_stage_contract import (
+from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
     PipelineDiagnosticEntry,
     StageManifestV1,
     StageCommand,
@@ -77,7 +77,7 @@ class BuildRequest:
     command: StageCommand
     build_plan: EffectiveBuildPlan
     diagnostics: tuple[PipelineDiagnosticEntry, ...]
-    provider_snapshot: ProviderSnapshotV1
+    provider_snapshot: ProviderSnapshotDocumentV1
     destination: StageDestination
     operator_policy: OperatorPolicy = field(default_factory=OperatorPolicy)
     included_unit_ids: frozenset[str] | None = None

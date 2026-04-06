@@ -20,7 +20,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 from apache_buildish_site_pipeline.models.enums import CheckFailureThreshold, RunStatus
-from apache_buildish_site_pipeline.models.planning_stage_contract import (
+from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
     CheckSummary,
     PipelineDiagnosticEntry,
 )

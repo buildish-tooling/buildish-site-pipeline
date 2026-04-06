@@ -89,7 +89,7 @@ practice that means a component with `content.docsRoot` can publish a moving
 development docs surface even before any consumer models explicit artifacts. If
 the consumer resolves that component to `/components/site-pipeline/latest/`, the
 component-owned `docsRoot` should populate that `/latest/` tree without first
-inventing an artifact in `site/components.yaml`.
+inventing an artifact in `site/catalog.yaml`.
 
 ### Consumer catalog contract
 
@@ -102,7 +102,7 @@ repository facts. They are part of what a specific consumer site chooses to
 publish from a repository without letting the repository silently redefine
 consumer-owned policy.
 
-Recommended top-level fields in `site/components.yaml`:
+Recommended top-level fields in `site/catalog.yaml`:
 
 - `schemaVersion`
 - `defaults`

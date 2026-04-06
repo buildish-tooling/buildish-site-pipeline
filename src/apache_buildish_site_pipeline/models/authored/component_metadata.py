@@ -16,12 +16,15 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import ClassVar, Literal
 
 from pydantic import Field
 
-from .base import SitePipelineBaseModel
-from .scalars import Identifier, NonEmptyString, RepoRelativePath, Slug, VersionString
+from ..documentation import (
+    ComponentOwnedAuthoredModel as SitePipelineBaseModel,
+    ContractDocumentation,
+)
+from ..scalars import Identifier, NonEmptyString, RepoRelativePath, Slug, VersionString
 
 
 class ComponentIdentity(SitePipelineBaseModel):
@@ -75,8 +78,15 @@ class ComponentLifecycleHints(SitePipelineBaseModel):
     )
 
 
-class ComponentRepositoryDocumentV1(SitePipelineBaseModel):
+class ComponentMetadataDocumentV1(SitePipelineBaseModel):
     """Component-owned metadata from ``site/component.yaml``."""
+
+    contract_documentation: ClassVar[ContractDocumentation] = ContractDocumentation(
+        category="authored",
+        ownership="component-owned",
+        summary="Component-owned metadata input.",
+        file_path="site/component.yaml",
+    )
 
     schema_version: Literal[1] = Field(
         description="Schema version for the component metadata file."

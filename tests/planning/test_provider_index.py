@@ -20,7 +20,7 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from apache_buildish_site_pipeline.models import ProviderSnapshotV1
+from apache_buildish_site_pipeline.models import ProviderSnapshotDocumentV1
 from apache_buildish_site_pipeline.planning.provider_index import build_provider_snapshot_index
 
 
@@ -87,8 +87,10 @@ class ProviderIndexTests(unittest.TestCase):
                 )
 
 
-def _provider_snapshot(records: list[dict[str, object]]) -> ProviderSnapshotV1:
-    return ProviderSnapshotV1.model_validate(
+def _provider_snapshot(
+    records: list[dict[str, object]],
+) -> ProviderSnapshotDocumentV1:
+    return ProviderSnapshotDocumentV1.model_validate(
         {
             "schemaVersion": 1,
             "providers": [{"key": "github", "type": "githubReleases", "fetchedAt": "2026-04-03T00:00:00Z"}],

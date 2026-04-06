@@ -152,5 +152,11 @@
     "items"
   ],
   "title": "Site Pipeline data/refs.json v1",
-  "type": "object"
+  "type": "object",
+  "x-buildish-contract": {
+    "category": "emitted",
+    "filePath": "data/refs.json",
+    "ownership": "pipeline-derived",
+    "summary": "Pipeline-emitted named-ref aggregate file."
+  }
 }

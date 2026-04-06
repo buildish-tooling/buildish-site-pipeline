@@ -21,7 +21,7 @@ import unittest
 
 from pydantic import ValidationError
 
-from apache_buildish_site_pipeline.models.aggregates import (
+from apache_buildish_site_pipeline.models.emitted.aggregates import (
     CompatibilityAggregateEntry,
     ComponentsDataEntry,
     ContentIndexEntry,

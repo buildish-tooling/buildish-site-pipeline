@@ -309,5 +309,11 @@
     "items"
   ],
   "title": "Site Pipeline data/candidates.json v1",
-  "type": "object"
+  "type": "object",
+  "x-buildish-contract": {
+    "category": "emitted",
+    "filePath": "data/candidates.json",
+    "ownership": "pipeline-derived",
+    "summary": "Pipeline-emitted candidate aggregate file."
+  }
 }

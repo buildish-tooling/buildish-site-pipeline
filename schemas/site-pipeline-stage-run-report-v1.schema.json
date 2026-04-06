@@ -295,5 +295,10 @@
     "diagnostics"
   ],
   "title": "Site Pipeline Stage Run Report v1",
-  "type": "object"
+  "type": "object",
+  "x-buildish-contract": {
+    "category": "emitted",
+    "ownership": "pipeline-derived",
+    "summary": "Pipeline-emitted stage execution report."
+  }
 }

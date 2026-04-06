@@ -32,7 +32,7 @@ from apache_buildish_site_pipeline.cli.contract import (
 )
 from apache_buildish_site_pipeline.commands.stage_report import _report_workspace_root
 from apache_buildish_site_pipeline.models.enums import DiagnosticSeverity, StageCommand
-from apache_buildish_site_pipeline.models.planning_stage_contract import (
+from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
     PipelineDiagnosticEntry,
 )
 
@@ -183,7 +183,7 @@ class BuildAndStageReportTests(unittest.TestCase):
             layout=RepositoryLayout(
                 cwd=workspace_root,
                 workspace_root=workspace_root,
-                catalog_path=site_root / "components.yaml",
+                catalog_path=site_root / "catalog.yaml",
                 site_root=site_root,
                 stage_root=site_root / ".stage",
                 work_root=site_root / ".site-pipeline-work",

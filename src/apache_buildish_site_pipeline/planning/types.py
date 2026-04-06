@@ -21,7 +21,7 @@ from enum import StrEnum
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from apache_buildish_site_pipeline.models.catalog import (
+from apache_buildish_site_pipeline.models.authored.site_catalog import (
     ArtifactLifecycleConfig,
     ArtifactVersioningConfig,
     ComponentCatalogEntry,
@@ -30,8 +30,8 @@ from apache_buildish_site_pipeline.models.catalog import (
     RouteAliasConfig,
     TopLevelAssetConfig,
 )
-from apache_buildish_site_pipeline.models.component_repository import (
-    ComponentRepositoryDocumentV1,
+from apache_buildish_site_pipeline.models.authored.component_metadata import (
+    ComponentMetadataDocumentV1,
     SupportStatusDefinition,
 )
 from apache_buildish_site_pipeline.models.scalars import TimestampString
@@ -44,10 +44,10 @@ from apache_buildish_site_pipeline.models.enums import (
     RouteMode,
     WithdrawalBehavior,
 )
-from apache_buildish_site_pipeline.models.planning_stage_contract import (
+from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
     PipelineDiagnosticEntry,
 )
-from apache_buildish_site_pipeline.models.provider_snapshot import (
+from apache_buildish_site_pipeline.models.provider.provider_snapshot import (
     ProviderAsset,
     ProviderDescriptor,
 )
@@ -147,7 +147,7 @@ class ResolvedComponentConfig:
 
     slug: str
     authored: ComponentCatalogEntry
-    repository_document: ComponentRepositoryDocumentV1 | None
+    repository_document: ComponentMetadataDocumentV1 | None
     group_key: str | None
     content_source: ResolvedSourceBinding | None
     metadata_file: Path | None

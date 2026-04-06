@@ -24,7 +24,9 @@ from apache_buildish_site_pipeline.models.enums import (
     MaterializationStatus,
 )
 from apache_buildish_site_pipeline.models.loading import LoadingError, load_yaml_mapping
-from apache_buildish_site_pipeline.models.page_metadata import PageTranslationMetadata
+from apache_buildish_site_pipeline.models.authored.page_metadata import (
+    PageTranslationMetadata,
+)
 from apache_buildish_site_pipeline.planning.types import (
     LocalInputIdentity,
     PlanningEvaluation,

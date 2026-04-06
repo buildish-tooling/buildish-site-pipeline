@@ -84,7 +84,7 @@ project:
 - `site/component.yaml` is component-owned and should describe stable component
   identity plus repository-owned content roots such as `pagesRoot`, `docsRoot`,
   and `assetsRoot`
-- `site/components.yaml` is consumer-owned and should describe inventory,
+- `site/catalog.yaml` is consumer-owned and should describe inventory,
   source bindings, publication policy, artifact decomposition, and version
   selection for one concrete site build
 

@@ -37,7 +37,7 @@ The smallest useful concrete shape is:
 
 ```text
 site/
-  components.yaml
+  catalog.yaml
   provider-snapshot.json
 components/
   runtime/
@@ -49,12 +49,12 @@ components/
 
 The smallest useful mental model is still simple:
 
-- `site/components.yaml` tells the pipeline which content participates
+- `site/catalog.yaml` tells the pipeline which content participates
 - component source trees hold the authored docs that participate
 - the pipeline stages content into a stable output tree for a renderer or other
   downstream consumer
 
-One representative `site/components.yaml` looks like this:
+One representative `site/catalog.yaml` looks like this:
 
 ```yaml
 schemaVersion: 1
@@ -84,11 +84,11 @@ site-pipeline build
 ```
 
 Those examples assume you run from the workspace root and keep the catalog at
-`site/components.yaml`. If you run from somewhere else or keep the catalog in a
+`site/catalog.yaml`. If you run from somewhere else or keep the catalog in a
 different repository, pass both selection flags explicitly, for example:
 
 ```bash
-site-pipeline build --workspace-root /workspace --catalog /workspace/buildish/site/components.yaml
+site-pipeline build --workspace-root /workspace --catalog /workspace/buildish/site/catalog.yaml
 ```
 
 In that split layout, authored relative paths still resolve from

@@ -252,5 +252,10 @@
     "diagnostics"
   ],
   "title": "Site Pipeline Check Report v1",
-  "type": "object"
+  "type": "object",
+  "x-buildish-contract": {
+    "category": "emitted",
+    "ownership": "pipeline-derived",
+    "summary": "Pipeline-emitted validation report."
+  }
 }

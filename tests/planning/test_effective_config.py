@@ -20,7 +20,10 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from apache_buildish_site_pipeline.models import CatalogDocumentV1, ComponentRepositoryDocumentV1
+from apache_buildish_site_pipeline.models import (
+    ComponentMetadataDocumentV1,
+    SiteCatalogDocumentV1,
+)
 from apache_buildish_site_pipeline.planning.effective_config import (
     _join_public_path,
     _resolve_repo_path,
@@ -30,7 +33,7 @@ from apache_buildish_site_pipeline.planning.effective_config import (
 
 class EffectiveConfigResolutionTests(unittest.TestCase):
     def test_resolves_component_local_dir_into_implicit_content_source(self) -> None:
-        catalog = CatalogDocumentV1.model_validate(
+        catalog = SiteCatalogDocumentV1.model_validate(
             {
                 "schemaVersion": 1,
                 "defaults": {
@@ -64,7 +67,7 @@ class EffectiveConfigResolutionTests(unittest.TestCase):
         )
 
     def test_resolves_defaults_groups_and_component_documents(self) -> None:
-        catalog = CatalogDocumentV1.model_validate(
+        catalog = SiteCatalogDocumentV1.model_validate(
             {
                 "schemaVersion": 1,
                 "defaults": {
@@ -101,7 +104,7 @@ class EffectiveConfigResolutionTests(unittest.TestCase):
             by_alias=True,
             by_name=False,
         )
-        component_document = ComponentRepositoryDocumentV1.model_validate(
+        component_document = ComponentMetadataDocumentV1.model_validate(
             {
                 "schemaVersion": 1,
                 "component": {"slug": "spark"},
@@ -129,7 +132,7 @@ class EffectiveConfigResolutionTests(unittest.TestCase):
         self.assertEqual(artifact.docs_root.name, "rendered")
 
     def test_preserves_explicit_nested_publication_segments(self) -> None:
-        catalog = CatalogDocumentV1.model_validate(
+        catalog = SiteCatalogDocumentV1.model_validate(
             {
                 "schemaVersion": 1,
                 "defaults": {
@@ -165,7 +168,7 @@ class EffectiveConfigResolutionTests(unittest.TestCase):
         self.assertEqual(publication.assets_path, "/spark/assets/")
 
     def test_rejects_unresolvable_component_publication_path(self) -> None:
-        catalog = CatalogDocumentV1.model_validate(
+        catalog = SiteCatalogDocumentV1.model_validate(
             {
                 "schemaVersion": 1,
                 "defaults": {"publication": {"origin": "docs"}},
@@ -181,7 +184,7 @@ class EffectiveConfigResolutionTests(unittest.TestCase):
             resolve_site_config(catalog=catalog, workspace_root=Path(tempdir))
 
     def test_rejects_missing_publication_origin(self) -> None:
-        catalog = CatalogDocumentV1.model_validate(
+        catalog = SiteCatalogDocumentV1.model_validate(
             {
                 "schemaVersion": 1,
                 "site": {},
@@ -203,7 +206,7 @@ class EffectiveConfigResolutionTests(unittest.TestCase):
             resolve_site_config(catalog=catalog, workspace_root=Path(tempdir))
 
     def test_allows_component_without_bound_content_source(self) -> None:
-        catalog = CatalogDocumentV1.model_validate(
+        catalog = SiteCatalogDocumentV1.model_validate(
             {
                 "schemaVersion": 1,
                 "defaults": {"publication": {"origin": "docs"}},
@@ -231,7 +234,7 @@ class EffectiveConfigResolutionTests(unittest.TestCase):
         self.assertIsNone(component.assets_root)
 
     def test_resolves_component_localization_from_defaults_and_overrides(self) -> None:
-        catalog = CatalogDocumentV1.model_validate(
+        catalog = SiteCatalogDocumentV1.model_validate(
             {
                 "schemaVersion": 1,
                 "defaults": {

@@ -69,7 +69,7 @@ from apache_buildish_site_pipeline.models.enums import (
     StageCommand,
 )
 from apache_buildish_site_pipeline.models.loading import load_stage_manifest
-from apache_buildish_site_pipeline.models.planning_stage_contract import (
+from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
     PipelineDiagnosticEntry,
     StageRunReportV1,
     StageRunSummary,
@@ -177,13 +177,13 @@ class WatchInternalTests(unittest.TestCase):
         changed_paths = (
             repo_root / "components/runtime/docs/releases",
             repo_root / "components/runtime/docs/releases/4.0.0/index.md",
-            repo_root / "site/components.yaml",
+            repo_root / "site/catalog.yaml",
         )
 
         self.assertEqual(
             _coalesce_dirty_paths(changed_paths),
             (
-                repo_root / "site/components.yaml",
+                repo_root / "site/catalog.yaml",
                 repo_root / "components/runtime/docs/releases",
             ),
         )
@@ -193,7 +193,7 @@ class WatchInternalTests(unittest.TestCase):
         site_root = repo_root / "site"
         planning_roots = (
             repo_root / "components/runtime/docs",
-            site_root / "components.yaml",
+            site_root / "catalog.yaml",
         )
 
         self.assertEqual(
@@ -298,7 +298,7 @@ class WatchInternalTests(unittest.TestCase):
                 dirty_paths=(dirty_path,),
                 workspace_root=workspace_root,
                 site_root=site_root,
-                catalog_path=site_root / "components.yaml",
+                catalog_path=site_root / "catalog.yaml",
                 provider_snapshot_path=site_root / "provider-snapshot.json",
             )
             if trusted_stage is None:
@@ -309,7 +309,7 @@ class WatchInternalTests(unittest.TestCase):
                 dirty_paths=(dirty_path,),
                 workspace_root=workspace_root,
                 site_root=site_root,
-                catalog_path=site_root / "components.yaml",
+                catalog_path=site_root / "catalog.yaml",
                 provider_snapshot_path=site_root / "provider-snapshot.json",
             )
 
@@ -334,7 +334,7 @@ class WatchInternalTests(unittest.TestCase):
             dirty_paths=(workspace_root / "site/provider-snapshot.json",),
             workspace_root=workspace_root,
             site_root=site_root,
-            catalog_path=site_root / "components.yaml",
+            catalog_path=site_root / "catalog.yaml",
             provider_snapshot_path=site_root / "provider-snapshot.json",
         )
 
@@ -352,10 +352,10 @@ class WatchInternalTests(unittest.TestCase):
         dirty_unit_ids = _dirty_unit_ids_for_paths(
             build_plan=build_plan,
             units=units,
-            dirty_paths=(workspace_root / "site/components.yaml",),
+            dirty_paths=(workspace_root / "site/catalog.yaml",),
             workspace_root=workspace_root,
             site_root=site_root,
-            catalog_path=site_root / "components.yaml",
+            catalog_path=site_root / "catalog.yaml",
             provider_snapshot_path=site_root / "provider-snapshot.json",
         )
 
@@ -589,13 +589,13 @@ class WatchInternalTests(unittest.TestCase):
         with self.assertLogs(logging.getLogger(watch_command.__name__), level="DEBUG") as captured:
             watch_io.emit_cycle_log(
                 report=_watch_report(cycle=5),
-                dirty_paths=(Path("/workspace/site/components.yaml"),),
+                dirty_paths=(Path("/workspace/site/catalog.yaml"),),
                 watch_roots=(Path("/workspace"), Path("/catalog")),
             )
 
         output = "\n".join(captured.output)
         self.assertIn("watch dirty path count: 1", output)
-        self.assertIn("watch debug dirty paths: /workspace/site/components.yaml", output)
+        self.assertIn("watch debug dirty paths: /workspace/site/catalog.yaml", output)
         self.assertIn("watch debug roots: /workspace, /catalog", output)
 
     def test_graceful_watch_shutdown_marks_stop_event_and_restores_handlers(self) -> None:
@@ -714,7 +714,7 @@ class WatchInternalTests(unittest.TestCase):
                     cycle_number=1,
                     trusted_stage=prior_stage,
                     last_watch_roots=(Path("/workspace"),),
-                    dirty_paths=(Path("/workspace/site/components.yaml"),),
+                    dirty_paths=(Path("/workspace/site/catalog.yaml"),),
                     stdout=io.StringIO(),
                     watch_io=watch_io,
                 )
@@ -841,7 +841,7 @@ class WatchInternalTests(unittest.TestCase):
                 catalog=object(),
                 provider_snapshot=object(),
                 component_documents=object(),
-                catalog_path=workspace_root / "site/components.yaml",
+                catalog_path=workspace_root / "site/catalog.yaml",
                 provider_snapshot_path=workspace_root / "provider-snapshot.json",
             )
             sentinel = SimpleNamespace(report=_watch_report(cycle=4), trusted_stage=None, watch_roots=(workspace_root,))
@@ -897,7 +897,7 @@ class WatchInternalTests(unittest.TestCase):
                 catalog=object(),
                 provider_snapshot=object(),
                 component_documents=object(),
-                catalog_path=workspace_root / "site/components.yaml",
+                catalog_path=workspace_root / "site/catalog.yaml",
                 provider_snapshot_path=workspace_root / "provider-snapshot.json",
             )
             build_outcome = SimpleNamespace(
@@ -971,7 +971,7 @@ class WatchInternalTests(unittest.TestCase):
                     dirty_paths=(build_plan.site.site_pages_root / "index.md",),
                     workspace_root=workspace_root,
                     site_root=workspace_root / "site",
-                    catalog_path=workspace_root / "site/components.yaml",
+                    catalog_path=workspace_root / "site/catalog.yaml",
                     provider_snapshot_path=None,
                 ),
                 frozenset({"site-pages"}),
@@ -983,7 +983,7 @@ class WatchInternalTests(unittest.TestCase):
                     dirty_paths=(build_plan.site.site_assets_root / "robots.txt",),
                     workspace_root=workspace_root,
                     site_root=workspace_root / "site",
-                    catalog_path=workspace_root / "site/components.yaml",
+                    catalog_path=workspace_root / "site/catalog.yaml",
                     provider_snapshot_path=None,
                 ),
                 frozenset({"site-assets"}),
@@ -995,7 +995,7 @@ class WatchInternalTests(unittest.TestCase):
                     dirty_paths=(vendor_asset,),
                     workspace_root=workspace_root,
                     site_root=workspace_root / "site",
-                    catalog_path=workspace_root / "site/components.yaml",
+                    catalog_path=workspace_root / "site/catalog.yaml",
                     provider_snapshot_path=None,
                 ),
                 frozenset({"vendor-assets"}),
@@ -1007,7 +1007,7 @@ class WatchInternalTests(unittest.TestCase):
                     dirty_paths=(component.content_source.local_dir / "README.md",),
                     workspace_root=workspace_root,
                     site_root=workspace_root / "site",
-                    catalog_path=workspace_root / "site/components.yaml",
+                    catalog_path=workspace_root / "site/catalog.yaml",
                     provider_snapshot_path=None,
                 ),
                 frozenset({f"component:{component.slug}"}),
@@ -1028,7 +1028,7 @@ class WatchInternalTests(unittest.TestCase):
                     dirty_paths=(site_root,),
                     workspace_root=workspace_root,
                     site_root=site_root,
-                    catalog_path=workspace_root / "site/components.yaml",
+                    catalog_path=workspace_root / "site/catalog.yaml",
                     provider_snapshot_path=None,
                 ),
                 current_unit_ids,
@@ -1040,7 +1040,7 @@ class WatchInternalTests(unittest.TestCase):
                     dirty_paths=(workspace_root,),
                     workspace_root=workspace_root,
                     site_root=site_root,
-                    catalog_path=workspace_root / "site/components.yaml",
+                    catalog_path=workspace_root / "site/catalog.yaml",
                     provider_snapshot_path=None,
                 ),
                 current_unit_ids,
@@ -1126,7 +1126,7 @@ def _watch_invocation(
         layout=RepositoryLayout(
             cwd=workspace_root,
             workspace_root=workspace_root,
-            catalog_path=site_root / "components.yaml",
+            catalog_path=site_root / "catalog.yaml",
             site_root=site_root,
             stage_root=site_root / ".stage",
             work_root=site_root / ".site-pipeline-work",

@@ -18,11 +18,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from apache_buildish_site_pipeline.models.planning_stage_contract import (
+from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
     StageCommand,
     StageManifestV1,
 )
-from apache_buildish_site_pipeline.models.provider_snapshot import ProviderSnapshotV1
+from apache_buildish_site_pipeline.models.provider.provider_snapshot import (
+    ProviderSnapshotDocumentV1,
+)
 
 from .aggregates import finalize_pages_and_write_aggregates
 from .ownership import OwnedUnit
@@ -36,7 +38,7 @@ def build_stage_manifest(
     command: StageCommand,
     build_plan: EffectiveBuildPlan,
     diagnostics: tuple[Any, ...],
-    provider_snapshot: ProviderSnapshotV1,
+    provider_snapshot: ProviderSnapshotDocumentV1,
     worker_results: tuple[WorkerResultWire, ...],
     retained_unit_manifests: tuple[UnitContributionManifestWire, ...] = (),
     owned_units: tuple[OwnedUnit, ...] | None = None,

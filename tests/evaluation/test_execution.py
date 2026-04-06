@@ -23,7 +23,11 @@ from pathlib import Path
 from unittest.mock import patch
 
 from apache_buildish_site_pipeline.evaluation import EvaluationMode, EvaluationRequest, build_check_report, run_evaluation
-from apache_buildish_site_pipeline.models import CatalogDocumentV1, PlanningTarget, ProviderSnapshotV1
+from apache_buildish_site_pipeline.models import (
+    PlanningTarget,
+    ProviderSnapshotDocumentV1,
+    SiteCatalogDocumentV1,
+)
 from apache_buildish_site_pipeline.models.enums import RunStatus
 from apache_buildish_site_pipeline.planning import evaluate_planning
 
@@ -748,8 +752,8 @@ def _planning_eval(
     workspace_root: Path,
     *,
     stale_release: bool = False,
-    catalog: CatalogDocumentV1 | None = None,
-    provider_snapshot: ProviderSnapshotV1 | None = None,
+    catalog: SiteCatalogDocumentV1 | None = None,
+    provider_snapshot: ProviderSnapshotDocumentV1 | None = None,
 ):
     catalog = _catalog(shared_mount_path=False) if catalog is None else catalog
     provider_snapshot = _provider_snapshot() if provider_snapshot is None else provider_snapshot
@@ -774,9 +778,9 @@ def _catalog(
     spark_localization: dict[str, object] | None = None,
     spark_artifact: dict[str, object] | None = None,
     flink_artifact: dict[str, object] | None = None,
-) -> CatalogDocumentV1:
+) -> SiteCatalogDocumentV1:
     runtime_two_mount_path = "/spark/" if shared_mount_path else "/flink/"
-    return CatalogDocumentV1.model_validate(
+    return SiteCatalogDocumentV1.model_validate(
         {
             "schemaVersion": 1,
             "defaults": {
@@ -836,8 +840,10 @@ def _catalog(
     )
 
 
-def _provider_snapshot(*, extra_records: list[dict[str, object]] | None = None) -> ProviderSnapshotV1:
-    return ProviderSnapshotV1.model_validate(
+def _provider_snapshot(
+    *, extra_records: list[dict[str, object]] | None = None
+) -> ProviderSnapshotDocumentV1:
+    return ProviderSnapshotDocumentV1.model_validate(
         {
             "schemaVersion": 1,
             "providers": [{"key": "github", "type": "githubReleases", "fetchedAt": "2026-04-03T00:00:00Z"}],

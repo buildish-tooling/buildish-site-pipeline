@@ -28,7 +28,7 @@ Start with this workspace shape:
 
 ```text
 site/
-  components.yaml
+  catalog.yaml
   provider-snapshot.json
 components/
   runtime/
@@ -43,7 +43,7 @@ metadata in staged page front matter and aggregate files.
 
 ## Write the catalog
 
-Create `site/components.yaml`:
+Create `site/catalog.yaml`:
 
 ```yaml
 schemaVersion: 1
@@ -108,13 +108,13 @@ site-pipeline check
 site-pipeline build
 ```
 
-Those defaults assume the catalog lives at `site/components.yaml`. If your site
+Those defaults assume the catalog lives at `site/catalog.yaml`. If your site
 catalog is in a different repository or you invoke the CLI from outside the
 workspace root, pass both paths explicitly:
 
 ```bash
-site-pipeline check --workspace-root /workspace --catalog /workspace/buildish/site/components.yaml
-site-pipeline build --workspace-root /workspace --catalog /workspace/buildish/site/components.yaml
+site-pipeline check --workspace-root /workspace --catalog /workspace/buildish/site/catalog.yaml
+site-pipeline build --workspace-root /workspace --catalog /workspace/buildish/site/catalog.yaml
 ```
 
 With that split, authored relative paths from the catalog still resolve from

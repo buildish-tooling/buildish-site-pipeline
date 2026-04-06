@@ -171,7 +171,7 @@ def parse_invocation(argv: Sequence[str] | None = None) -> CommandInvocation:
     catalog_path = (
         _resolve_cli_path(cwd=cwd, raw_path=namespace.catalog)
         if namespace.catalog
-        else workspace_root / "site/components.yaml"
+        else workspace_root / "site/catalog.yaml"
     )
     site_root = catalog_path.parent
     layout = RepositoryLayout(

@@ -20,18 +20,15 @@ from typing import Self
 
 from pydantic import Field, model_validator
 
-from .base import SitePipelineBaseModel
-from .catalog import ArtifactVersioningConfig, SupportWindow
-from .component_repository import SupportStatusDefinition
-from .enums import (
+from ..documentation import PipelineDerivedModel as SitePipelineBaseModel
+from ..enums import (
     IndexBehavior,
     PublicationState,
     RecordKind,
     TrustClass,
     WithdrawalBehavior,
 )
-from .provider_snapshot import ProviderAsset
-from .scalars import (
+from ..scalars import (
     ArtifactKey,
     ExtensionsObject,
     Identifier,
@@ -50,13 +47,16 @@ from .scalars import (
     UrlString,
     VersionString,
 )
+from ..validation.extensions import serialize_extensions_object
+from ..authored.component_metadata import SupportStatusDefinition
+from ..authored.site_catalog import ArtifactVersioningConfig, SupportWindow
+from ..provider.provider_snapshot import ProviderAsset
 from .staged_front_matter import (
     ArtifactFrontMatterSummary,
     ReleaseLineSummary,
     ResolvedPublication,
     TranslationLinkSummary,
 )
-from .validation.extensions import serialize_extensions_object
 
 _ALLOWED_REDIRECT_STATUS_CODES = frozenset({301, 302, 307, 308})
 _WITHDRAWN_PUBLICATION_STATES = frozenset(

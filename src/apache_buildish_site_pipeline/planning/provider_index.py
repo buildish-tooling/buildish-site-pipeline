@@ -19,7 +19,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from apache_buildish_site_pipeline.models.enums import RecordKind
-from apache_buildish_site_pipeline.models.provider_snapshot import ProviderSnapshotV1
+from apache_buildish_site_pipeline.models.provider.provider_snapshot import (
+    ProviderSnapshotDocumentV1,
+)
 
 from .types import (
     IndexedProviderRecord,
@@ -52,7 +54,7 @@ class _MutableProviderContextBucket:
 
 def build_provider_snapshot_index(
     *,
-    provider_snapshot: ProviderSnapshotV1,
+    provider_snapshot: ProviderSnapshotDocumentV1,
     site: ResolvedSiteConfig,
 ) -> ProviderSnapshotIndex:
     """Index provider records by artifact and selection identity."""

@@ -120,7 +120,7 @@ Recommended forms are:
 - `site-pipeline check`
 - `site-pipeline check --fail-on error`
 - `site-pipeline check --fail-on warning`
-- `site-pipeline check --workspace-root /workspace --catalog /workspace/buildish/site/components.yaml`
+- `site-pipeline check --workspace-root /workspace --catalog /workspace/buildish/site/catalog.yaml`
 - `site-pipeline check --report-format json --report-schema-version 1`
 - `site-pipeline check --report-format json --report-schema-version 1 --report-output -`
 - `site-pipeline check --report-format json --report-schema-version 1 --report-output .site-pipeline/check-report.json`
@@ -202,7 +202,7 @@ Recommended meanings are:
   roots, and other repo-relative authored paths
 - `--catalog` selects the authored catalog document to load
 - when `--catalog` is omitted, the default catalog is
-  `<workspace-root>/site/components.yaml`
+  `<workspace-root>/site/catalog.yaml`
 - the default provider snapshot path and the pipeline-owned `.stage` and
   `.site-pipeline-work` directories are derived from the selected catalog's
   parent directory
@@ -213,7 +213,7 @@ checkout root is larger than the repository that holds the site catalog.
 
 For example, this is a supported stable form:
 
-- `site-pipeline build --workspace-root /workspace --catalog /workspace/buildish/site/components.yaml`
+- `site-pipeline build --workspace-root /workspace --catalog /workspace/buildish/site/catalog.yaml`
 
 Future operator-local path mapping is intentionally separate from the shared
 catalog contract. `--local-overrides <path>` is reserved for that future work
@@ -268,7 +268,7 @@ Recommended forms are:
 
 - `site-pipeline plan --for build`
 - `site-pipeline plan --for watch`
-- `site-pipeline plan --for build --workspace-root /workspace --catalog /workspace/buildish/site/components.yaml`
+- `site-pipeline plan --for build --workspace-root /workspace --catalog /workspace/buildish/site/catalog.yaml`
 - `site-pipeline plan --for build --report-format json --report-schema-version 1`
 - `site-pipeline plan --for build --report-format json --report-schema-version 1 --report-output -`
 - `site-pipeline plan --for build --report-format json --report-schema-version 1 --report-output .site-pipeline/materialization-report.json`
@@ -348,13 +348,13 @@ shell exit status is outside the application-owned `0`-through-`3` contract.
 Recommended forms are:
 
 - `site-pipeline build`
-- `site-pipeline build --workspace-root /workspace --catalog /workspace/buildish/site/components.yaml`
+- `site-pipeline build --workspace-root /workspace --catalog /workspace/buildish/site/catalog.yaml`
 - `site-pipeline build --report-format json --report-schema-version 1`
 - `site-pipeline build --report-format json --report-schema-version 1 --report-output -`
 - `site-pipeline build --report-format json --report-schema-version 1 --report-output .site-pipeline/build-report.json`
 - `site-pipeline watch`
 - `site-pipeline watch --quiet`
-- `site-pipeline watch --workspace-root /workspace --catalog /workspace/buildish/site/components.yaml`
+- `site-pipeline watch --workspace-root /workspace --catalog /workspace/buildish/site/catalog.yaml`
 - `site-pipeline watch --verbose`
 - `site-pipeline watch --report-format json --report-schema-version 1 --report-output .site-pipeline/watch-report.json`
 - `site-pipeline watch --unstable-events jsonl`

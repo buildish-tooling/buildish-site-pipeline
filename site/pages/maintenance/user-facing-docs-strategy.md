@@ -151,7 +151,7 @@ Every tutorial, concept page, or how-to that introduces new pipeline behavior
 should try to include a small reusable example packet:
 
 - the relevant workspace tree
-- the authored `site/components.yaml` fragment
+- the authored `site/catalog.yaml` fragment
 - the authored page or content fragment when page behavior matters
 - the CLI command the reader runs
 - the first staged path the reader should inspect

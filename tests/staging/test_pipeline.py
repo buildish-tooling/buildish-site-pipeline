@@ -306,7 +306,7 @@ class StagingPipelineTests(unittest.TestCase):
 
     def test_build_resolves_internal_and_withdrawn_redirects_in_redirect_inventory(self) -> None:
         with _workspace(with_content_file=True) as workspace_root:
-            components_path = workspace_root / "site/components.yaml"
+            components_path = workspace_root / "site/catalog.yaml"
             provider_snapshot_path = workspace_root / "site/provider-snapshot.json"
             _replace_file_text_once(
                 components_path,
@@ -359,7 +359,7 @@ class StagingPipelineTests(unittest.TestCase):
         self,
     ) -> None:
         with _workspace(with_content_file=True) as workspace_root:
-            components_path = workspace_root / "site/components.yaml"
+            components_path = workspace_root / "site/catalog.yaml"
             _replace_file_text_once(
                 components_path,
                 "origins:\n  docs:\n    baseUrl: https://docs.example.org\n",
@@ -423,7 +423,7 @@ class StagingPipelineTests(unittest.TestCase):
         self,
     ) -> None:
         with _workspace(with_content_file=True) as workspace_root:
-            components_path = workspace_root / "site/components.yaml"
+            components_path = workspace_root / "site/catalog.yaml"
             _replace_file_text_once(
                 components_path,
                 "    publication:\n      mountPath: /spark/\n",
@@ -452,7 +452,7 @@ class StagingPipelineTests(unittest.TestCase):
 
     def test_component_redirect_uses_canonical_alias_route_when_present(self) -> None:
         with _workspace(with_content_file=True) as workspace_root:
-            components_path = workspace_root / "site/components.yaml"
+            components_path = workspace_root / "site/catalog.yaml"
             _replace_file_text_once(
                 components_path,
                 "    publication:\n      mountPath: /spark/\n",
@@ -484,7 +484,7 @@ class StagingPipelineTests(unittest.TestCase):
         self,
     ) -> None:
         with _workspace(with_content_file=True) as workspace_root:
-            components_path = workspace_root / "site/components.yaml"
+            components_path = workspace_root / "site/catalog.yaml"
             _replace_file_text_once(
                 components_path,
                 "    publication:\n      mountPath: /spark/\n",

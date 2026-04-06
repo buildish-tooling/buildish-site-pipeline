@@ -18,15 +18,19 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from apache_buildish_site_pipeline.models.catalog import CatalogDocumentV1
-from apache_buildish_site_pipeline.models.component_repository import (
-    ComponentRepositoryDocumentV1,
+from apache_buildish_site_pipeline.models.authored.site_catalog import (
+    SiteCatalogDocumentV1,
+)
+from apache_buildish_site_pipeline.models.authored.component_metadata import (
+    ComponentMetadataDocumentV1,
 )
 from apache_buildish_site_pipeline.models.enums import PlanningTarget
-from apache_buildish_site_pipeline.models.planning_stage_contract import (
+from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
     PipelineDiagnosticEntry,
 )
-from apache_buildish_site_pipeline.models.provider_snapshot import ProviderSnapshotV1
+from apache_buildish_site_pipeline.models.provider.provider_snapshot import (
+    ProviderSnapshotDocumentV1,
+)
 
 from .build_plan import build_effective_build_plan
 from .effective_config import resolve_site_config
@@ -42,10 +46,10 @@ from .watch_roots import derive_watch_plan
 def evaluate_planning(
     *,
     target: PlanningTarget,
-    catalog: CatalogDocumentV1,
-    provider_snapshot: ProviderSnapshotV1,
+    catalog: SiteCatalogDocumentV1,
+    provider_snapshot: ProviderSnapshotDocumentV1,
     workspace_root: Path,
-    component_documents: dict[str, ComponentRepositoryDocumentV1] | None = None,
+    component_documents: dict[str, ComponentMetadataDocumentV1] | None = None,
     stage_root: Path | None = None,
     work_root: Path | None = None,
     report_output: Path | None = None,

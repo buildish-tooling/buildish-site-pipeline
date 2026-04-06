@@ -22,7 +22,11 @@ import unittest
 from pathlib import Path
 
 from apache_buildish_site_pipeline.cli.errors import CommandExecutionError
-from apache_buildish_site_pipeline.models import CatalogDocumentV1, PlanningTarget, ProviderSnapshotV1
+from apache_buildish_site_pipeline.models import (
+    PlanningTarget,
+    ProviderSnapshotDocumentV1,
+    SiteCatalogDocumentV1,
+)
 from apache_buildish_site_pipeline.models.enums import MaterializationInputKind, MaterializationStatus
 from apache_buildish_site_pipeline.planning import build_resolved_materialization_report, evaluate_planning
 from apache_buildish_site_pipeline.planning.types import InputReadiness, LocalInputIdentity, MaterializationStatusReason, ResolvedLocalInput
@@ -322,8 +326,8 @@ class PlanningEvaluationTests(unittest.TestCase):
                 )
 
 
-def _sample_catalog() -> CatalogDocumentV1:
-    return CatalogDocumentV1.model_validate(
+def _sample_catalog() -> SiteCatalogDocumentV1:
+    return SiteCatalogDocumentV1.model_validate(
         {
             "schemaVersion": 1,
             "defaults": {
@@ -380,8 +384,8 @@ def _sample_catalog() -> CatalogDocumentV1:
     )
 
 
-def _component_only_catalog() -> CatalogDocumentV1:
-    return CatalogDocumentV1.model_validate(
+def _component_only_catalog() -> SiteCatalogDocumentV1:
+    return SiteCatalogDocumentV1.model_validate(
         {
             "schemaVersion": 1,
             "defaults": {
@@ -405,8 +409,8 @@ def _component_only_catalog() -> CatalogDocumentV1:
     )
 
 
-def _sample_provider_snapshot() -> ProviderSnapshotV1:
-    return ProviderSnapshotV1.model_validate(
+def _sample_provider_snapshot() -> ProviderSnapshotDocumentV1:
+    return ProviderSnapshotDocumentV1.model_validate(
         {
             "schemaVersion": 1,
             "providers": [
@@ -449,8 +453,8 @@ def _sample_provider_snapshot() -> ProviderSnapshotV1:
     )
 
 
-def _empty_provider_snapshot() -> ProviderSnapshotV1:
-    return ProviderSnapshotV1.model_validate(
+def _empty_provider_snapshot() -> ProviderSnapshotDocumentV1:
+    return ProviderSnapshotDocumentV1.model_validate(
         {"schemaVersion": 1, "providers": [], "records": []},
         by_alias=True,
         by_name=False,

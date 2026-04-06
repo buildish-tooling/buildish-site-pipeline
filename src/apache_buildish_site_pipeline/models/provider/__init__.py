@@ -12,15 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Page-authored metadata models."""
-
-from __future__ import annotations
-
-from .base import SitePipelineBaseModel
-from .scalars import NonEmptyString
-
-
-class PageTranslationMetadata(SitePipelineBaseModel):
-    """Authored page metadata used to link locale siblings."""
-
-    translation_key: NonEmptyString
+"""Provider-derived public model contracts."""

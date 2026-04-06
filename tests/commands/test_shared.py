@@ -25,7 +25,7 @@ from tests.support.workspace import _workspace
 
 
 def _set_default_metadata_file(workspace_root, metadata_file: str) -> None:
-    catalog_path = workspace_root / "site/components.yaml"
+    catalog_path = workspace_root / "site/catalog.yaml"
     catalog = catalog_path.read_text(encoding="utf-8")
     catalog = catalog.replace(
         "defaults:\n",
@@ -38,7 +38,7 @@ def _set_default_metadata_file(workspace_root, metadata_file: str) -> None:
 class SharedWorkspaceLoadingTests(unittest.TestCase):
     def test_missing_catalog_document_raises_invocation_error(self) -> None:
         with _workspace() as workspace_root:
-            (workspace_root / "site/components.yaml").unlink()
+            (workspace_root / "site/catalog.yaml").unlink()
 
             with self.assertRaises(InvocationError) as raised:
                 load_workspace_inputs(workspace_root=workspace_root)

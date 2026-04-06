@@ -21,8 +21,10 @@ import unittest
 
 from pydantic import ValidationError
 
-from apache_buildish_site_pipeline.models.page_metadata import PageTranslationMetadata
-from apache_buildish_site_pipeline.models.staged_front_matter import (
+from apache_buildish_site_pipeline.models.authored.page_metadata import (
+    PageTranslationMetadata,
+)
+from apache_buildish_site_pipeline.models.emitted.staged_front_matter import (
     PipelineFrontMatterNamespace,
     PipelinePageFrontMatter,
     ResolvedOrigin,

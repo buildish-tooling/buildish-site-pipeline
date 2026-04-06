@@ -16,13 +16,16 @@
 
 from __future__ import annotations
 
-from typing import Literal, Self
+from typing import ClassVar, Literal, Self
 
 from pydantic import model_validator
 
-from .base import SitePipelineBaseModel
-from .enums import PublicationState, RecordKind
-from .scalars import (
+from ..documentation import (
+    ContractDocumentation,
+    ProviderDerivedModel as SitePipelineBaseModel,
+)
+from ..enums import PublicationState, RecordKind
+from ..scalars import (
     ArtifactKey,
     Identifier,
     NonEmptyString,
@@ -103,8 +106,15 @@ class ProviderRecord(SitePipelineBaseModel):
         return self
 
 
-class ProviderSnapshotV1(SitePipelineBaseModel):
-    """Normalized external release-provider input."""
+class ProviderSnapshotDocumentV1(SitePipelineBaseModel):
+    """Provider-derived normalized snapshot from ``site/provider-snapshot.json``."""
+
+    contract_documentation: ClassVar[ContractDocumentation] = ContractDocumentation(
+        category="provider",
+        ownership="provider-derived",
+        summary="Provider-derived release snapshot input.",
+        file_path="site/provider-snapshot.json",
+    )
 
     schema_version: Literal[1]
     providers: list[ProviderDescriptor]

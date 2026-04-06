@@ -30,9 +30,9 @@ from apache_buildish_site_pipeline.cli.errors import (
     RetainedStageError,
     StageIntegrityError,
 )
-from apache_buildish_site_pipeline.models import ProviderSnapshotV1
+from apache_buildish_site_pipeline.models import ProviderSnapshotDocumentV1
 from apache_buildish_site_pipeline.models.enums import RecordKind
-from apache_buildish_site_pipeline.models.planning_stage_contract import (
+from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
     PipelineDiagnosticEntry,
     StageCommand,
     StageManifestV1,
@@ -120,7 +120,7 @@ def materialize_stage_tree(
     *,
     build_plan: EffectiveBuildPlan,
     diagnostics: tuple[PipelineDiagnosticEntry, ...],
-    provider_snapshot: ProviderSnapshotV1,
+    provider_snapshot: ProviderSnapshotDocumentV1,
     stage_root: Path,
     command: StageCommand = StageCommand.BUILD,
 ) -> StageManifestV1:
@@ -143,7 +143,7 @@ def publish_stage(
     *,
     build_plan: EffectiveBuildPlan,
     diagnostics: tuple[PipelineDiagnosticEntry, ...],
-    provider_snapshot: ProviderSnapshotV1,
+    provider_snapshot: ProviderSnapshotDocumentV1,
     stage_root: Path,
     assembly_root: Path | None = None,
     allow_replace_existing: bool = False,

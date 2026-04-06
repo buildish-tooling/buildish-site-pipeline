@@ -14,7 +14,8 @@
 
 """Typed external models for the site pipeline."""
 
-from .aggregates import (
+from .documentation import ContractDocumentation, contract_documentation_for
+from .emitted.aggregates import (
     ArtifactsDataEntry,
     CandidateAggregateEntry,
     CompatibilityAggregateEntry,
@@ -31,13 +32,12 @@ from .aggregates import (
     TranslationSetAggregateEntry,
 )
 from .base import SitePipelineBaseModel
-from .catalog import (
+from .authored.site_catalog import (
     ArtifactConfig,
     ArtifactLifecycleConfig,
     ArtifactVersioningConfig,
     CandidateSelectionPolicy,
     CatalogDefaults,
-    CatalogDocumentV1,
     CompatibilityAssertionConfig,
     ComponentCatalogEntry,
     ComponentContentSelection,
@@ -56,14 +56,15 @@ from .catalog import (
     ReleaseSelectionPolicy,
     RouteAliasConfig,
     SiteContentConfig,
+    SiteCatalogDocumentV1,
     SourceConfig,
     SupportWindow,
     TopLevelAssetConfig,
 )
-from .component_repository import (
+from .authored.component_metadata import (
     ComponentIdentity,
     ComponentLifecycleHints,
-    ComponentRepositoryDocumentV1,
+    ComponentMetadataDocumentV1,
     ContentRoots,
     SupportStatusDefinition,
 )
@@ -96,18 +97,18 @@ from .loading import (
     MissingSchemaVersionError,
     UnsupportedSchemaVersionError,
     load_check_report,
-    load_catalog_document,
-    load_component_repository_document,
+    load_component_metadata_document,
     load_json_mapping,
-    load_provider_snapshot,
+    load_provider_snapshot_document,
     load_resolved_materialization_report,
+    load_site_catalog_document,
     load_stage_manifest,
     load_stage_run_report,
     load_versioned_document,
     load_yaml_mapping,
 )
-from .page_metadata import PageTranslationMetadata
-from .planning_stage_contract import (
+from .authored.page_metadata import PageTranslationMetadata
+from .emitted.planning_stage_contract import (
     CheckReportV1,
     CheckSummary,
     PipelineDiagnosticEntry,
@@ -120,11 +121,11 @@ from .planning_stage_contract import (
     StageRunReportV1,
     StageRunSummary,
 )
-from .provider_snapshot import (
+from .provider.provider_snapshot import (
     ProviderAsset,
     ProviderDescriptor,
     ProviderRecord,
-    ProviderSnapshotV1,
+    ProviderSnapshotDocumentV1,
 )
 from .scalars import (
     ArtifactKey,
@@ -149,7 +150,7 @@ from .scalars import (
     UrlString,
     VersionString,
 )
-from .staged_front_matter import (
+from .emitted.staged_front_matter import (
     ArtifactFrontMatterSummary,
     PipelineComponentFrontMatter,
     PipelineFrontMatterNamespace,
@@ -176,7 +177,6 @@ __all__ = [
     "CandidateAggregateEntry",
     "CandidateSelectionPolicy",
     "CatalogDefaults",
-    "CatalogDocumentV1",
     "CheckFailureThreshold",
     "CheckReportV1",
     "CheckSummary",
@@ -185,9 +185,10 @@ __all__ = [
     "ComponentCatalogEntry",
     "ComponentsDataEntry",
     "ComponentContentSelection",
+    "ComponentMetadataDocumentV1",
     "ComponentIdentity",
     "ComponentLifecycleHints",
-    "ComponentRepositoryDocumentV1",
+    "ContractDocumentation",
     "ContentIndexEntry",
     "ContentRoots",
     "DiagnosticSeverity",
@@ -234,7 +235,7 @@ __all__ = [
     "ProvidersDataEntry",
     "ProviderRecord",
     "ProviderProvenance",
-    "ProviderSnapshotV1",
+    "ProviderSnapshotDocumentV1",
     "PublicationState",
     "PublicPath",
     "RecordKind",
@@ -264,6 +265,7 @@ __all__ = [
     "RunStatus",
     "SchemaVersion",
     "SiteContentConfig",
+    "SiteCatalogDocumentV1",
     "SitePipelineBaseModel",
     "Slug",
     "SourceConfig",
@@ -287,12 +289,13 @@ __all__ = [
     "VersionString",
     "VersionContext",
     "WithdrawalBehavior",
+    "contract_documentation_for",
     "load_check_report",
-    "load_catalog_document",
-    "load_component_repository_document",
+    "load_component_metadata_document",
     "load_json_mapping",
-    "load_provider_snapshot",
+    "load_provider_snapshot_document",
     "load_resolved_materialization_report",
+    "load_site_catalog_document",
     "load_stage_manifest",
     "load_stage_run_report",
     "load_versioned_document",

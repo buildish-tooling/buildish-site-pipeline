@@ -21,7 +21,7 @@ import tempfile
 from pathlib import Path
 from typing import TextIO
 
-from apache_buildish_site_pipeline.models.planning_stage_contract import (
+from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
     CheckReportV1,
     ResolvedMaterializationReportV1,
 )

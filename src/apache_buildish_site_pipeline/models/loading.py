@@ -27,15 +27,15 @@ from .base import SitePipelineBaseModel
 from .enums import DocumentFormat
 
 if TYPE_CHECKING:
-    from .catalog import CatalogDocumentV1
-    from .component_repository import ComponentRepositoryDocumentV1
-    from .planning_stage_contract import (
+    from .authored.component_metadata import ComponentMetadataDocumentV1
+    from .authored.site_catalog import SiteCatalogDocumentV1
+    from .emitted.planning_stage_contract import (
         CheckReportV1,
         ResolvedMaterializationReportV1,
         StageManifestV1,
         StageRunReportV1,
     )
-    from .provider_snapshot import ProviderSnapshotV1
+    from .provider.provider_snapshot import ProviderSnapshotDocumentV1
 
 
 class LoadingError(Exception):
@@ -236,7 +236,7 @@ def load_resolved_materialization_report(
     source_name: str = "<memory>",
 ) -> ResolvedMaterializationReportV1:
     """Load one resolved-materialization report document."""
-    from .planning_stage_contract import ResolvedMaterializationReportV1
+    from .emitted.planning_stage_contract import ResolvedMaterializationReportV1
 
     return load_versioned_document(
         document,
@@ -253,7 +253,7 @@ def load_check_report(
     source_name: str = "<memory>",
 ) -> CheckReportV1:
     """Load one check-report document."""
-    from .planning_stage_contract import CheckReportV1
+    from .emitted.planning_stage_contract import CheckReportV1
 
     return load_versioned_document(
         document,
@@ -270,7 +270,7 @@ def load_stage_run_report(
     source_name: str = "<memory>",
 ) -> StageRunReportV1:
     """Load one stage-run report document."""
-    from .planning_stage_contract import StageRunReportV1
+    from .emitted.planning_stage_contract import StageRunReportV1
 
     return load_versioned_document(
         document,
@@ -287,7 +287,7 @@ def load_stage_manifest(
     source_name: str = "<memory>",
 ) -> StageManifestV1:
     """Load one stage-manifest document."""
-    from .planning_stage_contract import StageManifestV1
+    from .emitted.planning_stage_contract import StageManifestV1
 
     return load_versioned_document(
         document,
@@ -297,52 +297,52 @@ def load_stage_manifest(
     )
 
 
-def load_catalog_document(
+def load_site_catalog_document(
     document: str | bytes,
     *,
     document_format: DocumentFormat,
     source_name: str = "<memory>",
-) -> CatalogDocumentV1:
-    """Load one consumer catalog document."""
-    from .catalog import CatalogDocumentV1
+) -> SiteCatalogDocumentV1:
+    """Load one consumer-authored site catalog document."""
+    from .authored.site_catalog import SiteCatalogDocumentV1
 
     return load_versioned_document(
         document,
         document_format=document_format,
-        schema_version_models={1: CatalogDocumentV1},
+        schema_version_models={1: SiteCatalogDocumentV1},
         source_name=source_name,
     )
 
 
-def load_component_repository_document(
+def load_component_metadata_document(
     document: str | bytes,
     *,
     document_format: DocumentFormat,
     source_name: str = "<memory>",
-) -> ComponentRepositoryDocumentV1:
-    """Load one component-repository metadata document."""
-    from .component_repository import ComponentRepositoryDocumentV1
+) -> ComponentMetadataDocumentV1:
+    """Load one component-owned metadata document."""
+    from .authored.component_metadata import ComponentMetadataDocumentV1
 
     return load_versioned_document(
         document,
         document_format=document_format,
-        schema_version_models={1: ComponentRepositoryDocumentV1},
+        schema_version_models={1: ComponentMetadataDocumentV1},
         source_name=source_name,
     )
 
 
-def load_provider_snapshot(
+def load_provider_snapshot_document(
     document: str | bytes,
     *,
     document_format: DocumentFormat,
     source_name: str = "<memory>",
-) -> ProviderSnapshotV1:
-    """Load one normalized provider snapshot document."""
-    from .provider_snapshot import ProviderSnapshotV1
+) -> ProviderSnapshotDocumentV1:
+    """Load one provider-derived normalized snapshot document."""
+    from .provider.provider_snapshot import ProviderSnapshotDocumentV1
 
     return load_versioned_document(
         document,
         document_format=document_format,
-        schema_version_models={1: ProviderSnapshotV1},
+        schema_version_models={1: ProviderSnapshotDocumentV1},
         source_name=source_name,
     )

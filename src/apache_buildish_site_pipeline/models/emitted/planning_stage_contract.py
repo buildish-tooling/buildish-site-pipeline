@@ -16,12 +16,15 @@
 
 from __future__ import annotations
 
-from typing import Literal, Self
+from typing import ClassVar, Literal, Self
 
 from pydantic import Field, field_validator, model_validator
 
-from .base import SitePipelineBaseModel
-from .enums import (
+from ..documentation import (
+    ContractDocumentation,
+    PipelineDerivedModel as SitePipelineBaseModel,
+)
+from ..enums import (
     CheckFailureThreshold,
     DiagnosticSeverity,
     MaterializationInputKind,
@@ -30,7 +33,7 @@ from .enums import (
     RunStatus,
     StageCommand,
 )
-from .scalars import (
+from ..scalars import (
     ExtensionsObject,
     LocalPathString,
     NonEmptyString,
@@ -103,6 +106,12 @@ class PipelineDiagnosticEntry(SitePipelineBaseModel):
 class ResolvedMaterializationReportV1(SitePipelineBaseModel):
     """Machine-readable planning report for required local inputs."""
 
+    contract_documentation: ClassVar[ContractDocumentation] = ContractDocumentation(
+        category="emitted",
+        ownership="pipeline-derived",
+        summary="Pipeline-emitted materialization report.",
+    )
+
     schema_version: Literal[1]
     generated_at: TimestampString
     target: PlanningTarget
@@ -159,6 +168,12 @@ class CheckSummary(SitePipelineBaseModel):
 class CheckReportV1(SitePipelineBaseModel):
     """Machine-readable result of ``site-pipeline check``."""
 
+    contract_documentation: ClassVar[ContractDocumentation] = ContractDocumentation(
+        category="emitted",
+        ownership="pipeline-derived",
+        summary="Pipeline-emitted validation report.",
+    )
+
     schema_version: Literal[1]
     generated_at: TimestampString
     command: Literal["check"]
@@ -202,6 +217,12 @@ class StageRunSummary(SitePipelineBaseModel):
 
 class StageRunReportV1(SitePipelineBaseModel):
     """Machine-readable result of ``build`` or one completed watch cycle."""
+
+    contract_documentation: ClassVar[ContractDocumentation] = ContractDocumentation(
+        category="emitted",
+        ownership="pipeline-derived",
+        summary="Pipeline-emitted stage execution report.",
+    )
 
     schema_version: Literal[1]
     generated_at: TimestampString
@@ -264,6 +285,13 @@ class StageDataFiles(SitePipelineBaseModel):
 
 class StageManifestV1(SitePipelineBaseModel):
     """Authoritative entry-point document for a staged output tree."""
+
+    contract_documentation: ClassVar[ContractDocumentation] = ContractDocumentation(
+        category="emitted",
+        ownership="pipeline-derived",
+        summary="Pipeline-emitted stage manifest.",
+        file_path="manifest.json",
+    )
 
     schema_version: Literal[1]
     stage_layout_version: SchemaVersion

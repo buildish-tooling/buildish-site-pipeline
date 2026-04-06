@@ -22,7 +22,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from apache_buildish_site_pipeline.models.enums import StageCommand
-from apache_buildish_site_pipeline.models.planning_stage_contract import (
+from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
     StageDataFiles,
     StageManifestV1,
     StageRoots,

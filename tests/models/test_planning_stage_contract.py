@@ -38,7 +38,7 @@ from apache_buildish_site_pipeline.models.loading import (
     load_stage_manifest,
     load_stage_run_report,
 )
-from apache_buildish_site_pipeline.models.planning_stage_contract import (
+from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
     CheckReportV1,
     CheckSummary,
     PipelineDiagnosticEntry,

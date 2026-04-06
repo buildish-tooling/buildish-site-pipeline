@@ -32,7 +32,8 @@ from typing import Any
 
 from pydantic import Field, TypeAdapter, create_model
 
-from apache_buildish_site_pipeline.models.aggregates import (
+from apache_buildish_site_pipeline.models.documentation import ContractDocumentation, contract_documentation_for
+from apache_buildish_site_pipeline.models.emitted.aggregates import (
     ArtifactsDataEntry,
     CandidateAggregateEntry,
     CompatibilityAggregateEntry,
@@ -47,21 +48,21 @@ from apache_buildish_site_pipeline.models.aggregates import (
     TranslationSetAggregateEntry,
 )
 from apache_buildish_site_pipeline.models.base import SitePipelineBaseModel
-from apache_buildish_site_pipeline.models.catalog import CatalogDocumentV1
-from apache_buildish_site_pipeline.models.component_repository import (
-    ComponentRepositoryDocumentV1,
+from apache_buildish_site_pipeline.models.authored.component_metadata import (
+    ComponentMetadataDocumentV1,
 )
-from apache_buildish_site_pipeline.models.planning_stage_contract import (
+from apache_buildish_site_pipeline.models.authored.site_catalog import SiteCatalogDocumentV1
+from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
     CheckReportV1,
     PipelineDiagnosticEntry,
     ResolvedMaterializationReportV1,
     StageManifestV1,
     StageRunReportV1,
 )
-from apache_buildish_site_pipeline.models.provider_snapshot import ProviderSnapshotV1
-from apache_buildish_site_pipeline.models.staged_front_matter import (
+from apache_buildish_site_pipeline.models.emitted.staged_front_matter import (
     PipelineFrontMatterNamespace,
 )
+from apache_buildish_site_pipeline.models.provider.provider_snapshot import ProviderSnapshotDocumentV1
 from apache_buildish_site_pipeline.staging.incremental_metadata import (
     AggregateDependencyMapV1,
     OutputOwnershipMapV1,
@@ -85,6 +86,7 @@ class SchemaExport:
     title: str
     schema_builder: SchemaBuilder
     description: str | None = None
+    documentation: ContractDocumentation | None = None
 
 
 def _model_schema(model: type[SitePipelineBaseModel]) -> SchemaBuilder:
@@ -121,46 +123,65 @@ def _list_schema(annotation: Any) -> SchemaBuilder:
     return build
 
 
+def _pipeline_file_documentation(*, summary: str, file_path: str) -> ContractDocumentation:
+    """Build documentation metadata for a pipeline-emitted file contract."""
+
+    return ContractDocumentation(
+        category="emitted",
+        ownership="pipeline-derived",
+        summary=summary,
+        file_path=file_path,
+    )
+
+
 _SCHEMA_EXPORTS = (
     SchemaExport(
         filename="site-pipeline-catalog-v1.schema.json",
         title="Site Pipeline Catalog v1",
-        schema_builder=_model_schema(CatalogDocumentV1),
+        schema_builder=_model_schema(SiteCatalogDocumentV1),
+        documentation=contract_documentation_for(SiteCatalogDocumentV1),
     ),
     SchemaExport(
         filename="site-pipeline-component-v1.schema.json",
         title="Site Pipeline Component Metadata v1",
-        schema_builder=_model_schema(ComponentRepositoryDocumentV1),
+        schema_builder=_model_schema(ComponentMetadataDocumentV1),
+        documentation=contract_documentation_for(ComponentMetadataDocumentV1),
     ),
     SchemaExport(
         filename="site-pipeline-provider-snapshot-v1.schema.json",
         title="Site Pipeline Provider Snapshot v1",
-        schema_builder=_model_schema(ProviderSnapshotV1),
+        schema_builder=_model_schema(ProviderSnapshotDocumentV1),
+        documentation=contract_documentation_for(ProviderSnapshotDocumentV1),
     ),
     SchemaExport(
         filename="site-pipeline-materialization-report-v1.schema.json",
         title="Site Pipeline Materialization Report v1",
         schema_builder=_model_schema(ResolvedMaterializationReportV1),
+        documentation=contract_documentation_for(ResolvedMaterializationReportV1),
     ),
     SchemaExport(
         filename="site-pipeline-check-report-v1.schema.json",
         title="Site Pipeline Check Report v1",
         schema_builder=_model_schema(CheckReportV1),
+        documentation=contract_documentation_for(CheckReportV1),
     ),
     SchemaExport(
         filename="site-pipeline-stage-run-report-v1.schema.json",
         title="Site Pipeline Stage Run Report v1",
         schema_builder=_model_schema(StageRunReportV1),
+        documentation=contract_documentation_for(StageRunReportV1),
     ),
     SchemaExport(
         filename="site-pipeline-stage-manifest-v1.schema.json",
         title="Site Pipeline Stage Manifest v1",
         schema_builder=_model_schema(StageManifestV1),
+        documentation=contract_documentation_for(StageManifestV1),
     ),
     SchemaExport(
         filename="site-pipeline-front-matter-namespace-v1.schema.json",
         title="Site Pipeline Front Matter Namespace v1",
         schema_builder=_model_schema(PipelineFrontMatterNamespace),
+        documentation=contract_documentation_for(PipelineFrontMatterNamespace),
     ),
     SchemaExport(
         filename="site-pipeline-components-data-v1.schema.json",
@@ -170,6 +191,10 @@ _SCHEMA_EXPORTS = (
             model_name="ComponentsDataFileV1",
             item_model=ComponentsDataEntry,
             items_description="Component aggregate entries emitted into `data/components.json`.",
+        ),
+        documentation=_pipeline_file_documentation(
+            summary="Pipeline-emitted component aggregate file.",
+            file_path="data/components.json",
         ),
     ),
     SchemaExport(
@@ -181,6 +206,10 @@ _SCHEMA_EXPORTS = (
             item_model=ArtifactsDataEntry,
             items_description="Artifact aggregate entries emitted into `data/artifacts.json`.",
         ),
+        documentation=_pipeline_file_documentation(
+            summary="Pipeline-emitted artifact aggregate file.",
+            file_path="data/artifacts.json",
+        ),
     ),
     SchemaExport(
         filename="site-pipeline-routes-data-v1.schema.json",
@@ -190,6 +219,10 @@ _SCHEMA_EXPORTS = (
             model_name="RoutesDataFileV1",
             item_model=RouteAggregateEntry,
             items_description="Route aggregate entries emitted into `data/routes.json`.",
+        ),
+        documentation=_pipeline_file_documentation(
+            summary="Pipeline-emitted route aggregate file.",
+            file_path="data/routes.json",
         ),
     ),
     SchemaExport(
@@ -201,6 +234,10 @@ _SCHEMA_EXPORTS = (
             item_model=RedirectAggregateEntry,
             items_description="Redirect aggregate entries emitted into `data/redirects.json`.",
         ),
+        documentation=_pipeline_file_documentation(
+            summary="Pipeline-emitted redirect aggregate file.",
+            file_path="data/redirects.json",
+        ),
     ),
     SchemaExport(
         filename="site-pipeline-providers-data-v1.schema.json",
@@ -210,6 +247,10 @@ _SCHEMA_EXPORTS = (
             model_name="ProvidersDataFileV1",
             item_model=ProvidersDataEntry,
             items_description="Provider summary entries emitted into `data/providers.json`.",
+        ),
+        documentation=_pipeline_file_documentation(
+            summary="Pipeline-emitted provider summary aggregate file.",
+            file_path="data/providers.json",
         ),
     ),
     SchemaExport(
@@ -221,6 +262,10 @@ _SCHEMA_EXPORTS = (
             item_model=ReleaseAggregateEntry,
             items_description="Released-version aggregate entries emitted into `data/releases.json`.",
         ),
+        documentation=_pipeline_file_documentation(
+            summary="Pipeline-emitted release aggregate file.",
+            file_path="data/releases.json",
+        ),
     ),
     SchemaExport(
         filename="site-pipeline-candidates-data-v1.schema.json",
@@ -230,6 +275,10 @@ _SCHEMA_EXPORTS = (
             model_name="CandidatesDataFileV1",
             item_model=CandidateAggregateEntry,
             items_description="Candidate-version aggregate entries emitted into `data/candidates.json`.",
+        ),
+        documentation=_pipeline_file_documentation(
+            summary="Pipeline-emitted candidate aggregate file.",
+            file_path="data/candidates.json",
         ),
     ),
     SchemaExport(
@@ -241,6 +290,10 @@ _SCHEMA_EXPORTS = (
             item_model=RefAggregateEntry,
             items_description="Named-ref aggregate entries emitted into `data/refs.json`.",
         ),
+        documentation=_pipeline_file_documentation(
+            summary="Pipeline-emitted named-ref aggregate file.",
+            file_path="data/refs.json",
+        ),
     ),
     SchemaExport(
         filename="site-pipeline-translations-data-v1.schema.json",
@@ -250,6 +303,10 @@ _SCHEMA_EXPORTS = (
             model_name="TranslationsDataFileV1",
             item_model=TranslationSetAggregateEntry,
             items_description="Translation-set aggregate entries emitted into `data/translations.json`.",
+        ),
+        documentation=_pipeline_file_documentation(
+            summary="Pipeline-emitted translation aggregate file.",
+            file_path="data/translations.json",
         ),
     ),
     SchemaExport(
@@ -261,6 +318,10 @@ _SCHEMA_EXPORTS = (
             item_model=CompatibilityAggregateEntry,
             items_description="Compatibility aggregate entries emitted into `data/compatibility.json`.",
         ),
+        documentation=_pipeline_file_documentation(
+            summary="Pipeline-emitted compatibility aggregate file.",
+            file_path="data/compatibility.json",
+        ),
     ),
     SchemaExport(
         filename="site-pipeline-mounts-data-v1.schema.json",
@@ -270,6 +331,10 @@ _SCHEMA_EXPORTS = (
             model_name="MountsDataFileV1",
             item_model=MountAggregateEntry,
             items_description="Mount aggregate entries emitted into `data/mounts.json`.",
+        ),
+        documentation=_pipeline_file_documentation(
+            summary="Pipeline-emitted mount aggregate file.",
+            file_path="data/mounts.json",
         ),
     ),
     SchemaExport(
@@ -281,27 +346,38 @@ _SCHEMA_EXPORTS = (
             item_model=ContentIndexEntry,
             items_description="Content-index entries emitted into `data/content-index.json`.",
         ),
+        documentation=_pipeline_file_documentation(
+            summary="Pipeline-emitted content index file.",
+            file_path="data/content-index.json",
+        ),
     ),
     SchemaExport(
         filename="site-pipeline-diagnostics-data-v1.schema.json",
         title="Site Pipeline data/diagnostics.json v1",
         description="Public staged diagnostics file at ``data/diagnostics.json``.",
         schema_builder=_list_schema(list[PipelineDiagnosticEntry]),
+        documentation=_pipeline_file_documentation(
+            summary="Pipeline-emitted diagnostics file.",
+            file_path="data/diagnostics.json",
+        ),
     ),
     SchemaExport(
         filename="site-pipeline-unit-contributions-v1.schema.json",
         title="Site Pipeline data/_pipeline/unit-contributions.json v1",
         schema_builder=_model_schema(PersistedUnitContributionsV1),
+        documentation=contract_documentation_for(PersistedUnitContributionsV1),
     ),
     SchemaExport(
         filename="site-pipeline-output-ownership-v1.schema.json",
         title="Site Pipeline data/_pipeline/output-ownership.json v1",
         schema_builder=_model_schema(OutputOwnershipMapV1),
+        documentation=contract_documentation_for(OutputOwnershipMapV1),
     ),
     SchemaExport(
         filename="site-pipeline-aggregate-dependencies-v1.schema.json",
         title="Site Pipeline data/_pipeline/aggregate-dependencies.json v1",
         schema_builder=_model_schema(AggregateDependencyMapV1),
+        documentation=contract_documentation_for(AggregateDependencyMapV1),
     ),
 )
 
@@ -313,7 +389,7 @@ def schema_exports() -> tuple[SchemaExport, ...]:
 
 
 def authored_schema_exports() -> tuple[SchemaExport, ...]:
-    """Return the authored-input schema exports kept for local YAML authoring."""
+    """Return the authored schema exports kept for local YAML authoring."""
 
     return tuple(export for export in _SCHEMA_EXPORTS[:2])
 
@@ -328,6 +404,8 @@ def build_schema_document(export: SchemaExport) -> dict[str, Any]:
     schema["title"] = export.title
     if export.description is not None:
         schema["description"] = export.description
+    if export.documentation is not None:
+        schema["x-buildish-contract"] = export.documentation.as_schema_extension()
     return schema
 
 

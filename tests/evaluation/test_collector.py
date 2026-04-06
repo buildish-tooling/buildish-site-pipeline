@@ -20,7 +20,7 @@ import unittest
 
 from apache_buildish_site_pipeline.evaluation.collector import DiagnosticCollector
 from apache_buildish_site_pipeline.models.enums import DiagnosticSeverity
-from apache_buildish_site_pipeline.models.planning_stage_contract import (
+from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
     PipelineDiagnosticEntry,
     ReducedDiagnosticDetailsSummary,
 )

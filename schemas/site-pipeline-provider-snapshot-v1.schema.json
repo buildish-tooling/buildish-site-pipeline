@@ -515,7 +515,7 @@
   "$id": "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-provider-snapshot-v1.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "Normalized external release-provider input.",
+  "description": "Provider-derived normalized snapshot from ``site/provider-snapshot.json``.",
   "properties": {
     "providers": {
       "items": {
@@ -543,5 +543,11 @@
     "records"
   ],
   "title": "Site Pipeline Provider Snapshot v1",
-  "type": "object"
+  "type": "object",
+  "x-buildish-contract": {
+    "category": "provider",
+    "filePath": "site/provider-snapshot.json",
+    "ownership": "provider-derived",
+    "summary": "Provider-derived release snapshot input."
+  }
 }

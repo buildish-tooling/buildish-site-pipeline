@@ -51,18 +51,62 @@ class SchemaExportTests(unittest.TestCase):
             "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-catalog-v1.schema.json",
         )
         self.assertIn("Do not edit by hand", catalog_schema["$comment"])
-        self.assertEqual(catalog_schema["description"], "Consumer-authored component catalog document.")
+        self.assertEqual(
+            catalog_schema["description"],
+            "Consumer-authored site catalog from ``site/catalog.yaml``.",
+        )
+        self.assertEqual(
+            catalog_schema["x-buildish-contract"],
+            {
+                "category": "authored",
+                "ownership": "consumer-owned",
+                "summary": "Consumer-authored site catalog input.",
+                "filePath": "site/catalog.yaml",
+            },
+        )
         self.assertEqual(catalog_schema["properties"]["schemaVersion"]["description"], "Schema version for the catalog format.")
         self.assertEqual(
             catalog_schema["$defs"]["ComponentCatalogEntry"]["properties"]["weight"]["description"],
             "Optional ordering hint for component listings, menus, and other consumer-rendered component collections.",
         )
         self.assertEqual(component_schema["description"], "Component-owned metadata from ``site/component.yaml``.")
+        self.assertEqual(
+            component_schema["x-buildish-contract"]["ownership"],
+            "component-owned",
+        )
+        self.assertEqual(
+            component_schema["x-buildish-contract"]["filePath"],
+            "site/component.yaml",
+        )
         self.assertEqual(component_schema["properties"]["component"]["description"], "Stable identity for the component repository.")
         self.assertEqual(manifest_schema["title"], "Site Pipeline Stage Manifest v1")
+        self.assertEqual(
+            manifest_schema["x-buildish-contract"]["category"],
+            "emitted",
+        )
+        self.assertEqual(
+            manifest_schema["x-buildish-contract"]["filePath"],
+            "manifest.json",
+        )
         self.assertEqual(components_data_schema["description"], "Public staged aggregate file at ``data/components.json``.")
+        self.assertEqual(
+            components_data_schema["x-buildish-contract"]["summary"],
+            "Pipeline-emitted component aggregate file.",
+        )
+        self.assertEqual(
+            components_data_schema["x-buildish-contract"]["filePath"],
+            "data/components.json",
+        )
         self.assertEqual(components_data_schema["properties"]["items"]["type"], "array")
         self.assertEqual(diagnostics_schema["description"], "Public staged diagnostics file at ``data/diagnostics.json``.")
+        self.assertEqual(
+            diagnostics_schema["x-buildish-contract"]["ownership"],
+            "pipeline-derived",
+        )
+        self.assertEqual(
+            diagnostics_schema["x-buildish-contract"]["filePath"],
+            "data/diagnostics.json",
+        )
         self.assertEqual(diagnostics_schema["type"], "array")
 
     def test_export_inventory_covers_inputs_and_outputs(self) -> None:

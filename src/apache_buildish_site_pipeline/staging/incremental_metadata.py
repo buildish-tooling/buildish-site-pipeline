@@ -18,10 +18,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal, cast
+from typing import ClassVar, Literal, cast
 
-from ..models.base import SitePipelineBaseModel
-from ..models.planning_stage_contract import (
+from ..models.documentation import (
+    ContractDocumentation,
+    PipelineDerivedModel as SitePipelineBaseModel,
+)
+from ..models.emitted.planning_stage_contract import (
     StageDataFiles,
     StageManifestV1,
     StageRelativePath,
@@ -34,6 +37,13 @@ COORDINATOR_OWNER_ID = "coordinator"
 
 class PersistedUnitContributionsV1(SitePipelineBaseModel):
     """Stable per-unit page contribution manifests retained in the visible stage."""
+
+    contract_documentation: ClassVar[ContractDocumentation] = ContractDocumentation(
+        category="emitted",
+        ownership="pipeline-derived",
+        summary="Pipeline-emitted unit contribution map.",
+        file_path="data/_pipeline/unit-contributions.json",
+    )
 
     schema_version: Literal[1] = 1
     units: tuple[UnitContributionManifestWire, ...] = ()
@@ -51,6 +61,13 @@ class OutputOwnershipClaimV1(SitePipelineBaseModel):
 class OutputOwnershipMapV1(SitePipelineBaseModel):
     """Published ownership inventory used to prune retained stages safely."""
 
+    contract_documentation: ClassVar[ContractDocumentation] = ContractDocumentation(
+        category="emitted",
+        ownership="pipeline-derived",
+        summary="Pipeline-emitted output ownership map.",
+        file_path="data/_pipeline/output-ownership.json",
+    )
+
     schema_version: Literal[1] = 1
     claims: tuple[OutputOwnershipClaimV1, ...] = ()
 
@@ -64,6 +81,13 @@ class AggregateDependencyEntryV1(SitePipelineBaseModel):
 
 class AggregateDependencyMapV1(SitePipelineBaseModel):
     """Shared-output dependency map for the current first-wave coordinator outputs."""
+
+    contract_documentation: ClassVar[ContractDocumentation] = ContractDocumentation(
+        category="emitted",
+        ownership="pipeline-derived",
+        summary="Pipeline-emitted aggregate dependency map.",
+        file_path="data/_pipeline/aggregate-dependencies.json",
+    )
 
     schema_version: Literal[1] = 1
     entries: tuple[AggregateDependencyEntryV1, ...] = ()

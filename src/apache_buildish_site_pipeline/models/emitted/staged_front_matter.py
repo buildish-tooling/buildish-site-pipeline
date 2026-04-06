@@ -16,14 +16,16 @@
 
 from __future__ import annotations
 
-from typing import Self
+from typing import ClassVar, Self
 
 from pydantic import Field, model_validator
 
-from .base import SitePipelineBaseModel
-from .catalog import SupportWindow
-from .enums import PublicationState, RecordKind
-from .scalars import (
+from ..documentation import (
+    ContractDocumentation,
+    PipelineDerivedModel as SitePipelineBaseModel,
+)
+from ..enums import PublicationState, RecordKind
+from ..scalars import (
     ArtifactKey,
     HostnameString,
     NonEmptyString,
@@ -35,7 +37,8 @@ from .scalars import (
     UrlString,
     VersionString,
 )
-from .validation.urls import extract_hostname_from_url
+from ..validation.urls import extract_hostname_from_url
+from ..authored.site_catalog import SupportWindow
 
 
 def _ensure_unique_strings(values: list[str], *, type_name: str) -> None:
@@ -221,6 +224,12 @@ class PipelineComponentFrontMatter(SitePipelineBaseModel):
 
 class PipelineFrontMatterNamespace(SitePipelineBaseModel):
     """Reserved top-level pipeline namespace emitted into staged pages."""
+
+    contract_documentation: ClassVar[ContractDocumentation] = ContractDocumentation(
+        category="emitted",
+        ownership="pipeline-derived",
+        summary="Pipeline-emitted front matter namespace.",
+    )
 
     component: PipelineComponentFrontMatter | None = None
     page: PipelinePageFrontMatter | None = None

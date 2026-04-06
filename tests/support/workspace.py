@@ -58,7 +58,7 @@ def _write_workspace_inputs(
 
 def _write_default_workspace_inputs(workspace_root: Path, *, with_content_file: bool) -> None:
     (workspace_root / "site").mkdir(parents=True, exist_ok=True)
-    (workspace_root / "site/components.yaml").write_text(
+    (workspace_root / "site/catalog.yaml").write_text(
         """
 schemaVersion: 1
 defaults:
@@ -156,7 +156,7 @@ def _write_component_only_latest_workspace_inputs(
     workspace_root: Path, *, with_content_file: bool
 ) -> None:
     (workspace_root / "site").mkdir(parents=True, exist_ok=True)
-    (workspace_root / "site/components.yaml").write_text(
+    (workspace_root / "site/catalog.yaml").write_text(
         """
 schemaVersion: 1
 defaults:
@@ -199,7 +199,7 @@ def _write_two_artifact_workspace_inputs(
     workspace_root: Path, *, with_content_file: bool
 ) -> None:
     (workspace_root / "site").mkdir(parents=True, exist_ok=True)
-    (workspace_root / "site/components.yaml").write_text(
+    (workspace_root / "site/catalog.yaml").write_text(
         """
 schemaVersion: 1
 defaults:
@@ -347,7 +347,7 @@ def _write_rich_lifecycle_workspace_inputs(
     workspace_root: Path, *, with_content_file: bool
 ) -> None:
     (workspace_root / "site").mkdir(parents=True, exist_ok=True)
-    (workspace_root / "site/components.yaml").write_text(
+    (workspace_root / "site/catalog.yaml").write_text(
         """
 schemaVersion: 1
 defaults:

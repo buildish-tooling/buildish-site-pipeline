@@ -16,13 +16,15 @@
 
 from __future__ import annotations
 
-from typing import Literal, Self
+from typing import ClassVar, Literal, Self
 
 from pydantic import Field, model_validator
 
-from .base import SitePipelineBaseModel
-from .component_repository import SupportStatusDefinition
-from .enums import (
+from ..documentation import (
+    ConsumerOwnedAuthoredModel as SitePipelineBaseModel,
+    ContractDocumentation,
+)
+from ..enums import (
     CandidateSelectionMode,
     IndexBehavior,
     LineHeadSelectionMode,
@@ -32,7 +34,7 @@ from .enums import (
     TrustClass,
     WithdrawalBehavior,
 )
-from .scalars import (
+from ..scalars import (
     ArtifactKey,
     ExtensionsObject,
     Identifier,
@@ -51,7 +53,8 @@ from .scalars import (
     UrlString,
     VersionString,
 )
-from .validation.extensions import serialize_extensions_object
+from ..validation.extensions import serialize_extensions_object
+from .component_metadata import SupportStatusDefinition
 
 _ALLOWED_REDIRECT_STATUS_CODES = frozenset({301, 302, 307, 308})
 _WITHDRAWN_PUBLICATION_STATES = frozenset(
@@ -702,8 +705,15 @@ class ComponentCatalogEntry(SitePipelineBaseModel):
         return self
 
 
-class CatalogDocumentV1(SitePipelineBaseModel):
-    """Consumer-authored component catalog document."""
+class SiteCatalogDocumentV1(SitePipelineBaseModel):
+    """Consumer-authored site catalog from ``site/catalog.yaml``."""
+
+    contract_documentation: ClassVar[ContractDocumentation] = ContractDocumentation(
+        category="authored",
+        ownership="consumer-owned",
+        summary="Consumer-authored site catalog input.",
+        file_path="site/catalog.yaml",
+    )
 
     schema_version: Literal[1] = Field(
         description="Schema version for the catalog format."

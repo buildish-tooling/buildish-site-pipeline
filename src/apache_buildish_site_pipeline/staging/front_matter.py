@@ -75,6 +75,8 @@ def build_component_front_matter(
     for context in selected_versions:
         if context.component_slug != component.slug:
             continue
+        if context.artifact_key is None:
+            continue
         selected_by_artifact.setdefault(context.artifact_key, []).append(context)
 
     artifact_summaries: list[ArtifactFrontMatterSummary] = []
@@ -423,8 +425,10 @@ def _artifact_display_name(artifact: ResolvedArtifactConfig) -> str | None:
 
 
 def _artifact_lifecycle(
-    component: ResolvedComponentConfig, *, artifact_key: str
+    component: ResolvedComponentConfig, *, artifact_key: str | None
 ) -> ArtifactLifecycleConfig | None:
+    if artifact_key is None:
+        return None
     for artifact in component.artifacts:
         if artifact.key == artifact_key:
             return artifact.lifecycle

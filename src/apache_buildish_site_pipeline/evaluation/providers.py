@@ -70,6 +70,8 @@ def validate_providers(
 def _matching_records(
     *, planning: PlanningEvaluation, context: SelectedVersionContext
 ) -> tuple[IndexedProviderRecord, ...]:
+    if context.artifact_key is None:
+        return ()
     provider_context = planning.provider_index.contexts_by_artifact.get(
         (context.component_slug, context.artifact_key)
     )

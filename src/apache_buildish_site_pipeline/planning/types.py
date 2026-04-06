@@ -231,7 +231,7 @@ class SelectedVersionContext:
     """One planned version context selected for the current run."""
 
     component_slug: str
-    artifact_key: str
+    artifact_key: str | None
     kind: RecordKind
     source_binding: ResolvedSourceBinding
     docs_root: Path

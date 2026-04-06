@@ -82,6 +82,44 @@ class PlanningEvaluationTests(unittest.TestCase):
         self.assertEqual(entries[("siteAssets", "site:assets")], "present")
         self.assertEqual(entries[("vendorAssets", "vendorAssets:0")], "present")
 
+    def test_build_target_reports_component_owned_docs_input_when_component_has_no_artifacts(self) -> None:
+        catalog = _component_only_catalog()
+        provider_snapshot = _empty_provider_snapshot()
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            docs_root = workspace_root / "components/site-pipeline/docs"
+            _mkdir(docs_root)
+
+            evaluation = evaluate_planning(
+                target=PlanningTarget.BUILD,
+                catalog=catalog,
+                provider_snapshot=provider_snapshot,
+                workspace_root=workspace_root,
+            )
+            report = build_resolved_materialization_report(evaluation)
+
+        development_inputs = [
+            local_input
+            for local_input in evaluation.local_inputs
+            if local_input.identity.input_kind is MaterializationInputKind.DEVELOPMENT
+        ]
+        self.assertEqual(len(development_inputs), 1)
+        self.assertEqual(
+            development_inputs[0].identity.source_key,
+            "component:site-pipeline",
+        )
+        self.assertIsNone(development_inputs[0].identity.artifact_key)
+        self.assertEqual(development_inputs[0].expected_local_path, docs_root)
+
+        entries = {
+            (entry.input_kind.value, entry.source_key, entry.artifact_key): entry.status.value
+            for entry in report.entries
+        }
+        self.assertEqual(
+            entries[("development", "component:site-pipeline", None)],
+            "present",
+        )
+
     def test_watch_target_marks_released_context_not_watch_eligible_and_detects_stale_marker(self) -> None:
         catalog = _sample_catalog()
         provider_snapshot = _sample_provider_snapshot()
@@ -342,6 +380,31 @@ def _sample_catalog() -> CatalogDocumentV1:
     )
 
 
+def _component_only_catalog() -> CatalogDocumentV1:
+    return CatalogDocumentV1.model_validate(
+        {
+            "schemaVersion": 1,
+            "defaults": {
+                "metadataFile": "site/component.yaml",
+                "docsRoot": "docs",
+                "publication": {"origin": "docs"},
+            },
+            "site": {},
+            "origins": {"docs": {"baseUrl": "https://docs.example.org"}},
+            "components": [
+                {
+                    "slug": "site-pipeline",
+                    "localDir": "components/site-pipeline",
+                    "publication": {"mountPath": "/components/site-pipeline/"},
+                    "artifacts": [],
+                },
+            ],
+        },
+        by_alias=True,
+        by_name=False,
+    )
+
+
 def _sample_provider_snapshot() -> ProviderSnapshotV1:
     return ProviderSnapshotV1.model_validate(
         {
@@ -381,6 +444,14 @@ def _sample_provider_snapshot() -> ProviderSnapshotV1:
                 },
             ],
         },
+        by_alias=True,
+        by_name=False,
+    )
+
+
+def _empty_provider_snapshot() -> ProviderSnapshotV1:
+    return ProviderSnapshotV1.model_validate(
+        {"schemaVersion": 1, "providers": [], "records": []},
         by_alias=True,
         by_name=False,
     )

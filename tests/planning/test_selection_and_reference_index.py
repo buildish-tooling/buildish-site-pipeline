@@ -59,6 +59,7 @@ from apache_buildish_site_pipeline.models.enums import (
 from apache_buildish_site_pipeline.planning.selection import (
     _select_development_context,
     _select_candidate_contexts,
+    _select_component_development_context,
     _select_line_head_contexts,
     _select_named_ref_contexts,
     _select_release_contexts,
@@ -74,6 +75,31 @@ from apache_buildish_site_pipeline.planning.types import (
 
 
 class SelectionAndReferenceIndexTests(unittest.TestCase):
+    def test_select_component_development_context_emits_latest_docs_when_component_has_no_artifacts(self) -> None:
+        component = SimpleNamespace(
+            slug="site-pipeline",
+            docs_root=Path("/workspace/site-pipeline/docs"),
+            assets_root=None,
+            content_source=ResolvedSourceBinding(
+                key="site-pipeline",
+                local_dir=Path("/workspace/site-pipeline"),
+                metadata_file=None,
+                repository=None,
+                default_branch="main",
+            ),
+            publication_selection=None,
+            artifacts=(),
+        )
+
+        selected = _select_component_development_context(component)
+
+        self.assertEqual(len(selected), 1)
+        self.assertEqual(selected[0].component_slug, "site-pipeline")
+        self.assertIsNone(selected[0].artifact_key)
+        self.assertIs(selected[0].kind, RecordKind.DEVELOPMENT)
+        self.assertEqual(selected[0].docs_root, Path("/workspace/site-pipeline/docs"))
+        self.assertEqual(selected[0].source_binding.local_dir, Path("/workspace/site-pipeline"))
+
     def test_build_context_reference_index_collects_routes_targets_and_provider_releases(self) -> None:
         artifact = self._artifact(
             lifecycle=ArtifactLifecycleConfig(

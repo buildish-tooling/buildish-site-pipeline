@@ -116,7 +116,7 @@ class ComponentContextWire(SitePipelineBaseModel):
     """One selected version context serialized for the component worker."""
 
     context_id: str
-    artifact_key: str
+    artifact_key: str | None = None
     source_docs_root: str | None = None
     source_assets_root: str | None = None
     content_stage_root: str

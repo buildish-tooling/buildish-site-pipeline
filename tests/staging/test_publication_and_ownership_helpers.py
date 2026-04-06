@@ -57,6 +57,14 @@ class PublicationAndOwnershipHelpersTests(unittest.TestCase):
             "released:spark:runtime:4.0.0",
         )
 
+    def test_target_id_for_context_uses_component_owner_key_when_artifact_is_missing(self) -> None:
+        self.assertEqual(
+            target_id_for_context(
+                self._context(RecordKind.DEVELOPMENT, artifact_key=None)
+            ),
+            "development:spark:component",
+        )
+
     def test_public_path_for_context_uses_component_root_when_docs_and_dev_match(self) -> None:
         same_base_publication = self._publication(docs_path="/spark/", development_path="/spark/")
 
@@ -140,6 +148,7 @@ class PublicationAndOwnershipHelpersTests(unittest.TestCase):
     def _context(
         kind: RecordKind,
         *,
+        artifact_key: str | None = "runtime",
         version: str | None = None,
         release_line: str | None = None,
         named_ref_key: str | None = None,
@@ -147,10 +156,10 @@ class PublicationAndOwnershipHelpersTests(unittest.TestCase):
     ) -> SelectedVersionContext:
         return SelectedVersionContext(
             component_slug="spark",
-            artifact_key="runtime",
+            artifact_key=artifact_key,
             kind=kind,
             source_binding=ResolvedSourceBinding(
-                key="runtime",
+                key=artifact_key or "component-content",
                 local_dir=Path("/workspace/components/runtime"),
                 metadata_file=None,
                 repository=None,

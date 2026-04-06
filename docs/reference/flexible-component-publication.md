@@ -84,9 +84,23 @@ lifecycle:
 
 The component repository should not own its final public site path.
 
+It should, however, be able to author repository-local content roots safely. In
+practice that means a component with `content.docsRoot` can publish a moving
+development docs surface even before any consumer models explicit artifacts. If
+the consumer resolves that component to `/components/site-pipeline/latest/`, the
+component-owned `docsRoot` should populate that `/latest/` tree without first
+inventing an artifact in `site/components.yaml`.
+
 ### Consumer catalog contract
 
 The consumer catalog should define both inventory and publication.
+
+This is also where artifact decomposition belongs. That is initially surprising,
+but it follows the boundary above: artifacts affect source bindings, publication
+selection, release visibility, and final routing, so they are not just
+repository facts. They are part of what a specific consumer site chooses to
+publish from a repository without letting the repository silently redefine
+consumer-owned policy.
 
 Recommended top-level fields in `site/components.yaml`:
 

@@ -366,6 +366,8 @@ def _build_artifacts_entries(
         defaultdict(list)
     )
     for context in build_plan.selected_versions:
+        if context.artifact_key is None:
+            continue
         selected_by_artifact[(context.component_slug, context.artifact_key)].append(
             context
         )
@@ -645,11 +647,11 @@ def _build_redirect_resolution_index(
             origin_key=resolved_route[0],
             path_value=resolved_route[1],
         )
-        if context.release_line is not None:
+        if context.artifact_key is not None and context.release_line is not None:
             targets_by_reference[
                 f"line:{context.component_slug}/{context.artifact_key}@{context.release_line}"
             ] = resolved_route
-        if context.version is not None:
+        if context.artifact_key is not None and context.version is not None:
             targets_by_reference[
                 f"release:{context.component_slug}/{context.artifact_key}@{context.version}"
             ] = resolved_route
@@ -815,6 +817,8 @@ def _build_ref_entries(build_plan: EffectiveBuildPlan) -> list[RefAggregateEntry
             RecordKind.LINE_HEAD,
             RecordKind.DEVELOPMENT,
         }:
+            continue
+        if context.artifact_key is None:
             continue
         entries.append(_ref_entry(component_by_slug[context.component_slug], context))
     return entries

@@ -36,6 +36,7 @@ from .types import (
     IndexedProviderRecord,
     ProviderContextIndex,
     ProviderSnapshotIndex,
+    ResolvedComponentConfig,
     ResolvedArtifactConfig,
     ResolvedSiteConfig,
     SelectedVersionContext,
@@ -54,6 +55,8 @@ def select_version_contexts(
     selected_contexts: list[SelectedVersionContext] = []
     deterministic = True
     for component in site.components:
+        if not component.artifacts:
+            selected_contexts.extend(_select_component_development_context(component))
         for artifact in component.artifacts:
             effective_policy = (
                 artifact.publication_selection
@@ -99,6 +102,31 @@ def select_version_contexts(
         deterministic=deterministic
         and all(context.deterministic for context in ordered_contexts),
     )
+
+
+def _select_component_development_context(
+    component: ResolvedComponentConfig,
+) -> list[SelectedVersionContext]:
+    """Select the component-owned development docs context when no artifacts exist."""
+
+    if component.docs_root is None or component.content_source is None:
+        return []
+    effective_policy = (
+        component.publication_selection or _default_publication_selection_policy()
+    )
+    if not effective_policy.development:
+        return []
+    return [
+        SelectedVersionContext(
+            component_slug=component.slug,
+            artifact_key=None,
+            kind=RecordKind.DEVELOPMENT,
+            source_binding=component.content_source,
+            docs_root=component.docs_root,
+            assets_root=component.assets_root,
+            deterministic=True,
+        )
+    ]
 
 
 def _default_publication_selection_policy() -> PublicationSelectionPolicy:
@@ -426,7 +454,7 @@ def _version_sort_key(version: str) -> tuple[object, ...]:
 def _context_sort_key(context: SelectedVersionContext) -> tuple[object, ...]:
     return (
         context.component_slug,
-        context.artifact_key,
+        context.artifact_key or "",
         context.kind.value,
         context.release_line or "",
         context.version or "",

@@ -151,6 +151,66 @@ class ComponentAndSitePageUnitTests(unittest.TestCase):
             self.assertEqual(manifest.pages[0].link_title, "Home")
             self.assertEqual(manifest.pages[1].version, "4.0.0")
 
+    def test_component_worker_stages_component_owned_latest_docs_without_artifact(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            latest_docs = root / "components/site-pipeline/docs"
+            latest_docs.mkdir(parents=True)
+            (latest_docs / "index.md").write_text(
+                "---\ntitle: Latest Docs\n---\nbody\n",
+                encoding="utf-8",
+            )
+
+            latest_stage_root = root / "stage/content/components/site-pipeline/latest"
+            latest_static_root = root / "stage/static/components/site-pipeline/latest"
+            fragment_path = root / ".work/fragments/component_site-pipeline.json"
+
+            result = execute_worker_spec(
+                WorkerSpecWire(
+                    unit_id="component:site-pipeline",
+                    unit_kind="component",
+                    owner_id="component:site-pipeline",
+                    workspace_root=str(root),
+                    unit_root=str(root / ".work/units/component_site-pipeline"),
+                    fragment_path=str(fragment_path),
+                    component_slug="site-pipeline",
+                    component_front_matter=self._component_front_matter(),
+                    localization={
+                        "default_locale": "en",
+                        "supported_locales": ("en",),
+                        "route_mode": "prefixAll",
+                    },
+                    contexts=(
+                        {
+                            "context_id": "development:site-pipeline:component",
+                            "artifact_key": None,
+                            "source_docs_root": str(latest_docs),
+                            "content_stage_root": str(latest_stage_root),
+                            "static_stage_root": str(latest_static_root),
+                            "publication": self._publication_wire(
+                                path="/components/site-pipeline/latest/",
+                                url="https://docs.example.org/components/site-pipeline/latest/",
+                            ),
+                            "version_context": {"label": "development", "kind": "development"},
+                            "page_kind": "development-page",
+                            "section": "development",
+                            "record_kind": "development",
+                        },
+                    ),
+                    stage_meta={
+                        "content_roots": (str(latest_stage_root),),
+                        "static_roots": (str(latest_static_root),),
+                    },
+                )
+            )
+
+            manifest = read_unit_manifest(fragment_path)
+            self.assertTrue(result.succeeded)
+            self.assertEqual(result.page_files_written, 1)
+            self.assertTrue((latest_stage_root / "index.md").is_file())
+            self.assertEqual(manifest.pages[0].artifact_key, None)
+            self.assertEqual(manifest.pages[0].public_path, "/components/site-pipeline/latest")
+
     def test_copy_tree_copies_nested_assets(self) -> None:
         with TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

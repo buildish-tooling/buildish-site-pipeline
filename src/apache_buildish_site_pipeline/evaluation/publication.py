@@ -30,18 +30,25 @@ from apache_buildish_site_pipeline.planning.types import (
 )
 
 
+def _context_owner_key(context: SelectedVersionContext) -> str:
+    """Return the stable owner key segment for one selected version context."""
+
+    return context.artifact_key or "component"
+
+
 def target_id_for_context(context: SelectedVersionContext) -> str:
     """Return the stable route target identifier for one selected version context."""
 
+    owner_key = _context_owner_key(context)
     if context.kind is RecordKind.DEVELOPMENT:
-        return f"development:{context.component_slug}:{context.artifact_key}"
+        return f"development:{context.component_slug}:{owner_key}"
     if context.kind is RecordKind.NAMED_REF:
-        return f"named-ref:{context.component_slug}:{context.artifact_key}:{context.named_ref_key}"
+        return f"named-ref:{context.component_slug}:{owner_key}:{context.named_ref_key}"
     if context.kind is RecordKind.LINE_HEAD:
-        return f"line-head:{context.component_slug}:{context.artifact_key}:{context.release_line}"
+        return f"line-head:{context.component_slug}:{owner_key}:{context.release_line}"
     if context.kind is RecordKind.CANDIDATE:
-        return f"candidate:{context.component_slug}:{context.artifact_key}:{context.version}"
-    return f"released:{context.component_slug}:{context.artifact_key}:{context.version}"
+        return f"candidate:{context.component_slug}:{owner_key}:{context.version}"
+    return f"released:{context.component_slug}:{owner_key}:{context.version}"
 
 
 def public_path_for_context(

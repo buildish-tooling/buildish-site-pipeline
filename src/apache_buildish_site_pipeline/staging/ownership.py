@@ -23,6 +23,7 @@ from pathlib import Path
 from ..cli.errors import StageIntegrityError
 from ..models.enums import RecordKind
 from ..planning.types import ResolvedVendorAsset, SelectedVersionContext
+from .publication_paths import target_id_for_context
 from .types import EffectiveBuildPlan
 
 
@@ -129,7 +130,7 @@ def build_owned_units(build_plan: EffectiveBuildPlan) -> tuple[OwnedUnit, ...]:
     for context in build_plan.selected_versions:
         contexts_by_component.setdefault(context.component_slug, []).append(
             OwnedContextInput(
-                context_id=f"{context.component_slug}:{context.artifact_key}:{context.kind}:{context.ref}",
+                context_id=target_id_for_context(context),
                 context=context,
                 content_stage_root=Path("content")
                 / "components"

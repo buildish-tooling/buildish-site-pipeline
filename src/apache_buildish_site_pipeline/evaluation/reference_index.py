@@ -175,18 +175,19 @@ def _build_context_reference_index(
             targets_by_reference[target.target_id] = route
         routes_by_path.setdefault(route.path.lower(), []).append(route)
     for context in planning.selected_versions.contexts:
+        owner_key = context.artifact_key or "component"
         route = KnownRoute(
-            route_id=f"{context.component_slug}/{context.artifact_key}/{context.kind.value}",
+            route_id=f"{context.component_slug}/{owner_key}/{context.kind.value}",
             origin_key="",
             path="",
             component_slug=context.component_slug,
             route_kind=context.kind.value,
         )
-        if context.release_line is not None:
+        if context.artifact_key is not None and context.release_line is not None:
             targets_by_reference[
                 f"line:{context.component_slug}/{context.artifact_key}@{context.release_line}"
             ] = route
-        if context.version is not None:
+        if context.artifact_key is not None and context.version is not None:
             targets_by_reference[
                 f"release:{context.component_slug}/{context.artifact_key}@{context.version}"
             ] = route

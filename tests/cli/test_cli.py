@@ -545,7 +545,7 @@ class CliTests(unittest.TestCase):
         self.assertIn("watch report sink:", stderr.getvalue())
         self.assertIn("watch event sink: disabled", stderr.getvalue())
         self.assertIn("watch dirty path count: <initial scan>", stderr.getvalue())
-        self.assertIn("watch root count: 1", stderr.getvalue())
+        self.assertIn("watch root count: 2", stderr.getvalue())
 
     def test_watch_stdout_guard_redirects_plain_prints_when_events_own_stdout(self) -> None:
         with _workspace(with_content_file=True) as workspace_root:
@@ -940,7 +940,15 @@ class CliTests(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         self.assertEqual(report["cycle"], 1)
         self.assertTrue(report["summary"]["succeeded"])
-        self.assertEqual(captured_watch_roots, [(workspace_root.resolve(strict=False),)])
+        self.assertEqual(
+            captured_watch_roots,
+            [
+                (
+                    (workspace_root / "site").resolve(strict=False),
+                    (workspace_root / "components/runtime").resolve(strict=False),
+                )
+            ],
+        )
         self.assertEqual(stdout.getvalue(), "")
         self.assertEqual(stderr.getvalue(), "")
 

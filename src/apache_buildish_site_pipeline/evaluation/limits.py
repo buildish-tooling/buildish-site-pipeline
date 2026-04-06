@@ -23,7 +23,7 @@ from apache_buildish_site_pipeline.planning.types import PlanningEvaluation
 
 from . import diagnostic_codes
 from .collector import DiagnosticCollector
-from .types import PageScanResult, RouteInventory
+from .types import PageInventory, RouteInventory
 
 _ROUTE_INVENTORY_LIMIT = 100_000
 _REDIRECT_INVENTORY_LIMIT = 100_000
@@ -37,7 +37,7 @@ def validate_limits(
     *,
     planning: PlanningEvaluation,
     route_inventory: RouteInventory,
-    page_scan: PageScanResult,
+    page_inventory: PageInventory,
     collector: DiagnosticCollector,
 ) -> None:
     """Apply documented operational ceilings to the resolved evaluation inputs."""
@@ -59,7 +59,7 @@ def validate_limits(
     _check_limit(
         collector=collector,
         metric="contentIndexCount",
-        measured=len(page_scan.pages),
+        measured=len(page_inventory.pages),
         allowed=_CONTENT_INDEX_LIMIT,
         message="Scanned page inventory exceeds the documented default safety ceiling",
     )

@@ -28,6 +28,7 @@ from ..reference_docs import ReferenceDocumentation, ReferenceMarkdown, Referenc
 from ..enums import (
     CandidateSelectionMode,
     IndexBehavior,
+    LinkCheckMode,
     LineHeadSelectionMode,
     PublicationState,
     ReleaseSelectionMode,
@@ -115,6 +116,49 @@ class SiteContentConfig(SitePipelineBaseModel):
     vendor_assets: list[TopLevelAssetConfig] | None = Field(
         default=None,
         description="Additional imported asset trees mounted into the top-level site assets area.",
+    )
+
+
+class LinkCheckConfig(SitePipelineBaseModel):
+    """Site-wide policy for internal page-link validation during ``check``."""
+
+    enabled: bool = Field(
+        default=True,
+        description="Whether the pipeline should validate authored internal page links against resolved public routes.",
+    )
+    mode: LinkCheckMode = Field(
+        default=LinkCheckMode.DIRECTORY,
+        description="How authored relative page links should resolve in the published site.",
+    )
+    check_root_absolute: bool = Field(
+        default=False,
+        description="Whether root-absolute links such as `/components/foo/` should also be validated when they match declared internal prefixes.",
+    )
+    internal_prefixes: list[PublicPath] | None = Field(
+        default=None,
+        description="Root-absolute public-path prefixes that should be treated as internal links when root-absolute checking is enabled.",
+        examples=[["/components/", "/docs/"]],
+    )
+
+    @model_validator(mode="after")
+    def ensure_root_absolute_policy_is_explicit(self) -> Self:
+        if self.internal_prefixes is not None:
+            _ensure_unique_strings(
+                self.internal_prefixes, type_name="link-check internal prefix"
+            )
+        if self.enabled and self.check_root_absolute and not self.internal_prefixes:
+            raise ValueError(
+                "linkChecks.internalPrefixes must be set when checkRootAbsolute is enabled"
+            )
+        return self
+
+
+class ValidationConfig(SitePipelineBaseModel):
+    """Optional site-wide validation policies that affect ``check`` behavior."""
+
+    link_checks: LinkCheckConfig | None = Field(
+        default=None,
+        description="Optional internal page-link checking policy resolved against staged public routes.",
     )
 
 
@@ -1046,6 +1090,10 @@ class SiteCatalogDocumentV1(SitePipelineBaseModel):
     groups: dict[Identifier, GroupConfig] | None = Field(
         default=None,
         description="Optional grouping defaults shared by multiple components.",
+    )
+    validation: ValidationConfig | None = Field(
+        default=None,
+        description="Optional site-wide validation policies that extend the default `check` behavior.",
     )
     components: list[ComponentCatalogEntry] = Field(
         description="Participating components in this consumer-authored catalog."

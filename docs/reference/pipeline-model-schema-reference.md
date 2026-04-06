@@ -124,6 +124,7 @@ Schema-root report and namespace types that do not correspond to one stable chec
 | <a id="diagnosticseverity"></a>`DiagnosticSeverity` | `info`, `warning`, `error` | Severity level for pipeline diagnostics. |
 | <a id="indexbehavior"></a>`IndexBehavior` | `full`, `metadataOnly`, `none` | Renderer hint for version/ref index visibility. |
 | <a id="lineheadselectionmode"></a>`LineHeadSelectionMode` | `none`, `allAuthored`, `explicit` | Strategy used to derive a release-line head record. |
+| <a id="linkcheckmode"></a>`LinkCheckMode` | `directory`, `file-html` | Supported staged public-path resolution strategies for internal page links. |
 | <a id="materializationinputkind"></a>`MaterializationInputKind` | `sitePages`, `siteAssets`, `vendorAssets`, `development`, `namedRef`, `lineHead`, `candidate`, `released` | Planning/build/watch local-input category. |
 | <a id="materializationstatus"></a>`MaterializationStatus` | `present`, `missing`, `stale`, `unresolved` | Readiness state of a required local input. |
 | <a id="planningtarget"></a>`PlanningTarget` | `build`, `watch` | Planning intent for later staging behavior. |
@@ -158,6 +159,7 @@ Consumer-owned and component-owned authored contract models.
 - [ExactReleaseConfig](#exactreleaseconfig) — Per-version lifecycle metadata and publication overrides for one exact release.
 - [GroupConfig](#groupconfig) — Reusable defaults and grouping hints shared by several components.
 - [LineHeadSelectionPolicy](#lineheadselectionpolicy) — Rule for which release-line head refs should appear as publishable contexts.
+- [LinkCheckConfig](#linkcheckconfig) — Site-wide policy for internal page-link validation during ``check``.
 - [LocalizationConfig](#localizationconfig) — Locale and translation defaults.
 - [MountConfig](#mountconfig) — Mounted subtree, such as generated API docs or imported assets, published below one public path.
 - [NamedRefConfig](#namedrefconfig) — Named source-control ref intentionally exposed as a stable version context.
@@ -173,6 +175,7 @@ Consumer-owned and component-owned authored contract models.
 - [SourceConfig](#sourceconfig) — Named repository or checkout binding reused by components and artifacts.
 - [SupportStatusDefinition](#supportstatusdefinition) — One reusable support-status label, description, and default lifecycle behavior.
 - [SupportWindow](#supportwindow) — Lifecycle dates and support notes for one release line or exact release.
+- [ValidationConfig](#validationconfig) — Optional site-wide validation policies that affect ``check`` behavior.
 
 ### Provider input types
 
@@ -571,6 +574,26 @@ Rule for which release-line head refs should appear as publishable contexts.
 
 - `keys`: Example: `["3.5","4.0"]`
 
+<a id="linkcheckconfig"></a>
+### LinkCheckConfig
+
+Site-wide policy for internal page-link validation during `check`.
+
+- category: `authored`
+- ownership: `consumer-owned`
+- file contract: (inner type)
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| <a id="linkcheckconfig-enabled"></a>`enabled` | bool | no | Whether the pipeline should validate authored internal page links against resolved public routes. |
+| <a id="linkcheckconfig-mode"></a>`mode` | [LinkCheckMode](#linkcheckmode) | no | How authored relative page links should resolve in the published site. |
+| <a id="linkcheckconfig-checkrootabsolute"></a>`checkRootAbsolute` | bool | no | Whether root-absolute links such as `/components/foo/` should also be validated when they match declared internal prefixes. |
+| <a id="linkcheckconfig-internalprefixes"></a>`internalPrefixes` | list[[PublicPath](#publicpath)] | no | Root-absolute public-path prefixes that should be treated as internal links when root-absolute checking is enabled. |
+
+#### Selected field examples
+
+- `internalPrefixes`: Example: `["/components/","/docs/"]`
+
 <a id="localizationconfig"></a>
 ### LocalizationConfig
 
@@ -815,6 +838,7 @@ Canonical site catalog that lists participating components, shared defaults, sou
 | <a id="sitecatalogdocumentv1-origins"></a>`origins` | dict[[OriginKey](#originkey), [OriginConfig](#originconfig)] | no | Named publication origins that components can target. |
 | <a id="sitecatalogdocumentv1-sources"></a>`sources` | dict[[SourceKey](#sourcekey), [SourceConfig](#sourceconfig)] | no | Named repository or checkout bindings used by components and artifacts. |
 | <a id="sitecatalogdocumentv1-groups"></a>`groups` | dict[[Identifier](#identifier), [GroupConfig](#groupconfig)] | no | Optional grouping defaults shared by multiple components. |
+| <a id="sitecatalogdocumentv1-validation"></a>`validation` | [ValidationConfig](#validationconfig) | no | Optional site-wide validation policies that extend the default `check` behavior. |
 | <a id="sitecatalogdocumentv1-components"></a>`components` | list[[ComponentCatalogEntry](#componentcatalogentry)] | yes | Participating components in this consumer-authored catalog. |
 
 #### Inheritance
@@ -941,6 +965,19 @@ Lifecycle dates and support notes for one release line or exact release.
 
 - `releaseDate`: Example: `"2026-04-01T00:00:00Z"`
 - `maintenancePhase`: Example: `"security-fixes"`
+
+<a id="validationconfig"></a>
+### ValidationConfig
+
+Optional site-wide validation policies that affect `check` behavior.
+
+- category: `authored`
+- ownership: `consumer-owned`
+- file contract: (inner type)
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| <a id="validationconfig-linkchecks"></a>`linkChecks` | [LinkCheckConfig](#linkcheckconfig) | no | Optional internal page-link checking policy resolved against staged public routes. |
 
 ## Provider input types
 

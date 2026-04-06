@@ -18,6 +18,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
+from pathlib import Path
 
 from apache_buildish_site_pipeline.models.enums import CheckFailureThreshold, RunStatus
 from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
@@ -91,21 +92,29 @@ class RouteInventory:
 
 
 @dataclass(frozen=True, slots=True)
-class ScannedPage:
-    """One page-like file discovered beneath a selected input root."""
+class InventoryPage:
+    """One discovered authored page plus the routing facts later checks reuse."""
 
     input_id: str
     component_slug: str | None
     artifact_key: str | None
     relative_path: str
+    routed_relative_path: str
+    source_path: Path
+    base_public_path: str
     translation_key: str | None
+    body_text: str | None
 
 
 @dataclass(frozen=True, slots=True)
-class PageScanResult:
-    """Summary of read-only page scanning over selected local inputs."""
+class PageInventory:
+    """Shared read-only page inventory for contextual evaluation checks."""
 
-    pages: tuple[ScannedPage, ...]
+    pages: tuple[InventoryPage, ...]
+
+
+ScannedPage = InventoryPage
+PageScanResult = PageInventory
 
 
 @dataclass(frozen=True, slots=True)
@@ -114,7 +123,7 @@ class EvaluationArtifacts:
 
     publication_index: PublicationIndex
     route_inventory: RouteInventory
-    page_scan: PageScanResult
+    page_inventory: PageInventory
 
 
 @dataclass(frozen=True, slots=True)

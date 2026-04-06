@@ -28,6 +28,7 @@ from .providers import validate_providers
 from .publication import validate_publication
 from .reference_index import validate_references
 from .routes import validate_routes
+from .staged_links import validate_staged_links
 from .summary import build_check_summary, build_run_status
 from .types import (
     BlockingCondition,
@@ -53,14 +54,19 @@ def run_evaluation(
         collector=collector,
     )
     route_inventory = validate_routes(planning, publication_index, collector)
-    page_scan = validate_page_scan(planning, collector)
-    validate_localization(planning=planning, page_scan=page_scan, collector=collector)
+    page_inventory = validate_page_scan(planning, collector)
+    validate_localization(
+        planning=planning, page_scan=page_inventory, collector=collector
+    )
+    validate_staged_links(
+        planning=planning, page_inventory=page_inventory, collector=collector
+    )
     validate_providers(planning, collector)
     validate_inputs(planning, collector)
     validate_limits(
         planning=planning,
         route_inventory=route_inventory,
-        page_scan=page_scan,
+        page_inventory=page_inventory,
         collector=collector,
     )
     if planning.build_plan_candidate is None:
@@ -100,7 +106,7 @@ def run_evaluation(
         artifacts=EvaluationArtifacts(
             publication_index=publication_index,
             route_inventory=route_inventory,
-            page_scan=page_scan,
+            page_inventory=page_inventory,
         ),
         check_summary=build_check_summary(
             counts=counts,

@@ -50,7 +50,7 @@ In practice, that means validating at least:
 - effective publication resolution, route uniqueness, and unique resolution of
   internal `route:` references
 - redirect safety and internal-target validity
-- page readability plus front matter parse and namespace rules
+- page readability, front matter parse and namespace rules, and optional internal page-link validation against staged public routes
 - localization policy shape, locale-prefix placement, and translation-link
   consistency
 - provider snapshot shape, provider-to-authored merge assumptions, authored

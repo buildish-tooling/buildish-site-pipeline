@@ -43,6 +43,7 @@ from apache_buildish_site_pipeline.commands.watch import (
     TrustedStageState,
     _WatchIo,
     _WatchEventStream,
+    _build_plan_watch_roots,
     _coalesce_dirty_paths,
     _derive_watch_roots,
     _dirty_component_unit_id,
@@ -188,39 +189,89 @@ class WatchInternalTests(unittest.TestCase):
             ),
         )
 
-    def test_derive_watch_roots_keeps_workspace_root_for_topology_changes(self) -> None:
-        repo_root = Path("/workspace")
-        site_root = repo_root / "site"
+    def test_derive_watch_roots_keeps_site_catalog_provider_and_planning_inputs_visible(self) -> None:
+        workspace_root = Path("/workspace")
+        site_root = workspace_root / "site"
+        catalog_path = site_root / "catalog.yaml"
+        provider_snapshot_path = workspace_root / "provider-snapshot.json"
         planning_roots = (
-            repo_root / "components/runtime/docs",
+            workspace_root / "components/runtime/docs",
             site_root / "catalog.yaml",
         )
 
         self.assertEqual(
-            _derive_watch_roots(workspace_root=repo_root, site_root=site_root, planning_roots=planning_roots),
-            (repo_root,),
+            _derive_watch_roots(
+                site_root=site_root,
+                catalog_path=catalog_path,
+                provider_snapshot_path=provider_snapshot_path,
+                planning_roots=planning_roots,
+            ),
+            (
+                provider_snapshot_path,
+                site_root,
+                workspace_root / "components/runtime/docs",
+            ),
         )
 
     def test_derive_watch_roots_keeps_external_site_root_visible(self) -> None:
         workspace_root = Path("/workspace")
         site_root = Path("/catalog-repo/site")
+        catalog_path = site_root / "catalog.yaml"
 
         self.assertEqual(
             _derive_watch_roots(
-                workspace_root=workspace_root,
                 site_root=site_root,
+                catalog_path=catalog_path,
+                provider_snapshot_path=None,
                 planning_roots=(workspace_root / "components/runtime/docs",),
             ),
-            (workspace_root, site_root),
+            (site_root, workspace_root / "components/runtime/docs"),
         )
 
-    def test_pipeline_owned_path_detection_filters_stage_work_event_outputs_and_backup_descendants(self) -> None:
+    def test_build_plan_watch_roots_include_component_cache_and_site_inputs(self) -> None:
+        build_plan = SimpleNamespace(
+            site=SimpleNamespace(
+                site_pages_root=Path("/workspace/site/pages"),
+                site_assets_root=Path("/workspace/site/assets"),
+                vendor_assets=(
+                    SimpleNamespace(source_path=Path("/workspace/site/package.json")),
+                ),
+                components=(
+                    SimpleNamespace(
+                        metadata_file=Path("/workspace/components/runtime/component.yaml"),
+                        pages_root=Path("/workspace/components/runtime/docs"),
+                        assets_root=Path("/workspace/components/runtime/assets"),
+                        content_source=SimpleNamespace(
+                            local_dir=Path("/workspace/buildish-mammoth-cache/site/pages")
+                        ),
+                    ),
+                ),
+            )
+        )
+
+        self.assertEqual(
+            _build_plan_watch_roots(build_plan),
+            (
+                Path("/workspace/site/pages"),
+                Path("/workspace/site/assets"),
+                Path("/workspace/site/package.json"),
+                Path("/workspace/components/runtime/component.yaml"),
+                Path("/workspace/components/runtime/docs"),
+                Path("/workspace/components/runtime/assets"),
+                Path("/workspace/buildish-mammoth-cache/site/pages"),
+            ),
+        )
+
+    def test_pipeline_owned_path_detection_filters_stage_work_renderer_outputs_event_outputs_and_backup_descendants(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             workspace_root = Path(tempdir)
             stage_root = workspace_root / "site/.stage"
             work_root = workspace_root / "site/.site-pipeline-work"
             report_output = workspace_root / "watch-report.json"
             event_output = workspace_root / "site/.watch-events.123456.jsonl"
+            generated_build_path = workspace_root / "site/build/fake-hugo.log"
+            generated_resource_parent = workspace_root / "site/resources"
+            generated_resource = workspace_root / "site/resources/_gen/assets/main.css"
             backup_descendant = workspace_root / "site/..stage.backup.abcdef/content/index.md"
             authored_path = workspace_root / "components/runtime/docs/index.md"
 
@@ -254,6 +305,33 @@ class WatchInternalTests(unittest.TestCase):
             self.assertTrue(
                 _is_pipeline_owned_path(
                     path=event_output,
+                    stage_root=stage_root,
+                    work_root=work_root,
+                    report_output=report_output,
+                    event_output=event_output,
+                ),
+            )
+            self.assertTrue(
+                _is_pipeline_owned_path(
+                    path=generated_build_path,
+                    stage_root=stage_root,
+                    work_root=work_root,
+                    report_output=report_output,
+                    event_output=event_output,
+                ),
+            )
+            self.assertTrue(
+                _is_pipeline_owned_path(
+                    path=generated_resource_parent,
+                    stage_root=stage_root,
+                    work_root=work_root,
+                    report_output=report_output,
+                    event_output=event_output,
+                ),
+            )
+            self.assertTrue(
+                _is_pipeline_owned_path(
+                    path=generated_resource,
                     stage_root=stage_root,
                     work_root=work_root,
                     report_output=report_output,
@@ -787,7 +865,9 @@ class WatchInternalTests(unittest.TestCase):
             )
             loaded_inputs = SimpleNamespace(
                 catalog=object(),
+                catalog_path=invocation.layout.catalog_path,
                 provider_snapshot=object(),
+                provider_snapshot_path=None,
                 component_documents=object(),
             )
 
@@ -1063,6 +1143,9 @@ class WatchInternalTests(unittest.TestCase):
         stage_root = Path("/workspace/site/.stage")
         work_root = Path("/workspace/site/.site-pipeline-work")
         report_output = Path("/workspace/watch-report.json")
+        generated_build_path = Path("/workspace/site/build/fake-hugo.log")
+        generated_resource_parent = Path("/workspace/site/resources")
+        generated_resource = Path("/workspace/site/resources/_gen/assets/main.css")
 
         self.assertTrue(
             _is_pipeline_owned_path(
@@ -1070,6 +1153,33 @@ class WatchInternalTests(unittest.TestCase):
                 stage_root=stage_root,
                 work_root=work_root,
                 report_output=report_output,
+                event_output=None,
+            ),
+        )
+        self.assertTrue(
+            _is_pipeline_owned_path(
+                path=generated_build_path,
+                stage_root=stage_root,
+                work_root=work_root,
+                report_output=None,
+                event_output=None,
+            ),
+        )
+        self.assertTrue(
+            _is_pipeline_owned_path(
+                path=generated_resource_parent,
+                stage_root=stage_root,
+                work_root=work_root,
+                report_output=None,
+                event_output=None,
+            ),
+        )
+        self.assertTrue(
+            _is_pipeline_owned_path(
+                path=generated_resource,
+                stage_root=stage_root,
+                work_root=work_root,
+                report_output=None,
                 event_output=None,
             ),
         )

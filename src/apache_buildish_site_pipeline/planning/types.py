@@ -36,6 +36,7 @@ from apache_buildish_site_pipeline.models.authored.component_metadata import (
 )
 from apache_buildish_site_pipeline.models.scalars import TimestampString
 from apache_buildish_site_pipeline.models.enums import (
+    LinkCheckMode,
     MaterializationInputKind,
     MaterializationStatus,
     PlanningTarget,
@@ -142,6 +143,16 @@ class ResolvedLocalizationPolicy:
 
 
 @dataclass(frozen=True, slots=True)
+class ResolvedLinkCheckPolicy:
+    """Resolved site-wide page-link validation policy used during evaluation."""
+
+    enabled: bool
+    mode: LinkCheckMode
+    check_root_absolute: bool
+    internal_prefixes: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class ResolvedComponentConfig:
     """Resolved component runtime view for planning."""
 
@@ -170,6 +181,7 @@ class ResolvedSiteConfig:
     vendor_assets: tuple[ResolvedVendorAsset, ...]
     origins: dict[str, ResolvedOrigin]
     sources: dict[str, ResolvedSourceBinding]
+    link_checks: ResolvedLinkCheckPolicy | None
     components: tuple[ResolvedComponentConfig, ...]
 
 

@@ -25,7 +25,7 @@ from unittest.mock import patch
 from apache_buildish_site_pipeline.evaluation.collector import DiagnosticCollector
 from apache_buildish_site_pipeline.evaluation.limits import _count_watch_entries, validate_limits
 from apache_buildish_site_pipeline.evaluation.summary import build_check_summary, build_run_status
-from apache_buildish_site_pipeline.evaluation.types import DiagnosticCounts, PageScanResult, RouteInventory
+from apache_buildish_site_pipeline.evaluation.types import DiagnosticCounts, PageInventory, RouteInventory
 from apache_buildish_site_pipeline.models.enums import CheckFailureThreshold, RunStatus
 
 
@@ -71,7 +71,7 @@ class SummaryAndLimitsTests(unittest.TestCase):
             validate_limits(
                 planning=planning,
                 route_inventory=RouteInventory(route_count=1, redirect_count=1),
-                page_scan=PageScanResult(pages=(object(),)),
+                page_inventory=PageInventory(pages=(object(),)),
                 collector=collector,
             )
 

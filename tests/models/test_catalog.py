@@ -42,6 +42,7 @@ from apache_buildish_site_pipeline.models.enums import (
     CandidateSelectionMode,
     DocumentFormat,
     IndexBehavior,
+    LinkCheckMode,
     LineHeadSelectionMode,
     PublicationState,
     ReleaseSelectionMode,
@@ -88,6 +89,13 @@ def _build_valid_catalog_document() -> dict[str, object]:
                 "pathPrefix": "/platform/",
                 "publication": {"origin": "docs"},
             },
+        },
+        "validation": {
+            "linkChecks": {
+                "mode": "file-html",
+                "checkRootAbsolute": True,
+                "internalPrefixes": ["/components/", "/docs/"],
+            }
         },
         "components": [
             {
@@ -172,6 +180,30 @@ class CatalogDocumentTests(unittest.TestCase):
         self.assertEqual(document.components[0].weight, 100)
         self.assertEqual(document.defaults.localization.route_mode, RouteMode.PREFIX_ALL)
         self.assertEqual(document.components[0].artifacts[0].mounts[0].trust_class, TrustClass.PASSIVE)
+        self.assertEqual(document.validation.link_checks.mode, LinkCheckMode.FILE_HTML)
+
+    def test_rejects_root_absolute_checking_without_internal_prefixes(self) -> None:
+        document = _build_valid_catalog_document()
+        document["validation"] = {"linkChecks": {"checkRootAbsolute": True}}
+
+        with self.assertRaises(DocumentValidationFailure):
+            load_site_catalog_document(
+                json.dumps(document),
+                document_format=DocumentFormat.JSON,
+                source_name="site/components.json",
+            )
+
+    def test_defaults_link_checks_to_directory_mode_when_enabled(self) -> None:
+        document = _build_valid_catalog_document()
+        document["validation"] = {"linkChecks": {"enabled": True}}
+
+        catalog = SiteCatalogDocumentV1.model_validate(
+            document, by_alias=True, by_name=False
+        )
+
+        self.assertIsNotNone(catalog.validation)
+        self.assertIsNotNone(catalog.validation.link_checks)
+        self.assertEqual(catalog.validation.link_checks.mode, LinkCheckMode.DIRECTORY)
 
     def test_rejects_unknown_local_cross_references(self) -> None:
         document = _build_valid_catalog_document()

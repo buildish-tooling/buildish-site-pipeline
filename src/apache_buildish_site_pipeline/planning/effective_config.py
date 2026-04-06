@@ -32,6 +32,7 @@ from apache_buildish_site_pipeline.models.validation.urls import (
 from .types import (
     ResolvedArtifactConfig,
     ResolvedComponentConfig,
+    ResolvedLinkCheckPolicy,
     ResolvedLocalizationPolicy,
     ResolvedOrigin,
     ResolvedPublicationPolicy,
@@ -114,6 +115,7 @@ def resolve_site_config(
         )
         for index, vendor_asset in enumerate(site_vendor_assets or ())
     )
+    link_checks = _resolve_link_checks(catalog)
 
     components = tuple(
         _resolve_component(
@@ -134,6 +136,7 @@ def resolve_site_config(
         vendor_assets=vendor_assets,
         origins=origins,
         sources=sources,
+        link_checks=link_checks,
         components=components,
     )
 
@@ -422,6 +425,24 @@ def _resolve_localization(
             authored.route_mode
             if authored and authored.route_mode is not None
             else (defaults.route_mode if defaults is not None else None)
+        ),
+    )
+
+
+def _resolve_link_checks(
+    catalog: SiteCatalogDocumentV1,
+) -> ResolvedLinkCheckPolicy | None:
+    validation = catalog.validation
+    if validation is None or validation.link_checks is None:
+        return None
+
+    link_checks = validation.link_checks
+    return ResolvedLinkCheckPolicy(
+        enabled=link_checks.enabled,
+        mode=link_checks.mode,
+        check_root_absolute=link_checks.check_root_absolute,
+        internal_prefixes=tuple(
+            str(prefix) for prefix in (link_checks.internal_prefixes or ())
         ),
     )
 

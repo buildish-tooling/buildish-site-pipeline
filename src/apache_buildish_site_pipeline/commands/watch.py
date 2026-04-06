@@ -347,8 +347,9 @@ def run_watch(invocation: WatchInvocation, *, stdout: TextIO) -> CommandResult:
             cycle_number=cycle_number,
             trusted_stage=trusted_stage,
             prior_watch_roots=_derive_watch_roots(
-                workspace_root=invocation.layout.workspace_root,
                 site_root=invocation.layout.site_root,
+                    catalog_path=invocation.layout.catalog_path,
+                    provider_snapshot_path=None,
                 planning_roots=(),
             ),
             dirty_paths=(),
@@ -511,10 +512,16 @@ def _run_watch_cycle(
         if planning.watch_plan is not None
         else prior_watch_roots
     )
+    build_input_roots = (
+        _build_plan_watch_roots(evaluation.build_plan)
+        if evaluation.build_plan is not None
+        else ()
+    )
     watch_roots = _derive_watch_roots(
-        workspace_root=invocation.layout.workspace_root,
         site_root=invocation.layout.site_root,
-        planning_roots=planning_roots,
+        catalog_path=loaded_inputs.catalog_path,
+        provider_snapshot_path=loaded_inputs.provider_snapshot_path,
+        planning_roots=planning_roots + build_input_roots,
     )
     if not evaluation.stage_gate.allowed or evaluation.build_plan is None:
         return WatchCycleOutcome(
@@ -943,16 +950,49 @@ def _graceful_watch_shutdown() -> Iterator[_WatchShutdownController]:
 
 
 def _derive_watch_roots(
-    *, workspace_root: Path, site_root: Path, planning_roots: tuple[Path, ...]
+    *,
+    site_root: Path,
+    catalog_path: Path,
+    provider_snapshot_path: Path | None,
+    planning_roots: tuple[Path, ...],
 ) -> tuple[Path, ...]:
-    """Keep a stable workspace-level watch root so topology changes remain visible."""
+    """Keep the watch scope narrow while preserving config and provider visibility."""
 
     return _coalesce_dirty_paths(
         (
-            workspace_root.resolve(strict=False),
             site_root.resolve(strict=False),
+            catalog_path.resolve(strict=False),
+            *(
+                (provider_snapshot_path.resolve(strict=False),)
+                if provider_snapshot_path is not None
+                else ()
+            ),
             *(root.resolve(strict=False) for root in planning_roots),
         ),
+    )
+
+
+def _build_plan_watch_roots(build_plan) -> tuple[Path, ...]:
+    """Collect the concrete local inputs that can invalidate an incremental watch build."""
+
+    return tuple(
+        candidate
+        for candidate in (
+            build_plan.site.site_pages_root,
+            build_plan.site.site_assets_root,
+            *(asset.source_path for asset in build_plan.site.vendor_assets),
+            *(
+                path
+                for component in build_plan.site.components
+                for path in (
+                    component.metadata_file,
+                    component.pages_root,
+                    component.assets_root,
+                    component.content_source.local_dir,
+                )
+            ),
+        )
+        if candidate is not None
     )
 
 
@@ -980,11 +1020,12 @@ def _is_pipeline_owned_path(
     report_output: Path | None,
     event_output: Path | None,
 ) -> bool:
-    """Return whether a changed path belongs to watch-owned outputs or temp files."""
+    """Return whether a changed path belongs to watch-owned or renderer-generated outputs."""
 
     normalized_path = path.resolve(strict=False)
     normalized_stage_root = stage_root.resolve(strict=False)
     normalized_work_root = work_root.resolve(strict=False)
+    normalized_site_root = normalized_stage_root.parent
     if normalized_path == normalized_stage_root or normalized_path.is_relative_to(
         normalized_stage_root
     ):
@@ -993,8 +1034,21 @@ def _is_pipeline_owned_path(
         normalized_work_root
     ):
         return True
+    generated_build_root = normalized_site_root / "build"
+    if normalized_path == generated_build_root or normalized_path.is_relative_to(
+        generated_build_root
+    ):
+        return True
+    generated_resource_parent = normalized_site_root / "resources"
+    generated_resource_root = generated_resource_parent / "_gen"
+    if normalized_path == generated_resource_parent:
+        return True
+    if normalized_path == generated_resource_root or normalized_path.is_relative_to(
+        generated_resource_root
+    ):
+        return True
 
-    stage_parent = normalized_stage_root.parent
+    stage_parent = normalized_site_root
     stage_temp_prefix = f".{normalized_stage_root.name}."
     stage_backup_prefix = f".{normalized_stage_root.name}.backup."
     for candidate in chain((normalized_path,), normalized_path.parents):

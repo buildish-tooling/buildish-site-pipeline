@@ -1000,6 +1000,63 @@
       "title": "LineHeadSelectionPolicy",
       "type": "object"
     },
+    "LinkCheckConfig": {
+      "additionalProperties": false,
+      "description": "Site-wide policy for internal page-link validation during ``check``.",
+      "properties": {
+        "checkRootAbsolute": {
+          "default": false,
+          "description": "Whether root-absolute links such as `/components/foo/` should also be validated when they match declared internal prefixes.",
+          "title": "Checkrootabsolute",
+          "type": "boolean"
+        },
+        "enabled": {
+          "default": true,
+          "description": "Whether the pipeline should validate authored internal page links against resolved public routes.",
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "internalPrefixes": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Root-absolute public-path prefixes that should be treated as internal links when root-absolute checking is enabled.",
+          "examples": [
+            [
+              "/components/",
+              "/docs/"
+            ]
+          ],
+          "title": "Internalprefixes"
+        },
+        "mode": {
+          "$ref": "#/$defs/LinkCheckMode",
+          "default": "directory",
+          "description": "How authored relative page links should resolve in the published site."
+        }
+      },
+      "title": "LinkCheckConfig",
+      "type": "object"
+    },
+    "LinkCheckMode": {
+      "description": "Supported staged public-path resolution strategies for internal page links.",
+      "enum": [
+        "directory",
+        "file-html"
+      ],
+      "title": "LinkCheckMode",
+      "type": "string"
+    },
     "LocalizationConfig": {
       "additionalProperties": false,
       "description": "Locale and translation defaults.",
@@ -2322,6 +2379,26 @@
       "title": "TrustClass",
       "type": "string"
     },
+    "ValidationConfig": {
+      "additionalProperties": false,
+      "description": "Optional site-wide validation policies that affect ``check`` behavior.",
+      "properties": {
+        "linkChecks": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LinkCheckConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional internal page-link checking policy resolved against staged public routes."
+        }
+      },
+      "title": "ValidationConfig",
+      "type": "object"
+    },
     "WithdrawalBehavior": {
       "description": "Author-directed behavior for a withdrawn release.",
       "enum": [
@@ -2499,6 +2576,18 @@
       "default": null,
       "description": "Named repository or checkout bindings used by components and artifacts.",
       "title": "Sources"
+    },
+    "validation": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ValidationConfig"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional site-wide validation policies that extend the default `check` behavior."
     }
   },
   "required": [

@@ -153,41 +153,34 @@ class LocalizationAndPageScanTests(unittest.TestCase):
             (assets_root / "asset.md").write_text("body\n", encoding="utf-8")
 
             scanned = validate_page_scan(
-                SimpleNamespace(
-                    local_inputs=(
-                        self._local_input(docs_root),
-                        self._local_input(
-                            assets_root,
-                            input_kind=MaterializationInputKind.SITE_ASSETS,
+                self._planning(
+                    self._local_input(docs_root),
+                    self._local_input(
+                        assets_root,
+                        input_kind=MaterializationInputKind.SITE_ASSETS,
+                    ),
+                    self._local_input(
+                        root / "missing",
+                        readiness=InputReadiness(
+                            status=MaterializationStatus.MISSING,
+                            reason=MaterializationStatusReason.PATH_MISSING,
                         ),
-                        self._local_input(
-                            root / "missing",
-                            readiness=InputReadiness(
-                                status=MaterializationStatus.MISSING,
-                                reason=MaterializationStatusReason.PATH_MISSING,
-                            ),
-                        ),
-                    )
+                    ),
                 ),
                 DiagnosticCollector(),
             )
 
         self.assertEqual(
-            scanned.pages,
-            (
-                self._page("Guide.MDX", None, input_id="development:spark:runtime"),
-                self._page(
-                    "Install.adoc",
-                    "install",
-                    input_id="development:spark:runtime",
-                ),
-                self._page(
-                    "Reference.asciidoc",
-                    None,
-                    input_id="development:spark:runtime",
-                ),
-            ),
+            [(page.relative_path, page.translation_key) for page in scanned.pages],
+            [
+                ("Guide.MDX", None),
+                ("Install.adoc", "install"),
+                ("Reference.asciidoc", None),
+            ],
         )
+        self.assertEqual(scanned.pages[0].routed_relative_path, "Guide.MDX")
+        self.assertEqual(scanned.pages[0].base_public_path, "/")
+        self.assertEqual(scanned.pages[0].body_text, "body\n")
 
     def test_validate_page_scan_reports_root_escape_and_read_failures(self) -> None:
         collector = DiagnosticCollector()
@@ -201,7 +194,7 @@ class LocalizationAndPageScanTests(unittest.TestCase):
             (docs_root / "broken.md").write_bytes(b"\xff")
 
             scanned = validate_page_scan(
-                SimpleNamespace(local_inputs=(self._local_input(docs_root),)),
+                self._planning(self._local_input(docs_root)),
                 collector,
             )
 
@@ -225,7 +218,7 @@ class LocalizationAndPageScanTests(unittest.TestCase):
             )
 
             scanned = validate_page_scan(
-                SimpleNamespace(local_inputs=(self._local_input(docs_root),)),
+                self._planning(self._local_input(docs_root)),
                 collector,
             )
 
@@ -252,7 +245,7 @@ class LocalizationAndPageScanTests(unittest.TestCase):
             (docs_root / "alias").symlink_to(real_dir, target_is_directory=True)
 
             scanned = validate_page_scan(
-                SimpleNamespace(local_inputs=(self._local_input(docs_root),)),
+                self._planning(self._local_input(docs_root)),
                 collector,
             )
 
@@ -273,7 +266,7 @@ class LocalizationAndPageScanTests(unittest.TestCase):
 
             with mock.patch.object(type(docs_root), "iterdir", autospec=True, side_effect=_iterdir):
                 scanned = validate_page_scan(
-                    SimpleNamespace(local_inputs=(self._local_input(docs_root),)),
+                    self._planning(self._local_input(docs_root)),
                     collector,
                 )
 
@@ -288,12 +281,33 @@ class LocalizationAndPageScanTests(unittest.TestCase):
             (docs_root / "empty.md").write_text("---\n\n---\nbody\n", encoding="utf-8")
 
             scanned = validate_page_scan(
-                SimpleNamespace(local_inputs=(self._local_input(docs_root),)),
+                self._planning(self._local_input(docs_root)),
                 collector,
             )
 
         self.assertEqual(tuple(page.relative_path for page in scanned.pages), ("empty.md",))
         self.assertEqual(collector.build(), ())
+
+    def test_validate_page_scan_includes_component_pages_roots_in_shared_inventory(self) -> None:
+        collector = DiagnosticCollector()
+        with TemporaryDirectory() as temp_dir:
+            pages_root = Path(temp_dir) / "pages"
+            pages_root.mkdir()
+            (pages_root / "guide.md").write_text("guide body\n", encoding="utf-8")
+
+            scanned = validate_page_scan(
+                self._planning(
+                    components=(
+                        self._component("spark", pages_root=pages_root, component_path="/spark"),
+                    )
+                ),
+                collector,
+            )
+
+        self.assertEqual(len(scanned.pages), 1)
+        self.assertEqual(scanned.pages[0].input_id, "componentPages:spark")
+        self.assertEqual(scanned.pages[0].base_public_path, "/spark")
+        self.assertEqual(scanned.pages[0].body_text, "guide body\n")
 
     @staticmethod
     def _component(
@@ -303,9 +317,13 @@ class LocalizationAndPageScanTests(unittest.TestCase):
         supported_locales: tuple[str, ...] | None = ("en", "de", "fr"),
         fallback_locale: str | None = None,
         route_mode: RouteMode | None = RouteMode.PREFIX_ALL,
+        pages_root: Path | None = None,
+        component_path: str = "/spark",
     ) -> SimpleNamespace:
         return SimpleNamespace(
             slug=slug,
+            pages_root=pages_root,
+            publication=SimpleNamespace(component_path=component_path),
             localization=SimpleNamespace(
                 default_locale=default_locale,
                 supported_locales=supported_locales,
@@ -322,13 +340,32 @@ class LocalizationAndPageScanTests(unittest.TestCase):
         input_id: str = "development:spark:runtime",
         component_slug: str | None = "spark",
         artifact_key: str | None = "runtime",
+        routed_relative_path: str | None = None,
+        base_public_path: str = "/",
+        body_text: str | None = None,
     ) -> ScannedPage:
         return ScannedPage(
             input_id=input_id,
             component_slug=component_slug,
             artifact_key=artifact_key,
             relative_path=relative_path,
+            routed_relative_path=routed_relative_path or relative_path,
+            source_path=Path(relative_path),
+            base_public_path=base_public_path,
             translation_key=translation_key,
+            body_text=body_text,
+        )
+
+    @staticmethod
+    def _planning(
+        *local_inputs: ResolvedLocalInput,
+        components: tuple[SimpleNamespace, ...] = (),
+        selected_contexts: tuple[SimpleNamespace, ...] = (),
+    ) -> SimpleNamespace:
+        return SimpleNamespace(
+            local_inputs=local_inputs,
+            site=SimpleNamespace(components=components),
+            selected_versions=SimpleNamespace(contexts=selected_contexts),
         )
 
     @staticmethod

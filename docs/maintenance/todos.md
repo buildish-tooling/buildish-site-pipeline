@@ -177,16 +177,47 @@ Current design direction:
 - blind generic link rewriting in the core pipeline likely does not, because
   link semantics depend on renderer behavior, URL shape policy, and site-local
   conventions that site-pipeline does not fully own
-- if the project grows first-class support here, the first slice should likely
-  be diagnostics-oriented and opt-in rather than a mutating rewrite pass
+- if the project grows first-class support here, it should be implemented as a
+  real supported feature with shared page inventory or equivalent shared page
+  facts, not as two unrelated page-tree scans that happen to stay in sync
+- the first production slice should support only the clearly modeled URL-shape
+  categories `directory` and `file-html`
+- `route-mapped` should stay deferred until the project has a concrete,
+  testable contract for custom permalink systems instead of a hand-wavy escape
+  hatch
 - any consumer-owned rule set should be explicit about renderer assumptions and
   should not silently rewrite links unless the contract is narrow, testable, and
   unambiguous
+- a future site-pipeline-native link syntax may be worth exploring if authors
+  need a way to express page identity or intent without hand-encoding the final
+  renderer-shaped URL, but that would add a pipeline-owned authoring surface and
+  should therefore stay a later design topic rather than part of the first link
+  checking implementation
+- broken internal links should still be reported individually rather than hidden
+  behind arbitrary per-page, per-component, or global quotas; if report volume
+  becomes a real problem, the better answer is reporting compaction or an
+  overflow summary diagnostic, not a correctness threshold
+
+Implementation follow-up worth evaluating before this grows further:
+
+- the current page inventory keeps `InventoryPage.body_text`, which means the
+  aggregator can retain full authored page bodies in memory longer than link
+  checking actually needs them
+- a leaner design may be to extract `LinkDescription`-style facts eagerly
+  (`target`, `line`, `column`, plus any other minimal routing context), validate
+  links as soon as the relevant local route facts are available, and retain only
+  the unresolved cross-component links for the final aggregation pass
+- that would likely reduce steady-state memory pressure and make the ownership
+  split clearer: component-local validation during or after each component pass,
+  cross-component validation only in the main aggregator once the full staged
+  route inventory exists
+- any such refactor must keep diagnostics stable and precise; losing source
+  location fidelity or deferring too little information would not be acceptable
 
 Questions worth answering before implementation:
 
-- should the catalog be able to declare a renderer profile or link policy for
-  relative Markdown links
+- should the catalog expose this as a general `linkChecks` capability rather
+  than a more implementation-leaking `stagedLinkChecks` name
 - should site-pipeline only report suspicious links, or also support an
   explicit transformation mode
 - how would such rules interact with pretty URLs, index pages, page bundles,
@@ -194,6 +225,8 @@ Questions worth answering before implementation:
 - can the pipeline validate links against the staged output tree without making
   incorrect assumptions about renderer-only features such as shortcodes or
   `ref`/`relref`-style link expansion
+- is a pipeline-native link syntax worth the portability cost if it lets
+  site-pipeline emit the correct renderer-facing link shape automatically
 
 This should be treated as optional publish-quality assistance for consumers, not
 as a reason to make the shared authored contract renderer-specific by default.

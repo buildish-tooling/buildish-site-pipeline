@@ -272,6 +272,40 @@ class EffectiveConfigResolutionTests(unittest.TestCase):
         self.assertEqual("de", localization.fallback_locale)
         self.assertEqual("prefixAll", localization.route_mode.value)
 
+    def test_resolves_site_link_check_policy(self) -> None:
+        catalog = SiteCatalogDocumentV1.model_validate(
+            {
+                "schemaVersion": 1,
+                "site": {},
+                "validation": {
+                    "linkChecks": {
+                        "enabled": True,
+                        "mode": "file-html",
+                        "checkRootAbsolute": True,
+                        "internalPrefixes": ["/components/", "/docs/"],
+                    }
+                },
+                "origins": {"docs": {"baseUrl": "https://docs.example.org"}},
+                "components": [
+                    {
+                        "slug": "spark",
+                        "publication": {"origin": "docs", "mountPath": "/spark/"},
+                        "artifacts": [],
+                    },
+                ],
+            },
+            by_alias=True,
+            by_name=False,
+        )
+
+        with tempfile.TemporaryDirectory() as tempdir:
+            site = resolve_site_config(catalog=catalog, workspace_root=Path(tempdir))
+
+        self.assertIsNotNone(site.link_checks)
+        self.assertTrue(site.link_checks.enabled)
+        self.assertEqual(site.link_checks.mode.value, "file-html")
+        self.assertEqual(site.link_checks.internal_prefixes, ("/components/", "/docs/"))
+
     def test_join_public_path_handles_root_prefix(self) -> None:
         self.assertEqual(_join_public_path("/", "spark"), "/spark/")
 

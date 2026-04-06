@@ -83,6 +83,13 @@ class CheckFailureThreshold(StrEnum):
     WARNING = "warning"
 
 
+class LinkCheckMode(StrEnum):
+    """Supported staged public-path resolution strategies for internal page links."""
+
+    DIRECTORY = "directory"
+    FILE_HTML = "file-html"
+
+
 class RecordKind(StrEnum):
     """Normalized provider record lifecycle kind."""
 

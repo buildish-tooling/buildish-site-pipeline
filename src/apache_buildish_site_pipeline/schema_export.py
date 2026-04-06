@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Generate checked-in JSON Schema files for public input and output contracts.
+"""Generate checked-in JSON Schema files and reference docs for public contracts.
 
-The exported schemas are derived from the same Pydantic models that validate or
-emit the pipeline's public file contracts. Model docstrings and
-``Field(description=...)`` metadata therefore become schema help text, keeping
-Python model metadata as the single source of truth.
+The exported artifacts are derived from the same Pydantic models that validate
+or emit the pipeline's public file contracts. Model docstrings,
+``Field(description=...)`` metadata, and typed reference-doc annotations
+therefore stay as the single source of truth for both machine-readable schemas
+and human-readable reference output.
 """
 
 from __future__ import annotations
@@ -28,11 +29,17 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 import sys
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import Field, TypeAdapter, create_model
 
 from apache_buildish_site_pipeline.models.documentation import ContractDocumentation, contract_documentation_for
+from apache_buildish_site_pipeline.models.enums import DocumentFormat
+from apache_buildish_site_pipeline.models.loading import (
+    load_component_metadata_document,
+    load_provider_snapshot_document,
+    load_site_catalog_document,
+)
 from apache_buildish_site_pipeline.models.emitted.aggregates import (
     ArtifactsDataEntry,
     CandidateAggregateEntry,
@@ -76,6 +83,17 @@ _PUBLISHED_SCHEMA_BASE_URL = (
 _GENERATED_COMMENT = "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`."
 
 SchemaBuilder = Callable[[], dict[str, Any]]
+ExampleValueBuilder = Callable[[], object]
+ExampleRenderFormat = Literal["json", "yaml"]
+
+
+@dataclass(frozen=True)
+class SchemaExample:
+    """One generated example shared by schema files and reference docs."""
+
+    summary: str
+    value_builder: ExampleValueBuilder
+    render_format: ExampleRenderFormat = "json"
 
 
 @dataclass(frozen=True)
@@ -87,6 +105,8 @@ class SchemaExport:
     schema_builder: SchemaBuilder
     description: str | None = None
     documentation: ContractDocumentation | None = None
+    reference_roots: tuple[type[SitePipelineBaseModel], ...] = ()
+    examples: tuple[SchemaExample, ...] = ()
 
 
 def _model_schema(model: type[SitePipelineBaseModel]) -> SchemaBuilder:
@@ -134,54 +154,183 @@ def _pipeline_file_documentation(*, summary: str, file_path: str) -> ContractDoc
     )
 
 
+def _serialize_example_value(value: object) -> object:
+    """Convert typed example payloads into JSON-serializable data."""
+
+    if isinstance(value, SitePipelineBaseModel):
+        return value.model_dump(by_alias=True, exclude_none=True, mode="json")
+    if isinstance(value, tuple):
+        return [_serialize_example_value(item) for item in value]
+    if isinstance(value, list):
+        return [_serialize_example_value(item) for item in value]
+    if isinstance(value, (str, int, float, bool)) or value is None:
+        return value
+    raise TypeError(f"Unsupported schema example payload type: {type(value)!r}")
+
+
+def _catalog_example_document() -> SiteCatalogDocumentV1:
+    """Return a realistic authored catalog example used in generated docs."""
+
+    return load_site_catalog_document(
+        (
+            "schemaVersion: 1\n"
+            "defaults:\n"
+            "  docsRoot: docs\n"
+            "  publication:\n"
+            "    origin: docs\n"
+            "site: {}\n"
+            "origins:\n"
+            "  docs:\n"
+            "    baseUrl: https://docs.example.org\n"
+            "sources:\n"
+            "  runtime:\n"
+            "    localDir: components/runtime\n"
+            "components:\n"
+            "  - slug: spark\n"
+            "    weight: 100\n"
+            "    content:\n"
+            "      source: runtime\n"
+            "    publication:\n"
+            "      mountPath: /spark/\n"
+            "    artifacts:\n"
+            "      - key: runtime\n"
+            "        source: runtime\n"
+            "        versioning:\n"
+            "          developmentRef: main\n"
+            "          tagPattern: ^v.*$\n"
+            "        publicationSelection:\n"
+            "          development: true\n"
+            "          lineHeads:\n"
+            "            mode: allAuthored\n"
+            "          releases:\n"
+            "            mode: latestPerLine\n"
+            "        lifecycle:\n"
+            "          releaseLines:\n"
+            "            - key: '4.0'\n"
+            "              maintenanceRef: maintenance/4.0\n"
+            "              latest: '4.0.0'\n"
+            "          releases:\n"
+            "            - version: '4.0.0'\n"
+        ),
+        document_format=DocumentFormat.YAML,
+        source_name="site/catalog.yaml",
+    )
+
+
+def _component_metadata_example_document() -> ComponentMetadataDocumentV1:
+    """Return a realistic component metadata example used in generated docs."""
+
+    return load_component_metadata_document(
+        (
+            "schemaVersion: 1\n"
+            "component:\n"
+            "  slug: spark\n"
+            "  displayName: Apache Spark\n"
+            "content:\n"
+            "  pagesRoot: site/pages\n"
+            "  docsRoot: docs\n"
+            "lifecycle:\n"
+            "  latestStable: 4.0.0\n"
+            "  supportStatusVocabulary:\n"
+            "    active:\n"
+            "      displayName: Active\n"
+            "      order: 10\n"
+        ),
+        document_format=DocumentFormat.YAML,
+        source_name="site/component.yaml",
+    )
+
+
+def _provider_snapshot_example_document() -> ProviderSnapshotDocumentV1:
+    """Return a realistic provider snapshot example used in generated docs."""
+
+    return load_provider_snapshot_document(
+        (
+            '{"schemaVersion":1,'
+            '"providers":[{"key":"github-releases","type":"github","displayName":"GitHub Releases","baseUrl":"https://github.com/apache/spark","fetchedAt":"2026-04-03T18:00:00Z"}],'
+            '"records":[{"provider":"github-releases","kind":"released","componentSlug":"spark","artifactKey":"runtime","externalId":"spark-4.0.0","version":"4.0.0","externalUrl":"https://github.com/apache/spark/releases/tag/v4.0.0","publishedAt":"2026-04-03T18:00:00Z","assets":[{"name":"spark-4.0.0-src.tgz","url":"https://downloads.apache.org/spark/spark-4.0.0-src.tgz","checksums":{"sha256":"abc123"}}]}]}'
+        ),
+        document_format=DocumentFormat.JSON,
+        source_name="providers.json",
+    )
+
+
 _SCHEMA_EXPORTS = (
     SchemaExport(
         filename="site-pipeline-catalog-v1.schema.json",
         title="Site Pipeline Catalog v1",
         schema_builder=_model_schema(SiteCatalogDocumentV1),
         documentation=contract_documentation_for(SiteCatalogDocumentV1),
+        reference_roots=(SiteCatalogDocumentV1,),
+        examples=(
+            SchemaExample(
+                summary="Catalog with one component, one artifact, and release selection policy.",
+                value_builder=_catalog_example_document,
+                render_format="yaml",
+            ),
+        ),
     ),
     SchemaExport(
         filename="site-pipeline-component-v1.schema.json",
         title="Site Pipeline Component Metadata v1",
         schema_builder=_model_schema(ComponentMetadataDocumentV1),
         documentation=contract_documentation_for(ComponentMetadataDocumentV1),
+        reference_roots=(ComponentMetadataDocumentV1,),
+        examples=(
+            SchemaExample(
+                summary="Component metadata with identity, content roots, and lifecycle hints.",
+                value_builder=_component_metadata_example_document,
+                render_format="yaml",
+            ),
+        ),
     ),
     SchemaExport(
         filename="site-pipeline-provider-snapshot-v1.schema.json",
         title="Site Pipeline Provider Snapshot v1",
         schema_builder=_model_schema(ProviderSnapshotDocumentV1),
         documentation=contract_documentation_for(ProviderSnapshotDocumentV1),
+        reference_roots=(ProviderSnapshotDocumentV1,),
+        examples=(
+            SchemaExample(
+                summary="Provider snapshot with one released record and one downloadable asset.",
+                value_builder=_provider_snapshot_example_document,
+            ),
+        ),
     ),
     SchemaExport(
         filename="site-pipeline-materialization-report-v1.schema.json",
         title="Site Pipeline Materialization Report v1",
         schema_builder=_model_schema(ResolvedMaterializationReportV1),
         documentation=contract_documentation_for(ResolvedMaterializationReportV1),
+        reference_roots=(ResolvedMaterializationReportV1,),
     ),
     SchemaExport(
         filename="site-pipeline-check-report-v1.schema.json",
         title="Site Pipeline Check Report v1",
         schema_builder=_model_schema(CheckReportV1),
         documentation=contract_documentation_for(CheckReportV1),
+        reference_roots=(CheckReportV1,),
     ),
     SchemaExport(
         filename="site-pipeline-stage-run-report-v1.schema.json",
         title="Site Pipeline Stage Run Report v1",
         schema_builder=_model_schema(StageRunReportV1),
         documentation=contract_documentation_for(StageRunReportV1),
+        reference_roots=(StageRunReportV1,),
     ),
     SchemaExport(
         filename="site-pipeline-stage-manifest-v1.schema.json",
         title="Site Pipeline Stage Manifest v1",
         schema_builder=_model_schema(StageManifestV1),
         documentation=contract_documentation_for(StageManifestV1),
+        reference_roots=(StageManifestV1,),
     ),
     SchemaExport(
         filename="site-pipeline-front-matter-namespace-v1.schema.json",
         title="Site Pipeline Front Matter Namespace v1",
         schema_builder=_model_schema(PipelineFrontMatterNamespace),
         documentation=contract_documentation_for(PipelineFrontMatterNamespace),
+        reference_roots=(PipelineFrontMatterNamespace,),
     ),
     SchemaExport(
         filename="site-pipeline-components-data-v1.schema.json",
@@ -196,6 +345,7 @@ _SCHEMA_EXPORTS = (
             summary="Pipeline-emitted component aggregate file.",
             file_path="data/components.json",
         ),
+        reference_roots=(ComponentsDataEntry,),
     ),
     SchemaExport(
         filename="site-pipeline-artifacts-data-v1.schema.json",
@@ -210,6 +360,7 @@ _SCHEMA_EXPORTS = (
             summary="Pipeline-emitted artifact aggregate file.",
             file_path="data/artifacts.json",
         ),
+        reference_roots=(ArtifactsDataEntry,),
     ),
     SchemaExport(
         filename="site-pipeline-routes-data-v1.schema.json",
@@ -224,6 +375,7 @@ _SCHEMA_EXPORTS = (
             summary="Pipeline-emitted route aggregate file.",
             file_path="data/routes.json",
         ),
+        reference_roots=(RouteAggregateEntry,),
     ),
     SchemaExport(
         filename="site-pipeline-redirects-data-v1.schema.json",
@@ -238,6 +390,7 @@ _SCHEMA_EXPORTS = (
             summary="Pipeline-emitted redirect aggregate file.",
             file_path="data/redirects.json",
         ),
+        reference_roots=(RedirectAggregateEntry,),
     ),
     SchemaExport(
         filename="site-pipeline-providers-data-v1.schema.json",
@@ -252,6 +405,7 @@ _SCHEMA_EXPORTS = (
             summary="Pipeline-emitted provider summary aggregate file.",
             file_path="data/providers.json",
         ),
+        reference_roots=(ProvidersDataEntry,),
     ),
     SchemaExport(
         filename="site-pipeline-releases-data-v1.schema.json",
@@ -266,6 +420,7 @@ _SCHEMA_EXPORTS = (
             summary="Pipeline-emitted release aggregate file.",
             file_path="data/releases.json",
         ),
+        reference_roots=(ReleaseAggregateEntry,),
     ),
     SchemaExport(
         filename="site-pipeline-candidates-data-v1.schema.json",
@@ -280,6 +435,7 @@ _SCHEMA_EXPORTS = (
             summary="Pipeline-emitted candidate aggregate file.",
             file_path="data/candidates.json",
         ),
+        reference_roots=(CandidateAggregateEntry,),
     ),
     SchemaExport(
         filename="site-pipeline-refs-data-v1.schema.json",
@@ -294,6 +450,7 @@ _SCHEMA_EXPORTS = (
             summary="Pipeline-emitted named-ref aggregate file.",
             file_path="data/refs.json",
         ),
+        reference_roots=(RefAggregateEntry,),
     ),
     SchemaExport(
         filename="site-pipeline-translations-data-v1.schema.json",
@@ -308,6 +465,7 @@ _SCHEMA_EXPORTS = (
             summary="Pipeline-emitted translation aggregate file.",
             file_path="data/translations.json",
         ),
+        reference_roots=(TranslationSetAggregateEntry,),
     ),
     SchemaExport(
         filename="site-pipeline-compatibility-data-v1.schema.json",
@@ -322,6 +480,7 @@ _SCHEMA_EXPORTS = (
             summary="Pipeline-emitted compatibility aggregate file.",
             file_path="data/compatibility.json",
         ),
+        reference_roots=(CompatibilityAggregateEntry,),
     ),
     SchemaExport(
         filename="site-pipeline-mounts-data-v1.schema.json",
@@ -336,6 +495,7 @@ _SCHEMA_EXPORTS = (
             summary="Pipeline-emitted mount aggregate file.",
             file_path="data/mounts.json",
         ),
+        reference_roots=(MountAggregateEntry,),
     ),
     SchemaExport(
         filename="site-pipeline-content-index-data-v1.schema.json",
@@ -350,6 +510,7 @@ _SCHEMA_EXPORTS = (
             summary="Pipeline-emitted content index file.",
             file_path="data/content-index.json",
         ),
+        reference_roots=(ContentIndexEntry,),
     ),
     SchemaExport(
         filename="site-pipeline-diagnostics-data-v1.schema.json",
@@ -360,24 +521,28 @@ _SCHEMA_EXPORTS = (
             summary="Pipeline-emitted diagnostics file.",
             file_path="data/diagnostics.json",
         ),
+        reference_roots=(PipelineDiagnosticEntry,),
     ),
     SchemaExport(
         filename="site-pipeline-unit-contributions-v1.schema.json",
         title="Site Pipeline data/_pipeline/unit-contributions.json v1",
         schema_builder=_model_schema(PersistedUnitContributionsV1),
         documentation=contract_documentation_for(PersistedUnitContributionsV1),
+        reference_roots=(PersistedUnitContributionsV1,),
     ),
     SchemaExport(
         filename="site-pipeline-output-ownership-v1.schema.json",
         title="Site Pipeline data/_pipeline/output-ownership.json v1",
         schema_builder=_model_schema(OutputOwnershipMapV1),
         documentation=contract_documentation_for(OutputOwnershipMapV1),
+        reference_roots=(OutputOwnershipMapV1,),
     ),
     SchemaExport(
         filename="site-pipeline-aggregate-dependencies-v1.schema.json",
         title="Site Pipeline data/_pipeline/aggregate-dependencies.json v1",
         schema_builder=_model_schema(AggregateDependencyMapV1),
         documentation=contract_documentation_for(AggregateDependencyMapV1),
+        reference_roots=(AggregateDependencyMapV1,),
     ),
 )
 
@@ -406,6 +571,10 @@ def build_schema_document(export: SchemaExport) -> dict[str, Any]:
         schema["description"] = export.description
     if export.documentation is not None:
         schema["x-buildish-contract"] = export.documentation.as_schema_extension()
+    if export.examples:
+        schema["examples"] = [
+            _serialize_example_value(example.value_builder()) for example in export.examples
+        ]
     return schema
 
 
@@ -430,6 +599,14 @@ def write_authored_schema_files(output_dir: Path) -> tuple[Path, ...]:
     return write_schema_files(output_dir)
 
 
+def write_reference_file(output_path: Path) -> Path:
+    """Write the generated Markdown schema reference document."""
+
+    from apache_buildish_site_pipeline.reference_export import write_reference_markdown_file
+
+    return write_reference_markdown_file(output_path, schema_exports())
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="python -m apache_buildish_site_pipeline.schema_export"
@@ -439,16 +616,24 @@ def _build_parser() -> argparse.ArgumentParser:
         default="schemas",
         help="Directory that should receive the generated JSON Schema files.",
     )
+    parser.add_argument(
+        "--reference-output",
+        default="docs/reference/pipeline-model-schema-reference.md",
+        help="Path that should receive the generated Markdown schema reference.",
+    )
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Generate the checked-in JSON Schema files for public file contracts."""
+    """Generate the checked-in JSON Schema files and Markdown reference docs."""
 
     args = _build_parser().parse_args(argv)
     for output_path in write_schema_files(Path(args.output_dir)):
         sys.stdout.write(output_path.as_posix())  # noqa: TID251
         sys.stdout.write("\n")  # noqa: TID251
+    reference_path = write_reference_file(Path(args.reference_output))
+    sys.stdout.write(reference_path.as_posix())  # noqa: TID251
+    sys.stdout.write("\n")  # noqa: TID251
     return 0
 
 

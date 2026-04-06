@@ -2048,6 +2048,73 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "Consumer-authored site catalog from ``site/catalog.yaml``.",
+  "examples": [
+    {
+      "components": [
+        {
+          "artifacts": [
+            {
+              "key": "runtime",
+              "lifecycle": {
+                "releaseLines": [
+                  {
+                    "key": "4.0",
+                    "latest": "4.0.0",
+                    "maintenanceRef": "maintenance/4.0"
+                  }
+                ],
+                "releases": [
+                  {
+                    "version": "4.0.0"
+                  }
+                ]
+              },
+              "publicationSelection": {
+                "development": true,
+                "lineHeads": {
+                  "mode": "allAuthored"
+                },
+                "releases": {
+                  "mode": "latestPerLine"
+                }
+              },
+              "source": "runtime",
+              "versioning": {
+                "developmentRef": "main",
+                "tagPattern": "^v.*$"
+              }
+            }
+          ],
+          "content": {
+            "source": "runtime"
+          },
+          "publication": {
+            "mountPath": "/spark/"
+          },
+          "slug": "spark",
+          "weight": 100
+        }
+      ],
+      "defaults": {
+        "docsRoot": "docs",
+        "publication": {
+          "origin": "docs"
+        }
+      },
+      "origins": {
+        "docs": {
+          "baseUrl": "https://docs.example.org"
+        }
+      },
+      "schemaVersion": 1,
+      "site": {},
+      "sources": {
+        "runtime": {
+          "localDir": "components/runtime"
+        }
+      }
+    }
+  ],
   "properties": {
     "components": {
       "description": "Participating components in this consumer-authored catalog.",

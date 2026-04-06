@@ -516,6 +516,41 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "Provider-derived normalized snapshot from ``site/provider-snapshot.json``.",
+  "examples": [
+    {
+      "providers": [
+        {
+          "baseUrl": "https://github.com/apache/spark",
+          "displayName": "GitHub Releases",
+          "fetchedAt": "2026-04-03T18:00:00Z",
+          "key": "github-releases",
+          "type": "github"
+        }
+      ],
+      "records": [
+        {
+          "artifactKey": "runtime",
+          "assets": [
+            {
+              "checksums": {
+                "sha256": "abc123"
+              },
+              "name": "spark-4.0.0-src.tgz",
+              "url": "https://downloads.apache.org/spark/spark-4.0.0-src.tgz"
+            }
+          ],
+          "componentSlug": "spark",
+          "externalId": "spark-4.0.0",
+          "externalUrl": "https://github.com/apache/spark/releases/tag/v4.0.0",
+          "kind": "released",
+          "provider": "github-releases",
+          "publishedAt": "2026-04-03T18:00:00Z",
+          "version": "4.0.0"
+        }
+      ],
+      "schemaVersion": 1
+    }
+  ],
   "properties": {
     "providers": {
       "items": {

@@ -48,7 +48,7 @@ rat: ## Run Apache RAT license checks.
 
 check: lint typecheck test rat ## Run lint, type checks, tests, and RAT.
 
-schemas: ## Regenerate checked-in JSON Schema files for authored YAML documents.
+schemas: ## Regenerate checked-in JSON Schema files and the Markdown model reference.
 	$(UV_RUN) python -m apache_buildish_site_pipeline.schema_export --output-dir schemas
 
 publish-snapshot-local: ## Build and publish a local wheel snapshot under dist/snapshots.

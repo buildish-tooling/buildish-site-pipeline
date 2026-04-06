@@ -182,6 +182,28 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "Component-owned metadata from ``site/component.yaml``.",
+  "examples": [
+    {
+      "component": {
+        "displayName": "Apache Spark",
+        "slug": "spark"
+      },
+      "content": {
+        "docsRoot": "docs",
+        "pagesRoot": "site/pages"
+      },
+      "lifecycle": {
+        "latestStable": "4.0.0",
+        "supportStatusVocabulary": {
+          "active": {
+            "displayName": "Active",
+            "order": 10
+          }
+        }
+      },
+      "schemaVersion": 1
+    }
+  ],
   "properties": {
     "component": {
       "$ref": "#/$defs/ComponentIdentity",

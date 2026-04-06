@@ -29,6 +29,7 @@ from apache_buildish_site_pipeline.schema_export import (
     main,
     schema_exports,
     write_authored_schema_files,
+    write_reference_file,
     write_schema_files,
 )
 
@@ -65,11 +66,13 @@ class SchemaExportTests(unittest.TestCase):
             },
         )
         self.assertEqual(catalog_schema["properties"]["schemaVersion"]["description"], "Schema version for the catalog format.")
+        self.assertEqual(catalog_schema["examples"][0]["components"][0]["slug"], "spark")
         self.assertEqual(
             catalog_schema["$defs"]["ComponentCatalogEntry"]["properties"]["weight"]["description"],
             "Optional ordering hint for component listings, menus, and other consumer-rendered component collections.",
         )
         self.assertEqual(component_schema["description"], "Component-owned metadata from ``site/component.yaml``.")
+        self.assertEqual(component_schema["examples"][0]["component"]["slug"], "spark")
         self.assertEqual(
             component_schema["x-buildish-contract"]["ownership"],
             "component-owned",
@@ -108,6 +111,19 @@ class SchemaExportTests(unittest.TestCase):
             "data/diagnostics.json",
         )
         self.assertEqual(diagnostics_schema["type"], "array")
+
+    def test_generated_reference_doc_matches_checked_in_output(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            generated_reference_path = Path(tempdir) / "pipeline-model-schema-reference.md"
+            write_reference_file(generated_reference_path)
+            checked_in_reference_path = (
+                Path(__file__).resolve().parents[2] / "docs/reference/pipeline-model-schema-reference.md"
+            )
+
+            self.assertEqual(
+                checked_in_reference_path.read_text(encoding="utf-8"),
+                generated_reference_path.read_text(encoding="utf-8"),
+            )
 
     def test_export_inventory_covers_inputs_and_outputs(self) -> None:
         export_names = {export.filename for export in schema_exports()}
@@ -160,17 +176,26 @@ class SchemaExportTests(unittest.TestCase):
         namespace = parser.parse_args([])
 
         self.assertEqual(namespace.output_dir, "schemas")
+        self.assertEqual(namespace.reference_output, "docs/reference/pipeline-model-schema-reference.md")
 
         with tempfile.TemporaryDirectory() as tempdir:
             stdout = io.StringIO()
             with redirect_stdout(stdout):
-                exit_code = main(["--output-dir", tempdir])
+                exit_code = main(
+                    [
+                        "--output-dir",
+                        tempdir,
+                        "--reference-output",
+                        str(Path(tempdir) / "pipeline-model-schema-reference.md"),
+                    ]
+                )
 
             written_lines = [line for line in stdout.getvalue().splitlines() if line.strip()]
 
         self.assertEqual(exit_code, 0)
-        self.assertEqual(len(written_lines), len(schema_exports()))
+        self.assertEqual(len(written_lines), len(schema_exports()) + 1)
         self.assertTrue(written_lines[0].endswith("site-pipeline-catalog-v1.schema.json"))
+        self.assertTrue(written_lines[-1].endswith("pipeline-model-schema-reference.md"))
 
 
 if __name__ == "__main__":

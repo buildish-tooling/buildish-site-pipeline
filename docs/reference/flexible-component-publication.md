@@ -1,4 +1,6 @@
 ---
+title: "Flexible component publication model"
+description: "This document proposes a more flexible component contract for a green-field Site Pipeline deployment."
 weight: 25
 ---
 
@@ -17,11 +19,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-# Flexible component publication model
-
-This document proposes a more flexible component contract for a green-field Site
-Pipeline deployment.
 
 The central design choice is to separate component identity from public routing:
 
@@ -1251,7 +1248,7 @@ The pipeline should reject:
 - any configuration that leaves a component without a resolvable public mount.
 
 Detailed path-safety, XSS-defense, redirect-safety, and mounted-content trust
-rules are defined in [security-and-trust-model.md](security-and-trust-model.md).
+ rules are defined in [security-and-trust-model.md](../security-and-trust-model/).
 
 ## Opinionated recommendation
 

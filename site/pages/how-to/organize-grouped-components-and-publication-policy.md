@@ -1,5 +1,6 @@
 ---
 title: Organize grouped components and publication policy
+description: "Use this guide when one docs estate starts behaving like an ecosystem with many components, artifacts, or publication surfaces that should share defaults."
 weight: 20
 ---
 
@@ -18,9 +19,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-Use this guide when one docs estate starts behaving like an ecosystem with many
-components, artifacts, or publication surfaces that should share defaults.
 
 ## What to centralize
 
@@ -48,6 +46,6 @@ to mirror repository layout or organization charts.
 
 ## Read this next
 
-- [flexible component publication](/docs/reference/flexible-component-publication/)
-- [plan-publication-and-materialization.md](plan-publication-and-materialization.md)
-- [pipeline model schema reference](/docs/reference/pipeline-model-schema-reference/)
+- [flexible component publication](/components/site-pipeline/development/reference/flexible-component-publication/)
+- [plan-publication-and-materialization.md](../plan-publication-and-materialization/)
+- [pipeline model schema reference](/components/site-pipeline/development/reference/pipeline-model-schema-reference/)

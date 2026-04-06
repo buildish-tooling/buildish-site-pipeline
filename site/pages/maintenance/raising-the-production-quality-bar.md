@@ -1,5 +1,6 @@
 ---
 title: Raising the production quality bar
+description: "This note is for maintainers who want to move the Site Pipeline codebase from \"strong\" toward \"very strong\" or better. It is not a bug list. It is a maintainer checklist for the next quality step once correctness and coverage are already in good shape."
 weight: 36
 ---
 
@@ -18,13 +19,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-# Raising the production quality bar
-
-This note is for maintainers who want to move the Site Pipeline codebase from
-"strong" toward "very strong" or better. It is not a bug list. It is a
-maintainer checklist for the next quality step once correctness and coverage are
-already in good shape.
 
 ## Highest-leverage improvements
 

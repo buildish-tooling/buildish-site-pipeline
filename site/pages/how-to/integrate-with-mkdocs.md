@@ -1,5 +1,6 @@
 ---
 title: How to integrate Site Pipeline with MkDocs
+description: "This page is a stub for the future MkDocs integration guide."
 weight: 40
 ---
 
@@ -18,10 +19,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-# How to integrate Site Pipeline with MkDocs
-
-This page is a stub for the future MkDocs integration guide.
 
 ## What this guide will cover
 
@@ -48,6 +45,6 @@ metadata.
 
 ## Read this next
 
-- [inspect staged output and routes](inspect-staged-output-and-routes.md)
-- [../concepts/staged-output-and-consumers.md](../concepts/staged-output-and-consumers.md)
-- [staged output contract](/docs/reference/staged-output-contract/)
+- [inspect staged output and routes](../inspect-staged-output-and-routes/)
+- [../concepts/staged-output-and-consumers.md](../../concepts/staged-output-and-consumers/)
+- [staged output contract](/components/site-pipeline/development/reference/staged-output-contract/)

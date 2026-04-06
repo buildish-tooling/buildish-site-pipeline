@@ -1,5 +1,6 @@
 ---
-title: Site Pipeline How-to Guides
+title: How-to Guides
+description: "This section contains task-oriented guides for common site-pipeline workflows."
 weight: 15
 ---
 
@@ -19,8 +20,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-This section contains task-oriented guides for common site-pipeline workflows.
-
 Start with [../getting-started/](../getting-started/) if you first need help
 deciding which publication shape best matches your site.
 
@@ -32,13 +31,13 @@ procedure, read [../concepts/](../concepts/) first.
 Use these guides when you want faster feedback while editing catalogs and
 component metadata or when you need the generated file-contract schemas:
 
-- [use JSON Schema for Site Pipeline file contracts](use-json-schema-for-yaml-authoring.md)
+- [use JSON Schema for Site Pipeline file contracts](use-json-schema-for-yaml-authoring/)
 
 ## Renderer integration guides
 
 Use these guides when you already understand the staged output and now want to
 wire it into a concrete renderer workflow:
 
-- [integrate with Hugo](integrate-with-hugo.md)
-- [integrate with Jekyll](integrate-with-jekyll.md)
-- [integrate with MkDocs](integrate-with-mkdocs.md)
+- [integrate with Hugo](integrate-with-hugo/)
+- [integrate with Jekyll](integrate-with-jekyll/)
+- [integrate with MkDocs](integrate-with-mkdocs/)

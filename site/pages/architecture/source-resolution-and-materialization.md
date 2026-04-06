@@ -1,4 +1,6 @@
 ---
+title: "Source resolution and materialization"
+description: "For maintainer-facing notes about planning-layer ownership, effective input resolution, watch-root derivation, and shared execution boundaries, see [`../maintenance/code-maintenance.md`](../../maintenance/code-maintenance/)."
 weight: 14
 ---
 
@@ -17,12 +19,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-# Source resolution and materialization
-
-For maintainer-facing notes about planning-layer ownership, effective input
-resolution, watch-root derivation, and shared execution boundaries, see
-[`../maintenance/code-maintenance.md`](../maintenance/code-maintenance.md).
 
 This document separates three concerns that are easy to mix together when
 discussing versioned documentation:
@@ -339,14 +335,14 @@ Both cases fit the same architecture.
 
 ## Read next
 
-- [architecture-overview.md](architecture-overview.md) for the top-level system
+- [architecture-overview.md](../architecture-overview/) for the top-level system
   model
-- [api contract](/docs/reference/api-contract/) for stable invocation and output boundaries
-- [staged output contract](/docs/reference/staged-output-contract/) for the staged-tree
+- [api contract](/components/site-pipeline/development/reference/api-contract/) for stable invocation and output boundaries
+- [staged output contract](/components/site-pipeline/development/reference/staged-output-contract/) for the staged-tree
   contract consumed by renderers and deployment adapters
-- [../maintenance/code-maintenance.md](../maintenance/code-maintenance.md) for maintainer-facing planning and
+- [../maintenance/code-maintenance.md](../../maintenance/code-maintenance/) for maintainer-facing planning and
   execution-path boundaries
-- [build-architecture.md](build-architecture.md) for the build/watch execution
+- [build-architecture.md](../build-architecture/) for the build/watch execution
   model
-- [flexible component publication](/docs/reference/flexible-component-publication/) for the
+- [flexible component publication](/components/site-pipeline/development/reference/flexible-component-publication/) for the
   publication and lifecycle model

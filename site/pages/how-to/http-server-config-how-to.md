@@ -1,4 +1,6 @@
 ---
+title: "How to create HTTP server config from staged metadata"
+description: "This document explains how a deployment adapter can turn the pipeline's staged route and redirect metadata into concrete HTTP server, CDN, or edge-routing configuration."
 weight: 37
 ---
 
@@ -17,12 +19,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-# How to create HTTP server config from staged metadata
-
-This document explains how a deployment adapter can turn the pipeline's staged
-route and redirect metadata into concrete HTTP server, CDN, or edge-routing
-configuration.
 
 The pipeline intentionally emits server-neutral metadata. It does not emit a
 stable Apache `httpd`, Nginx, CDN, or platform-specific config format.
@@ -156,6 +152,6 @@ remains portable across hosting targets.
 
 For the underlying contract details, see:
 
-- [staged output contract](/docs/reference/staged-output-contract/)
-- [pipeline model schema reference](/docs/reference/pipeline-model-schema-reference/)
-- [security and trust model](/docs/reference/security-and-trust-model/)
+- [staged output contract](/components/site-pipeline/development/reference/staged-output-contract/)
+- [pipeline model schema reference](/components/site-pipeline/development/reference/pipeline-model-schema-reference/)
+- [security and trust model](/components/site-pipeline/development/reference/security-and-trust-model/)

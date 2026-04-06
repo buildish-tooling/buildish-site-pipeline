@@ -1,4 +1,6 @@
 ---
+title: "Validation and `site-pipeline check`"
+description: "For maintainer-facing notes about shared evaluation ownership, stage-gating, and the lower execution path reused by `check`, `build`, and `watch`, see [code maintenance](/maintenance/code-maintenance/)."
 weight: 17
 ---
 
@@ -17,12 +19,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-# Validation and `site-pipeline check`
-
-For maintainer-facing notes about shared evaluation ownership, stage-gating, and
-the lower execution path reused by `check`, `build`, and `watch`, see
-[code maintenance](/maintenance/code-maintenance/).
 
 `site-pipeline check` should be the stable non-mutating command for validating a
 workspace before staging.
@@ -146,7 +142,7 @@ Recommended rules:
   overall status so callers do not need to recompute them
 
 The canonical typed shape lives in
-[pipeline-model-schema-reference.md](pipeline-model-schema-reference.md).
+ [pipeline-model-schema-reference.md](../pipeline-model-schema-reference/).
 
 ## Relationship to planning and staging
 
@@ -204,12 +200,12 @@ boundary between validation, materialization, and staging.
 
 ## Read next
 
-- [api-contract.md](api-contract.md) for the stable CLI boundary
+- [api-contract.md](../api-contract/) for the stable CLI boundary
 - [source resolution and materialization](/architecture/source-resolution-and-materialization/)
-  for planning and local-input readiness
+   for planning and local-input readiness
 - [code maintenance](/maintenance/code-maintenance/) for maintainer-facing planning,
-  evaluation, staging, and watch guardrails
-- [flexible-component-publication.md](flexible-component-publication.md) for the
-  validation rules `check` should enforce
-- [pipeline-model-schema-reference.md](pipeline-model-schema-reference.md) for
-  `CheckReport` and `PipelineDiagnosticEntry`
+   evaluation, staging, and watch guardrails
+- [flexible-component-publication.md](../flexible-component-publication/) for the
+   validation rules `check` should enforce
+- [pipeline-model-schema-reference.md](../pipeline-model-schema-reference/) for
+   `CheckReport` and `PipelineDiagnosticEntry`

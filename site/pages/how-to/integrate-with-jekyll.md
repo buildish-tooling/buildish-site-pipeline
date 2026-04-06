@@ -1,5 +1,6 @@
 ---
 title: How to integrate Site Pipeline with Jekyll
+description: "This page is a stub for the future Jekyll integration guide."
 weight: 39
 ---
 
@@ -18,10 +19,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-# How to integrate Site Pipeline with Jekyll
-
-This page is a stub for the future Jekyll integration guide.
 
 ## What this guide will cover
 
@@ -48,6 +45,6 @@ fits without changing the Site Pipeline contract.
 
 ## Read this next
 
-- [inspect staged output and routes](inspect-staged-output-and-routes.md)
-- [../concepts/staged-output-and-consumers.md](../concepts/staged-output-and-consumers.md)
-- [staged output contract](/docs/reference/staged-output-contract/)
+- [inspect staged output and routes](../inspect-staged-output-and-routes/)
+- [../concepts/staged-output-and-consumers.md](../../concepts/staged-output-and-consumers/)
+- [staged output contract](/components/site-pipeline/development/reference/staged-output-contract/)

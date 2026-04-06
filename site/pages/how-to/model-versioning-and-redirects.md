@@ -1,5 +1,6 @@
 ---
 title: Model versioning and redirects
+description: "Use this guide when one product starts needing latest-release, development, archive, or release-specific routes without changing public permalinks by hand."
 weight: 18
 ---
 
@@ -18,9 +19,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-Use this guide when one product starts needing latest-release, development,
-archive, or release-specific routes without changing public permalinks by hand.
 
 ## Start with public URL policy
 
@@ -57,7 +55,7 @@ resolved redirect inventory rather than rebuilding redirect behavior from scratc
 
 ## Read this next
 
-- [inspect-staged-output-and-routes.md](inspect-staged-output-and-routes.md)
-- [http-server-config-how-to.md](http-server-config-how-to.md)
-- [flexible component publication](/docs/reference/flexible-component-publication/)
-- [security and trust model](/docs/reference/security-and-trust-model/)
+- [inspect-staged-output-and-routes.md](../inspect-staged-output-and-routes/)
+- [http-server-config-how-to.md](../http-server-config-how-to/)
+- [flexible component publication](/components/site-pipeline/development/reference/flexible-component-publication/)
+- [security and trust model](/components/site-pipeline/development/reference/security-and-trust-model/)

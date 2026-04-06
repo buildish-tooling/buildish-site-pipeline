@@ -1,5 +1,6 @@
 ---
 title: Use JSON Schema for Site Pipeline file contracts
+description: "Use the checked-in JSON Schema files under `schemas/` to get field completion, required-field validation, hover help for authored YAML, and machine-readable contract files for staged outputs and reports."
 weight: 23
 ---
 
@@ -18,10 +19,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-Use the checked-in JSON Schema files under `schemas/` to get field completion,
-required-field validation, hover help for authored YAML, and machine-readable
-contract files for staged outputs and reports.
 
 The schema files are generated from the same Pydantic models that validate or
 emit the pipeline's public file contracts. That means model docstrings and

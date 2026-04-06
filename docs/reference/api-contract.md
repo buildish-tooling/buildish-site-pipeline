@@ -1,4 +1,6 @@
 ---
+title: "Site Pipeline API and contract boundaries"
+description: "This document defines the public contract boundaries for the Site Pipeline."
 weight: 12
 ---
 
@@ -17,10 +19,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-# Site Pipeline API and contract boundaries
-
-This document defines the public contract boundaries for the Site Pipeline.
 
 For maintainer-facing notes about CLI-layer ownership, shared lower execution
 paths, and internal report/publication guardrails, see
@@ -218,7 +216,7 @@ For example, this is a supported stable form:
 Future operator-local path mapping is intentionally separate from the shared
 catalog contract. `--local-overrides <path>` is reserved for that future work
 but is not implemented yet; see the
-[maintenance backlog](/docs/maintenance/todos/).
+[maintenance backlog](/components/site-pipeline/development/maintenance/todos/).
 
 ## Stable planning command
 
@@ -539,18 +537,18 @@ contracts, not as reasons to widen the core API boundary.
 ## Read next
 
 - [architecture overview](/architecture/architecture-overview/) for the high-level system
-  picture
-- [staged-output-contract.md](staged-output-contract.md) for the staged-tree
-  layout and `manifest.json` contract
+   picture
+- [staged-output-contract.md](../staged-output-contract/) for the staged-tree
+   layout and `manifest.json` contract
 - [source resolution and materialization](/architecture/source-resolution-and-materialization/)
-  for version selection and materialized content inputs
-- [validation-and-check.md](validation-and-check.md) for non-mutating validation,
-  diagnostics, and `site-pipeline check`
+   for version selection and materialized content inputs
+- [validation-and-check.md](../validation-and-check/) for non-mutating validation,
+   diagnostics, and `site-pipeline check`
 - [build architecture](/architecture/build-architecture/) for the recommended execution
-  shape of `build` and `watch`
+   shape of `build` and `watch`
 - [code maintenance](/maintenance/code-maintenance/) for maintainer-facing internal
-  boundaries and watch/publication guardrails
-- [security-and-trust-model.md](security-and-trust-model.md) for path-safety,
-  trust-boundary, and XSS-defense expectations
-- [flexible-component-publication.md](flexible-component-publication.md) for the
-  publication and lifecycle model
+   boundaries and watch/publication guardrails
+- [security-and-trust-model.md](../security-and-trust-model/) for path-safety,
+   trust-boundary, and XSS-defense expectations
+- [flexible-component-publication.md](../flexible-component-publication/) for the
+   publication and lifecycle model

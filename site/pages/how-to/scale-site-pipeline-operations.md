@@ -1,5 +1,6 @@
 ---
 title: Scale Site Pipeline operations
+description: "Use this guide when the site has enough sources, redirects, lifecycle data, or deployment targets that operational boundaries become part of the design."
 weight: 22
 ---
 
@@ -18,9 +19,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-Use this guide when the site has enough sources, redirects, lifecycle data, or
-deployment targets that operational boundaries become part of the design.
 
 ## Focus on boundaries first
 
@@ -42,7 +40,7 @@ At large scale, the main operational concerns are usually:
 
 ## Read this next
 
-- [plan-publication-and-materialization.md](plan-publication-and-materialization.md)
-- [http-server-config-how-to.md](http-server-config-how-to.md)
-- [security and trust model](/docs/reference/security-and-trust-model/)
-- [../architecture/source-resolution-and-materialization.md](../architecture/source-resolution-and-materialization.md)
+- [plan-publication-and-materialization.md](../plan-publication-and-materialization/)
+- [http-server-config-how-to.md](../http-server-config-how-to/)
+- [security and trust model](/components/site-pipeline/development/reference/security-and-trust-model/)
+- [../architecture/source-resolution-and-materialization.md](../../architecture/source-resolution-and-materialization/)

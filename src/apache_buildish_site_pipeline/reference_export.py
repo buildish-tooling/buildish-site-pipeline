@@ -110,6 +110,8 @@ def build_reference_markdown(exports: Iterable[SchemaExport]) -> str:
 
     lines = [
         "---",
+        'title: "Pipeline model schema reference"',
+        'description: "This reference is generated from the Site Pipeline Pydantic models and checked-in reference metadata. Do not edit it by hand; regenerate it with `make schemas`."',
         "weight: 30",
         "---",
         "",
@@ -128,10 +130,6 @@ def build_reference_markdown(exports: Iterable[SchemaExport]) -> str:
         "See the License for the specific language governing permissions and",
         "limitations under the License.",
         "-->",
-        "",
-        "# Pipeline model schema reference",
-        "",
-        _GENERATED_REFERENCE_COMMENT,
         "",
         "This reference describes the current public contracts exposed by the Site Pipeline model layer.",
         "It covers authored inputs, provider inputs, pipeline-emitted outputs, shared scalars, enums, and the detailed field rules for each typed contract.",

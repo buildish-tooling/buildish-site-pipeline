@@ -1,5 +1,6 @@
 ---
 title: Create a tiny site
+description: "Use this guide when you want the smallest useful Site Pipeline setup: one consumer-owned site catalog, one component, and one staged output."
 weight: 16
 ---
 
@@ -18,9 +19,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-Use this guide when you want the smallest useful Site Pipeline setup: one
-consumer-owned site catalog, one component, and one staged output.
 
 ## Create the smallest useful tree
 
@@ -176,7 +174,7 @@ You are in a good starting state when:
 
 ## Read this next
 
-- [../concepts/staged-output-and-consumers.md](../concepts/staged-output-and-consumers.md)
-- [inspect-staged-output-and-routes.md](inspect-staged-output-and-routes.md)
-- [flexible component publication](/docs/reference/flexible-component-publication/)
-- [staged output contract](/docs/reference/staged-output-contract/)
+- [../concepts/staged-output-and-consumers.md](../../concepts/staged-output-and-consumers/)
+- [inspect-staged-output-and-routes.md](../inspect-staged-output-and-routes/)
+- [flexible component publication](/components/site-pipeline/development/reference/flexible-component-publication/)
+- [staged output contract](/components/site-pipeline/development/reference/staged-output-contract/)

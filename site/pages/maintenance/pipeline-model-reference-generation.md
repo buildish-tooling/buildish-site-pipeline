@@ -1,5 +1,6 @@
 ---
 title: Pipeline model reference generation
+description: "This page defines the intended direction for how Site Pipeline documents its catalog and component models."
 weight: 25
 ---
 
@@ -18,11 +19,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-# Pipeline model reference generation
-
-This page defines the intended direction for how Site Pipeline documents its
-catalog and component models.
 
 Today the repository already generates JSON Schema from the Pydantic models, but
 the checked-in schema reference Markdown is still maintained separately. That is

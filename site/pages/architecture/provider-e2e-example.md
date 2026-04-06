@@ -1,4 +1,6 @@
 ---
+title: "Provider integration end-to-end example"
+description: "This example shows one way a component catalog, artifact model, and provider snapshot could combine into staged metadata."
 weight: 29
 ---
 
@@ -17,11 +19,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-# Provider integration end-to-end example
-
-This example shows one way a component catalog, artifact model, and provider
-snapshot could combine into staged metadata.
 
 ## Scenario
 

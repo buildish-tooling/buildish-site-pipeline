@@ -1,4 +1,6 @@
 ---
+title: "Design review"
+description: "This document reviews the current docs as a design set."
 weight: 40
 ---
 
@@ -17,10 +19,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-# Design review
-
-This document reviews the current docs as a design set.
 
 The goal is not to restate every schema field. The goal is to answer whether the
 current design is coherent and whether the greenfield contract set is now

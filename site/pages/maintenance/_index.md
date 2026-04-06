@@ -1,5 +1,6 @@
 ---
-title: Site Pipeline Maintenance Notes
+title: Maintenance Notes
+description: "This section is for maintainers of the Site Pipeline implementation. It records durable internal boundaries, refactoring guardrails, and documentation-maintainer expectations."
 weight: 30
 ---
 
@@ -19,17 +20,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-This section is for maintainers of the Site Pipeline implementation. It records
-durable internal boundaries, refactoring guardrails, and documentation-maintainer
-expectations.
-
-- [code-maintenance.md](code-maintenance.md) records durable implementation
+- [code-maintenance.md](code-maintenance/) records durable implementation
   boundaries and refactoring guardrails
-- [maintenance backlog](/docs/maintenance/todos/) records intentionally deferred
+- [maintenance backlog](/components/site-pipeline/development/maintenance/todos/) records intentionally deferred
   maintenance follow-ups that
   should stay visible during nearby implementation work
-- [user-facing-docs-strategy.md](user-facing-docs-strategy.md) defines the
+- [user-facing-docs-strategy.md](user-facing-docs-strategy/) defines the
   target shape of the public documentation site
-- [pipeline-model-reference-generation.md](pipeline-model-reference-generation.md)
+- [pipeline-model-reference-generation.md](pipeline-model-reference-generation/)
   records how model docstrings and field metadata should become the single
   source of truth for JSON Schema and schema reference output

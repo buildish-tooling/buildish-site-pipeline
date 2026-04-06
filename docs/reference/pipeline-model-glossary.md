@@ -1,4 +1,6 @@
 ---
+title: "Pipeline model glossary"
+description: "This glossary defines the terms used across the flexible publication and provider-integration docs."
 weight: 28
 ---
 
@@ -17,11 +19,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-# Pipeline model glossary
-
-This glossary defines the terms used across the flexible publication and
-provider-integration docs.
 
 ## Component
 

@@ -1,5 +1,6 @@
 ---
 title: Staged output and consumers
+description: "The staged tree is the durable hand-off point between Site Pipeline and the systems that render, serve, or audit the site."
 weight: 14
 ---
 
@@ -18,9 +19,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-The staged tree is the durable hand-off point between Site Pipeline and the
-systems that render, serve, or audit the site.
 
 ## Start with manifest.json
 
@@ -115,6 +113,6 @@ They should use the staged output instead.
 
 ## Read next
 
-- [../how-to/inspect-staged-output-and-routes.md](../how-to/inspect-staged-output-and-routes.md)
-- [staged output contract](/docs/reference/staged-output-contract/)
-- [api contract](/docs/reference/api-contract/)
+- [../how-to/inspect-staged-output-and-routes.md](../../how-to/inspect-staged-output-and-routes/)
+- [staged output contract](/components/site-pipeline/development/reference/staged-output-contract/)
+- [api contract](/components/site-pipeline/development/reference/api-contract/)

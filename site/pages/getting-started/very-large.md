@@ -1,5 +1,6 @@
 ---
 title: Very-large sites
+description: "This page is for publication systems that span many repositories, multiple product families, and strong permalink, trust-boundary, and localization needs."
 weight: 15
 ---
 
@@ -19,9 +20,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-This page is for publication systems that span many repositories, multiple
-product families, and strong permalink, trust-boundary, and localization needs.
-
 ## Who this is for
 
 - many repositories or doc sources
@@ -36,9 +34,9 @@ outputs. The public staged contract matters more than any single source layout.
 
 ## Read these first
 
-1. [../how-to/integrate-provider-compatibility-and-translation-data.md](../how-to/integrate-provider-compatibility-and-translation-data.md)
-2. [../how-to/scale-site-pipeline-operations.md](../how-to/scale-site-pipeline-operations.md)
-3. [../how-to/http-server-config-how-to.md](../how-to/http-server-config-how-to.md)
+1. [../how-to/integrate-provider-compatibility-and-translation-data.md](../../how-to/integrate-provider-compatibility-and-translation-data/)
+2. [../how-to/scale-site-pipeline-operations.md](../../how-to/scale-site-pipeline-operations/)
+3. [../how-to/http-server-config-how-to.md](../../how-to/http-server-config-how-to/)
 
 ## What you should treat as first-class concerns
 
@@ -54,7 +52,7 @@ reference pass through the contracts and security model.
 
 ## Deeper reference trail
 
-- [../architecture/architecture-overview.md](../architecture/architecture-overview.md)
-- [staged output contract](/docs/reference/staged-output-contract/)
-- [security and trust model](/docs/reference/security-and-trust-model/)
-- [pipeline model schema reference](/docs/reference/pipeline-model-schema-reference/)
+- [../architecture/architecture-overview.md](../../architecture/architecture-overview/)
+- [staged output contract](/components/site-pipeline/development/reference/staged-output-contract/)
+- [security and trust model](/components/site-pipeline/development/reference/security-and-trust-model/)
+- [pipeline model schema reference](/components/site-pipeline/development/reference/pipeline-model-schema-reference/)

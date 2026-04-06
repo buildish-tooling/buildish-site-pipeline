@@ -1,5 +1,6 @@
 ---
 title: Deferred maintenance follow-ups
+description: "This page records small but important follow-up work that is intentionally deferred while nearby changes are being implemented in smaller safe slices."
 weight: 35
 ---
 
@@ -19,18 +20,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-# Deferred maintenance follow-ups
-
-This page records small but important follow-up work that is intentionally
-deferred while nearby changes are being implemented in smaller safe slices.
-
 ## Raising the production quality bar
 
 The repo-wide audit ended with the implementation in a good state overall, but a
 few higher-level refactoring themes still stand out for maintainers who want to
 push the codebase from "strong" toward "very strong" or better.
 
-See [raising-the-production-quality-bar.md](raising-the-production-quality-bar.md)
+ See [raising-the-production-quality-bar.md](../../../maintenance/raising-the-production-quality-bar/)
 for the short maintainer checklist. The highest-leverage themes are thinner
 orchestration, more explicit invariants in types, and more aggressively
 single-sourced trust-boundary and policy rules.

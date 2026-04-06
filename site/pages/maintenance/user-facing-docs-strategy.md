@@ -1,5 +1,6 @@
 ---
 title: User-facing documentation strategy
+description: "This document describes the target shape of the public documentation site for Apache Buildish Site Pipeline."
 weight: 20
 ---
 
@@ -18,11 +19,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-# User-facing documentation strategy
-
-This document describes the target shape of the public documentation site for
-Apache Buildish Site Pipeline.
 
 The current documentation set already has stronger structure than before, but it
 is still weighted toward implementation, architecture, and contract readers.
@@ -203,9 +199,9 @@ The user-facing site is in good shape when a new reader can:
 
 ## Read next
 
-- [code-maintenance.md](code-maintenance.md) for durable maintainer guidance
-- [../architecture/architecture-overview.md](../architecture/architecture-overview.md)
+- [code-maintenance.md](../code-maintenance/) for durable maintainer guidance
+- [../architecture/architecture-overview.md](../../architecture/architecture-overview/)
   for the current architectural explanation that the user-facing site should
   gradually expose more accessibly
-- [api contract](/docs/reference/api-contract/) for the stable
+- [api contract](/components/site-pipeline/development/reference/api-contract/) for the stable
   command and output boundary that user-facing pages should point toward

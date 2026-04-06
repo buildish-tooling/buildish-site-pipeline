@@ -1,3 +1,8 @@
+---
+title: "Site Pipeline"
+description: "Assemble component-owned docs into a predictable site contract."
+---
+
 <!--
 Copyright 2026 The Apache Software Foundation
 
@@ -13,10 +18,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-# Site Pipeline
-
-Assemble component-owned docs into a predictable site contract.
 
 The Site Pipeline discovers component content, validates the workspace contract,
 and stages normalized pages, docs, assets, and metadata for a downstream site
@@ -61,7 +62,7 @@ The consumer repository keeps ownership of the rendered site experience:
 - [Concepts](concepts/) for the mental model and staged-output boundary
 - [How-to](how-to/) for task-oriented procedures
 - [Architecture](architecture/) for deeper system shape and rationale
-- [Reference](/docs/reference/) for stable contracts, schemas, and trust rules
+- [Reference](/components/site-pipeline/development/reference/) for stable contracts, schemas, and trust rules
 - [Maintenance](maintenance/) for maintainer-facing implementation guidance
 
 ## Source layout in this repository

@@ -1,5 +1,6 @@
 ---
 title: Medium sites
+description: "This page is for product families with multiple visible publication surfaces, common generated or imported docs, and a real planning/materialization step."
 weight: 13
 ---
 
@@ -18,9 +19,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-This page is for product families with multiple visible publication surfaces,
-common generated or imported docs, and a real planning/materialization step.
 
 ## Who this is for
 
@@ -42,9 +40,9 @@ You will usually need to think about:
 
 ## Read these first
 
-1. [../how-to/plan-publication-and-materialization.md](../how-to/plan-publication-and-materialization.md)
-2. [../how-to/model-versioning-and-redirects.md](../how-to/model-versioning-and-redirects.md)
-3. [../architecture/source-resolution-and-materialization.md](../architecture/source-resolution-and-materialization.md)
+1. [../how-to/plan-publication-and-materialization.md](../../how-to/plan-publication-and-materialization/)
+2. [../how-to/model-versioning-and-redirects.md](../../how-to/model-versioning-and-redirects/)
+3. [../architecture/source-resolution-and-materialization.md](../../architecture/source-resolution-and-materialization/)
 
 ## Ignore for now
 
@@ -56,12 +54,12 @@ You can still often postpone:
 
 ## Read this next when you grow
 
-Move to [large.md](large.md) when you need grouped components, strong
+Move to [large.md](../large/) when you need grouped components, strong
 compatibility relationships, or provider-enriched publication state across a
 larger ecosystem.
 
 ## Deeper reference trail
 
-- [flexible component publication](/docs/reference/flexible-component-publication/)
-- [validation and check](/docs/reference/validation-and-check/)
-- [pipeline model schema reference](/docs/reference/pipeline-model-schema-reference/)
+- [flexible component publication](/components/site-pipeline/development/reference/flexible-component-publication/)
+- [validation and check](/components/site-pipeline/development/reference/validation-and-check/)
+- [pipeline model schema reference](/components/site-pipeline/development/reference/pipeline-model-schema-reference/)

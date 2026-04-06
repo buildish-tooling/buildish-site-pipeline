@@ -1,5 +1,6 @@
 ---
-title: Site Pipeline Architecture and Design
+title: Architecture and Design
+description: "This section explains the overall system shape, design rationale, model fit, and example-driven architecture guidance."
 weight: 20
 ---
 
@@ -18,6 +19,3 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-This section explains the overall system shape, design rationale, model fit, and
-example-driven architecture guidance.

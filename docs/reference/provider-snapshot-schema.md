@@ -1,4 +1,6 @@
 ---
+title: "Provider snapshot schema"
+description: "This document defines a normalized input schema for external release providers. It complements the flexible publication model by making the provider boundary concrete without hard-coding Apache Trusted Releases (ATR) or any other provider into the core pipeline model."
 weight: 26
 ---
 
@@ -17,13 +19,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-# Provider snapshot schema
-
-This document defines a normalized input schema for external release providers.
-It complements the flexible publication model by making the provider boundary
-concrete without hard-coding Apache Trusted Releases (ATR) or any other provider
-into the core pipeline model.
 
 ## Goals
 

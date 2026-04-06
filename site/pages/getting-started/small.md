@@ -1,5 +1,6 @@
 ---
 title: Small sites
+description: "This page is for one main product with a small visible release history and maybe one mounted API, generated reference tree, or imported docs subtree."
 weight: 12
 ---
 
@@ -18,9 +19,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-This page is for one main product with a small visible release history and maybe
-one mounted API, generated reference tree, or imported docs subtree.
 
 ## Who this is for
 
@@ -42,9 +40,9 @@ For this size band, the important model shift is:
 
 ## Read these first
 
-1. [../how-to/model-versioning-and-redirects.md](../how-to/model-versioning-and-redirects.md)
-2. [../how-to/inspect-staged-output-and-routes.md](../how-to/inspect-staged-output-and-routes.md)
-3. [../how-to/http-server-config-how-to.md](../how-to/http-server-config-how-to.md)
+1. [../how-to/model-versioning-and-redirects.md](../../how-to/model-versioning-and-redirects/)
+2. [../how-to/inspect-staged-output-and-routes.md](../../how-to/inspect-staged-output-and-routes/)
+3. [../how-to/http-server-config-how-to.md](../../how-to/http-server-config-how-to/)
 
 ## Ignore for now
 
@@ -57,12 +55,12 @@ Most small sites can defer:
 
 ## Read this next when you grow
 
-Move to [medium.md](medium.md) when the site has multiple artifacts, imported or
+Move to [medium.md](../medium/) when the site has multiple artifacts, imported or
 generated docs become normal, or publication planning/materialization becomes a
 real step in the workflow.
 
 ## Deeper reference trail
 
-- [flexible component publication](/docs/reference/flexible-component-publication/)
-- [staged output contract](/docs/reference/staged-output-contract/)
-- [security and trust model](/docs/reference/security-and-trust-model/)
+- [flexible component publication](/components/site-pipeline/development/reference/flexible-component-publication/)
+- [staged output contract](/components/site-pipeline/development/reference/staged-output-contract/)
+- [security and trust model](/components/site-pipeline/development/reference/security-and-trust-model/)

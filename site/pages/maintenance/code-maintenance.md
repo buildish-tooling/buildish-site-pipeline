@@ -1,4 +1,6 @@
 ---
+title: "Code maintenance and internal boundaries"
+description: "This document is for maintainers of the Site Pipeline implementation."
 weight: 19
 ---
 
@@ -17,10 +19,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-# Code maintenance and internal boundaries
-
-This document is for maintainers of the Site Pipeline implementation.
 
 The public reference and architecture docs define the public contract,
 staged-output contract, schema shape, security model, and system shape. This
@@ -209,16 +207,16 @@ set is not yet consumable enough.
 
 ## Read next
 
-- [api contract](/docs/reference/api-contract/) for the public CLI boundary
-- [../architecture/source-resolution-and-materialization.md](../architecture/source-resolution-and-materialization.md)
+- [api contract](/components/site-pipeline/development/reference/api-contract/) for the public CLI boundary
+- [../architecture/source-resolution-and-materialization.md](../../architecture/source-resolution-and-materialization/)
   for planning inputs and materialized-source boundaries
-- [validation and check](/docs/reference/validation-and-check/) for shared validation
+- [validation and check](/components/site-pipeline/development/reference/validation-and-check/) for shared validation
   semantics and `site-pipeline check`
-- [../architecture/build-architecture.md](../architecture/build-architecture.md) for coordinator/worker execution
+- [../architecture/build-architecture.md](../../architecture/build-architecture/) for coordinator/worker execution
   structure and scaling shape
-- [staged output contract](/docs/reference/staged-output-contract/) for the renderer-visible
+- [staged output contract](/components/site-pipeline/development/reference/staged-output-contract/) for the renderer-visible
   stage contract
-- [security and trust model](/docs/reference/security-and-trust-model/) for path, URL, and
+- [security and trust model](/components/site-pipeline/development/reference/security-and-trust-model/) for path, URL, and
   trust-boundary requirements
-- [user-facing-docs-strategy.md](user-facing-docs-strategy.md) for the planned
+- [user-facing-docs-strategy.md](../user-facing-docs-strategy/) for the planned
   user-facing documentation site shape

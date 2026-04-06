@@ -1,4 +1,6 @@
 ---
+title: "Pipeline model fit cross-check"
+description: "This document cross-checks the current Site Pipeline publication model against public documentation and release topologies used by prominent OSS projects."
 weight: 35
 ---
 
@@ -18,15 +20,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-# Pipeline model fit cross-check
-
-This document cross-checks the current Site Pipeline publication model against
-public documentation and release topologies used by prominent OSS projects.
-
 The goal is not to propose migrations. The goal is to test whether the model
-described in [flexible component publication](/docs/reference/flexible-component-publication/),
-[provider snapshot schema](/docs/reference/provider-snapshot-schema/), and
-[pipeline model schema reference](/docs/reference/pipeline-model-schema-reference/) can, in
+described in [flexible component publication](/components/site-pipeline/development/reference/flexible-component-publication/),
+[provider snapshot schema](/components/site-pipeline/development/reference/provider-snapshot-schema/), and
+[pipeline model schema reference](/components/site-pipeline/development/reference/pipeline-model-schema-reference/) can, in
 theory, represent those sites without forcing projects to change their current
 permalinks.
 

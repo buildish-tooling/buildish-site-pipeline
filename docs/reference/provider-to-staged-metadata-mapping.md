@@ -1,4 +1,6 @@
 ---
+title: "Provider snapshot to staged metadata mapping"
+description: "This document describes how normalized provider snapshot data should flow into staged metadata. It complements `provider-snapshot-schema.md` by answering not just what a provider may supply, but what the pipeline should emit for renderers."
 weight: 27
 ---
 
@@ -17,12 +19,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-# Provider snapshot to staged metadata mapping
-
-This document describes how normalized provider snapshot data should flow into
-staged metadata. It complements `provider-snapshot-schema.md` by answering not
-just what a provider may supply, but what the pipeline should emit for renderers.
 
 ## Mapping principles
 

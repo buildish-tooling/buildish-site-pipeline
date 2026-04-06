@@ -1,5 +1,6 @@
 ---
 title: Inspect staged output and routes
+description: "Use this guide after a successful build when you want to understand what the pipeline actually staged and which public routes it resolved."
 weight: 17
 ---
 
@@ -18,9 +19,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-Use this guide after a successful build when you want to understand what the
-pipeline actually staged and which public routes it resolved.
 
 ## Start with the manifest
 
@@ -164,7 +162,7 @@ cat site/.stage/data/content-index.json
 
 ## Read this next
 
-- [../concepts/staged-output-and-consumers.md](../concepts/staged-output-and-consumers.md)
-- [http-server-config-how-to.md](http-server-config-how-to.md)
-- [staged output contract](/docs/reference/staged-output-contract/)
-- [pipeline model schema reference](/docs/reference/pipeline-model-schema-reference/)
+- [../concepts/staged-output-and-consumers.md](../../concepts/staged-output-and-consumers/)
+- [http-server-config-how-to.md](../http-server-config-how-to/)
+- [staged output contract](/components/site-pipeline/development/reference/staged-output-contract/)
+- [pipeline model schema reference](/components/site-pipeline/development/reference/pipeline-model-schema-reference/)

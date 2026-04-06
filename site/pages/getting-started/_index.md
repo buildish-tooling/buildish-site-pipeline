@@ -1,5 +1,6 @@
 ---
-title: Site Pipeline Getting Started
+title: Getting Started
+description: "This section helps consumers choose the right entry point for the Site Pipeline documentation set."
 weight: 10
 ---
 
@@ -19,9 +20,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-This section helps consumers choose the right entry point for the Site Pipeline
-documentation set.
-
 Use the size band that matches your publication shape today. Each page gives a
 smallest useful mental model, points out what you can ignore for now, and links
 to the next band when your site grows.
@@ -30,11 +28,11 @@ to the next band when your site grows.
 
 | Size band | Good fit if your site looks like this | Start here |
 | --- | --- | --- |
-| tiny | one component, one main docs tree, minimal lifecycle surface | [tiny.md](tiny.md) |
-| small | one main product, a few versions, maybe one mounted API or reference subtree | [small.md](small.md) |
-| medium | one product family with multiple doc surfaces, generated or imported docs, and publication planning needs | [medium.md](medium.md) |
-| large | one platform plus many modules, extensions, or sibling projects with stronger routing and compatibility needs | [large.md](large.md) |
-| very-large | many repos or doc sources, multiple product families, localization, and strong permalink continuity requirements | [very-large.md](very-large.md) |
+| tiny | one component, one main docs tree, minimal lifecycle surface | [tiny.md](tiny/) |
+| small | one main product, a few versions, maybe one mounted API or reference subtree | [small.md](small/) |
+| medium | one product family with multiple doc surfaces, generated or imported docs, and publication planning needs | [medium.md](medium/) |
+| large | one platform plus many modules, extensions, or sibling projects with stronger routing and compatibility needs | [large.md](large/) |
+| very-large | many repos or doc sources, multiple product families, localization, and strong permalink continuity requirements | [very-large.md](very-large/) |
 
 ## Topic emphasis matrix
 
@@ -59,11 +57,11 @@ that audience.
 
 ## If you are not sure where to start
 
-- start with [tiny.md](tiny.md) if you have one component and no serious version
+- start with [tiny.md](tiny/) if you have one component and no serious version
   or publication policy yet
-- start with [small.md](small.md) if you already need latest-release/development
+- start with [small.md](small/) if you already need latest-release/development
   routes or simple redirects
-- start with [medium.md](medium.md) if the site already has multiple artifacts,
+- start with [medium.md](medium/) if the site already has multiple artifacts,
   imported docs, or a planning/materialization step
 
 ## Shared follow-on trails
@@ -72,6 +70,6 @@ that audience.
   thread used across the docs
 - [../how-to/](../how-to/) for task-oriented guides
 - [../architecture/](../architecture/) for system shape, rationale, and examples
-- [reference](/docs/reference/) for contracts, schemas, and trust-model details
-- [../architecture/model-fit-cross-check.md](../architecture/model-fit-cross-check.md) for the
+- [reference](/components/site-pipeline/development/reference/) for contracts, schemas, and trust-model details
+- [../architecture/model-fit-cross-check.md](../architecture/model-fit-cross-check/) for the
   rationale behind the size bands

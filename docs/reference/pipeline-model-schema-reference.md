@@ -1,4 +1,6 @@
 ---
+title: "Pipeline model schema reference"
+description: "This reference is generated from the Site Pipeline Pydantic models and checked-in reference metadata. Do not edit it by hand; regenerate it with `make schemas`."
 weight: 30
 ---
 
@@ -17,10 +19,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-# Pipeline model schema reference
-
-This reference is generated from the Site Pipeline Pydantic models and checked-in reference metadata. Do not edit it by hand; regenerate it with `make schemas`.
 
 This reference describes the current public contracts exposed by the Site Pipeline model layer.
 It covers authored inputs, provider inputs, pipeline-emitted outputs, shared scalars, enums, and the detailed field rules for each typed contract.

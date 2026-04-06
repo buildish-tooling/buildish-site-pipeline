@@ -1,5 +1,6 @@
 ---
 title: What a tiny site looks like
+description: "This page shows the smallest concrete example thread used across the user-facing docs."
 weight: 13
 ---
 
@@ -18,9 +19,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-This page shows the smallest concrete example thread used across the user-facing
-docs.
 
 ## Repository shape
 
@@ -130,6 +128,6 @@ That output is the important boundary:
 
 ## Read next
 
-- [../how-to/create-a-tiny-site.md](../how-to/create-a-tiny-site.md)
-- [staged-output-and-consumers.md](staged-output-and-consumers.md)
-- [../getting-started/tiny.md](../getting-started/tiny.md)
+- [../how-to/create-a-tiny-site.md](../../how-to/create-a-tiny-site/)
+- [staged-output-and-consumers.md](../staged-output-and-consumers/)
+- [../getting-started/tiny.md](../../getting-started/tiny/)

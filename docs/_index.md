@@ -1,5 +1,6 @@
 ---
-title: Site Pipeline Docs and Reference
+title: Docs and Reference
+description: "This `docs/` tree now holds the material that belongs under the component's versioned docs root: stable reference pages today, and release-tied docs later."
 ---
 
 <!--
@@ -18,9 +19,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-This `docs/` tree now holds the material that belongs under the component's
-versioned docs root: stable reference pages today, and release-tied docs later.
-
 Use the top-level component pages for onboarding and narrative guidance:
 
 - [Getting started](/getting-started/) for first setup and size-band guidance
@@ -33,11 +31,11 @@ Use the top-level component pages for onboarding and narrative guidance:
 
 - stable reference and schema material under [reference](reference/)
 - future versioned or release-tied docs for this component
-- deferred maintenance backlog items under [maintenance backlog](/docs/maintenance/todos/)
+- deferred maintenance backlog items under [maintenance backlog](/components/site-pipeline/development/maintenance/todos/)
 
 ## Read next
 
 - [reference](reference/) for contracts, schemas, glossary material, and trust rules
-- [API contract](reference/api-contract.md) for the CLI and report boundary
-- [staged output contract](reference/staged-output-contract.md) for renderer-facing staged content
+- [API contract](reference/api-contract/) for the CLI and report boundary
+- [staged output contract](reference/staged-output-contract/) for renderer-facing staged content
 - [Site Pipeline root page](/) for the component overview and reader routing

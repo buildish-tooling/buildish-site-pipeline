@@ -1,5 +1,6 @@
 ---
 title: Tiny sites
+description: "This page is for sites with one component, one main docs tree, and only a small amount of lifecycle or routing complexity."
 weight: 11
 ---
 
@@ -18,9 +19,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-This page is for sites with one component, one main docs tree, and only a small
-amount of lifecycle or routing complexity.
 
 ## Who this is for
 
@@ -106,11 +104,11 @@ site/.stage/
 
 ## Read these first
 
-1. [../concepts/tiny-site-shape.md](../concepts/tiny-site-shape.md)
-2. [../concepts/staged-output-and-consumers.md](../concepts/staged-output-and-consumers.md)
-3. [../how-to/create-a-tiny-site.md](../how-to/create-a-tiny-site.md)
-4. [../how-to/inspect-staged-output-and-routes.md](../how-to/inspect-staged-output-and-routes.md)
-5. [staged output contract](/docs/reference/staged-output-contract/)
+1. [../concepts/tiny-site-shape.md](../../concepts/tiny-site-shape/)
+2. [../concepts/staged-output-and-consumers.md](../../concepts/staged-output-and-consumers/)
+3. [../how-to/create-a-tiny-site.md](../../how-to/create-a-tiny-site/)
+4. [../how-to/inspect-staged-output-and-routes.md](../../how-to/inspect-staged-output-and-routes/)
+5. [staged output contract](/components/site-pipeline/development/reference/staged-output-contract/)
 
 ## Ignore for now
 
@@ -125,10 +123,10 @@ You can usually ignore these until the site grows:
 
 ## Read this next when you grow
 
-Move to [small.md](small.md) when the site adds stable version navigation,
+Move to [small.md](../small/) when the site adds stable version navigation,
 redirects, or one mounted imported/generated docs subtree.
 
 ## Deeper reference trail
 
-- [flexible component publication](/docs/reference/flexible-component-publication/)
-- [pipeline model schema reference](/docs/reference/pipeline-model-schema-reference/)
+- [flexible component publication](/components/site-pipeline/development/reference/flexible-component-publication/)
+- [pipeline model schema reference](/components/site-pipeline/development/reference/pipeline-model-schema-reference/)

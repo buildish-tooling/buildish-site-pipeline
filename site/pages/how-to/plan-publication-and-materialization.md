@@ -1,5 +1,6 @@
 ---
 title: Plan publication and materialization
+description: "Use this guide when the site has enough versions, refs, or imported inputs that you need an explicit planning step before staging starts."
 weight: 19
 ---
 
@@ -18,9 +19,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-Use this guide when the site has enough versions, refs, or imported inputs that
-you need an explicit planning step before staging starts.
 
 ## Keep three concerns separate
 
@@ -54,6 +52,6 @@ This workflow keeps the contracts clear:
 
 ## Read this next
 
-- [../architecture/source-resolution-and-materialization.md](../architecture/source-resolution-and-materialization.md)
-- [validation and check](/docs/reference/validation-and-check/)
-- [api contract](/docs/reference/api-contract/)
+- [../architecture/source-resolution-and-materialization.md](../../architecture/source-resolution-and-materialization/)
+- [validation and check](/components/site-pipeline/development/reference/validation-and-check/)
+- [api contract](/components/site-pipeline/development/reference/api-contract/)

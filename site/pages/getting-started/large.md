@@ -1,5 +1,6 @@
 ---
 title: Large sites
+description: "This page is for platform-style sites with many modules, sibling projects, or extensions that share publication policy but still need explicit routing, lifecycle, and compatibility behavior."
 weight: 14
 ---
 
@@ -19,10 +20,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-This page is for platform-style sites with many modules, sibling projects, or
-extensions that share publication policy but still need explicit routing,
-lifecycle, and compatibility behavior.
-
 ## Who this is for
 
 - one platform plus many modules or sibling projects
@@ -37,9 +34,9 @@ and provider enrichment as first-class modeled inputs.
 
 ## Read these first
 
-1. [../how-to/organize-grouped-components-and-publication-policy.md](../how-to/organize-grouped-components-and-publication-policy.md)
-2. [../how-to/plan-publication-and-materialization.md](../how-to/plan-publication-and-materialization.md)
-3. [../how-to/integrate-provider-compatibility-and-translation-data.md](../how-to/integrate-provider-compatibility-and-translation-data.md)
+1. [../how-to/organize-grouped-components-and-publication-policy.md](../../how-to/organize-grouped-components-and-publication-policy/)
+2. [../how-to/plan-publication-and-materialization.md](../../how-to/plan-publication-and-materialization/)
+3. [../how-to/integrate-provider-compatibility-and-translation-data.md](../../how-to/integrate-provider-compatibility-and-translation-data/)
 
 ## Usually still background material
 
@@ -48,13 +45,13 @@ For many large sites, those topics are already close to the critical path.
 
 ## Read this next when you grow
 
-Move to [very-large.md](very-large.md) when the site spans many repositories or
+Move to [very-large.md](../very-large/) when the site spans many repositories or
 product families and needs stronger operational boundaries, localization policy,
 or very large redirect inventories.
 
 ## Deeper reference trail
 
-- [flexible component publication](/docs/reference/flexible-component-publication/)
-- [provider snapshot schema](/docs/reference/provider-snapshot-schema/)
-- [provider to staged metadata mapping](/docs/reference/provider-to-staged-metadata-mapping/)
-- [security and trust model](/docs/reference/security-and-trust-model/)
+- [flexible component publication](/components/site-pipeline/development/reference/flexible-component-publication/)
+- [provider snapshot schema](/components/site-pipeline/development/reference/provider-snapshot-schema/)
+- [provider to staged metadata mapping](/components/site-pipeline/development/reference/provider-to-staged-metadata-mapping/)
+- [security and trust model](/components/site-pipeline/development/reference/security-and-trust-model/)

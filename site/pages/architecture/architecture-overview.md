@@ -1,4 +1,6 @@
 ---
+title: "Site Pipeline architecture overview"
+description: "This document is the entry point for the current design docs."
 weight: 10
 ---
 
@@ -17,10 +19,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-# Site Pipeline architecture overview
-
-This document is the entry point for the current design docs.
 
 The core idea is simple: the pipeline gathers authored content and metadata,
 optionally enriches that with release-provider data, resolves publication and
@@ -170,7 +168,7 @@ May also add:
 - large redirect inventories for preserved permalinks
 - deployment adapters for multiple hosting targets
 
-The cross-check in [model-fit-cross-check.md](model-fit-cross-check.md) is the
+The cross-check in [model-fit-cross-check.md](../model-fit-cross-check/) is the
 best place to see how those pressures show up in real projects.
 
 ## Why redirect and deployment metadata are separate from content
@@ -181,7 +179,7 @@ metadata. They are poor places to express deployment policy.
 That is why the pipeline should emit server-neutral route and redirect metadata,
 while deployment adapters remain responsible for concrete outputs such as Apache
 `httpd`, Nginx, CDN, or static-host configuration. For the practical adapter
-workflow, see [../how-to/http-server-config-how-to.md](../how-to/http-server-config-how-to.md).
+workflow, see [../how-to/http-server-config-how-to.md](../../how-to/http-server-config-how-to/).
 
 ## Main staged outputs
 
@@ -197,22 +195,22 @@ The pipeline should produce:
 
 After this overview, the most useful next docs are usually:
 
-- [api contract](/docs/reference/api-contract/) for the stable invocation and output
+- [api contract](/components/site-pipeline/development/reference/api-contract/) for the stable invocation and output
   boundaries
-- [staged output contract](/docs/reference/staged-output-contract/) for the staged-tree
+- [staged output contract](/components/site-pipeline/development/reference/staged-output-contract/) for the staged-tree
   layout and manifest contract
-- [source-resolution-and-materialization.md](source-resolution-and-materialization.md)
+- [source-resolution-and-materialization.md](../source-resolution-and-materialization/)
   for version selection and local materialization strategy
-- [validation and check](/docs/reference/validation-and-check/) for validation semantics,
+- [validation and check](/components/site-pipeline/development/reference/validation-and-check/) for validation semantics,
   diagnostics, and `site-pipeline check`
-- [build-architecture.md](build-architecture.md) for build/watch execution shape
-- [security and trust model](/docs/reference/security-and-trust-model/) for trust,
+- [build-architecture.md](../build-architecture/) for build/watch execution shape
+- [security and trust model](/components/site-pipeline/development/reference/security-and-trust-model/) for trust,
   validation, and content-safety boundaries
-- [flexible component publication](/docs/reference/flexible-component-publication/) for the
+- [flexible component publication](/components/site-pipeline/development/reference/flexible-component-publication/) for the
   main publication and lifecycle model
-- [pipeline model schema reference](/docs/reference/pipeline-model-schema-reference/) for
+- [pipeline model schema reference](/components/site-pipeline/development/reference/pipeline-model-schema-reference/) for
   the typed field-level reference
-- [provider snapshot schema](/docs/reference/provider-snapshot-schema/) for optional
+- [provider snapshot schema](/components/site-pipeline/development/reference/provider-snapshot-schema/) for optional
   provider input shape
-- [provider to staged metadata mapping](/docs/reference/provider-to-staged-metadata-mapping/)
+- [provider to staged metadata mapping](/components/site-pipeline/development/reference/provider-to-staged-metadata-mapping/)
   for how provider data enriches staged outputs

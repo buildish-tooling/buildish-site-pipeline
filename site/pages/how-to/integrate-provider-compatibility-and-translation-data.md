@@ -1,5 +1,6 @@
 ---
 title: Integrate provider, compatibility, and translation data
+description: "Use this guide when authored publication policy is no longer enough by itself and the site needs provider-derived lifecycle data, compatibility metadata, or translation linkage."
 weight: 21
 ---
 
@@ -18,10 +19,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-Use this guide when authored publication policy is no longer enough by itself and
-the site needs provider-derived lifecycle data, compatibility metadata, or
-translation linkage.
 
 ## Keep ownership boundaries explicit
 
@@ -48,7 +45,7 @@ consumer-owned publication policy.
 
 ## Read this next
 
-- [provider snapshot schema](/docs/reference/provider-snapshot-schema/)
-- [provider to staged metadata mapping](/docs/reference/provider-to-staged-metadata-mapping/)
-- [security and trust model](/docs/reference/security-and-trust-model/)
-- [pipeline model schema reference](/docs/reference/pipeline-model-schema-reference/)
+- [provider snapshot schema](/components/site-pipeline/development/reference/provider-snapshot-schema/)
+- [provider to staged metadata mapping](/components/site-pipeline/development/reference/provider-to-staged-metadata-mapping/)
+- [security and trust model](/components/site-pipeline/development/reference/security-and-trust-model/)
+- [pipeline model schema reference](/components/site-pipeline/development/reference/pipeline-model-schema-reference/)

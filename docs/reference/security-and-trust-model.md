@@ -1,4 +1,6 @@
 ---
+title: "Security and trust model"
+description: "This document defines the baseline security posture for the current model."
 weight: 16
 ---
 
@@ -17,10 +19,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-# Security and trust model
-
-This document defines the baseline security posture for the current model.
 
 The Site Pipeline stages and normalizes content. It does not make untrusted
 content safe by accident. Safety depends on explicit validation, careful staged
@@ -216,9 +214,9 @@ Security is shared across layers:
 
 ## Read next
 
-- [flexible-component-publication.md](flexible-component-publication.md) for the
-  publication model and validation rules
-- [staged-output-contract.md](staged-output-contract.md) for the staged-tree
-  contract
+- [flexible-component-publication.md](../flexible-component-publication/) for the
+   publication model and validation rules
+- [staged-output-contract.md](../staged-output-contract/) for the staged-tree
+   contract
 - [source resolution and materialization](/architecture/source-resolution-and-materialization/)
-  for local input and cache boundaries
+   for local input and cache boundaries

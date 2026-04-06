@@ -24,6 +24,7 @@ from unittest import mock
 import apache_buildish_site_pipeline.planning.selection as selection_module
 from apache_buildish_site_pipeline.evaluation.collector import DiagnosticCollector
 from apache_buildish_site_pipeline.evaluation.reference_index import (
+    ArtifactIdentity,
     KnownRoute,
     _build_context_reference_index,
     _has_line_cycle,
@@ -177,11 +178,15 @@ class SelectionAndReferenceIndexTests(unittest.TestCase):
             {"spark": frozenset({"runtime"})},
         )
         self.assertEqual(
-            reference_index.releases_by_artifact[("spark", "runtime")],
+            reference_index.releases_by_artifact[
+                ArtifactIdentity(component_slug="spark", artifact_key="runtime")
+            ],
             frozenset({"4.0.0", "4.0.1"}),
         )
         self.assertEqual(
-            reference_index.named_refs_by_artifact[("spark", "runtime")],
+            reference_index.named_refs_by_artifact[
+                ArtifactIdentity(component_slug="spark", artifact_key="runtime")
+            ],
             frozenset({"main"}),
         )
 
@@ -594,8 +599,12 @@ class SelectionAndReferenceIndexTests(unittest.TestCase):
             targets_by_reference={"component:spark": route},
             known_components=frozenset({"spark"}),
             artifacts_by_component={"spark": frozenset({"runtime"})},
-            release_lines_by_artifact={("spark", "runtime"): frozenset({"4.0"})},
-            releases_by_artifact={("spark", "runtime"): frozenset({"4.0.0"})},
+            release_lines_by_artifact={
+                ArtifactIdentity(component_slug="spark", artifact_key="runtime"): frozenset({"4.0"})
+            },
+            releases_by_artifact={
+                ArtifactIdentity(component_slug="spark", artifact_key="runtime"): frozenset({"4.0.0"})
+            },
             routes_by_path={"/spark/guide/": (route,)},
         )
 

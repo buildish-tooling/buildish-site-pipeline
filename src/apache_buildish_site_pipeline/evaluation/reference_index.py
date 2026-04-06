@@ -26,6 +26,10 @@ from apache_buildish_site_pipeline.models.enums import (
     DiagnosticSeverity,
     ReleaseSelectionMode,
 )
+from apache_buildish_site_pipeline.models.validation.common import (
+    validate_artifact_key,
+    validate_slug,
+)
 from apache_buildish_site_pipeline.planning.types import (
     PlanningEvaluation,
     ResolvedArtifactConfig,
@@ -49,6 +53,37 @@ class KnownRoute:
 
 
 @dataclass(frozen=True, slots=True)
+class ArtifactIdentity:
+    """Validated component/artifact identity used by reference lookups."""
+
+    component_slug: str
+    artifact_key: str
+
+    @classmethod
+    def from_parts(cls, *, component_slug: str, artifact_key: str) -> ArtifactIdentity:
+        return cls(
+            component_slug=validate_slug(component_slug),
+            artifact_key=validate_artifact_key(artifact_key),
+        )
+
+    @classmethod
+    def parse_reference_payload(cls, payload: str) -> ArtifactIdentity | None:
+        component_slug, separator, artifact_key = payload.partition("/")
+        if separator == "":
+            return None
+        try:
+            return cls.from_parts(
+                component_slug=component_slug,
+                artifact_key=artifact_key,
+            )
+        except ValueError:
+            return None
+
+    def as_tuple(self) -> tuple[str, str]:
+        return (self.component_slug, self.artifact_key)
+
+
+@dataclass(frozen=True, slots=True)
 class ReferenceIndex:
     """Lookup tables for internal references and route-path targets."""
 
@@ -56,9 +91,9 @@ class ReferenceIndex:
     targets_by_reference: dict[str, KnownRoute]
     known_components: frozenset[str]
     artifacts_by_component: dict[str, frozenset[str]]
-    release_lines_by_artifact: dict[tuple[str, str], frozenset[str]]
-    releases_by_artifact: dict[tuple[str, str], frozenset[str]]
-    named_refs_by_artifact: dict[tuple[str, str], frozenset[str]]
+    release_lines_by_artifact: dict[ArtifactIdentity, frozenset[str]]
+    releases_by_artifact: dict[ArtifactIdentity, frozenset[str]]
+    named_refs_by_artifact: dict[ArtifactIdentity, frozenset[str]]
     routes_by_path: dict[str, tuple[KnownRoute, ...]]
 
 
@@ -68,9 +103,9 @@ def build_reference_index(
     targets_by_reference: dict[str, KnownRoute],
     known_components: frozenset[str] | None = None,
     artifacts_by_component: dict[str, frozenset[str]] | None = None,
-    release_lines_by_artifact: dict[tuple[str, str], frozenset[str]] | None = None,
-    releases_by_artifact: dict[tuple[str, str], frozenset[str]] | None = None,
-    named_refs_by_artifact: dict[tuple[str, str], frozenset[str]] | None = None,
+    release_lines_by_artifact: dict[ArtifactIdentity, frozenset[str]] | None = None,
+    releases_by_artifact: dict[ArtifactIdentity, frozenset[str]] | None = None,
+    named_refs_by_artifact: dict[ArtifactIdentity, frozenset[str]] | None = None,
     routes_by_path: dict[str, tuple[KnownRoute, ...]] | None = None,
 ) -> ReferenceIndex:
     """Freeze the computed contextual reference lookups."""
@@ -164,9 +199,9 @@ def _build_context_reference_index(
     targets_by_reference: dict[str, KnownRoute] = {}
     routes_by_path: dict[str, list[KnownRoute]] = {}
     artifacts_by_component: dict[str, frozenset[str]] = {}
-    release_lines_by_artifact: dict[tuple[str, str], frozenset[str]] = {}
-    releases_by_artifact: dict[tuple[str, str], frozenset[str]] = {}
-    named_refs_by_artifact: dict[tuple[str, str], frozenset[str]] = {}
+    release_lines_by_artifact: dict[ArtifactIdentity, frozenset[str]] = {}
+    releases_by_artifact: dict[ArtifactIdentity, frozenset[str]] = {}
+    named_refs_by_artifact: dict[ArtifactIdentity, frozenset[str]] = {}
 
     for target in publication_targets:
         route = route_from_published_target(target)
@@ -197,7 +232,10 @@ def _build_context_reference_index(
             artifact.key for artifact in component.artifacts
         )
         for artifact in component.artifacts:
-            artifact_identity = (component.slug, artifact.key)
+            artifact_identity = ArtifactIdentity.from_parts(
+                component_slug=component.slug,
+                artifact_key=artifact.key,
+            )
             release_lines_by_artifact[artifact_identity] = (
                 frozenset(line.key for line in artifact.lifecycle.release_lines or ())
                 if artifact.lifecycle
@@ -209,7 +247,7 @@ def _build_context_reference_index(
                 else set()
             )
             provider_context = planning.provider_index.contexts_by_artifact.get(
-                artifact_identity
+                artifact_identity.as_tuple()
             )
             if provider_context is not None:
                 known_releases.update(provider_context.released_by_version)
@@ -412,21 +450,27 @@ def _reference_exists(*, reference: str, reference_index: ReferenceIndex) -> boo
     if prefix == "component":
         return payload in reference_index.known_components
     if prefix == "artifact":
-        component_slug, artifact_key = payload.split("/", maxsplit=1)
-        return artifact_key in reference_index.artifacts_by_component.get(
-            component_slug, frozenset()
+        artifact_identity = ArtifactIdentity.parse_reference_payload(payload)
+        if artifact_identity is None:
+            return False
+        return artifact_identity.artifact_key in reference_index.artifacts_by_component.get(
+            artifact_identity.component_slug, frozenset()
         )
     if prefix == "line":
         artifact_payload, line_key = payload.split("@", maxsplit=1)
-        component_slug, artifact_key = artifact_payload.split("/", maxsplit=1)
+        artifact_identity = ArtifactIdentity.parse_reference_payload(artifact_payload)
+        if artifact_identity is None:
+            return False
         return line_key in reference_index.release_lines_by_artifact.get(
-            (component_slug, artifact_key), frozenset()
+            artifact_identity, frozenset()
         )
     if prefix == "release":
         artifact_payload, version = payload.split("@", maxsplit=1)
-        component_slug, artifact_key = artifact_payload.split("/", maxsplit=1)
+        artifact_identity = ArtifactIdentity.parse_reference_payload(artifact_payload)
+        if artifact_identity is None:
+            return False
         return version in reference_index.releases_by_artifact.get(
-            (component_slug, artifact_key), frozenset()
+            artifact_identity, frozenset()
         )
     if prefix == "route":
         return len(reference_index.routes_by_path.get(payload.lower(), ())) == 1

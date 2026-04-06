@@ -55,7 +55,27 @@ The consumer repository keeps ownership of the rendered site experience:
 - publishing, and
 - environment-specific runtime choices.
 
-## Learn more
+## Start here
+
+- [Getting started](getting-started/) for size-band onboarding and first setup
+- [Concepts](concepts/) for the mental model and staged-output boundary
+- [How-to](how-to/) for task-oriented procedures
+- [Architecture](architecture/) for deeper system shape and rationale
+- [Reference](/docs/reference/) for stable contracts, schemas, and trust rules
+- [Maintenance](maintenance/) for maintainer-facing implementation guidance
+
+## Source layout in this repository
+
+This component keeps non-versioned reader and maintainer pages under `site/pages/`
+and keeps versioned or normative reference material under `docs/`.
+
+That split matches the authored-content contract exposed by `site/component.yaml`:
+
+- `site/pages/` for top-level component pages,
+- `docs/` for versioned or development docs content, and
+- optional `site/assets/` for component-owned static assets.
+
+## Learn more in the source tree
 
 Start with the docs for the current contract, configuration model, and adoption
 patterns. If you are integrating or modifying the pipeline, the source

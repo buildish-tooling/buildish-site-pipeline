@@ -59,5 +59,5 @@ resolved redirect inventory rather than rebuilding redirect behavior from scratc
 
 - [inspect-staged-output-and-routes.md](inspect-staged-output-and-routes.md)
 - [http-server-config-how-to.md](http-server-config-how-to.md)
-- [../reference/flexible-component-publication.md](../reference/flexible-component-publication.md)
-- [../reference/security-and-trust-model.md](../reference/security-and-trust-model.md)
+- [flexible component publication](/docs/reference/flexible-component-publication/)
+- [security and trust model](/docs/reference/security-and-trust-model/)

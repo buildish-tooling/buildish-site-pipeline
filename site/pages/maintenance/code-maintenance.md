@@ -172,14 +172,15 @@ When changing these internals, update tests in the same area.
 Keep the documentation set split by reader need instead of mixing onboarding,
 procedural guidance, and reference material into the same layer.
 
-- `docs/getting-started/` is the onboarding layer for readers who first need to
-  identify their site shape and the smallest model they need
-- `docs/how-to/` is for task-oriented workflows such as building a tiny site,
-  inspecting staged output, or generating HTTP server config
-- `docs/architecture/` explains the system shape, rationale, and examples
+- `site/pages/getting-started/` is the onboarding layer for readers who first
+  need to identify their site shape and the smallest model they need
+- `site/pages/how-to/` is for task-oriented workflows such as building a tiny
+  site, inspecting staged output, or generating HTTP server config
+- `site/pages/architecture/` explains the system shape, rationale, and examples
 - `docs/reference/` defines contracts, schemas, glossary material, and trust
   boundaries
-- `docs/maintenance/` records maintainer-facing internal guidance
+- `site/pages/maintenance/` records durable maintainer guidance, while
+  `docs/maintenance/todos.md` remains the backlog page for deferred follow-ups
 
 When maintaining the onboarding docs, optimize for these outcomes:
 
@@ -208,16 +209,16 @@ set is not yet consumable enough.
 
 ## Read next
 
-- [../reference/api-contract.md](../reference/api-contract.md) for the public CLI boundary
+- [api contract](/docs/reference/api-contract/) for the public CLI boundary
 - [../architecture/source-resolution-and-materialization.md](../architecture/source-resolution-and-materialization.md)
   for planning inputs and materialized-source boundaries
-- [../reference/validation-and-check.md](../reference/validation-and-check.md) for shared validation
+- [validation and check](/docs/reference/validation-and-check/) for shared validation
   semantics and `site-pipeline check`
 - [../architecture/build-architecture.md](../architecture/build-architecture.md) for coordinator/worker execution
   structure and scaling shape
-- [../reference/staged-output-contract.md](../reference/staged-output-contract.md) for the renderer-visible
+- [staged output contract](/docs/reference/staged-output-contract/) for the renderer-visible
   stage contract
-- [../reference/security-and-trust-model.md](../reference/security-and-trust-model.md) for path, URL, and
+- [security and trust model](/docs/reference/security-and-trust-model/) for path, URL, and
   trust-boundary requirements
 - [user-facing-docs-strategy.md](user-facing-docs-strategy.md) for the planned
   user-facing documentation site shape

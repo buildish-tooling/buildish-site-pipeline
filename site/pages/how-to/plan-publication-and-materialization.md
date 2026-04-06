@@ -55,5 +55,5 @@ This workflow keeps the contracts clear:
 ## Read this next
 
 - [../architecture/source-resolution-and-materialization.md](../architecture/source-resolution-and-materialization.md)
-- [../reference/validation-and-check.md](../reference/validation-and-check.md)
-- [../reference/api-contract.md](../reference/api-contract.md)
+- [validation and check](/docs/reference/validation-and-check/)
+- [api contract](/docs/reference/api-contract/)

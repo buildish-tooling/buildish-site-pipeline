@@ -22,7 +22,7 @@ limitations under the License.
 
 For maintainer-facing notes about shared evaluation ownership, stage-gating, and
 the lower execution path reused by `check`, `build`, and `watch`, see
-[`../maintenance/code-maintenance.md`](../maintenance/code-maintenance.md).
+[code maintenance](/maintenance/code-maintenance/).
 
 `site-pipeline check` should be the stable non-mutating command for validating a
 workspace before staging.
@@ -205,9 +205,9 @@ boundary between validation, materialization, and staging.
 ## Read next
 
 - [api-contract.md](api-contract.md) for the stable CLI boundary
-- [../architecture/source-resolution-and-materialization.md](../architecture/source-resolution-and-materialization.md)
+- [source resolution and materialization](/architecture/source-resolution-and-materialization/)
   for planning and local-input readiness
-- [../maintenance/code-maintenance.md](../maintenance/code-maintenance.md) for maintainer-facing planning,
+- [code maintenance](/maintenance/code-maintenance/) for maintainer-facing planning,
   evaluation, staging, and watch guardrails
 - [flexible-component-publication.md](flexible-component-publication.md) for the
   validation rules `check` should enforce

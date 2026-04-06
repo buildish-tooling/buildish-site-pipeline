@@ -116,5 +116,5 @@ They should use the staged output instead.
 ## Read next
 
 - [../how-to/inspect-staged-output-and-routes.md](../how-to/inspect-staged-output-and-routes.md)
-- [../reference/staged-output-contract.md](../reference/staged-output-contract.md)
-- [../reference/api-contract.md](../reference/api-contract.md)
+- [staged output contract](/docs/reference/staged-output-contract/)
+- [api contract](/docs/reference/api-contract/)

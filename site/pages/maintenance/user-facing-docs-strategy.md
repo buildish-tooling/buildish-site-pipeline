@@ -101,8 +101,8 @@ material too early.
 
 ## Docs root requirements
 
-`docs/_index.md` should become a real product landing page, not just a section
-index. It should include, in this order:
+`site/pages/_index.md` should be the real product landing page, not just a
+section index. It should include, in this order:
 
 1. a one-paragraph definition of Site Pipeline
 2. a short "what it is" list
@@ -181,8 +181,8 @@ multiple sections.
 
 Deliver the user-facing site in phases:
 
-1. rewrite `docs/_index.md` as a true landing page
-2. add `docs/concepts/` with a small initial concept set
+1. keep `site/pages/_index.md` focused on product definition and reader routing
+2. keep `site/pages/concepts/` as the plain-language mental-model layer
 3. expand the getting-started guides with real-looking examples and expected
    outputs
 4. align how-to pages with the new concept pages and canonical examples
@@ -207,5 +207,5 @@ The user-facing site is in good shape when a new reader can:
 - [../architecture/architecture-overview.md](../architecture/architecture-overview.md)
   for the current architectural explanation that the user-facing site should
   gradually expose more accessibly
-- [../reference/api-contract.md](../reference/api-contract.md) for the stable
+- [api contract](/docs/reference/api-contract/) for the stable
   command and output boundary that user-facing pages should point toward

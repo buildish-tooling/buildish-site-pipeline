@@ -62,6 +62,6 @@ larger ecosystem.
 
 ## Deeper reference trail
 
-- [../reference/flexible-component-publication.md](../reference/flexible-component-publication.md)
-- [../reference/validation-and-check.md](../reference/validation-and-check.md)
-- [../reference/pipeline-model-schema-reference.md](../reference/pipeline-model-schema-reference.md)
+- [flexible component publication](/docs/reference/flexible-component-publication/)
+- [validation and check](/docs/reference/validation-and-check/)
+- [pipeline model schema reference](/docs/reference/pipeline-model-schema-reference/)

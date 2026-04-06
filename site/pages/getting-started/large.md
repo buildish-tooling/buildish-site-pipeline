@@ -54,7 +54,7 @@ or very large redirect inventories.
 
 ## Deeper reference trail
 
-- [../reference/flexible-component-publication.md](../reference/flexible-component-publication.md)
-- [../reference/provider-snapshot-schema.md](../reference/provider-snapshot-schema.md)
-- [../reference/provider-to-staged-metadata-mapping.md](../reference/provider-to-staged-metadata-mapping.md)
-- [../reference/security-and-trust-model.md](../reference/security-and-trust-model.md)
+- [flexible component publication](/docs/reference/flexible-component-publication/)
+- [provider snapshot schema](/docs/reference/provider-snapshot-schema/)
+- [provider to staged metadata mapping](/docs/reference/provider-to-staged-metadata-mapping/)
+- [security and trust model](/docs/reference/security-and-trust-model/)

@@ -178,5 +178,5 @@ You are in a good starting state when:
 
 - [../concepts/staged-output-and-consumers.md](../concepts/staged-output-and-consumers.md)
 - [inspect-staged-output-and-routes.md](inspect-staged-output-and-routes.md)
-- [../reference/flexible-component-publication.md](../reference/flexible-component-publication.md)
-- [../reference/staged-output-contract.md](../reference/staged-output-contract.md)
+- [flexible component publication](/docs/reference/flexible-component-publication/)
+- [staged output contract](/docs/reference/staged-output-contract/)

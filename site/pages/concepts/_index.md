@@ -39,5 +39,5 @@ adapters can consume safely.
   supported onboarding path
 - [../how-to/create-a-tiny-site.md](../how-to/create-a-tiny-site.md) for the
   first copy-pasteable setup
-- [../reference/staged-output-contract.md](../reference/staged-output-contract.md)
+- [staged output contract](/docs/reference/staged-output-contract/)
   for the durable downstream contract

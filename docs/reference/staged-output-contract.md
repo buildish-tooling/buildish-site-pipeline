@@ -185,7 +185,7 @@ Different downstream consumers can stay focused on the parts they need:
   files
 - deployment adapters read route and redirect metadata and can turn them into
   concrete HTTP server or CDN config as described in
-  [../how-to/http-server-config-how-to.md](../how-to/http-server-config-how-to.md)
+  [http server config how to](/how-to/http-server-config-how-to/)
 - search and indexing tools read `data/content-index.json`
 - diagnostic or audit tools read `manifest.json` and `data/diagnostics.json`
 
@@ -225,6 +225,6 @@ The typed definitions for this contract live in:
 
 - [api-contract.md](api-contract.md) for the stable invocation and output
   boundary
-- [../architecture/build-architecture.md](../architecture/build-architecture.md) for build/watch execution shape
+- [build architecture](/architecture/build-architecture/) for build/watch execution shape
 - [security-and-trust-model.md](security-and-trust-model.md) for content-safety,
   path-safety, and trust-boundary rules

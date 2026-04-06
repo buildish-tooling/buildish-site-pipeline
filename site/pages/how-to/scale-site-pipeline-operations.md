@@ -44,5 +44,5 @@ At large scale, the main operational concerns are usually:
 
 - [plan-publication-and-materialization.md](plan-publication-and-materialization.md)
 - [http-server-config-how-to.md](http-server-config-how-to.md)
-- [../reference/security-and-trust-model.md](../reference/security-and-trust-model.md)
+- [security and trust model](/docs/reference/security-and-trust-model/)
 - [../architecture/source-resolution-and-materialization.md](../architecture/source-resolution-and-materialization.md)

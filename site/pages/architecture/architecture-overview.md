@@ -197,22 +197,22 @@ The pipeline should produce:
 
 After this overview, the most useful next docs are usually:
 
-- [../reference/api-contract.md](../reference/api-contract.md) for the stable invocation and output
+- [api contract](/docs/reference/api-contract/) for the stable invocation and output
   boundaries
-- [../reference/staged-output-contract.md](../reference/staged-output-contract.md) for the staged-tree
+- [staged output contract](/docs/reference/staged-output-contract/) for the staged-tree
   layout and manifest contract
 - [source-resolution-and-materialization.md](source-resolution-and-materialization.md)
   for version selection and local materialization strategy
-- [../reference/validation-and-check.md](../reference/validation-and-check.md) for validation semantics,
+- [validation and check](/docs/reference/validation-and-check/) for validation semantics,
   diagnostics, and `site-pipeline check`
 - [build-architecture.md](build-architecture.md) for build/watch execution shape
-- [../reference/security-and-trust-model.md](../reference/security-and-trust-model.md) for trust,
+- [security and trust model](/docs/reference/security-and-trust-model/) for trust,
   validation, and content-safety boundaries
-- [../reference/flexible-component-publication.md](../reference/flexible-component-publication.md) for the
+- [flexible component publication](/docs/reference/flexible-component-publication/) for the
   main publication and lifecycle model
-- [../reference/pipeline-model-schema-reference.md](../reference/pipeline-model-schema-reference.md) for
+- [pipeline model schema reference](/docs/reference/pipeline-model-schema-reference/) for
   the typed field-level reference
-- [../reference/provider-snapshot-schema.md](../reference/provider-snapshot-schema.md) for optional
+- [provider snapshot schema](/docs/reference/provider-snapshot-schema/) for optional
   provider input shape
-- [../reference/provider-to-staged-metadata-mapping.md](../reference/provider-to-staged-metadata-mapping.md)
+- [provider to staged metadata mapping](/docs/reference/provider-to-staged-metadata-mapping/)
   for how provider data enriches staged outputs

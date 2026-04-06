@@ -341,12 +341,12 @@ Both cases fit the same architecture.
 
 - [architecture-overview.md](architecture-overview.md) for the top-level system
   model
-- [../reference/api-contract.md](../reference/api-contract.md) for stable invocation and output boundaries
-- [../reference/staged-output-contract.md](../reference/staged-output-contract.md) for the staged-tree
+- [api contract](/docs/reference/api-contract/) for stable invocation and output boundaries
+- [staged output contract](/docs/reference/staged-output-contract/) for the staged-tree
   contract consumed by renderers and deployment adapters
 - [../maintenance/code-maintenance.md](../maintenance/code-maintenance.md) for maintainer-facing planning and
   execution-path boundaries
 - [build-architecture.md](build-architecture.md) for the build/watch execution
   model
-- [../reference/flexible-component-publication.md](../reference/flexible-component-publication.md) for the
+- [flexible component publication](/docs/reference/flexible-component-publication/) for the
   publication and lifecycle model

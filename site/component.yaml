@@ -19,4 +19,5 @@ component:
   slug: site-pipeline
   displayName: Site Pipeline
 content:
+  pagesRoot: site/pages
   docsRoot: docs

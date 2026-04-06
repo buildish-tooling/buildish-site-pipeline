@@ -166,5 +166,5 @@ cat site/.stage/data/content-index.json
 
 - [../concepts/staged-output-and-consumers.md](../concepts/staged-output-and-consumers.md)
 - [http-server-config-how-to.md](http-server-config-how-to.md)
-- [../reference/staged-output-contract.md](../reference/staged-output-contract.md)
-- [../reference/pipeline-model-schema-reference.md](../reference/pipeline-model-schema-reference.md)
+- [staged output contract](/docs/reference/staged-output-contract/)
+- [pipeline model schema reference](/docs/reference/pipeline-model-schema-reference/)

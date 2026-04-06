@@ -55,4 +55,4 @@ aggregate JSON data, not from the manifest itself.
 
 - [inspect staged output and routes](inspect-staged-output-and-routes.md)
 - [../concepts/staged-output-and-consumers.md](../concepts/staged-output-and-consumers.md)
-- [../reference/staged-output-contract.md](../reference/staged-output-contract.md)
+- [staged output contract](/docs/reference/staged-output-contract/)

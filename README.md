@@ -26,7 +26,8 @@ inputs, and emits metadata that a downstream renderer can consume.
 - the `apache_buildish_site_pipeline` Python package,
 - the `site-pipeline` CLI entrypoint,
 - an optional multi-platform container image that runs `site-pipeline`,
-- contract and adoption docs under `docs/`, and
+- reader and maintainer pages under `site/pages/`,
+- stable reference and versioned docs under `docs/`, and
 - a small self-contained generic test suite.
 
 ## What the pipeline owns
@@ -63,12 +64,13 @@ stderr log detail without changing explicit report or JSONL event outputs.
 
 ## Documentation
 
-- [Documentation index](docs/_index.md)
-- [Getting started](docs/getting-started/_index.md)
-- [How-to guides](docs/how-to/_index.md)
-- [Architecture docs](docs/architecture/_index.md)
+- [Component landing page](site/pages/_index.md)
+- [Getting started](site/pages/getting-started/_index.md)
+- [How-to guides](site/pages/how-to/_index.md)
+- [Architecture docs](site/pages/architecture/_index.md)
 - [Reference docs](docs/reference/_index.md)
-- [Maintenance notes](docs/maintenance/_index.md)
+- [Versioned docs landing](docs/_index.md)
+- [Maintenance notes](site/pages/maintenance/_index.md)
 
 ## Local development
 

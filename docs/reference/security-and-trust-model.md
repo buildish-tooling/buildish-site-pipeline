@@ -220,5 +220,5 @@ Security is shared across layers:
   publication model and validation rules
 - [staged-output-contract.md](staged-output-contract.md) for the staged-tree
   contract
-- [../architecture/source-resolution-and-materialization.md](../architecture/source-resolution-and-materialization.md)
+- [source resolution and materialization](/architecture/source-resolution-and-materialization/)
   for local input and cache boundaries

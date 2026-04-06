@@ -157,3 +157,47 @@ basic event-stream introduction. Follow-ups worth evaluating include:
 
 This work should improve operator ergonomics without changing the current safety
 rules around trusted-stage publication or weakening the manifest-last contract.
+
+## Optional staged-tree link checking for renderer-specific relative links
+
+Some authored Markdown links are valid as repository-relative source references
+but do not survive unchanged once a downstream renderer maps source files to
+pretty output URLs.
+
+One concrete example is a source link such as `../foo/bar.md`. That may look
+reasonable while editing in the repository tree, but a renderer such as Hugo may
+publish the target as a directory-style URL like `../../foo/bar/` instead. In
+that shape, a literal carry-through of the authored Markdown link is wrong even
+though the intent was clear.
+
+The deferred follow-up is to decide whether site-pipeline should support
+optional automatic link diagnostics for staged content and, if so, where the
+policy belongs.
+
+Current design direction:
+
+- link checking likely belongs in scope because broken staged links are a real
+  publication-quality problem
+- blind generic link rewriting in the core pipeline likely does not, because
+  link semantics depend on renderer behavior, URL shape policy, and site-local
+  conventions that site-pipeline does not fully own
+- if the project grows first-class support here, the first slice should likely
+  be diagnostics-oriented and opt-in rather than a mutating rewrite pass
+- any consumer-owned rule set should be explicit about renderer assumptions and
+  should not silently rewrite links unless the contract is narrow, testable, and
+  unambiguous
+
+Questions worth answering before implementation:
+
+- should the catalog be able to declare a renderer profile or link policy for
+  relative Markdown links
+- should site-pipeline only report suspicious links, or also support an
+  explicit transformation mode
+- how would such rules interact with pretty URLs, index pages, page bundles,
+  aliases, mounted content, and non-Hugo renderers
+- can the pipeline validate links against the staged output tree without making
+  incorrect assumptions about renderer-only features such as shortcodes or
+  `ref`/`relref`-style link expansion
+
+This should be treated as optional publish-quality assistance for consumers, not
+as a reason to make the shared authored contract renderer-specific by default.

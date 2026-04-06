@@ -22,9 +22,10 @@ target deterministically.
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 import re
+from typing import cast
 from urllib.parse import urlparse
 
 from mistletoe import Document
@@ -140,7 +141,7 @@ def parse_reference_document(source: str) -> ReferenceDocument:
     if not source.strip():
         raise ReferenceDocError("Reference documentation fragments must not be blank.")
     document = Document(source)
-    return ReferenceDocument(blocks=tuple(_convert_block_token(child) for child in document.children))
+    return ReferenceDocument(blocks=tuple(_convert_block_token(child) for child in _block_children(document)))
 
 
 def render_reference_markdown(
@@ -178,23 +179,26 @@ def parse_reference_link_target(target: str) -> ReferenceLinkTarget:
 
 def _convert_block_token(token: block_token.BlockToken) -> ReferenceBlockNode:
     if isinstance(token, block_token.Paragraph):
-        return ReferenceParagraph(children=_convert_span_children(token.children))
+        return ReferenceParagraph(children=_convert_span_children(_span_children(token)))
     if isinstance(token, block_token.List):
         return ReferenceList(
             ordered=bool(token.start is not None),
             items=tuple(
-                ReferenceListItem(blocks=tuple(_convert_block_token(child) for child in item.children))
-                for item in token.children
+                ReferenceListItem(blocks=tuple(_convert_block_token(child) for child in _block_children(item)))
+                for item in _block_children(token)
             ),
         )
     if isinstance(token, block_token.CodeFence):
         if token.language is None or not token.language.strip():
             raise ReferenceDocError("Reference code fences must declare a language tag.")
-        return ReferenceCodeBlock(language=token.language.strip(), code=token.children[0].content.rstrip("\n"))
+        return ReferenceCodeBlock(
+            language=token.language.strip(),
+            code=_first_raw_text_child(token).content.rstrip("\n"),
+        )
     raise ReferenceDocError(f"Unsupported block token in reference docs: {type(token).__name__}")
 
 
-def _convert_span_children(children: list[span_token.SpanToken]) -> tuple[ReferenceInlineNode, ...]:
+def _convert_span_children(children: tuple[span_token.SpanToken, ...]) -> tuple[ReferenceInlineNode, ...]:
     return tuple(_convert_span_token(child) for child in children)
 
 
@@ -202,30 +206,47 @@ def _convert_span_token(token: span_token.SpanToken) -> ReferenceInlineNode:
     if isinstance(token, span_token.RawText):
         return ReferenceText(value=token.content)
     if isinstance(token, span_token.InlineCode):
-        return ReferenceCodeSpan(value=_render_raw_text_children(token.children))
+        return ReferenceCodeSpan(value=_render_raw_text_children(_span_children(token)))
     if isinstance(token, span_token.Emphasis):
-        return ReferenceEmphasis(children=_convert_span_children(token.children))
+        return ReferenceEmphasis(children=_convert_span_children(_span_children(token)))
     if isinstance(token, span_token.Strong):
-        return ReferenceStrong(children=_convert_span_children(token.children))
+        return ReferenceStrong(children=_convert_span_children(_span_children(token)))
     if isinstance(token, span_token.Link):
         return ReferenceLink(
-            label=_convert_span_children(token.children),
+            label=_convert_span_children(_span_children(token)),
             target=parse_reference_link_target(token.target),
         )
     if isinstance(token, span_token.EscapeSequence):
-        return ReferenceText(value=_render_raw_text_children(token.children))
+        return ReferenceText(value=_render_raw_text_children(_span_children(token)))
     if isinstance(token, span_token.LineBreak):
         return ReferenceLineBreak()
     raise ReferenceDocError(f"Unsupported inline token in reference docs: {type(token).__name__}")
 
 
-def _render_raw_text_children(children: list[span_token.SpanToken]) -> str:
+def _render_raw_text_children(children: tuple[span_token.SpanToken, ...]) -> str:
     parts: list[str] = []
     for child in children:
         if not isinstance(child, span_token.RawText):
             raise ReferenceDocError(f"Expected raw text content, got {type(child).__name__}")
         parts.append(child.content)
     return "".join(parts)
+
+
+def _block_children(token: object) -> tuple[block_token.BlockToken, ...]:
+    children = cast(Iterable[object] | None, getattr(token, "children", None))
+    return tuple(cast(block_token.BlockToken, child) for child in children or ())
+
+
+def _span_children(token: object) -> tuple[span_token.SpanToken, ...]:
+    children = cast(Iterable[object] | None, getattr(token, "children", None))
+    return tuple(cast(span_token.SpanToken, child) for child in children or ())
+
+
+def _first_raw_text_child(token: block_token.CodeFence) -> span_token.RawText:
+    children = _span_children(token)
+    if not children or not isinstance(children[0], span_token.RawText):
+        raise ReferenceDocError("Reference code fences must contain raw text content.")
+    return children[0]
 
 
 def _render_block_markdown(block: ReferenceBlockNode, *, resolve_type_target: TypeTargetResolver | None) -> str:

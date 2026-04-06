@@ -315,9 +315,9 @@ def _render_model_section(
     if documentation is not None:
         lines.extend(
             [
-                "- category: `{}`".format(documentation.category),
-                "- ownership: `{}`".format(documentation.ownership),
-                "- file contract: `{}`".format(documentation.file_path)
+                f"- category: `{documentation.category}`",
+                f"- ownership: `{documentation.ownership}`",
+                f"- file contract: `{documentation.file_path}`"
                 if documentation.file_path is not None
                 else "- file contract: —",
                 "",

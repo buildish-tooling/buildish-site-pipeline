@@ -82,7 +82,7 @@ from tests.support.staging import _work_layout
 class AggregateHelperTests(unittest.TestCase):
     def _contribution(self, **overrides) -> StagedPageContributionWire:
         payload = {
-            "stage_relative_path": "content/components/spark/pages/guide.md",
+            "stage_relative_path": "content/components/spark/guide.md",
             "component_slug": "spark",
             "artifact_key": "runtime",
             "section": "docs",
@@ -147,13 +147,13 @@ class AggregateHelperTests(unittest.TestCase):
     def test_translation_helpers_group_links_per_page_and_emit_sorted_sets(self) -> None:
         contributions = (
             self._contribution(
-                stage_relative_path="content/components/spark/pages/guide-en.md",
+                stage_relative_path="content/components/spark/guide-en.md",
                 locale="en",
                 translation_key="guide.install",
                 title="Guide",
             ),
             self._contribution(
-                stage_relative_path="content/components/spark/pages/guide-de.md",
+                stage_relative_path="content/components/spark/guide-de.md",
                 locale="de",
                 translation_key="guide.install",
                 title="Anleitung",
@@ -162,7 +162,7 @@ class AggregateHelperTests(unittest.TestCase):
                 canonical_url="https://docs.example.org/de/spark/guide",
             ),
             self._contribution(
-                stage_relative_path="content/components/spark/pages/guide-fr.md",
+                stage_relative_path="content/components/spark/guide-fr.md",
                 locale="fr",
                 translation_key="guide.install",
                 title="Guide FR",
@@ -177,7 +177,7 @@ class AggregateHelperTests(unittest.TestCase):
         sets = _build_translation_entries(contributions)
 
         self.assertEqual(
-            [link.locale for link in links_by_page[("spark", "runtime", "content/components/spark/pages/guide-en.md")]],
+            [link.locale for link in links_by_page[("spark", "runtime", "content/components/spark/guide-en.md")]],
             ["de", "fr"],
         )
         self.assertEqual(
@@ -467,7 +467,7 @@ class AggregateHelperTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tempdir:
             workspace_root = Path(tempdir)
             layout = _work_layout(workspace_root)
-            absolute_stage_path = layout.next_stage_root / "content/components/spark/pages/guide.md"
+            absolute_stage_path = layout.next_stage_root / "content/components/spark/guide.md"
             absolute_stage_path.parent.mkdir(parents=True, exist_ok=True)
             manifest_path = layout.fragments_root / "component_spark.json"
             write_unit_manifest(
@@ -495,9 +495,9 @@ class AggregateHelperTests(unittest.TestCase):
             self.assertEqual(manifests[0].unit_id, "retained")
             self.assertEqual(
                 manifests[1].pages[0].stage_relative_path,
-                "content/components/spark/pages/guide.md",
+                "content/components/spark/guide.md",
             )
-            relative = self._contribution(stage_relative_path="content/components/spark/pages/guide.md")
+            relative = self._contribution(stage_relative_path="content/components/spark/guide.md")
             self.assertIs(_normalize_page_contribution(layout=layout, contribution=relative), relative)
 
             manifest_path.unlink()

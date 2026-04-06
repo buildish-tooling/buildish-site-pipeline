@@ -322,7 +322,6 @@ def _worker_spec_for_unit(
             / "content"
             / "components"
             / component.slug
-            / "pages"
         ),
         component_assets_source=str(unit.component_assets_source)
         if unit.component_assets_source is not None

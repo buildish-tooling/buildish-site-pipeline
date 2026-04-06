@@ -50,7 +50,7 @@ from .publication import (
     finalize_stage_publication,
     validate_visible_stage_target_path,
 )
-from .publication_paths import public_path_for_context
+from .publication_paths import public_path_for_context, stage_root_for_public_path
 from .types import (
     BuildRequest,
     BuildRunOutcome,
@@ -319,19 +319,14 @@ def _worker_spec_for_unit(
         else None,
         component_pages_stage_root=str(
             run_workspace.layout.next_stage_root
-            / "content"
-            / "components"
-            / component.slug
+            / stage_root_for_public_path("content", component.publication.component_path)
         ),
         component_assets_source=str(unit.component_assets_source)
         if unit.component_assets_source is not None
         else None,
         component_assets_stage_root=str(
             run_workspace.layout.next_stage_root
-            / "static"
-            / "components"
-            / component.slug
-            / "assets"
+            / stage_root_for_public_path("static", component.publication.assets_path)
         ),
         component_front_matter=component_front_matter,
         component_publication=component_publication,

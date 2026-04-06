@@ -65,11 +65,69 @@ class StagingPipelineTests(unittest.TestCase):
         self.assertEqual(component_unit.component_slug, "spark")
         self.assertEqual([context.context.kind.value for context in component_unit.contexts], ["development", "lineHead", "released"])
         self.assertEqual(
+            [root.as_posix() for root in component_unit.content_stage_roots],
+            [
+                "content/spark",
+                "content/spark/latest",
+                "content/spark/latest/4.0",
+                "content/spark/releases/4.0.0",
+            ],
+        )
+        self.assertEqual(
+            [root.as_posix() for root in component_unit.static_stage_roots],
+            [
+                "static/spark/assets",
+                "static/spark/latest",
+                "static/spark/latest/4.0",
+                "static/spark/releases/4.0.0",
+            ],
+        )
+        self.assertEqual(
             [context.content_stage_root.as_posix() for context in component_unit.contexts],
             [
-                "content/components/spark/contexts/development",
-                "content/components/spark/contexts/line-heads/4.0",
-                "content/components/spark/contexts/releases/4.0.0",
+                "content/spark/latest",
+                "content/spark/latest/4.0",
+                "content/spark/releases/4.0.0",
+            ],
+        )
+
+    def test_build_owned_units_use_publication_paths_for_component_roots(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            _replace_file_text_once(
+                workspace_root / "site/catalog.yaml",
+                "    publication:\n      mountPath: /spark/\n",
+                "    publication:\n      mountPath: /products/spark/\n",
+            )
+            loaded_inputs = load_workspace_inputs(workspace_root)
+            planning = evaluate_planning(
+                target=PlanningTarget.BUILD,
+                catalog=loaded_inputs.catalog,
+                provider_snapshot=loaded_inputs.provider_snapshot,
+                workspace_root=workspace_root,
+                component_documents=loaded_inputs.component_documents,
+                stage_root=workspace_root / "site/.stage",
+                work_root=workspace_root / ".buildish/work",
+            )
+
+        self.assertIsNotNone(planning.build_plan_candidate)
+        units = build_owned_units(planning.build_plan_candidate)
+        component_unit = units[0]
+        self.assertEqual(
+            [root.as_posix() for root in component_unit.content_stage_roots],
+            [
+                "content/products/spark",
+                "content/products/spark/latest",
+                "content/products/spark/latest/4.0",
+                "content/products/spark/releases/4.0.0",
+            ],
+        )
+        self.assertEqual(
+            [root.as_posix() for root in component_unit.static_stage_roots],
+            [
+                "static/products/spark/assets",
+                "static/products/spark/latest",
+                "static/products/spark/latest/4.0",
+                "static/products/spark/releases/4.0.0",
             ],
         )
 
@@ -145,7 +203,7 @@ class StagingPipelineTests(unittest.TestCase):
             with _cwd(workspace_root):
                 exit_code = _run(argv=["build"], stdout=io.StringIO(), stderr=io.StringIO())
             stage_root = workspace_root / "site/.stage"
-            release_page = frontmatter.load(stage_root / "content/components/spark/contexts/releases/4.0.0/index.md")
+            release_page = frontmatter.load(stage_root / "content/spark/releases/4.0.0/index.md")
             content_index = json.loads((stage_root / "data/content-index.json").read_text(encoding="utf-8"))["items"]
             release_entry = next(item for item in content_index if item["pageKind"] == "release-page")
 
@@ -183,7 +241,7 @@ class StagingPipelineTests(unittest.TestCase):
             routes = json.loads((stage_root / "data/routes.json").read_text(encoding="utf-8"))["items"]
             content_index = json.loads((stage_root / "data/content-index.json").read_text(encoding="utf-8"))["items"]
             staged_latest_exists = (
-                stage_root / "content/components/site-pipeline/contexts/development/index.md"
+                stage_root / "content/components/site-pipeline/latest/index.md"
             ).is_file()
             latest_route = next(
                 entry
@@ -203,6 +261,56 @@ class StagingPipelineTests(unittest.TestCase):
         self.assertTrue(staged_latest_exists)
         self.assertEqual(latest_entry["sourcePath"], "components/site-pipeline/docs/index.md")
         self.assertEqual(latest_entry["pageKind"], "development-page")
+
+    def test_build_stages_component_owned_pages_and_assets_under_publication_paths(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            components_path = workspace_root / "site/catalog.yaml"
+            _replace_file_text_once(
+                components_path,
+                "defaults:\n  docsRoot: docs\n  publication:\n    origin: docs\n",
+                "defaults:\n  pagesRoot: pages\n  docsRoot: docs\n  assetsRoot: assets\n  publication:\n    origin: docs\n",
+            )
+            _replace_file_text_once(
+                components_path,
+                "    publication:\n      mountPath: /spark/\n",
+                "    publication:\n      mountPath: /products/spark/\n",
+            )
+            (workspace_root / "components/runtime/pages").mkdir(parents=True, exist_ok=True)
+            (workspace_root / "components/runtime/pages/index.md").write_text(
+                "---\ntitle: Spark Landing\n---\nbody\n",
+                encoding="utf-8",
+            )
+            (workspace_root / "components/runtime/assets").mkdir(parents=True, exist_ok=True)
+            (workspace_root / "components/runtime/assets/logo.svg").write_text(
+                "<svg/>\n",
+                encoding="utf-8",
+            )
+
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            with _cwd(workspace_root):
+                exit_code = _run(argv=["build"], stdout=stdout, stderr=stderr)
+            stage_root = workspace_root / "site/.stage"
+            routes = json.loads((stage_root / "data/routes.json").read_text(encoding="utf-8"))["items"]
+            component_route = next(
+                entry for entry in routes if entry["targetId"] == "component:spark"
+            )
+            staged_component_page_exists = (stage_root / "content/products/spark/index.md").is_file()
+            staged_component_asset_exists = (
+                stage_root / "static/products/spark/assets/logo.svg"
+            ).is_file()
+            legacy_component_page_exists = (stage_root / "content/components/spark/index.md").exists()
+            legacy_component_asset_exists = (
+                stage_root / "static/components/spark/assets/logo.svg"
+            ).exists()
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(stderr.getvalue(), "")
+        self.assertEqual(component_route["path"], "/products/spark/")
+        self.assertTrue(staged_component_page_exists)
+        self.assertTrue(staged_component_asset_exists)
+        self.assertFalse(legacy_component_page_exists)
+        self.assertFalse(legacy_component_asset_exists)
 
     def test_build_stages_two_artifact_component_through_shared_component_routes(self) -> None:
         with _workspace(with_content_file=True, topology="two_artifacts") as workspace_root:
@@ -229,16 +337,16 @@ class StagingPipelineTests(unittest.TestCase):
                 if entry["path"] == "/spark/latest/"
             }
             staged_development_guide_exists = (
-                stage_root / "content/components/spark/contexts/development/guide/index.md"
+                stage_root / "content/spark/latest/guide/index.md"
             ).is_file()
             staged_development_reference_exists = (
-                stage_root / "content/components/spark/contexts/development/reference/index.md"
+                stage_root / "content/spark/latest/reference/index.md"
             ).is_file()
             staged_release_guide_exists = (
-                stage_root / "content/components/spark/contexts/releases/4.0.0/guide/index.md"
+                stage_root / "content/spark/releases/4.0.0/guide/index.md"
             ).is_file()
             staged_release_reference_exists = (
-                stage_root / "content/components/spark/contexts/releases/4.0.0/reference/index.md"
+                stage_root / "content/spark/releases/4.0.0/reference/index.md"
             ).is_file()
 
         self.assertEqual(exit_code, 0)

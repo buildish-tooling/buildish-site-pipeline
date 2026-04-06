@@ -43,15 +43,18 @@ The recommended top-level layout is:
 
 - `manifest.json`
 - `content/site/...` for consumer-authored site pages staged by the pipeline
-- `content/components/<slug>/...` for component-owned staged pages and docs
+- `content/<resolved-public-path>/...` for component-owned staged pages and docs,
+  using the same normalized public hierarchy that route metadata advertises
 - `static/site/...` for consumer-authored site assets staged by the pipeline
 - `static/site/vendor/<stable-key>/...` for top-level vendor asset trees staged by
   the pipeline
-- `static/components/<slug>/...` for component assets and opaque static mounts
+- `static/<resolved-public-path>/...` for component-owned static output, including
+  component asset trees and context-owned static mounts
 - `data/*.json` for aggregate metadata
 
 The stage root is renderer-facing. It does not need to mirror source-repository
-layout.
+layout. Component-owned staged paths should therefore track the resolved public
+paths instead of an internal taxonomy such as `contexts/...`.
 
 ## Serialization rules
 

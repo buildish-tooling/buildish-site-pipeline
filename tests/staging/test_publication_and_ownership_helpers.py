@@ -19,7 +19,7 @@ from __future__ import annotations
 from pathlib import Path
 import unittest
 
-from apache_buildish_site_pipeline.models.enums import PublicationState, RecordKind
+from apache_buildish_site_pipeline.models.enums import RecordKind
 from apache_buildish_site_pipeline.planning.types import (
     IndexedProviderRecord,
     ResolvedOrigin,
@@ -27,9 +27,9 @@ from apache_buildish_site_pipeline.planning.types import (
     ResolvedSourceBinding,
     SelectedVersionContext,
 )
-from apache_buildish_site_pipeline.staging.ownership import context_subpath
 from apache_buildish_site_pipeline.staging.publication_paths import (
     public_path_for_context,
+    stage_root_for_public_path,
     target_id_for_context,
 )
 
@@ -77,45 +77,14 @@ class PublicationAndOwnershipHelpersTests(unittest.TestCase):
             "/spark/docs/refs/main/",
         )
 
-    def test_context_subpath_covers_release_line_fallbacks_and_refs(self) -> None:
-        line_head = self._context(
-            RecordKind.LINE_HEAD,
-            provider_record=IndexedProviderRecord(
-                provider="provider",
-                kind=RecordKind.LINE_HEAD,
-                component_slug="spark",
-                artifact_key="runtime",
-                external_id=None,
-                external_url=None,
-                version=None,
-                display_version=None,
-                tag=None,
-                ref="maintenance/4.0",
-                commit_sha=None,
-                named_ref_key=None,
-                release_line="4.0",
-                release_line_ancestors=(),
-                support_status=None,
-                publication_state=PublicationState.PUBLISHED,
-                maturity=None,
-                candidate_sequence=None,
-                vote_status=None,
-                created_at=None,
-                published_at=None,
-                updated_at=None,
-                urls={},
-                assets=(),
-            ),
-        )
-
-        self.assertEqual(context_subpath(line_head), Path("line-heads/4.0"))
+    def test_stage_root_for_public_path_uses_public_segments_verbatim(self) -> None:
         self.assertEqual(
-            context_subpath(self._context(RecordKind.NAMED_REF, named_ref_key="main")),
-            Path("refs/main"),
+            stage_root_for_public_path("content", "/spark/latest/4.0/"),
+            Path("content/spark/latest/4.0"),
         )
         self.assertEqual(
-            context_subpath(self._context(RecordKind.CANDIDATE, version="4.1.0-rc1")),
-            Path("candidates/4.1.0-rc1"),
+            stage_root_for_public_path("static", "/spark/releases/4.0.0/"),
+            Path("static/spark/releases/4.0.0"),
         )
 
     @staticmethod

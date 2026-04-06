@@ -97,7 +97,7 @@ Use `check` when you want validation without mutating `site/.stage/`. Use
 
 ```text
 site/.stage/
-  content/components/spark/contexts/releases/4.0.0/index.md
+  content/spark/releases/4.0.0/index.md
   data/components.json
   data/content-index.json
   data/routes.json
@@ -109,6 +109,8 @@ That output is the important boundary:
 
 - authored files stay in your repos
 - staged files become consumer input for renderers and deployment adapters
+- component-owned staged paths follow the same resolved public hierarchy that the
+  route inventory publishes
 - aggregate JSON files tell downstream tools which public routes, redirects,
   pages, and metadata the stage owns
 

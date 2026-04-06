@@ -26,6 +26,10 @@ from apache_buildish_site_pipeline.cli.errors import (
     RetainedStageError,
     StageIntegrityError,
 )
+from apache_buildish_site_pipeline.models.enums import DocumentFormat
+from apache_buildish_site_pipeline.models.loading import load_stage_manifest
+
+from .incremental_metadata import load_retained_stage_incremental_state
 
 
 @dataclass(frozen=True, slots=True)
@@ -171,6 +175,11 @@ def _validate_replacement_cleanup_scope(
     candidate_entries = _collect_stage_tree_entries(candidate_stage_root)
     extra_existing_paths = sorted(existing_entries.keys() - candidate_entries.keys())
     if extra_existing_paths:
+        extra_existing_paths = _ambiguous_deletion_paths(
+            stage_root=stage_root,
+            extra_existing_paths=tuple(extra_existing_paths),
+        )
+    if extra_existing_paths:
         raise StageIntegrityError(
             "Visible stage replacement would delete paths with ambiguous ownership: "
             + ", ".join(extra_existing_paths[:5]),
@@ -185,6 +194,64 @@ def _validate_replacement_cleanup_scope(
             "Visible stage replacement would change existing path types ambiguously: "
             + ", ".join(changed_entry_types[:5]),
         )
+
+
+def _ambiguous_deletion_paths(
+    *, stage_root: Path, extra_existing_paths: tuple[str, ...]
+) -> list[str]:
+    """Return visible-stage deletions that are not covered by retained unit claims."""
+
+    manifest_path = stage_root / "manifest.json"
+    try:
+        manifest = load_stage_manifest(
+            manifest_path.read_text(encoding="utf-8"),
+            document_format=DocumentFormat.JSON,
+            source_name=str(manifest_path),
+        )
+    except Exception:
+        return list(extra_existing_paths)
+    retained_state = load_retained_stage_incremental_state(
+        stage_root=stage_root,
+        manifest=manifest,
+    )
+    if retained_state is None:
+        return list(extra_existing_paths)
+    claimed_directories = {
+        str(claim.stage_relative_path)
+        for claim in retained_state.output_ownership.claims
+        if claim.unit_id is not None and claim.path_kind == "directory"
+    }
+    claimed_files = {
+        str(claim.stage_relative_path)
+        for claim in retained_state.output_ownership.claims
+        if claim.unit_id is not None and claim.path_kind == "file"
+    }
+    return [
+        stage_relative_path
+        for stage_relative_path in extra_existing_paths
+        if not _stage_path_is_unit_owned(
+            stage_relative_path=stage_relative_path,
+            claimed_directories=claimed_directories,
+            claimed_files=claimed_files,
+        )
+    ]
+
+
+def _stage_path_is_unit_owned(
+    *,
+    stage_relative_path: str,
+    claimed_directories: set[str],
+    claimed_files: set[str],
+) -> bool:
+    """Return whether one visible-stage path is covered by a unit-owned claim."""
+
+    if stage_relative_path in claimed_directories or stage_relative_path in claimed_files:
+        return True
+    return any(
+        stage_relative_path.startswith(f"{claimed_directory}/")
+        or claimed_directory.startswith(f"{stage_relative_path}/")
+        for claimed_directory in claimed_directories
+    )
 
 
 def _collect_stage_tree_entries(stage_root: Path) -> dict[str, str]:

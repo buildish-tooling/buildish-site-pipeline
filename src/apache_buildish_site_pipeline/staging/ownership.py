@@ -21,9 +21,12 @@ from enum import StrEnum
 from pathlib import Path
 
 from ..cli.errors import StageIntegrityError
-from ..models.enums import RecordKind
 from ..planning.types import ResolvedVendorAsset, SelectedVersionContext
-from .publication_paths import target_id_for_context
+from .publication_paths import (
+    public_path_for_context,
+    stage_root_for_public_path,
+    target_id_for_context,
+)
 from .types import EffectiveBuildPlan
 
 
@@ -63,38 +66,24 @@ class OwnedUnit:
     component_assets_source: Path | None = None
     contexts: tuple[OwnedContextInput, ...] = ()
 
+def _unique_stage_roots(*roots: Path) -> tuple[Path, ...]:
+    """Return one stable tuple of stage roots without duplicates."""
 
-def context_subpath(context: SelectedVersionContext) -> Path:
-    """Return the stable internal stage subpath for one selected version context."""
-
-    if context.kind == RecordKind.DEVELOPMENT:
-        return Path("development")
-    if context.kind == RecordKind.RELEASED:
-        return Path("releases") / (context.version or "unversioned")
-    if context.kind == RecordKind.LINE_HEAD:
-        release_line = (
-            context.release_line
-            or (
-                context.provider_record.release_line
-                if context.provider_record is not None
-                else None
-            )
-            or "unknown"
-        )
-        return Path("line-heads") / release_line
-    if context.kind == RecordKind.NAMED_REF:
-        return Path("refs") / (context.named_ref_key or context.ref or "unknown")
-    if context.kind == RecordKind.CANDIDATE:
-        return Path("candidates") / (context.version or context.ref or "unknown")
-    raise StageIntegrityError(
-        f"Unsupported selected context kind for staging: {context.kind}"
-    )
+    unique_roots: list[Path] = []
+    for root in roots:
+        if root in unique_roots:
+            continue
+        unique_roots.append(root)
+    return tuple(unique_roots)
 
 
 def build_owned_units(build_plan: EffectiveBuildPlan) -> tuple[OwnedUnit, ...]:
     """Produce the first-wave owned units from one validated build plan."""
 
     units: list[OwnedUnit] = []
+    publications_by_component = {
+        component.slug: component.publication for component in build_plan.site.components
+    }
     if build_plan.site.site_pages_root is not None:
         units.append(
             OwnedUnit(
@@ -128,39 +117,54 @@ def build_owned_units(build_plan: EffectiveBuildPlan) -> tuple[OwnedUnit, ...]:
 
     contexts_by_component: dict[str, list[OwnedContextInput]] = {}
     for context in build_plan.selected_versions:
+        publication = publications_by_component.get(context.component_slug)
+        if publication is None:
+            raise StageIntegrityError(
+                f"Missing publication policy for selected context component: {context.component_slug}"
+            )
+        public_path = public_path_for_context(publication, context)
         contexts_by_component.setdefault(context.component_slug, []).append(
             OwnedContextInput(
                 context_id=target_id_for_context(context),
                 context=context,
-                content_stage_root=Path("content")
-                / "components"
-                / context.component_slug
-                / "contexts"
-                / context_subpath(context),
-                static_stage_root=Path("static")
-                / "components"
-                / context.component_slug
-                / "contexts"
-                / context_subpath(context)
-                / "assets",
+                content_stage_root=stage_root_for_public_path("content", public_path),
+                static_stage_root=stage_root_for_public_path("static", public_path),
             ),
         )
 
     for component in build_plan.site.components:
         component_contexts = tuple(contexts_by_component.get(component.slug, ()))
+        component_content_root = stage_root_for_public_path(
+            "content", component.publication.component_path
+        )
+        component_static_root = stage_root_for_public_path(
+            "static", component.publication.assets_path
+        )
         if (
             component.pages_root is None
             and component.assets_root is None
             and not component_contexts
         ):
             continue
+        context_content_roots = tuple(
+            context.content_stage_root for context in component_contexts
+        )
+        context_static_roots = tuple(
+            context.static_stage_root for context in component_contexts
+        )
         units.append(
             OwnedUnit(
                 unit_id=f"component:{component.slug}",
                 owner_id=f"component:{component.slug}",
                 kind=OwnedUnitKind.COMPONENT,
-                content_stage_roots=(Path("content") / "components" / component.slug,),
-                static_stage_roots=(Path("static") / "components" / component.slug,),
+                content_stage_roots=_unique_stage_roots(
+                    component_content_root,
+                    *context_content_roots,
+                ),
+                static_stage_roots=_unique_stage_roots(
+                    component_static_root,
+                    *context_static_roots,
+                ),
                 component_slug=component.slug,
                 component_pages_source=component.pages_root,
                 component_assets_source=component.assets_root,

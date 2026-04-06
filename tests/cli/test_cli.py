@@ -170,7 +170,7 @@ class CliTests(unittest.TestCase):
 
             report = json.loads(stdout.getvalue())
             manifest_path = workspace_root / "site/.stage/manifest.json"
-            staged_file = workspace_root / "site/.stage/content/components/spark/contexts/releases/4.0.0/index.md"
+            staged_file = workspace_root / "site/.stage/content/spark/releases/4.0.0/index.md"
 
             self.assertEqual(exit_code, 0)
             self.assertTrue(report["summary"]["succeeded"])
@@ -728,7 +728,7 @@ class CliTests(unittest.TestCase):
             routes = json.loads((stage_root / "data/routes.json").read_text(encoding="utf-8"))["items"]
             content_index = json.loads((stage_root / "data/content-index.json").read_text(encoding="utf-8"))["items"]
             staged_latest_exists = (
-                stage_root / "content/components/site-pipeline/contexts/development/index.md"
+                stage_root / "content/components/site-pipeline/latest/index.md"
             ).is_file()
             latest_route = next(
                 entry
@@ -756,7 +756,7 @@ class CliTests(unittest.TestCase):
             report_path = workspace_root / "watch-report.json"
             watched_file = workspace_root / "components/runtime/docs/releases/4.0.0/index.md"
             manifest_path = workspace_root / "site/.stage/manifest.json"
-            staged_file = workspace_root / "site/.stage/content/components/spark/contexts/releases/4.0.0/index.md"
+            staged_file = workspace_root / "site/.stage/content/spark/releases/4.0.0/index.md"
             stdout = io.StringIO()
             stderr = io.StringIO()
 
@@ -808,7 +808,7 @@ class CliTests(unittest.TestCase):
             report_path = workspace_root / "watch-report.json"
             catalog_path = workspace_root / "site/catalog.yaml"
             manifest_path = workspace_root / "site/.stage/manifest.json"
-            staged_file = workspace_root / "site/.stage/content/components/spark/contexts/releases/4.0.0/index.md"
+            staged_file = workspace_root / "site/.stage/content/spark/releases/4.0.0/index.md"
             stdout = io.StringIO()
             stderr = io.StringIO()
 

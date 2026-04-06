@@ -143,7 +143,7 @@ After `build`, inspect these paths first:
 
 ```text
 site/.stage/manifest.json
-site/.stage/content/components/spark/contexts/releases/4.0.0/index.md
+site/.stage/content/spark/releases/4.0.0/index.md
 site/.stage/data/routes.json
 site/.stage/data/redirects.json
 site/.stage/data/content-index.json

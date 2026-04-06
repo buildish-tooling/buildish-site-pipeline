@@ -316,7 +316,8 @@ class WatchInternalTests(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         self.assertEqual(dirty_unit_ids, frozenset({"component:spark"}))
         self.assertEqual(selection.included_unit_ids, frozenset({"component:spark"}))
-        self.assertIn("content/components/spark", selection.seed_stage_removals)
+        self.assertIn("content/spark", selection.seed_stage_removals)
+        self.assertIn("static/spark/assets", selection.seed_stage_removals)
         self.assertNotIn("content/site", selection.seed_stage_removals)
 
     def test_dirty_unit_mapping_broadens_provider_snapshot_changes_to_all_units(self) -> None:
@@ -725,22 +726,22 @@ class WatchInternalTests(unittest.TestCase):
     def test_stage_path_is_claimed_handles_exact_and_nested_claims(self) -> None:
         self.assertTrue(
             _stage_path_is_claimed(
-                "content/components/spark/index.md",
-                {"content/components/spark"},
+                "content/spark/index.md",
+                {"content/spark"},
                 set(),
             ),
         )
         self.assertTrue(
             _stage_path_is_claimed(
-                "content/components",
+                "content",
                 set(),
-                {"content/components/spark/index.md"},
+                {"content/spark/index.md"},
             ),
         )
         self.assertFalse(
             _stage_path_is_claimed(
-                "content/components/flink/index.md",
-                {"content/components/spark"},
+                "content/flink/index.md",
+                {"content/spark"},
                 set(),
             ),
         )

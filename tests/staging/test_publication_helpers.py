@@ -16,7 +16,9 @@
 
 from __future__ import annotations
 
+import io
 import json
+import shutil
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -24,6 +26,7 @@ from unittest.mock import patch
 
 from apache_buildish_site_pipeline.cli.errors import StageIntegrityError
 from apache_buildish_site_pipeline.cli.errors import RetainedStageError
+from apache_buildish_site_pipeline.cli import _run
 from apache_buildish_site_pipeline.staging.publication import (
     _collect_stage_tree_entries,
     _fsync_directory,
@@ -37,6 +40,7 @@ from apache_buildish_site_pipeline.staging.publication import (
     validate_materialized_stage_tree,
     validate_visible_stage_target_path,
 )
+from tests.support.workspace import _cwd, _workspace
 
 
 class PublicationHelperTests(unittest.TestCase):
@@ -146,6 +150,48 @@ class PublicationHelperTests(unittest.TestCase):
                 _validate_replaceable_stage_root(
                     stage_root=stage_root,
                     candidate_stage_root=self._stage_tree(root / "candidate"),
+                )
+
+    def test_validate_replaceable_stage_root_allows_deleting_unit_owned_paths(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            with _cwd(workspace_root):
+                exit_code = _run(argv=["build"], stdout=stdout, stderr=stderr)
+            self.assertEqual(exit_code, 0)
+            self.assertEqual(stderr.getvalue(), "")
+            stage_root = workspace_root / "site/.stage"
+            candidate_root = workspace_root / "candidate-stage"
+            shutil.copytree(stage_root, candidate_root)
+            shutil.rmtree(candidate_root / "content/spark")
+
+            _validate_replaceable_stage_root(
+                stage_root=stage_root,
+                candidate_stage_root=candidate_root,
+            )
+
+    def test_validate_replaceable_stage_root_rejects_deleting_coordinator_owned_files(
+        self,
+    ) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            with _cwd(workspace_root):
+                exit_code = _run(argv=["build"], stdout=stdout, stderr=stderr)
+            self.assertEqual(exit_code, 0)
+            self.assertEqual(stderr.getvalue(), "")
+            stage_root = workspace_root / "site/.stage"
+            candidate_root = workspace_root / "candidate-stage"
+            shutil.copytree(stage_root, candidate_root)
+            (candidate_root / "data/routes.json").unlink()
+
+            with self.assertRaisesRegex(
+                StageIntegrityError,
+                "Visible stage replacement would delete paths with ambiguous ownership",
+            ):
+                _validate_replaceable_stage_root(
+                    stage_root=stage_root,
+                    candidate_stage_root=candidate_root,
                 )
 
     def test_validate_candidate_stage_root_rejects_bad_directory_and_missing_manifest(self) -> None:

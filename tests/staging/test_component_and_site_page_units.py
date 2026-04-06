@@ -71,10 +71,10 @@ class ComponentAndSitePageUnitTests(unittest.TestCase):
             )
             (context_assets / "download.zip").write_bytes(b"zip")
 
-            component_stage_root = root / "stage/content/components/spark"
-            component_assets_stage_root = root / "stage/static/components/spark"
-            context_stage_root = root / "stage/content/components/spark/4.0"
-            context_static_root = root / "stage/static/components/spark/4.0"
+            component_stage_root = root / "stage/content/spark"
+            component_assets_stage_root = root / "stage/static/spark/assets"
+            context_stage_root = root / "stage/content/spark/4.0.0"
+            context_static_root = root / "stage/static/spark/4.0.0"
             fragment_path = root / ".work/fragments/component_spark.json"
 
             result = execute_worker_spec(

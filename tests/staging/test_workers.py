@@ -37,6 +37,7 @@ from apache_buildish_site_pipeline.staging.coordinator import (
     _context_wire,
     _run_worker_subprocess,
     _seed_next_stage_root,
+    _worker_spec_for_unit,
     cleanup_after_publication,
     materialize_stage_tree,
     publish_stage,
@@ -77,16 +78,55 @@ class StagingWorkerTests(unittest.TestCase):
                     unit_id="component:spark",
                     owner_id="component:spark",
                     kind=OwnedUnitKind.COMPONENT,
-                    content_stage_roots=(Path("content/components/spark"),),
-                    static_stage_roots=(Path("static/components/spark"),),
+                    content_stage_roots=(Path("content/spark"),),
+                    static_stage_roots=(Path("static/spark/assets"),),
                 ),
             )
 
             self.assertEqual(unit_workspace.fragment_path, layout.fragments_root / "component_spark.json")
             self.assertEqual(unit_workspace.unit_root, layout.units_root / "component_spark")
             self.assertTrue(unit_workspace.unit_root.is_dir())
-            self.assertEqual(unit_workspace.content_roots, (layout.next_stage_root / "content/components/spark",))
-            self.assertEqual(unit_workspace.static_roots, (layout.next_stage_root / "static/components/spark",))
+            self.assertEqual(unit_workspace.content_roots, (layout.next_stage_root / "content/spark",))
+            self.assertEqual(unit_workspace.static_roots, (layout.next_stage_root / "static/spark/assets",))
+
+    def test_worker_spec_uses_resolved_public_paths_for_component_roots(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            catalog_path = workspace_root / "site/catalog.yaml"
+            catalog_text = catalog_path.read_text(encoding="utf-8")
+            catalog_path.write_text(
+                catalog_text.replace(
+                    "    publication:\n      mountPath: /spark/\n",
+                    "    publication:\n      mountPath: /products/spark/\n",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+            request = _build_request(workspace_root, pool_size=1)
+            layout = _work_layout(workspace_root)
+            unit = self._component_unit(request)
+
+            spec = _worker_spec_for_unit(
+                unit=unit,
+                request=request,
+                run_workspace=RunWorkspace(workspace_root=workspace_root, layout=layout),
+            )
+
+        self.assertEqual(
+            spec.component_pages_stage_root,
+            str(layout.next_stage_root / "content/products/spark"),
+        )
+        self.assertEqual(
+            spec.component_assets_stage_root,
+            str(layout.next_stage_root / "static/products/spark/assets"),
+        )
+        self.assertEqual(
+            spec.stage_meta.content_roots[0],
+            str(layout.next_stage_root / "content/products/spark"),
+        )
+        self.assertEqual(
+            spec.stage_meta.static_roots[0],
+            str(layout.next_stage_root / "static/products/spark/assets"),
+        )
 
     def test_worker_entrypoint_reports_unknown_unit_kind_as_failure_wire(self) -> None:
         result = execute_worker_spec(
@@ -206,7 +246,7 @@ class StagingWorkerTests(unittest.TestCase):
                     component_slug="spark",
                     component_pages_source=str(source_root),
                     component_pages_stage_root=str(
-                        workspace_root / "site/.stage/content/components/spark"
+                        workspace_root / "site/.stage/content/spark"
                     ),
                     component_publication={
                         "path": "/spark/",
@@ -217,7 +257,7 @@ class StagingWorkerTests(unittest.TestCase):
                     },
                     stage_meta={
                         "content_roots": (
-                            str(workspace_root / "site/.stage/content/components/spark"),
+                            str(workspace_root / "site/.stage/content/spark"),
                         ),
                     },
                 ),
@@ -608,7 +648,7 @@ class StagingWorkerTests(unittest.TestCase):
                 request.build_plan,
                 (
                     StagedPageContributionWire(
-                        stage_relative_path="content/components/spark/contexts/releases/4.0.0/index.md",
+                        stage_relative_path="content/spark/releases/4.0.0/index.md",
                         component_slug="spark",
                         artifact_key="runtime",
                         section="release",

@@ -16,6 +16,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from apache_buildish_site_pipeline.models.enums import RecordKind
 from apache_buildish_site_pipeline.planning.types import (
     ResolvedPublicationPolicy,
@@ -42,6 +44,13 @@ def target_id_for_context(context: SelectedVersionContext) -> str:
     if context.kind is RecordKind.CANDIDATE:
         return f"candidate:{context.component_slug}:{owner_key}:{context.version}"
     return f"released:{context.component_slug}:{owner_key}:{context.version}"
+
+
+def stage_root_for_public_path(stage_kind: str, public_path: str) -> Path:
+    """Return the renderer-facing stage root for one resolved public path."""
+
+    relative_path = Path(public_path.strip("/"))
+    return Path(stage_kind) / relative_path
 
 
 def public_path_for_context(

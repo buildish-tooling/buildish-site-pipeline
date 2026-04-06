@@ -246,7 +246,7 @@ class WatchIncrementalTests(unittest.TestCase):
             _expand_workspace_for_multiple_owned_units(workspace_root)
             stage_root = workspace_root / "site/.stage"
             watched_file = workspace_root / "components/runtime/docs/releases/4.0.0/index.md"
-            release_page = stage_root / "content/components/spark/contexts/releases/4.0.0/index.md"
+            release_page = stage_root / "content/spark/releases/4.0.0/index.md"
             failures: list[str] = []
             stop_event = threading.Event()
             raw_batches = (

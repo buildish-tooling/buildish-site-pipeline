@@ -57,7 +57,7 @@ from apache_buildish_site_pipeline.staging.worker_protocol import StagedPageCont
 class FrontMatterHelpersTests(unittest.TestCase):
     def _contribution(self, **overrides) -> StagedPageContributionWire:
         payload = {
-            "stage_relative_path": "content/components/spark/guide.md",
+            "stage_relative_path": "content/spark/guide.md",
             "component_slug": "spark",
             "artifact_key": "runtime",
             "section": "docs",

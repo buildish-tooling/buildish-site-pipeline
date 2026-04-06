@@ -135,6 +135,16 @@ class WatchCycleOutcome:
     watch_roots: tuple[Path, ...]
 
 
+@dataclass(frozen=True, slots=True)
+class FollowUpCycleOutcome:
+    """Explicit state returned after one successful follow-up watch cycle."""
+
+    cycle_number: int
+    report: StageRunReportV1
+    trusted_stage: TrustedStageState | None
+    watch_roots: tuple[Path, ...]
+
+
 @dataclass(slots=True)
 class _WatchShutdownController:
     """Shared stop controller for graceful watch shutdown after steady state."""
@@ -389,17 +399,19 @@ def run_watch(invocation: WatchInvocation, *, stdout: TextIO) -> CommandResult:
                 if pending_dirty_paths is None:
                     return _watch_success_result(last_report)
 
-                cycle_number, trusted_stage, current_watch_roots, last_report = (
-                    _run_follow_up_cycle(
-                        invocation=invocation,
-                        cycle_number=cycle_number,
-                        trusted_stage=trusted_stage,
-                        last_watch_roots=current_watch_roots,
-                        dirty_paths=pending_dirty_paths,
-                        stdout=stdout,
-                        watch_io=watch_io,
-                    )
+                follow_up = _run_follow_up_cycle(
+                    invocation=invocation,
+                    cycle_number=cycle_number,
+                    trusted_stage=trusted_stage,
+                    last_watch_roots=current_watch_roots,
+                    dirty_paths=pending_dirty_paths,
+                    stdout=stdout,
+                    watch_io=watch_io,
                 )
+                cycle_number = follow_up.cycle_number
+                trusted_stage = follow_up.trusted_stage
+                current_watch_roots = follow_up.watch_roots
+                last_report = follow_up.report
                 if shutdown_controller.shutdown_requested:
                     return _watch_success_result(last_report)
 
@@ -411,17 +423,19 @@ def run_watch(invocation: WatchInvocation, *, stdout: TextIO) -> CommandResult:
                         return _watch_success_result(last_report)
                     if not pending_dirty_paths:
                         break
-                    cycle_number, trusted_stage, current_watch_roots, last_report = (
-                        _run_follow_up_cycle(
-                            invocation=invocation,
-                            cycle_number=cycle_number,
-                            trusted_stage=trusted_stage,
-                            last_watch_roots=current_watch_roots,
-                            dirty_paths=pending_dirty_paths,
-                            stdout=stdout,
-                            watch_io=watch_io,
-                        )
+                    follow_up = _run_follow_up_cycle(
+                        invocation=invocation,
+                        cycle_number=cycle_number,
+                        trusted_stage=trusted_stage,
+                        last_watch_roots=current_watch_roots,
+                        dirty_paths=pending_dirty_paths,
+                        stdout=stdout,
+                        watch_io=watch_io,
                     )
+                    cycle_number = follow_up.cycle_number
+                    trusted_stage = follow_up.trusted_stage
+                    current_watch_roots = follow_up.watch_roots
+                    last_report = follow_up.report
 
 
 def _run_follow_up_cycle(
@@ -433,7 +447,7 @@ def _run_follow_up_cycle(
     dirty_paths: tuple[Path, ...],
     stdout,
     watch_io: _WatchIo,
-) -> tuple[int, TrustedStageState | None, tuple[Path, ...], StageRunReportV1]:
+) -> FollowUpCycleOutcome:
     """Run one later watch cycle and enforce stage-integrity rules."""
 
     next_cycle_number = cycle_number + 1
@@ -455,7 +469,12 @@ def _run_follow_up_cycle(
         raise StageIntegrityError(
             f"Watch cycle {next_cycle_number} left no trustworthy stage to serve"
         )
-    return next_cycle_number, outcome.trusted_stage, outcome.watch_roots, outcome.report
+    return FollowUpCycleOutcome(
+        cycle_number=next_cycle_number,
+        report=outcome.report,
+        trusted_stage=outcome.trusted_stage,
+        watch_roots=outcome.watch_roots,
+    )
 
 
 def _watch_success_result(report: StageRunReportV1) -> CommandResult:

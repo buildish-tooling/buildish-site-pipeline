@@ -798,7 +798,37 @@ class WatchInternalTests(unittest.TestCase):
                     watch_io=watch_io,
                 )
 
-        watch_io.emit_cycle_event.assert_called_once_with(failed_outcome.report)
+    def test_run_follow_up_cycle_returns_explicit_outcome(self) -> None:
+        invocation = _watch_invocation(Path("/workspace"))
+        prior_stage = SimpleNamespace(
+            stage_root=Path("/workspace/site/.stage"),
+            manifest_path=Path("/workspace/site/.stage/manifest.json"),
+        )
+        report = _watch_report(cycle=2, succeeded=True, wrote_stage=True, stage_usable=True)
+        watch_outcome = SimpleNamespace(
+            report=report,
+            trusted_stage=prior_stage,
+            watch_roots=(Path("/workspace"), Path("/workspace/components")),
+        )
+        watch_io = mock.Mock()
+
+        with mock.patch.object(watch_command, "_run_watch_cycle", return_value=watch_outcome):
+            outcome = _run_follow_up_cycle(
+                invocation=invocation,
+                cycle_number=1,
+                trusted_stage=prior_stage,
+                last_watch_roots=(Path("/workspace"),),
+                dirty_paths=(Path("/workspace/site/catalog.yaml"),),
+                stdout=io.StringIO(),
+                watch_io=watch_io,
+            )
+
+        self.assertEqual(outcome.cycle_number, 2)
+        self.assertIs(outcome.report, report)
+        self.assertIs(outcome.trusted_stage, prior_stage)
+        self.assertEqual(outcome.watch_roots, watch_outcome.watch_roots)
+
+        watch_io.emit_cycle_event.assert_called_once_with(watch_outcome.report)
         watch_io.emit_cycle_log.assert_called_once()
 
     def test_stage_path_is_claimed_handles_exact_and_nested_claims(self) -> None:

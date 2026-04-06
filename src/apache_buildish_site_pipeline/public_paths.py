@@ -12,7 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Canonical helpers for normalized public-route paths."""
+"""Canonical helpers for normalized public-route paths.
+
+Planning, staging, and evaluation all derive public-facing paths, but they do so
+for slightly different call sites:
+
+* planning builds directory-like publication roots such as ``/docs/spark/``
+* staging builds concrete page or asset routes such as ``/docs/spark/index.html``
+* evaluation normalizes link targets before route lookups
+
+This module is the shared source of truth for those path-shaping rules so the
+layers above do not drift apart over time.
+"""
 
 from __future__ import annotations
 
@@ -20,7 +31,13 @@ import posixpath
 
 
 def normalize_public_path(path: str, *, trailing_slash: bool) -> str:
-    """Normalize a public route path with one canonical trailing-slash policy."""
+    """Normalize one public route path with an explicit slash style.
+
+    ``trailing_slash=True`` is for directory-like publication roots that should
+    stay stable across joins in planning. ``trailing_slash=False`` is for staged
+    file routes and evaluated link targets where ``/docs/page`` and not
+    ``/docs/page/`` is the canonical lookup key.
+    """
 
     normalized = posixpath.normpath(path or "/")
     if not normalized.startswith("/"):
@@ -35,7 +52,13 @@ def normalize_public_path(path: str, *, trailing_slash: bool) -> str:
 
 
 def join_public_path(base_path: str, segment: str, *, trailing_slash: bool) -> str:
-    """Join a validated public base path and child segment into one route path."""
+    """Join a validated public base path and child segment into one route path.
+
+    Callers pass the slash policy that matches their boundary:
+
+    * planning joins publication prefixes and asks for a trailing slash
+    * staging joins page-local suffixes and asks for no trailing slash
+    """
 
     normalized_base = normalize_public_path(base_path, trailing_slash=False)
     normalized_segment = segment.strip("/")

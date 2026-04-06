@@ -34,8 +34,11 @@ from .contract import (
     BuildInvocation,
     CheckInvocation,
     CommandInvocation,
+    ReportModel,
+    ReportRequest,
     PlanInvocation,
     RepositoryLayout,
+    WatchEventRequest,
     WatchEventFormat,
     WatchInvocation,
 )
@@ -74,78 +77,10 @@ def _run(*, argv: Sequence[str] | None, stdout: TextIO, stderr: TextIO) -> int:
     try:
         invocation = parse_invocation(argv)
         if isinstance(invocation, WatchInvocation):
-            report_request = invocation.report_request
-            if report_request.output_path is not None:
-                report_request = revalidate_report_request(
-                    cwd=invocation.layout.cwd,
-                    request=report_request,
-                    forbidden_roots=(
-                        invocation.layout.stage_root,
-                        invocation.layout.work_root,
-                    ),
-                )
-            watch_event_request = revalidate_watch_event_request(
-                cwd=invocation.layout.cwd,
-                request=invocation.unstable_event_request,
-                forbidden_roots=(
-                    invocation.layout.stage_root,
-                    invocation.layout.work_root,
-                ),
+            return _run_watch_invocation(
+                invocation=invocation, stdout=stdout, stderr=stderr
             )
-            if (
-                watch_event_request is not None
-                and watch_event_request.output_path is not None
-                and report_request.output_path is not None
-                and watch_event_request.output_path == report_request.output_path
-            ):
-                raise InvocationError(
-                    "--unstable-events-output must differ from --report-output"
-                )
-            invocation = WatchInvocation(
-                layout=invocation.layout,
-                fail_on_severity=invocation.fail_on_severity,
-                report_request=report_request,
-                unstable_event_request=watch_event_request,
-            )
-            with guard_stdout_for_machine_output(
-                enabled=watch_event_request is not None
-                and watch_event_request.writes_to_stdout,
-                stderr=stderr,
-            ):
-                result = run_watch(invocation, stdout=stdout)
-                if report_request.output_path is None:
-                    if (
-                        watch_event_request is None
-                        or not watch_event_request.writes_to_stdout
-                    ):
-                        emit_report(
-                            request=report_request,
-                            report=result.report,
-                            text_output=result.text_output,
-                            stdout=stdout,
-                        )
-                    else:
-                        _write_stream_output(stderr, result.text_output)
-            return int(result.exit_code)
-
-        result = dispatch_command(invocation)
-        report_request = invocation.report_request
-        if report_request.output_path is not None:
-            report_request = revalidate_report_request(
-                cwd=invocation.layout.cwd,
-                request=report_request,
-                forbidden_roots=(
-                    invocation.layout.stage_root,
-                    invocation.layout.work_root,
-                ),
-            )
-        emit_report(
-            request=report_request,
-            report=result.report,
-            text_output=result.text_output,
-            stdout=stdout,
-        )
-        return int(result.exit_code)
+        return _run_non_watch_invocation(invocation=invocation, stdout=stdout)
     except InvocationError as exc:
         _emit_error(str(exc), stderr=stderr)
         return int(ApplicationExitCode.INVOCATION_ERROR)
@@ -155,6 +90,102 @@ def _run(*, argv: Sequence[str] | None, stdout: TextIO, stderr: TextIO) -> int:
     except SitePipelineCliError as exc:
         _emit_error(str(exc), stderr=stderr)
         return int(ApplicationExitCode.INTERNAL_FAILURE)
+
+
+def _run_watch_invocation(
+    *, invocation: WatchInvocation, stdout: TextIO, stderr: TextIO
+) -> int:
+    normalized_invocation = _revalidate_watch_invocation_outputs(invocation)
+    watch_event_request = normalized_invocation.unstable_event_request
+    with guard_stdout_for_machine_output(
+        enabled=watch_event_request is not None and watch_event_request.writes_to_stdout,
+        stderr=stderr,
+    ):
+        result = run_watch(normalized_invocation, stdout=stdout)
+        _emit_watch_terminal_report(
+            report_request=normalized_invocation.report_request,
+            watch_event_request=watch_event_request,
+            report=result.report,
+            text_output=result.text_output,
+            stdout=stdout,
+            stderr=stderr,
+        )
+    return int(result.exit_code)
+
+
+def _run_non_watch_invocation(
+    *, invocation: PlanInvocation | CheckInvocation | BuildInvocation, stdout: TextIO
+) -> int:
+    result = dispatch_command(invocation)
+    emit_report(
+        request=_revalidate_report_request_for_layout(
+            layout=invocation.layout,
+            request=invocation.report_request,
+        ),
+        report=result.report,
+        text_output=result.text_output,
+        stdout=stdout,
+    )
+    return int(result.exit_code)
+
+
+def _revalidate_watch_invocation_outputs(invocation: WatchInvocation) -> WatchInvocation:
+    report_request = _revalidate_report_request_for_layout(
+        layout=invocation.layout,
+        request=invocation.report_request,
+    )
+    watch_event_request = revalidate_watch_event_request(
+        cwd=invocation.layout.cwd,
+        request=invocation.unstable_event_request,
+        forbidden_roots=(invocation.layout.stage_root, invocation.layout.work_root),
+    )
+    if (
+        watch_event_request is not None
+        and watch_event_request.output_path is not None
+        and report_request.output_path is not None
+        and watch_event_request.output_path == report_request.output_path
+    ):
+        raise InvocationError("--unstable-events-output must differ from --report-output")
+    return WatchInvocation(
+        layout=invocation.layout,
+        fail_on_severity=invocation.fail_on_severity,
+        report_request=report_request,
+        unstable_event_request=watch_event_request,
+    )
+
+
+def _revalidate_report_request_for_layout(
+    *, layout: RepositoryLayout, request: ReportRequest
+) -> ReportRequest:
+    if request.output_path is None:
+        return request
+    return revalidate_report_request(
+        cwd=layout.cwd,
+        request=request,
+        forbidden_roots=(layout.stage_root, layout.work_root),
+    )
+
+
+def _emit_watch_terminal_report(
+    *,
+    report_request: ReportRequest,
+    watch_event_request: WatchEventRequest | None,
+    report: ReportModel,
+    text_output: str,
+    stdout: TextIO,
+    stderr: TextIO,
+) -> None:
+    if report_request.output_path is not None:
+        return
+    if watch_event_request is None or not watch_event_request.writes_to_stdout:
+        emit_report(
+            request=report_request,
+            report=report,
+            text_output=text_output,
+            stdout=stdout,
+        )
+        return
+    _write_stream_output(stderr, text_output)
 
 
 def parse_invocation(argv: Sequence[str] | None = None) -> CommandInvocation:

@@ -119,10 +119,18 @@ class SchemaExportTests(unittest.TestCase):
             checked_in_reference_path = (
                 Path(__file__).resolve().parents[2] / "docs/reference/pipeline-model-schema-reference.md"
             )
+            generated_reference_text = generated_reference_path.read_text(encoding="utf-8")
 
             self.assertEqual(
                 checked_in_reference_path.read_text(encoding="utf-8"),
-                generated_reference_path.read_text(encoding="utf-8"),
+                generated_reference_text,
+            )
+            self.assertIn("### Authored input contracts", generated_reference_text)
+            self.assertIn("### Pipeline-emitted non-file root contracts", generated_reference_text)
+            self.assertNotIn("(/schemas/", generated_reference_text)
+            self.assertIn(
+                "- [SiteCatalogDocumentV1](#sitecatalogdocumentv1) — Consumer-owned catalog input",
+                generated_reference_text,
             )
 
     def test_export_inventory_covers_inputs_and_outputs(self) -> None:

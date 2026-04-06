@@ -28,7 +28,13 @@ import yaml
 
 from apache_buildish_site_pipeline.models.base import SitePipelineBaseModel, to_camel_case
 from apache_buildish_site_pipeline.models.documentation import contract_documentation_for
-from apache_buildish_site_pipeline.models.reference_docs import ReferenceDocError, TypeReferenceTarget
+from apache_buildish_site_pipeline.models.reference_docs import (
+    ReferenceDocError,
+    TypeReferenceTarget,
+    parse_reference_document,
+    render_reference_markdown,
+    render_reference_schema_text,
+)
 from apache_buildish_site_pipeline.models.reference_docs.registry import (
     MODEL_SECTION_DEFINITIONS,
     SCALAR_REFERENCE_ENTRIES,
@@ -76,6 +82,16 @@ class AnchorIndex:
         return token if anchor is None else f"[{token}](#{anchor})"
 
 
+@dataclass(frozen=True, slots=True)
+class FileContractIndexGroup:
+    """One rendered grouping for the file-contract index."""
+
+    title: str
+    description: str
+    category: str
+    has_contract_file: bool
+
+
 def build_reference_markdown(exports: Iterable[SchemaExport]) -> str:
     """Build the generated Markdown schema reference from public model metadata."""
 
@@ -116,9 +132,8 @@ def build_reference_markdown(exports: Iterable[SchemaExport]) -> str:
         "## Scope and conventions",
         "",
         "- field names are shown in their wire-format aliases",
-        "- field type expressions use Python-style annotations because they are generated from the actual model signatures",
-        "- type, enum, and scalar names link to anchors in this document",
-        "- schema-file links point to the checked-in generated JSON Schema files under `/schemas/`",
+        "- type, enum, and scalar names link to their definitions below",
+        "- schema files are listed by checked-in filename for the matching root contract",
         "",
     ]
     lines.extend(_render_file_contract_index(export_list, anchors))
@@ -209,24 +224,47 @@ def _slugify_anchor(value: str) -> str:
 
 
 def _render_file_contract_index(exports: tuple[SchemaExport, ...], anchors: AnchorIndex) -> list[str]:
-    lines = [
-        "## File contract index",
-        "",
-        "| Schema file | Contract file | Root type(s) | Ownership | Summary |",
-        "| --- | --- | --- | --- | --- |",
-    ]
-    for export in exports:
-        documentation = export.documentation
-        summary = documentation.summary if documentation is not None and documentation.summary is not None else export.description or "—"
-        ownership = documentation.ownership if documentation is not None else "—"
-        file_path = documentation.file_path if documentation is not None and documentation.file_path is not None else "—"
-        root_types = ", ".join(
-            f"[{root.__name__}](#{anchors.type_anchors[root.__name__]})" for root in export.reference_roots
-        ) or "—"
-        lines.append(
-            f"| [{export.filename}](/schemas/{export.filename}) | `{file_path}` | {root_types} | {ownership} | {_escape_table_cell(summary)} |"
+    lines = ["## File contract index", ""]
+    for group in _file_contract_index_groups():
+        grouped_exports = tuple(
+            sorted(
+                (
+                    export
+                    for export in exports
+                    if _matches_file_contract_group(export, group)
+                ),
+                key=_file_contract_sort_key,
+            )
         )
-    lines.extend(["", ""]) 
+        if not grouped_exports:
+            continue
+        lines.append(f"### {group.title}")
+        lines.append("")
+        lines.append(group.description)
+        lines.append("")
+        if group.has_contract_file:
+            lines.extend(
+                [
+                    "| Contract file | Root type(s) | Schema file | Summary |",
+                    "| --- | --- | --- | --- |",
+                ]
+            )
+            for export in grouped_exports:
+                lines.append(
+                    f"| `{_contract_file_path(export)}` | {_render_root_types(export, anchors)} | `{export.filename}` | {_escape_table_cell(_export_summary(export))} |"
+                )
+        else:
+            lines.extend(
+                [
+                    "| Root type(s) | Schema file | Summary |",
+                    "| --- | --- | --- |",
+                ]
+            )
+            for export in grouped_exports:
+                lines.append(
+                    f"| {_render_root_types(export, anchors)} | `{export.filename}` | {_escape_table_cell(_export_summary(export))} |"
+                )
+        lines.append("")
     return lines
 
 
@@ -273,7 +311,9 @@ def _render_model_index(models: tuple[type[SitePipelineBaseModel], ...], anchors
         lines.append(definition.description)
         lines.append("")
         for model in grouped_models:
-            lines.append(f"- [{model.__name__}](#{anchors.type_anchors[model.__name__]})")
+            lines.append(
+                f"- [{model.__name__}](#{anchors.type_anchors[model.__name__]}) — {_model_index_summary(model)}"
+            )
         lines.append("")
     return lines
 
@@ -354,8 +394,6 @@ def _render_model_section(
 
 
 def _render_markdown_fragment(source: str, anchors: AnchorIndex) -> str:
-    from apache_buildish_site_pipeline.models.reference_docs import parse_reference_document, render_reference_markdown
-
     try:
         return render_reference_markdown(
             parse_reference_document(cleandoc(source)),
@@ -405,6 +443,91 @@ def _group_models(
 
 def _escape_table_cell(value: str) -> str:
     return value.replace("|", "\\|").replace("\n", "<br>")
+
+
+def _file_contract_index_groups() -> tuple[FileContractIndexGroup, ...]:
+    return (
+        FileContractIndexGroup(
+            title="Authored input contracts",
+            description="Consumer-owned and component-owned source-tree contracts.",
+            category="authored",
+            has_contract_file=True,
+        ),
+        FileContractIndexGroup(
+            title="Provider input contracts",
+            description="Provider-derived snapshot contracts consumed by the pipeline.",
+            category="provider",
+            has_contract_file=True,
+        ),
+        FileContractIndexGroup(
+            title="Pipeline-emitted file contracts",
+            description="Stable files emitted by the pipeline into staged or published output trees.",
+            category="emitted",
+            has_contract_file=True,
+        ),
+        FileContractIndexGroup(
+            title="Pipeline-emitted non-file root contracts",
+            description="Schema-root report and namespace types without one stable checked-in file path hint.",
+            category="emitted",
+            has_contract_file=False,
+        ),
+    )
+
+
+def _matches_file_contract_group(export: SchemaExport, group: FileContractIndexGroup) -> bool:
+    documentation = export.documentation
+    if documentation is None:
+        return False
+    return documentation.category == group.category and (documentation.file_path is not None) is group.has_contract_file
+
+
+def _file_contract_sort_key(export: SchemaExport) -> tuple[int, str, str]:
+    documentation = export.documentation
+    ownership = documentation.ownership if documentation is not None else ""
+    contract_file = documentation.file_path if documentation is not None and documentation.file_path is not None else ""
+    return (0 if documentation is not None and documentation.file_path is not None else 1, ownership, contract_file or export.title)
+
+
+def _contract_file_path(export: SchemaExport) -> str:
+    documentation = export.documentation
+    if documentation is None or documentation.file_path is None:
+        return "—"
+    return documentation.file_path
+
+
+def _render_root_types(export: SchemaExport, anchors: AnchorIndex) -> str:
+    return ", ".join(
+        f"[{root.__name__}](#{anchors.type_anchors[root.__name__]})" for root in export.reference_roots
+    ) or "—"
+
+
+def _export_summary(export: SchemaExport) -> str:
+    documentation = export.documentation
+    if documentation is not None and documentation.summary is not None:
+        return documentation.summary
+    return export.description or "—"
+
+
+def _model_index_summary(model: type[SitePipelineBaseModel]) -> str:
+    return _first_sentence(_model_summary_text(model))
+
+
+def _model_summary_text(model: type[SitePipelineBaseModel]) -> str:
+    documentation = contract_documentation_for(model)
+    if documentation is not None and documentation.reference is not None and documentation.reference.summary is not None:
+        return _normalize_summary_text(
+            render_reference_schema_text(parse_reference_document(cleandoc(documentation.reference.summary.source)))
+        )
+    return _normalize_summary_text(getdoc(model) or "No model summary documented.")
+
+
+def _first_sentence(value: str) -> str:
+    sentence_match = re.match(r"^(.+?[.!?])(?:\s|$)", value)
+    return sentence_match.group(1) if sentence_match is not None else value
+
+
+def _normalize_summary_text(value: str) -> str:
+    return re.sub(r"\s+", " ", value).strip()
 
 
 def _serialize_example_value(value: object) -> object:

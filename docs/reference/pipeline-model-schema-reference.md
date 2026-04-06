@@ -28,39 +28,62 @@ It is the typed reference companion to the narrative maintenance and how-to docs
 ## Scope and conventions
 
 - field names are shown in their wire-format aliases
-- field type expressions use Python-style annotations because they are generated from the actual model signatures
-- type, enum, and scalar names link to anchors in this document
-- schema-file links point to the checked-in generated JSON Schema files under `/schemas/`
+- type, enum, and scalar names link to their definitions below
+- schema files are listed by checked-in filename for the matching root contract
 
 ## File contract index
 
-| Schema file | Contract file | Root type(s) | Ownership | Summary |
-| --- | --- | --- | --- | --- |
-| [site-pipeline-catalog-v1.schema.json](/schemas/site-pipeline-catalog-v1.schema.json) | `site/catalog.yaml` | [SiteCatalogDocumentV1](#sitecatalogdocumentv1) | consumer-owned | Consumer-authored site catalog input. |
-| [site-pipeline-component-v1.schema.json](/schemas/site-pipeline-component-v1.schema.json) | `site/component.yaml` | [ComponentMetadataDocumentV1](#componentmetadatadocumentv1) | component-owned | Component-owned metadata input. |
-| [site-pipeline-provider-snapshot-v1.schema.json](/schemas/site-pipeline-provider-snapshot-v1.schema.json) | `site/provider-snapshot.json` | [ProviderSnapshotDocumentV1](#providersnapshotdocumentv1) | provider-derived | Provider-derived release snapshot input. |
-| [site-pipeline-materialization-report-v1.schema.json](/schemas/site-pipeline-materialization-report-v1.schema.json) | `—` | [ResolvedMaterializationReportV1](#resolvedmaterializationreportv1) | pipeline-derived | Pipeline-emitted materialization report. |
-| [site-pipeline-check-report-v1.schema.json](/schemas/site-pipeline-check-report-v1.schema.json) | `—` | [CheckReportV1](#checkreportv1) | pipeline-derived | Pipeline-emitted validation report. |
-| [site-pipeline-stage-run-report-v1.schema.json](/schemas/site-pipeline-stage-run-report-v1.schema.json) | `—` | [StageRunReportV1](#stagerunreportv1) | pipeline-derived | Pipeline-emitted stage execution report. |
-| [site-pipeline-stage-manifest-v1.schema.json](/schemas/site-pipeline-stage-manifest-v1.schema.json) | `manifest.json` | [StageManifestV1](#stagemanifestv1) | pipeline-derived | Pipeline-emitted stage manifest. |
-| [site-pipeline-front-matter-namespace-v1.schema.json](/schemas/site-pipeline-front-matter-namespace-v1.schema.json) | `—` | [PipelineFrontMatterNamespace](#pipelinefrontmatternamespace) | pipeline-derived | Pipeline-emitted front matter namespace. |
-| [site-pipeline-components-data-v1.schema.json](/schemas/site-pipeline-components-data-v1.schema.json) | `data/components.json` | [ComponentsDataEntry](#componentsdataentry) | pipeline-derived | Pipeline-emitted component aggregate file. |
-| [site-pipeline-artifacts-data-v1.schema.json](/schemas/site-pipeline-artifacts-data-v1.schema.json) | `data/artifacts.json` | [ArtifactsDataEntry](#artifactsdataentry) | pipeline-derived | Pipeline-emitted artifact aggregate file. |
-| [site-pipeline-routes-data-v1.schema.json](/schemas/site-pipeline-routes-data-v1.schema.json) | `data/routes.json` | [RouteAggregateEntry](#routeaggregateentry) | pipeline-derived | Pipeline-emitted route aggregate file. |
-| [site-pipeline-redirects-data-v1.schema.json](/schemas/site-pipeline-redirects-data-v1.schema.json) | `data/redirects.json` | [RedirectAggregateEntry](#redirectaggregateentry) | pipeline-derived | Pipeline-emitted redirect aggregate file. |
-| [site-pipeline-providers-data-v1.schema.json](/schemas/site-pipeline-providers-data-v1.schema.json) | `data/providers.json` | [ProvidersDataEntry](#providersdataentry) | pipeline-derived | Pipeline-emitted provider summary aggregate file. |
-| [site-pipeline-releases-data-v1.schema.json](/schemas/site-pipeline-releases-data-v1.schema.json) | `data/releases.json` | [ReleaseAggregateEntry](#releaseaggregateentry) | pipeline-derived | Pipeline-emitted release aggregate file. |
-| [site-pipeline-candidates-data-v1.schema.json](/schemas/site-pipeline-candidates-data-v1.schema.json) | `data/candidates.json` | [CandidateAggregateEntry](#candidateaggregateentry) | pipeline-derived | Pipeline-emitted candidate aggregate file. |
-| [site-pipeline-refs-data-v1.schema.json](/schemas/site-pipeline-refs-data-v1.schema.json) | `data/refs.json` | [RefAggregateEntry](#refaggregateentry) | pipeline-derived | Pipeline-emitted named-ref aggregate file. |
-| [site-pipeline-translations-data-v1.schema.json](/schemas/site-pipeline-translations-data-v1.schema.json) | `data/translations.json` | [TranslationSetAggregateEntry](#translationsetaggregateentry) | pipeline-derived | Pipeline-emitted translation aggregate file. |
-| [site-pipeline-compatibility-data-v1.schema.json](/schemas/site-pipeline-compatibility-data-v1.schema.json) | `data/compatibility.json` | [CompatibilityAggregateEntry](#compatibilityaggregateentry) | pipeline-derived | Pipeline-emitted compatibility aggregate file. |
-| [site-pipeline-mounts-data-v1.schema.json](/schemas/site-pipeline-mounts-data-v1.schema.json) | `data/mounts.json` | [MountAggregateEntry](#mountaggregateentry) | pipeline-derived | Pipeline-emitted mount aggregate file. |
-| [site-pipeline-content-index-data-v1.schema.json](/schemas/site-pipeline-content-index-data-v1.schema.json) | `data/content-index.json` | [ContentIndexEntry](#contentindexentry) | pipeline-derived | Pipeline-emitted content index file. |
-| [site-pipeline-diagnostics-data-v1.schema.json](/schemas/site-pipeline-diagnostics-data-v1.schema.json) | `data/diagnostics.json` | [PipelineDiagnosticEntry](#pipelinediagnosticentry) | pipeline-derived | Pipeline-emitted diagnostics file. |
-| [site-pipeline-unit-contributions-v1.schema.json](/schemas/site-pipeline-unit-contributions-v1.schema.json) | `data/_pipeline/unit-contributions.json` | [PersistedUnitContributionsV1](#persistedunitcontributionsv1) | pipeline-derived | Pipeline-emitted unit contribution map. |
-| [site-pipeline-output-ownership-v1.schema.json](/schemas/site-pipeline-output-ownership-v1.schema.json) | `data/_pipeline/output-ownership.json` | [OutputOwnershipMapV1](#outputownershipmapv1) | pipeline-derived | Pipeline-emitted output ownership map. |
-| [site-pipeline-aggregate-dependencies-v1.schema.json](/schemas/site-pipeline-aggregate-dependencies-v1.schema.json) | `data/_pipeline/aggregate-dependencies.json` | [AggregateDependencyMapV1](#aggregatedependencymapv1) | pipeline-derived | Pipeline-emitted aggregate dependency map. |
+### Authored input contracts
 
+Consumer-owned and component-owned source-tree contracts.
+
+| Contract file | Root type(s) | Schema file | Summary |
+| --- | --- | --- | --- |
+| `site/component.yaml` | [ComponentMetadataDocumentV1](#componentmetadatadocumentv1) | `site-pipeline-component-v1.schema.json` | Component-owned metadata input. |
+| `site/catalog.yaml` | [SiteCatalogDocumentV1](#sitecatalogdocumentv1) | `site-pipeline-catalog-v1.schema.json` | Consumer-authored site catalog input. |
+
+### Provider input contracts
+
+Provider-derived snapshot contracts consumed by the pipeline.
+
+| Contract file | Root type(s) | Schema file | Summary |
+| --- | --- | --- | --- |
+| `site/provider-snapshot.json` | [ProviderSnapshotDocumentV1](#providersnapshotdocumentv1) | `site-pipeline-provider-snapshot-v1.schema.json` | Provider-derived release snapshot input. |
+
+### Pipeline-emitted file contracts
+
+Stable files emitted by the pipeline into staged or published output trees.
+
+| Contract file | Root type(s) | Schema file | Summary |
+| --- | --- | --- | --- |
+| `data/_pipeline/aggregate-dependencies.json` | [AggregateDependencyMapV1](#aggregatedependencymapv1) | `site-pipeline-aggregate-dependencies-v1.schema.json` | Pipeline-emitted aggregate dependency map. |
+| `data/_pipeline/output-ownership.json` | [OutputOwnershipMapV1](#outputownershipmapv1) | `site-pipeline-output-ownership-v1.schema.json` | Pipeline-emitted output ownership map. |
+| `data/_pipeline/unit-contributions.json` | [PersistedUnitContributionsV1](#persistedunitcontributionsv1) | `site-pipeline-unit-contributions-v1.schema.json` | Pipeline-emitted unit contribution map. |
+| `data/artifacts.json` | [ArtifactsDataEntry](#artifactsdataentry) | `site-pipeline-artifacts-data-v1.schema.json` | Pipeline-emitted artifact aggregate file. |
+| `data/candidates.json` | [CandidateAggregateEntry](#candidateaggregateentry) | `site-pipeline-candidates-data-v1.schema.json` | Pipeline-emitted candidate aggregate file. |
+| `data/compatibility.json` | [CompatibilityAggregateEntry](#compatibilityaggregateentry) | `site-pipeline-compatibility-data-v1.schema.json` | Pipeline-emitted compatibility aggregate file. |
+| `data/components.json` | [ComponentsDataEntry](#componentsdataentry) | `site-pipeline-components-data-v1.schema.json` | Pipeline-emitted component aggregate file. |
+| `data/content-index.json` | [ContentIndexEntry](#contentindexentry) | `site-pipeline-content-index-data-v1.schema.json` | Pipeline-emitted content index file. |
+| `data/diagnostics.json` | [PipelineDiagnosticEntry](#pipelinediagnosticentry) | `site-pipeline-diagnostics-data-v1.schema.json` | Pipeline-emitted diagnostics file. |
+| `data/mounts.json` | [MountAggregateEntry](#mountaggregateentry) | `site-pipeline-mounts-data-v1.schema.json` | Pipeline-emitted mount aggregate file. |
+| `data/providers.json` | [ProvidersDataEntry](#providersdataentry) | `site-pipeline-providers-data-v1.schema.json` | Pipeline-emitted provider summary aggregate file. |
+| `data/redirects.json` | [RedirectAggregateEntry](#redirectaggregateentry) | `site-pipeline-redirects-data-v1.schema.json` | Pipeline-emitted redirect aggregate file. |
+| `data/refs.json` | [RefAggregateEntry](#refaggregateentry) | `site-pipeline-refs-data-v1.schema.json` | Pipeline-emitted named-ref aggregate file. |
+| `data/releases.json` | [ReleaseAggregateEntry](#releaseaggregateentry) | `site-pipeline-releases-data-v1.schema.json` | Pipeline-emitted release aggregate file. |
+| `data/routes.json` | [RouteAggregateEntry](#routeaggregateentry) | `site-pipeline-routes-data-v1.schema.json` | Pipeline-emitted route aggregate file. |
+| `data/translations.json` | [TranslationSetAggregateEntry](#translationsetaggregateentry) | `site-pipeline-translations-data-v1.schema.json` | Pipeline-emitted translation aggregate file. |
+| `manifest.json` | [StageManifestV1](#stagemanifestv1) | `site-pipeline-stage-manifest-v1.schema.json` | Pipeline-emitted stage manifest. |
+
+### Pipeline-emitted non-file root contracts
+
+Schema-root report and namespace types without one stable checked-in file path hint.
+
+| Root type(s) | Schema file | Summary |
+| --- | --- | --- |
+| [CheckReportV1](#checkreportv1) | `site-pipeline-check-report-v1.schema.json` | Pipeline-emitted validation report. |
+| [PipelineFrontMatterNamespace](#pipelinefrontmatternamespace) | `site-pipeline-front-matter-namespace-v1.schema.json` | Pipeline-emitted front matter namespace. |
+| [ResolvedMaterializationReportV1](#resolvedmaterializationreportv1) | `site-pipeline-materialization-report-v1.schema.json` | Pipeline-emitted materialization report. |
+| [StageRunReportV1](#stagerunreportv1) | `site-pipeline-stage-run-report-v1.schema.json` | Pipeline-emitted stage execution report. |
 
 ## Scalar aliases
 
@@ -120,110 +143,110 @@ It is the typed reference companion to the narrative maintenance and how-to docs
 
 Consumer-owned and component-owned authored contract models.
 
-- [ArtifactConfig](#artifactconfig)
-- [ArtifactLifecycleConfig](#artifactlifecycleconfig)
-- [ArtifactVersioningConfig](#artifactversioningconfig)
-- [CandidateSelectionPolicy](#candidateselectionpolicy)
-- [CatalogDefaults](#catalogdefaults)
-- [CompatibilityAssertionConfig](#compatibilityassertionconfig)
-- [ComponentCatalogEntry](#componentcatalogentry)
-- [ComponentContentSelection](#componentcontentselection)
-- [ComponentIdentity](#componentidentity)
-- [ComponentLifecycleHints](#componentlifecyclehints)
-- [ComponentMetadataDocumentV1](#componentmetadatadocumentv1)
-- [ContentRoots](#contentroots)
-- [ExactReleaseConfig](#exactreleaseconfig)
-- [GroupConfig](#groupconfig)
-- [LineHeadSelectionPolicy](#lineheadselectionpolicy)
-- [LocalizationConfig](#localizationconfig)
-- [MountConfig](#mountconfig)
-- [NamedRefConfig](#namedrefconfig)
-- [OriginConfig](#originconfig)
-- [PublicationConfig](#publicationconfig)
-- [PublicationSelectionPolicy](#publicationselectionpolicy)
-- [RedirectRuleConfig](#redirectruleconfig)
-- [ReleaseLineConfig](#releaselineconfig)
-- [ReleaseSelectionPolicy](#releaseselectionpolicy)
-- [RouteAliasConfig](#routealiasconfig)
-- [SiteCatalogDocumentV1](#sitecatalogdocumentv1)
-- [SiteContentConfig](#sitecontentconfig)
-- [SourceConfig](#sourceconfig)
-- [SupportStatusDefinition](#supportstatusdefinition)
-- [SupportWindow](#supportwindow)
+- [ArtifactConfig](#artifactconfig) — Independently versioned release unit within a component.
+- [ArtifactLifecycleConfig](#artifactlifecycleconfig) — Artifact-authored lifecycle metadata.
+- [ArtifactVersioningConfig](#artifactversioningconfig) — Artifact-specific version-discovery configuration.
+- [CandidateSelectionPolicy](#candidateselectionpolicy) — Selection policy for release candidates.
+- [CatalogDefaults](#catalogdefaults) — Shared defaults applied before per-component overrides.
+- [CompatibilityAssertionConfig](#compatibilityassertionconfig) — Authored compatibility relationship between published identities.
+- [ComponentCatalogEntry](#componentcatalogentry) — One component entry in the consumer catalog.
+- [ComponentContentSelection](#componentcontentselection) — Selection of the source that owns shared component content.
+- [ComponentIdentity](#componentidentity) — Stable identity for a component repository.
+- [ComponentLifecycleHints](#componentlifecyclehints) — Optional high-level lifecycle defaults for a component.
+- [ComponentMetadataDocumentV1](#componentmetadatadocumentv1) — Component-owned metadata that describes stable identity and repository content roots.
+- [ContentRoots](#contentroots) — Repository-relative locations of authored component content.
+- [ExactReleaseConfig](#exactreleaseconfig) — Authored exact-release metadata or publication override for one version.
+- [GroupConfig](#groupconfig) — Reusable defaults for a set of components.
+- [LineHeadSelectionPolicy](#lineheadselectionpolicy) — Selection policy for release-line head refs.
+- [LocalizationConfig](#localizationconfig) — Locale and translation defaults.
+- [MountConfig](#mountconfig) — Generated or imported subtree mounted into the publication surface.
+- [NamedRefConfig](#namedrefconfig) — Authored named ref intentionally exposed as a publishable version context.
+- [OriginConfig](#originconfig) — Named publication origin.
+- [PublicationConfig](#publicationconfig) — Explicit publication configuration or inherited publication defaults.
+- [PublicationSelectionPolicy](#publicationselectionpolicy) — Planning-time policy for which version contexts are staged and surfaced.
+- [RedirectRuleConfig](#redirectruleconfig) — Authored redirect rule resolved into deployment-neutral redirect metadata.
+- [ReleaseLineConfig](#releaselineconfig) — Artifact-authored release-line definition.
+- [ReleaseSelectionPolicy](#releaseselectionpolicy) — Selection policy for exact released versions.
+- [RouteAliasConfig](#routealiasconfig) — Additional route resolving to the same published target.
+- [SiteCatalogDocumentV1](#sitecatalogdocumentv1) — Consumer-owned catalog input that selects participating components and shared publication policy.
+- [SiteContentConfig](#sitecontentconfig) — Consumer-owned top-level site pages, assets, and vendor assets.
+- [SourceConfig](#sourceconfig) — Repository or checkout definition.
+- [SupportStatusDefinition](#supportstatusdefinition) — Definition of one support-status vocabulary entry.
+- [SupportWindow](#supportwindow) — Structured support-window metadata for a line or exact release.
 
 ### Provider input types
 
 Normalized provider snapshot contracts consumed by the pipeline.
 
-- [ProviderAsset](#providerasset)
-- [ProviderDescriptor](#providerdescriptor)
-- [ProviderRecord](#providerrecord)
-- [ProviderSnapshotDocumentV1](#providersnapshotdocumentv1)
+- [ProviderAsset](#providerasset) — Optional file-level metadata attached to a provider record.
+- [ProviderDescriptor](#providerdescriptor) — Descriptor for one loaded provider.
+- [ProviderRecord](#providerrecord) — Normalized release, candidate, or ref record from a provider.
+- [ProviderSnapshotDocumentV1](#providersnapshotdocumentv1) — Provider-derived normalized snapshot from ``site/provider-snapshot.json``.
 
 ### Planning and stage-contract types
 
 Pipeline-emitted planning, diagnostics, and stage-manifest contracts.
 
-- [CheckReportV1](#checkreportv1)
-- [CheckSummary](#checksummary)
-- [PipelineDiagnosticEntry](#pipelinediagnosticentry)
-- [ReducedDiagnosticDetailsSummary](#reduceddiagnosticdetailssummary)
-- [ResolvedMaterializationEntry](#resolvedmaterializationentry)
-- [ResolvedMaterializationReportV1](#resolvedmaterializationreportv1)
-- [StageDataFiles](#stagedatafiles)
-- [StageManifestV1](#stagemanifestv1)
-- [StageRoots](#stageroots)
-- [StageRunReportV1](#stagerunreportv1)
-- [StageRunSummary](#stagerunsummary)
+- [CheckReportV1](#checkreportv1) — Machine-readable result of ``site-pipeline check``.
+- [CheckSummary](#checksummary) — Outcome summary for one ``check`` run.
+- [PipelineDiagnosticEntry](#pipelinediagnosticentry) — Structured pipeline diagnostic entry.
+- [ReducedDiagnosticDetailsSummary](#reduceddiagnosticdetailssummary) — Bounded replacement object for oversized diagnostic details.
+- [ResolvedMaterializationEntry](#resolvedmaterializationentry) — One required local input discovered by planning.
+- [ResolvedMaterializationReportV1](#resolvedmaterializationreportv1) — Machine-readable planning report for required local inputs.
+- [StageDataFiles](#stagedatafiles) — Inventory of aggregate metadata files present in a stage tree.
+- [StageManifestV1](#stagemanifestv1) — Authoritative entry-point document for a staged output tree.
+- [StageRoots](#stageroots) — Top-level directory roots within a stage tree.
+- [StageRunReportV1](#stagerunreportv1) — Machine-readable result of ``build`` or one completed watch cycle.
+- [StageRunSummary](#stagerunsummary) — Outcome summary for one stage-producing run or watch cycle.
 
 ### Staged front matter types
 
 Front matter and page-level metadata emitted into staged content.
 
-- [ArtifactFrontMatterSummary](#artifactfrontmattersummary)
-- [PipelineComponentFrontMatter](#pipelinecomponentfrontmatter)
-- [PipelineFrontMatterNamespace](#pipelinefrontmatternamespace)
-- [PipelinePageFrontMatter](#pipelinepagefrontmatter)
-- [ProviderProvenance](#providerprovenance)
-- [ReleaseLineContext](#releaselinecontext)
-- [ReleaseLineSummary](#releaselinesummary)
-- [ResolvedOrigin](#resolvedorigin)
-- [ResolvedPathSet](#resolvedpathset)
-- [ResolvedPublication](#resolvedpublication)
-- [ResolvedUrlSet](#resolvedurlset)
-- [TranslationLinkSummary](#translationlinksummary)
-- [VersionContext](#versioncontext)
+- [ArtifactFrontMatterSummary](#artifactfrontmattersummary) — Compact artifact summary embedded in component front matter.
+- [PipelineComponentFrontMatter](#pipelinecomponentfrontmatter) — Pipeline-owned component front matter.
+- [PipelineFrontMatterNamespace](#pipelinefrontmatternamespace) — Reserved top-level pipeline namespace emitted into staged pages.
+- [PipelinePageFrontMatter](#pipelinepagefrontmatter) — Pipeline-owned page-local front matter.
+- [ProviderProvenance](#providerprovenance) — Compact provider provenance embedded in page front matter.
+- [ReleaseLineContext](#releaselinecontext) — Page-local release-line context.
+- [ReleaseLineSummary](#releaselinesummary) — Compact release-line summary embedded into front matter.
+- [ResolvedOrigin](#resolvedorigin) — Resolved publication origin information.
+- [ResolvedPathSet](#resolvedpathset) — Resolved public paths for one component.
+- [ResolvedPublication](#resolvedpublication) — Resolved route and URL bundle for one component.
+- [ResolvedUrlSet](#resolvedurlset) — Resolved fully qualified URLs for one component.
+- [TranslationLinkSummary](#translationlinksummary) — Compact translation sibling reference.
+- [VersionContext](#versioncontext) — Version or ref context attached to one staged page.
 
 ### Staged aggregate metadata types
 
 Public aggregate JSON contracts emitted under `data/`.
 
-- [ArtifactsDataEntry](#artifactsdataentry)
-- [CandidateAggregateEntry](#candidateaggregateentry)
-- [CompatibilityAggregateEntry](#compatibilityaggregateentry)
-- [ComponentsDataEntry](#componentsdataentry)
-- [ContentIndexEntry](#contentindexentry)
-- [LatestCandidateSummary](#latestcandidatesummary)
-- [LatestReleaseSummary](#latestreleasesummary)
-- [MountAggregateEntry](#mountaggregateentry)
-- [ProvidersDataEntry](#providersdataentry)
-- [RedirectAggregateEntry](#redirectaggregateentry)
-- [RefAggregateEntry](#refaggregateentry)
-- [ReleaseAggregateEntry](#releaseaggregateentry)
-- [RouteAggregateEntry](#routeaggregateentry)
-- [TranslationSetAggregateEntry](#translationsetaggregateentry)
+- [ArtifactsDataEntry](#artifactsdataentry) — Entry in ``data/artifacts.json``.
+- [CandidateAggregateEntry](#candidateaggregateentry) — Entry in ``data/candidates.json``.
+- [CompatibilityAggregateEntry](#compatibilityaggregateentry) — Entry in ``data/compatibility.json``.
+- [ComponentsDataEntry](#componentsdataentry) — Entry in ``data/components.json``.
+- [ContentIndexEntry](#contentindexentry) — Entry in ``data/content-index.json``.
+- [LatestCandidateSummary](#latestcandidatesummary) — Compact latest-candidate summary embedded in artifact aggregates.
+- [LatestReleaseSummary](#latestreleasesummary) — Compact latest-release summary embedded in artifact aggregates.
+- [MountAggregateEntry](#mountaggregateentry) — Entry in ``data/mounts.json``.
+- [ProvidersDataEntry](#providersdataentry) — Entry in ``data/providers.json``.
+- [RedirectAggregateEntry](#redirectaggregateentry) — Entry in ``data/redirects.json``.
+- [RefAggregateEntry](#refaggregateentry) — Entry in ``data/refs.json``.
+- [ReleaseAggregateEntry](#releaseaggregateentry) — Entry in ``data/releases.json``.
+- [RouteAggregateEntry](#routeaggregateentry) — Entry in ``data/routes.json``.
+- [TranslationSetAggregateEntry](#translationsetaggregateentry) — Entry in ``data/translations.json``.
 
 ### Incremental bookkeeping types
 
 Pipeline-internal emitted bookkeeping contracts stored under `data/_pipeline/`.
 
-- [AggregateDependencyEntryV1](#aggregatedependencyentryv1)
-- [AggregateDependencyMapV1](#aggregatedependencymapv1)
-- [OutputOwnershipClaimV1](#outputownershipclaimv1)
-- [OutputOwnershipMapV1](#outputownershipmapv1)
-- [PersistedUnitContributionsV1](#persistedunitcontributionsv1)
-- [StagedPageContributionWire](#stagedpagecontributionwire)
-- [UnitContributionManifestWire](#unitcontributionmanifestwire)
+- [AggregateDependencyEntryV1](#aggregatedependencyentryv1) — One coordinator-owned aggregate and the units that may change its payload.
+- [AggregateDependencyMapV1](#aggregatedependencymapv1) — Shared-output dependency map for the current first-wave coordinator outputs.
+- [OutputOwnershipClaimV1](#outputownershipclaimv1) — One exact published file or directory root together with its logical owner.
+- [OutputOwnershipMapV1](#outputownershipmapv1) — Published ownership inventory used to prune retained stages safely.
+- [PersistedUnitContributionsV1](#persistedunitcontributionsv1) — Stable per-unit page contribution manifests retained in the visible stage.
+- [StagedPageContributionWire](#stagedpagecontributionwire) — Metadata emitted by one page-staging worker for later aggregation.
+- [UnitContributionManifestWire](#unitcontributionmanifestwire) — Worker-emitted contribution fragment consumed by the coordinator.
 
 ## Authored input types
 

@@ -87,8 +87,8 @@ The component repository should not own its final public site path.
 It should, however, be able to author repository-local content roots safely. In
 practice that means a component with `content.docsRoot` can publish a moving
 development docs surface even before any consumer models explicit artifacts. If
-the consumer resolves that component to `/components/site-pipeline/latest/`, the
-component-owned `docsRoot` should populate that `/latest/` tree without first
+the consumer resolves that component to `/components/site-pipeline/development/`, the
+component-owned `docsRoot` should populate that `/development/` tree without first
 inventing an artifact in `site/catalog.yaml`.
 
 ### Consumer catalog contract
@@ -171,7 +171,7 @@ defaults:
   assetsRoot: site/assets
   publication:
     origin: main
-    developmentSegment: latest
+    developmentSegment: development
     assetsSegment: assets
 site:
   pagesRoot: site/root-pages
@@ -1067,8 +1067,8 @@ pipeline:
     displayName: Apache Spark
     publication:
       origin: { key: spark, baseUrl: https://spark.example.org, hostname: spark.example.org }
-      paths: { component: /, development: /latest/, docs: /latest/, assets: /assets/ }
-      urls: { component: https://spark.example.org/, development: https://spark.example.org/latest/, docs: https://spark.example.org/latest/, assets: https://spark.example.org/assets/ }
+      paths: { component: /, development: /development/, docs: /development/, assets: /assets/ }
+      urls: { component: https://spark.example.org/, development: https://spark.example.org/development/, docs: https://spark.example.org/development/, assets: https://spark.example.org/assets/ }
     artifacts:
       - { key: runtime, displayName: Spark Runtime, latestStable: 4.0.0, releaseLines: [{ key: 4.x, latest: 4.0.0, supportStatus: active }] }
       - { key: kubernetes-operator, displayName: Spark Kubernetes Operator, latestStable: 1.3.0 }

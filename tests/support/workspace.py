@@ -41,8 +41,8 @@ def _write_workspace_inputs(
     if topology == "default":
         _write_default_workspace_inputs(workspace_root, with_content_file=with_content_file)
         return
-    if topology == "component_only_latest":
-        _write_component_only_latest_workspace_inputs(
+    if topology == "component_only_development":
+        _write_component_only_development_workspace_inputs(
             workspace_root,
             with_content_file=with_content_file,
         )
@@ -152,7 +152,7 @@ components:
         )
 
 
-def _write_component_only_latest_workspace_inputs(
+def _write_component_only_development_workspace_inputs(
     workspace_root: Path, *, with_content_file: bool
 ) -> None:
     (workspace_root / "site").mkdir(parents=True, exist_ok=True)
@@ -176,8 +176,8 @@ components:
       source: site-pipeline
     publication:
       mountPath: /components/site-pipeline/
-      developmentPath: /components/site-pipeline/latest/
-      docsPath: /components/site-pipeline/latest/
+      developmentPath: /components/site-pipeline/development/
+      docsPath: /components/site-pipeline/development/
     artifacts: []
 """.strip()
         + "\n",
@@ -190,7 +190,7 @@ components:
     (workspace_root / "components/site-pipeline/docs").mkdir(parents=True, exist_ok=True)
     if with_content_file:
         (workspace_root / "components/site-pipeline/docs/index.md").write_text(
-            "component latest\n",
+            "component development\n",
             encoding="utf-8",
         )
 
@@ -326,7 +326,7 @@ components:
             exist_ok=True,
         )
         (workspace_root / "components/runtime/docs/runtime/guide/index.md").write_text(
-            "runtime latest guide\n",
+            "runtime development guide\n",
             encoding="utf-8",
         )
         (workspace_root / "components/runtime/docs/runtime/releases/4.0.0/guide/index.md").write_text(
@@ -334,7 +334,7 @@ components:
             encoding="utf-8",
         )
         (workspace_root / "components/api/docs/reference/index.md").write_text(
-            "api latest reference\n",
+            "api development reference\n",
             encoding="utf-8",
         )
         (workspace_root / "components/api/docs/releases/4.0.0/reference/index.md").write_text(
@@ -497,7 +497,7 @@ components:
     )
     if with_content_file:
         (workspace_root / "components/runtime/docs/index.md").write_text(
-            "latest docs\n",
+            "development docs\n",
             encoding="utf-8",
         )
         (workspace_root / "components/runtime/docs/maintenance/4.1/index.md").write_text(

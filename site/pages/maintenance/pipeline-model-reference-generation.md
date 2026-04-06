@@ -85,7 +85,7 @@ Hand-written wrapper pages would explain:
 
 - the component-owned versus consumer-owned split
 - precedence such as `defaults < group < component < artifact`
-- how `docsRoot`, artifacts, and `/latest/` relate
+- how `docsRoot`, artifacts, and `/development/` versus `/latest/` routes relate
 - migration examples and authoring patterns
 
 Pros:

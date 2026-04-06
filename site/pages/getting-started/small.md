@@ -25,7 +25,7 @@ one mounted API, generated reference tree, or imported docs subtree.
 ## Who this is for
 
 - one product with a few visible versions
-- simple latest/development/archive routing
+- simple latest-release/development/archive routing
 - maybe one mounted subtree for generated or imported docs
 
 ## Smallest useful mental model

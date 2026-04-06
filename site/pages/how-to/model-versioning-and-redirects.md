@@ -19,14 +19,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-Use this guide when one product starts needing stable latest, development,
+Use this guide when one product starts needing latest-release, development,
 archive, or release-specific routes without changing public permalinks by hand.
 
 ## Start with public URL policy
 
 Decide which public route families the site should preserve, for example:
 
-- latest-style routes
+- latest-release routes
 - development routes
 - exact release routes
 - archive or withdrawn release routes

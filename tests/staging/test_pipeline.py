@@ -68,8 +68,8 @@ class StagingPipelineTests(unittest.TestCase):
             [root.as_posix() for root in component_unit.content_stage_roots],
             [
                 "content/spark",
-                "content/spark/latest",
-                "content/spark/latest/4.0",
+                "content/spark/development",
+                "content/spark/development/4.0",
                 "content/spark/releases/4.0.0",
             ],
         )
@@ -77,16 +77,16 @@ class StagingPipelineTests(unittest.TestCase):
             [root.as_posix() for root in component_unit.static_stage_roots],
             [
                 "static/spark/assets",
-                "static/spark/latest",
-                "static/spark/latest/4.0",
+                "static/spark/development",
+                "static/spark/development/4.0",
                 "static/spark/releases/4.0.0",
             ],
         )
         self.assertEqual(
             [context.content_stage_root.as_posix() for context in component_unit.contexts],
             [
-                "content/spark/latest",
-                "content/spark/latest/4.0",
+                "content/spark/development",
+                "content/spark/development/4.0",
                 "content/spark/releases/4.0.0",
             ],
         )
@@ -116,8 +116,8 @@ class StagingPipelineTests(unittest.TestCase):
             [root.as_posix() for root in component_unit.content_stage_roots],
             [
                 "content/products/spark",
-                "content/products/spark/latest",
-                "content/products/spark/latest/4.0",
+                "content/products/spark/development",
+                "content/products/spark/development/4.0",
                 "content/products/spark/releases/4.0.0",
             ],
         )
@@ -125,8 +125,8 @@ class StagingPipelineTests(unittest.TestCase):
             [root.as_posix() for root in component_unit.static_stage_roots],
             [
                 "static/products/spark/assets",
-                "static/products/spark/latest",
-                "static/products/spark/latest/4.0",
+                "static/products/spark/development",
+                "static/products/spark/development/4.0",
                 "static/products/spark/releases/4.0.0",
             ],
         )
@@ -231,8 +231,8 @@ class StagingPipelineTests(unittest.TestCase):
         self.assertEqual(components[0]["slug"], "spark")
         self.assertEqual(components[0]["weight"], 100)
 
-    def test_build_stages_component_owned_latest_docs_without_artifacts(self) -> None:
-        with _workspace(with_content_file=True, topology="component_only_latest") as workspace_root:
+    def test_build_stages_component_owned_development_docs_without_artifacts(self) -> None:
+        with _workspace(with_content_file=True, topology="component_only_development") as workspace_root:
             stdout = io.StringIO()
             stderr = io.StringIO()
             with _cwd(workspace_root):
@@ -240,27 +240,27 @@ class StagingPipelineTests(unittest.TestCase):
             stage_root = workspace_root / "site/.stage"
             routes = json.loads((stage_root / "data/routes.json").read_text(encoding="utf-8"))["items"]
             content_index = json.loads((stage_root / "data/content-index.json").read_text(encoding="utf-8"))["items"]
-            staged_latest_exists = (
-                stage_root / "content/components/site-pipeline/latest/index.md"
+            staged_development_exists = (
+                stage_root / "content/components/site-pipeline/development/index.md"
             ).is_file()
-            latest_route = next(
+            development_route = next(
                 entry
                 for entry in routes
                 if entry["targetId"] == "development:site-pipeline:component"
             )
-            latest_entry = next(
+            development_entry = next(
                 entry
                 for entry in content_index
-                if entry["path"] == "/components/site-pipeline/latest"
+                if entry["path"] == "/components/site-pipeline/development"
             )
 
         self.assertEqual(exit_code, 0)
         self.assertEqual(stderr.getvalue(), "")
-        self.assertEqual(latest_route["path"], "/components/site-pipeline/latest/")
-        self.assertEqual(latest_route["section"], "development")
-        self.assertTrue(staged_latest_exists)
-        self.assertEqual(latest_entry["sourcePath"], "components/site-pipeline/docs/index.md")
-        self.assertEqual(latest_entry["pageKind"], "development-page")
+        self.assertEqual(development_route["path"], "/components/site-pipeline/development/")
+        self.assertEqual(development_route["section"], "development")
+        self.assertTrue(staged_development_exists)
+        self.assertEqual(development_entry["sourcePath"], "components/site-pipeline/docs/index.md")
+        self.assertEqual(development_entry["pageKind"], "development-page")
 
     def test_build_stages_component_owned_pages_and_assets_under_publication_paths(self) -> None:
         with _workspace(with_content_file=True) as workspace_root:
@@ -334,13 +334,13 @@ class StagingPipelineTests(unittest.TestCase):
             development_target_ids = {
                 entry["targetId"]
                 for entry in routes
-                if entry["path"] == "/spark/latest/"
+                if entry["path"] == "/spark/development/"
             }
             staged_development_guide_exists = (
-                stage_root / "content/spark/latest/guide/index.md"
+                stage_root / "content/spark/development/guide/index.md"
             ).is_file()
             staged_development_reference_exists = (
-                stage_root / "content/spark/latest/reference/index.md"
+                stage_root / "content/spark/development/reference/index.md"
             ).is_file()
             staged_release_guide_exists = (
                 stage_root / "content/spark/releases/4.0.0/guide/index.md"
@@ -360,11 +360,11 @@ class StagingPipelineTests(unittest.TestCase):
             {"development:spark", "development:spark:api", "development:spark:runtime"},
         )
         self.assertEqual(
-            content_paths["/spark/latest/guide"],
+            content_paths["/spark/development/guide"],
             "components/runtime/docs/runtime/guide/index.md",
         )
         self.assertEqual(
-            content_paths["/spark/latest/reference"],
+            content_paths["/spark/development/reference"],
             "components/api/docs/reference/index.md",
         )
         self.assertEqual(
@@ -395,12 +395,12 @@ class StagingPipelineTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 0)
         self.assertEqual(stderr.getvalue(), "")
-        self.assertEqual(route_paths["development:spark:runtime"], "/spark/latest/")
-        self.assertEqual(route_paths["line-head:spark:runtime:4.0"], "/spark/latest/4.0/")
-        self.assertEqual(route_paths["line-head:spark:runtime:4.1"], "/spark/latest/4.1/")
+        self.assertEqual(route_paths["development:spark:runtime"], "/spark/development/")
+        self.assertEqual(route_paths["line-head:spark:runtime:4.0"], "/spark/development/4.0/")
+        self.assertEqual(route_paths["line-head:spark:runtime:4.1"], "/spark/development/4.1/")
         self.assertEqual(
             route_paths["candidate:spark:runtime:4.2.0-rc2"],
-            "/spark/latest/candidates/4.2.0-rc2/",
+            "/spark/development/candidates/4.2.0-rc2/",
         )
         self.assertEqual(route_paths["released:spark:runtime:4.0.2"], "/spark/releases/4.0.2/")
         self.assertEqual(route_paths["released:spark:runtime:4.1.0"], "/spark/releases/4.1.0/")

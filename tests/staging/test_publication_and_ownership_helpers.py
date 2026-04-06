@@ -79,8 +79,8 @@ class PublicationAndOwnershipHelpersTests(unittest.TestCase):
 
     def test_stage_root_for_public_path_uses_public_segments_verbatim(self) -> None:
         self.assertEqual(
-            stage_root_for_public_path("content", "/spark/latest/4.0/"),
-            Path("content/spark/latest/4.0"),
+            stage_root_for_public_path("content", "/spark/development/4.0/"),
+            Path("content/spark/development/4.0"),
         )
         self.assertEqual(
             stage_root_for_public_path("static", "/spark/releases/4.0.0/"),

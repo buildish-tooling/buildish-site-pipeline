@@ -1371,7 +1371,7 @@
             }
           ],
           "default": null,
-          "description": "Explicit public path for the moving latest/development docs surface.",
+          "description": "Explicit public path for the moving development docs surface.",
           "title": "Developmentpath"
         },
         "docsPath": {
@@ -1385,7 +1385,7 @@
             }
           ],
           "default": null,
-          "description": "Explicit public docs landing path exposed to downstream consumers; defaults to the development/latest path unless an additional docs segment or override is configured.",
+          "description": "Explicit public docs landing path exposed to downstream consumers; defaults to the development path unless an additional docs segment or override is configured.",
           "title": "Docspath"
         },
         "mountPath": {
@@ -1482,7 +1482,7 @@
             }
           ],
           "default": null,
-          "description": "Default path segment appended below the component root for moving development/latest docs.",
+          "description": "Default path segment appended below the component root for moving development docs.",
           "title": "Developmentsegment"
         },
         "docsSegment": {
@@ -1496,7 +1496,7 @@
             }
           ],
           "default": null,
-          "description": "Optional extra path segment appended below the latest docs root when docs should live under an additional nested path.",
+          "description": "Optional extra path segment appended below the development docs root when docs should live under an additional nested path.",
           "title": "Docssegment"
         },
         "origin": {
@@ -1651,7 +1651,7 @@
           "default": null,
           "description": "Short explanation of why the redirect exists, for example to describe a rename, consolidation, or withdrawn release route.",
           "examples": [
-            "Current docs live on the latest release route."
+            "Development docs moved to the new route."
           ],
           "title": "Reason"
         },
@@ -1674,7 +1674,7 @@
         "target": {
           "description": "Destination of the redirect, either as a typed internal reference string or as a fully qualified external URL.",
           "examples": [
-            "route:/spark/latest/"
+            "route:/spark/development/"
           ],
           "minLength": 1,
           "title": "Target",

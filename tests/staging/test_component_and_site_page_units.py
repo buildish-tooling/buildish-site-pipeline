@@ -151,18 +151,18 @@ class ComponentAndSitePageUnitTests(unittest.TestCase):
             self.assertEqual(manifest.pages[0].link_title, "Home")
             self.assertEqual(manifest.pages[1].version, "4.0.0")
 
-    def test_component_worker_stages_component_owned_latest_docs_without_artifact(self) -> None:
+    def test_component_worker_stages_component_owned_development_docs_without_artifact(self) -> None:
         with TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
-            latest_docs = root / "components/site-pipeline/docs"
-            latest_docs.mkdir(parents=True)
-            (latest_docs / "index.md").write_text(
-                "---\ntitle: Latest Docs\n---\nbody\n",
+            development_docs = root / "components/site-pipeline/docs"
+            development_docs.mkdir(parents=True)
+            (development_docs / "index.md").write_text(
+                "---\ntitle: Development Docs\n---\nbody\n",
                 encoding="utf-8",
             )
 
-            latest_stage_root = root / "stage/content/components/site-pipeline/latest"
-            latest_static_root = root / "stage/static/components/site-pipeline/latest"
+            development_stage_root = root / "stage/content/components/site-pipeline/development"
+            development_static_root = root / "stage/static/components/site-pipeline/development"
             fragment_path = root / ".work/fragments/component_site-pipeline.json"
 
             result = execute_worker_spec(
@@ -184,12 +184,12 @@ class ComponentAndSitePageUnitTests(unittest.TestCase):
                         {
                             "context_id": "development:site-pipeline:component",
                             "artifact_key": None,
-                            "source_docs_root": str(latest_docs),
-                            "content_stage_root": str(latest_stage_root),
-                            "static_stage_root": str(latest_static_root),
+                            "source_docs_root": str(development_docs),
+                            "content_stage_root": str(development_stage_root),
+                            "static_stage_root": str(development_static_root),
                             "publication": self._publication_wire(
-                                path="/components/site-pipeline/latest/",
-                                url="https://docs.example.org/components/site-pipeline/latest/",
+                                path="/components/site-pipeline/development/",
+                                url="https://docs.example.org/components/site-pipeline/development/",
                             ),
                             "version_context": {"label": "development", "kind": "development"},
                             "page_kind": "development-page",
@@ -198,8 +198,8 @@ class ComponentAndSitePageUnitTests(unittest.TestCase):
                         },
                     ),
                     stage_meta={
-                        "content_roots": (str(latest_stage_root),),
-                        "static_roots": (str(latest_static_root),),
+                        "content_roots": (str(development_stage_root),),
+                        "static_roots": (str(development_static_root),),
                     },
                 )
             )
@@ -207,9 +207,9 @@ class ComponentAndSitePageUnitTests(unittest.TestCase):
             manifest = read_unit_manifest(fragment_path)
             self.assertTrue(result.succeeded)
             self.assertEqual(result.page_files_written, 1)
-            self.assertTrue((latest_stage_root / "index.md").is_file())
+            self.assertTrue((development_stage_root / "index.md").is_file())
             self.assertEqual(manifest.pages[0].artifact_key, None)
-            self.assertEqual(manifest.pages[0].public_path, "/components/site-pipeline/latest")
+            self.assertEqual(manifest.pages[0].public_path, "/components/site-pipeline/development")
 
     def test_copy_tree_copies_nested_assets(self) -> None:
         with TemporaryDirectory() as temp_dir:

@@ -699,8 +699,8 @@ class CliTests(unittest.TestCase):
         self.assertIn("32 watch-root ceiling", report["diagnostics"][-1]["message"])
         self.assertIn("Initial watch cycle failed", stderr.getvalue())
 
-    def test_watch_stages_component_owned_latest_without_artifacts(self) -> None:
-        with _workspace(with_content_file=True, topology="component_only_latest") as workspace_root:
+    def test_watch_stages_component_owned_development_without_artifacts(self) -> None:
+        with _workspace(with_content_file=True, topology="component_only_development") as workspace_root:
             report_path = workspace_root / "watch-report.json"
             stdout = io.StringIO()
             stderr = io.StringIO()
@@ -727,10 +727,10 @@ class CliTests(unittest.TestCase):
             stage_root = workspace_root / "site/.stage"
             routes = json.loads((stage_root / "data/routes.json").read_text(encoding="utf-8"))["items"]
             content_index = json.loads((stage_root / "data/content-index.json").read_text(encoding="utf-8"))["items"]
-            staged_latest_exists = (
-                stage_root / "content/components/site-pipeline/latest/index.md"
+            staged_development_exists = (
+                stage_root / "content/components/site-pipeline/development/index.md"
             ).is_file()
-            latest_route = next(
+            development_route = next(
                 entry
                 for entry in routes
                 if entry["targetId"] == "development:site-pipeline:component"
@@ -742,12 +742,12 @@ class CliTests(unittest.TestCase):
         self.assertTrue(report["summary"]["succeeded"])
         self.assertTrue(report["summary"]["wroteStage"])
         self.assertTrue(report["summary"]["stageUsable"])
-        self.assertEqual(latest_route["path"], "/components/site-pipeline/latest/")
+        self.assertEqual(development_route["path"], "/components/site-pipeline/development/")
         self.assertIn(
-            "/components/site-pipeline/latest",
+            "/components/site-pipeline/development",
             {entry["path"] for entry in content_index},
         )
-        self.assertTrue(staged_latest_exists)
+        self.assertTrue(staged_development_exists)
         self.assertEqual(stdout.getvalue(), "")
         self.assertEqual(stderr.getvalue(), "")
 

@@ -151,7 +151,7 @@ class WatchIncrementalTests(unittest.TestCase):
                     replacements=(
                         (
                             "    publication:\n      mountPath: /spark/\n",
-                            "    publication:\n      mountPath: /spark/\n      canonicalPath: /spark/latest/\n",
+                            "    publication:\n      mountPath: /spark/\n      canonicalPath: /spark/development/\n",
                         ),
                     ),
                 )

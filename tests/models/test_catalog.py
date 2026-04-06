@@ -99,7 +99,7 @@ def _build_valid_catalog_document() -> dict[str, object]:
                 "publication": {
                     "origin": "docs",
                     "mountPath": "/spark/",
-                    "aliases": [{"path": "/spark/latest/"}],
+                    "aliases": [{"path": "/spark/development/"}],
                     "redirects": [{"fromPath": "/spark/old/", "target": "route:/spark/"}],
                 },
                 "artifacts": [

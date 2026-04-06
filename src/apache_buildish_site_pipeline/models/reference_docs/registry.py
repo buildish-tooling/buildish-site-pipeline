@@ -92,7 +92,7 @@ SCALAR_REFERENCE_ENTRIES = (
     ScalarReferenceEntry(
         "ReferenceString",
         "String",
-        "Typed internal reference string such as `route:/docs/latest/` or `artifact:spark/runtime`.",
+        "Typed internal reference string such as `route:/docs/development/` or `artifact:spark/runtime`.",
     ),
     ScalarReferenceEntry("RegexString", "String", "Regex pattern stored as text."),
     ScalarReferenceEntry("SchemaVersion", "Integer", "Positive schema version integer."),
@@ -113,7 +113,7 @@ SCALAR_REFERENCE_ENTRIES = (
         "Stage-root-relative normalized POSIX path that must use forward slashes.",
     ),
     ScalarReferenceEntry("MountSourceRef", "String", "Stable mount source reference such as a path or bundle key."),
-    ScalarReferenceEntry("PublicPath", "String", "Resolved normalized POSIX public path such as `/docs/latest/`."),
+    ScalarReferenceEntry("PublicPath", "String", "Resolved normalized POSIX public path such as `/docs/development/`."),
     ScalarReferenceEntry("HostnameString", "String", "Hostname derived from an origin URL."),
     ScalarReferenceEntry("UrlString", "String", "Absolute public URL."),
     ScalarReferenceEntry("ProviderBaseUrl", "String", "Validated public provider base URL."),

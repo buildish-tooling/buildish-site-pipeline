@@ -113,9 +113,9 @@ origin that the adapter owns.
 
 For example:
 
-- if `fromUrl` is `https://docs.example.org/spark/latest/`
+- if `fromUrl` is `https://docs.example.org/spark/development/`
 - and the adapter is generating config for `docs.example.org`
-- then the emitted rule source path can safely be `/spark/latest/`
+- then the emitted rule source path can safely be `/spark/development/`
 
 Do not strip hosts from redirect URLs before you know that the redirect belongs
 to the current deployment target.

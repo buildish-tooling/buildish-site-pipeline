@@ -61,7 +61,7 @@ that audience.
 
 - start with [tiny.md](tiny.md) if you have one component and no serious version
   or publication policy yet
-- start with [small.md](small.md) if you already need stable latest/development
+- start with [small.md](small.md) if you already need latest-release/development
   routes or simple redirects
 - start with [medium.md](medium.md) if the site already has multiple artifacts,
   imported docs, or a planning/materialization step

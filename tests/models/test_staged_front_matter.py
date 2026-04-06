@@ -48,14 +48,14 @@ class StagedFrontMatterTests(unittest.TestCase):
                         },
                         "paths": {
                             "component": "/spark/",
-                            "development": "/spark/latest/",
-                            "docs": "/spark/latest/",
+                            "development": "/spark/development/",
+                            "docs": "/spark/development/",
                             "assets": "/spark/assets/",
                         },
                         "urls": {
                             "component": "https://docs.example.org/spark/",
-                            "development": "https://docs.example.org/spark/latest/",
-                            "docs": "https://docs.example.org/spark/latest/",
+                            "development": "https://docs.example.org/spark/development/",
+                            "docs": "https://docs.example.org/spark/development/",
                             "assets": "https://docs.example.org/spark/assets/",
                         },
                     },
@@ -63,15 +63,15 @@ class StagedFrontMatterTests(unittest.TestCase):
                 "page": {
                     "kind": "docsPage",
                     "artifactKey": "runtime",
-                    "path": "/spark/latest/sql/",
-                    "url": "https://docs.example.org/spark/latest/sql/",
-                    "canonicalUrl": "https://docs.example.org/spark/latest/sql/",
+                    "path": "/spark/development/sql/",
+                    "url": "https://docs.example.org/spark/development/sql/",
+                    "canonicalUrl": "https://docs.example.org/spark/development/sql/",
                     "alternateUrls": ["https://docs.example.org/spark/archive/sql/"],
                     "translationKey": "runtime-sql-overview",
                     "translations": [
                         {
                             "locale": "de",
-                            "url": "https://docs.example.org/de/spark/latest/sql/",
+                            "url": "https://docs.example.org/de/spark/development/sql/",
                         },
                     ],
                     "componentPath": "/spark/",

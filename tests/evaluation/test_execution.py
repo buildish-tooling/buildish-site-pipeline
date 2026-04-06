@@ -589,7 +589,7 @@ class EvaluationExecutionTests(unittest.TestCase):
                         "compatibility": [
                             {
                                 "subjectRef": "artifact:spark/runtime",
-                                "targetRef": "route:/spark/latest/",
+                                "targetRef": "route:/spark/development/",
                                 "relation": "supports",
                             },
                         ],
@@ -605,10 +605,10 @@ class EvaluationExecutionTests(unittest.TestCase):
             diagnostic
             for diagnostic in result.diagnostics
             if diagnostic.code == "compatibility-reference-unknown"
-            and diagnostic.details.get("reference") == "route:/spark/latest/"
+            and diagnostic.details.get("reference") == "route:/spark/development/"
         )
         self.assertFalse(result.stage_gate.allowed)
-        self.assertEqual(ambiguity_diagnostic.details["reference"], "route:/spark/latest/")
+        self.assertEqual(ambiguity_diagnostic.details["reference"], "route:/spark/development/")
 
     def test_unknown_release_line_reference_blocks_stage(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:

@@ -102,7 +102,7 @@ Schema-root report and namespace types that do not correspond to one stable chec
 | <a id="providerkey"></a>`ProviderKey` | `String` | Key for a provider descriptor. |
 | <a id="versionstring"></a>`VersionString` | `String` | Exact version string such as `4.0.0`. |
 | <a id="refstring"></a>`RefString` | `String` | Moving ref name such as `main` or `releases/4.x`. |
-| <a id="referencestring"></a>`ReferenceString` | `String` | Typed internal reference string such as `route:/docs/latest/` or `artifact:spark/runtime`. |
+| <a id="referencestring"></a>`ReferenceString` | `String` | Typed internal reference string such as `route:/docs/development/` or `artifact:spark/runtime`. |
 | <a id="regexstring"></a>`RegexString` | `String` | Regex pattern stored as text. |
 | <a id="schemaversion"></a>`SchemaVersion` | `Integer` | Positive schema version integer. |
 | <a id="timestampstring"></a>`TimestampString` | `Datetime` | RFC 3339 / ISO 8601 timestamp value. |
@@ -110,7 +110,7 @@ Schema-root report and namespace types that do not correspond to one stable chec
 | <a id="reporelativepath"></a>`RepoRelativePath` | `String` | Repository-relative normalized POSIX path that must use forward slashes. |
 | <a id="stagerelativepath"></a>`StageRelativePath` | `String` | Stage-root-relative normalized POSIX path that must use forward slashes. |
 | <a id="mountsourceref"></a>`MountSourceRef` | `String` | Stable mount source reference such as a path or bundle key. |
-| <a id="publicpath"></a>`PublicPath` | `String` | Resolved normalized POSIX public path such as `/docs/latest/`. |
+| <a id="publicpath"></a>`PublicPath` | `String` | Resolved normalized POSIX public path such as `/docs/development/`. |
 | <a id="hostnamestring"></a>`HostnameString` | `String` | Hostname derived from an origin URL. |
 | <a id="urlstring"></a>`UrlString` | `String` | Absolute public URL. |
 | <a id="providerbaseurl"></a>`ProviderBaseUrl` | `String` | Validated public provider base URL. |
@@ -672,8 +672,8 @@ Resolved-or-authored route layout choices for a component or artifact.
 | <a id="publicationconfig-pathsegment"></a>`pathSegment` | [NonEmptyString](#nonemptystring) | no | Path segment appended below an inherited path prefix or mount root. |
 | <a id="publicationconfig-mountpath"></a>`mountPath` | [PublicPath](#publicpath) | no | Explicit public root path for the component's published content. |
 | <a id="publicationconfig-componentpath"></a>`componentPath` | [PublicPath](#publicpath) | no | Explicit public path for the component landing page or overview root. |
-| <a id="publicationconfig-developmentpath"></a>`developmentPath` | [PublicPath](#publicpath) | no | Explicit public path for the moving latest/development docs surface. |
-| <a id="publicationconfig-docspath"></a>`docsPath` | [PublicPath](#publicpath) | no | Explicit public docs landing path exposed to downstream consumers; defaults to the development/latest path unless an additional docs segment or override is configured. |
+| <a id="publicationconfig-developmentpath"></a>`developmentPath` | [PublicPath](#publicpath) | no | Explicit public path for the moving development docs surface. |
+| <a id="publicationconfig-docspath"></a>`docsPath` | [PublicPath](#publicpath) | no | Explicit public docs landing path exposed to downstream consumers; defaults to the development path unless an additional docs segment or override is configured. |
 | <a id="publicationconfig-assetspath"></a>`assetsPath` | [PublicPath](#publicpath) | no | Explicit public path for static assets below the component root. |
 | <a id="publicationconfig-canonicalpath"></a>`canonicalPath` | [PublicPath](#publicpath) | no | Optional canonical public path used when aliases or multiple origins are present. |
 | <a id="publicationconfig-aliases"></a>`aliases` | list[[RouteAliasConfig](#routealiasconfig)] | no | Additional public aliases that should resolve to the same published target. |
@@ -725,9 +725,9 @@ Redirect rule that sends one published path to another internal or external targ
 
 - `fromPath`: Example: `"/spark/docs/current/"`
 - `fromOrigin`: Example: `"archive"`
-- `target`: Example: `"route:/spark/latest/"`
+- `target`: Example: `"route:/spark/development/"`
 - `status`: Example: `308`
-- `reason`: Example: `"Current docs live on the latest release route."`
+- `reason`: Example: `"Development docs moved to the new route."`
 
 <a id="releaselineconfig"></a>
 ### ReleaseLineConfig

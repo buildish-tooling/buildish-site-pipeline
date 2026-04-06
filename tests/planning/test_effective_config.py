@@ -124,8 +124,8 @@ class EffectiveConfigResolutionTests(unittest.TestCase):
         component = site.components[0]
         artifact = component.artifacts[0]
         self.assertEqual(component.publication.component_path, "/streaming/spark/")
-        self.assertEqual(component.publication.development_url, "https://docs.example.org/streaming/spark/latest/")
-        self.assertEqual(component.publication.docs_url, "https://docs.example.org/streaming/spark/latest/")
+        self.assertEqual(component.publication.development_url, "https://docs.example.org/streaming/spark/development/")
+        self.assertEqual(component.publication.docs_url, "https://docs.example.org/streaming/spark/development/")
         self.assertEqual(component.publication.assets_url, "https://docs.example.org/streaming/spark/assets/")
         self.assertEqual(component.pages_root.name, "pages")
         self.assertEqual(component.docs_root.name, "rendered")

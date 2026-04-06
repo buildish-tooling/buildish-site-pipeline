@@ -40,7 +40,7 @@ from .types import (
     ResolvedVendorAsset,
 )
 
-_DEFAULT_DEVELOPMENT_SEGMENT = "latest"
+_DEFAULT_DEVELOPMENT_SEGMENT = "development"
 _DEFAULT_DOCS_SEGMENT: str | None = None
 _DEFAULT_ASSETS_SEGMENT = "assets"
 

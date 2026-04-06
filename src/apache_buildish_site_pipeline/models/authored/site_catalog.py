@@ -151,11 +151,11 @@ class PublicationDefaults(SitePipelineBaseModel):
     )
     development_segment: NonEmptyString | None = Field(
         default=None,
-        description="Default path segment appended below the component root for moving development/latest docs.",
+        description="Default path segment appended below the component root for moving development docs.",
     )
     docs_segment: NonEmptyString | None = Field(
         default=None,
-        description="Optional extra path segment appended below the latest docs root when docs should live under an additional nested path.",
+        description="Optional extra path segment appended below the development docs root when docs should live under an additional nested path.",
     )
     assets_segment: NonEmptyString | None = Field(
         default=None,
@@ -307,7 +307,7 @@ class RedirectRuleConfig(SitePipelineBaseModel):
     )
     target: ReferenceString | UrlString = Field(
         description="Destination of the redirect, either as a typed internal reference string or as a fully qualified external URL.",
-        examples=["route:/spark/latest/"],
+        examples=["route:/spark/development/"],
     )
     status: int | None = Field(
         default=None,
@@ -318,7 +318,7 @@ class RedirectRuleConfig(SitePipelineBaseModel):
     reason: NonEmptyString | None = Field(
         default=None,
         description="Short explanation of why the redirect exists, for example to describe a rename, consolidation, or withdrawn release route.",
-        examples=["Current docs live on the latest release route."],
+        examples=["Development docs moved to the new route."],
     )
 
     @model_validator(mode="after")
@@ -353,11 +353,11 @@ class PublicationConfig(SitePipelineBaseModel):
     )
     development_path: PublicPath | None = Field(
         default=None,
-        description="Explicit public path for the moving latest/development docs surface.",
+        description="Explicit public path for the moving development docs surface.",
     )
     docs_path: PublicPath | None = Field(
         default=None,
-        description="Explicit public docs landing path exposed to downstream consumers; defaults to the development/latest path unless an additional docs segment or override is configured.",
+        description="Explicit public docs landing path exposed to downstream consumers; defaults to the development path unless an additional docs segment or override is configured.",
     )
     assets_path: PublicPath | None = Field(
         default=None,

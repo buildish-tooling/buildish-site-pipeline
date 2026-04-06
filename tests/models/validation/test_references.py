@@ -26,7 +26,7 @@ class ReferenceValidationTests(unittest.TestCase):
 
     def test_accepts_supported_reference_kinds(self) -> None:
         for value in (
-            "route:/docs/latest/",
+            "route:/docs/development/",
             "component:spark",
             "artifact:spark/runtime",
             "line:spark/runtime@4.x",

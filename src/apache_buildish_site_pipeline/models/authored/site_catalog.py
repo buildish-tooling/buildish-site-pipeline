@@ -24,6 +24,7 @@ from ..documentation import (
     ConsumerOwnedAuthoredModel as SitePipelineBaseModel,
     ContractDocumentation,
 )
+from ..reference_docs import ReferenceDocumentation, ReferenceMarkdown, ReferenceSection
 from ..enums import (
     CandidateSelectionMode,
     IndexBehavior,
@@ -713,6 +714,19 @@ class SiteCatalogDocumentV1(SitePipelineBaseModel):
         ownership="consumer-owned",
         summary="Consumer-authored site catalog input.",
         file_path="site/catalog.yaml",
+        reference=ReferenceDocumentation(
+            summary=ReferenceMarkdown(
+                "Consumer-owned catalog input that selects participating components and shared publication policy."
+            ),
+            sections=(
+                ReferenceSection(
+                    title="Inheritance",
+                    body=ReferenceMarkdown(
+                        "Defaults flow from `defaults` to `groups` to individual component entries. See [component entries](type:SiteCatalogDocumentV1#components)."
+                    ),
+                ),
+            ),
+        ),
     )
 
     schema_version: Literal[1] = Field(

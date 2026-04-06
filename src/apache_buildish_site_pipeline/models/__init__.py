@@ -15,6 +15,18 @@
 """Typed external models for the site pipeline."""
 
 from .documentation import ContractDocumentation, contract_documentation_for
+from .reference_docs import (
+    ExternalLinkTarget,
+    ReferenceDocError,
+    ReferenceDocumentation,
+    ReferenceMarkdown,
+    ReferenceSection,
+    TypeReferenceTarget,
+    parse_reference_document,
+    parse_reference_link_target,
+    render_reference_markdown,
+    render_reference_schema_text,
+)
 from .emitted.aggregates import (
     ArtifactsDataEntry,
     CandidateAggregateEntry,
@@ -199,6 +211,7 @@ __all__ = [
     "DocumentValidationFailure",
     "DuplicateKeyError",
     "ExactReleaseConfig",
+    "ExternalLinkTarget",
     "ExtensionsObject",
     "GroupConfig",
     "HostnameString",
@@ -238,6 +251,10 @@ __all__ = [
     "ProviderSnapshotDocumentV1",
     "PublicationState",
     "PublicPath",
+    "ReferenceDocError",
+    "ReferenceDocumentation",
+    "ReferenceMarkdown",
+    "ReferenceSection",
     "RecordKind",
     "RedirectAggregateEntry",
     "RedirectRuleConfig",
@@ -284,12 +301,15 @@ __all__ = [
     "TranslationSetAggregateEntry",
     "TranslationLinkSummary",
     "TrustClass",
+    "TypeReferenceTarget",
     "UnsupportedSchemaVersionError",
     "UrlString",
     "VersionString",
     "VersionContext",
     "WithdrawalBehavior",
     "contract_documentation_for",
+    "parse_reference_document",
+    "parse_reference_link_target",
     "load_check_report",
     "load_component_metadata_document",
     "load_json_mapping",
@@ -300,4 +320,6 @@ __all__ = [
     "load_stage_run_report",
     "load_versioned_document",
     "load_yaml_mapping",
+    "render_reference_markdown",
+    "render_reference_schema_text",
 ]

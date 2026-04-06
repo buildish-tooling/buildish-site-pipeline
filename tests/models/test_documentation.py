@@ -58,6 +58,14 @@ class ContractDocumentationTests(unittest.TestCase):
         self.assertIsNone(self._documentation_for(PipelineFrontMatterNamespace).file_path)
         self.assertIsNone(self._documentation_for(ComponentCatalogEntry).file_path)
 
+    def test_reference_metadata_can_live_next_to_schema_grouping_hints(self) -> None:
+        documentation = self._documentation_for(SiteCatalogDocumentV1)
+
+        self.assertIsNotNone(documentation.reference)
+        assert documentation.reference is not None
+        self.assertIn("Consumer-owned catalog input", documentation.reference.summary.source)
+        self.assertEqual(documentation.reference.sections[0].title, "Inheritance")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -25,6 +25,7 @@ from dataclasses import dataclass
 from typing import ClassVar, Literal
 
 from apache_buildish_site_pipeline.models.base import SitePipelineBaseModel
+from apache_buildish_site_pipeline.models.reference_docs import ReferenceDocumentation
 
 ContractCategory = Literal["authored", "provider", "emitted"]
 ContractOwnership = Literal[
@@ -40,6 +41,7 @@ class ContractDocumentation:
     ownership: ContractOwnership
     summary: str | None = None
     file_path: str | None = None
+    reference: ReferenceDocumentation | None = None
 
     def as_schema_extension(self) -> dict[str, str]:
         """Return the stable vendor extension used in exported JSON Schema files."""

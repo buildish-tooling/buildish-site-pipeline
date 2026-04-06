@@ -24,6 +24,7 @@ from ..documentation import (
     ComponentOwnedAuthoredModel as SitePipelineBaseModel,
     ContractDocumentation,
 )
+from ..reference_docs import ReferenceDocumentation, ReferenceMarkdown, ReferenceSection
 from ..scalars import Identifier, NonEmptyString, RepoRelativePath, Slug, VersionString
 
 
@@ -86,6 +87,19 @@ class ComponentMetadataDocumentV1(SitePipelineBaseModel):
         ownership="component-owned",
         summary="Component-owned metadata input.",
         file_path="site/component.yaml",
+        reference=ReferenceDocumentation(
+            summary=ReferenceMarkdown(
+                "Component-owned metadata that describes stable identity and repository content roots."
+            ),
+            sections=(
+                ReferenceSection(
+                    title="Content roots",
+                    body=ReferenceMarkdown(
+                        "Use `pagesRoot` for unversioned component pages and `docsRoot` for versioned or development docs content."
+                    ),
+                ),
+            ),
+        ),
     )
 
     schema_version: Literal[1] = Field(

@@ -22,6 +22,10 @@
               }
             ],
             "default": null,
+            "description": "Optional confidence label that explains how strong the supporting evidence is.",
+            "examples": [
+              "verified"
+            ],
             "title": "Confidence"
           },
           "evidence": {
@@ -38,6 +42,7 @@
               }
             ],
             "default": null,
+            "description": "Named evidence pointers or short evidence labels that support the compatibility statement.",
             "title": "Evidence"
           },
           "notes": {
@@ -51,9 +56,14 @@
               }
             ],
             "default": null,
+            "description": "Additional human-readable explanation, caveats, or migration advice for the compatibility statement.",
             "title": "Notes"
           },
           "relation": {
+            "description": "Relationship label that names the compatibility statement.",
+            "examples": [
+              "testedWith"
+            ],
             "minLength": 1,
             "title": "Relation",
             "type": "string"
@@ -69,14 +79,26 @@
               }
             ],
             "default": null,
+            "description": "Optional scope label that narrows the compatibility statement.",
+            "examples": [
+              "kubernetes"
+            ],
             "title": "Scope"
           },
           "subjectId": {
+            "description": "Typed reference or aggregate identifier for the subject of the compatibility statement.",
+            "examples": [
+              "artifact:spark/runtime"
+            ],
             "minLength": 1,
             "title": "Subjectid",
             "type": "string"
           },
           "targetId": {
+            "description": "Typed reference or aggregate identifier for the target of the compatibility statement.",
+            "examples": [
+              "artifact:spark/operator"
+            ],
             "minLength": 1,
             "title": "Targetid",
             "type": "string"
@@ -103,6 +125,6 @@
     "category": "emitted",
     "filePath": "data/compatibility.json",
     "ownership": "pipeline-derived",
-    "summary": "Pipeline-emitted compatibility aggregate file."
+    "summary": "Declared compatibility relationships between published identities."
   }
 }

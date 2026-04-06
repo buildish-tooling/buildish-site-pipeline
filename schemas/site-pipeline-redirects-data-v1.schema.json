@@ -12,6 +12,7 @@
         "description": "Entry in ``data/redirects.json``.",
         "properties": {
           "fromUrl": {
+            "description": "Absolute source URL that should redirect.",
             "minLength": 1,
             "title": "Fromurl",
             "type": "string"
@@ -27,6 +28,7 @@
               }
             ],
             "default": null,
+            "description": "Short explanation of why the redirect exists.",
             "title": "Reason"
           },
           "sourceKind": {
@@ -40,13 +42,22 @@
               }
             ],
             "default": null,
+            "description": "Short label describing where the redirect originated, such as an alias or withdrawn release rule.",
+            "examples": [
+              "withdrawnRelease"
+            ],
             "title": "Sourcekind"
           },
           "status": {
+            "description": "HTTP redirect status code emitted for this redirect.",
+            "examples": [
+              308
+            ],
             "title": "Status",
             "type": "integer"
           },
           "toUrl": {
+            "description": "Absolute destination URL that the redirect should send readers to.",
             "minLength": 1,
             "title": "Tourl",
             "type": "string"
@@ -73,6 +84,6 @@
     "category": "emitted",
     "filePath": "data/redirects.json",
     "ownership": "pipeline-derived",
-    "summary": "Pipeline-emitted redirect aggregate file."
+    "summary": "Flat inventory of published redirects and their resolved destination URLs."
   }
 }

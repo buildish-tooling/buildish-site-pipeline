@@ -15,6 +15,10 @@
             }
           ],
           "default": null,
+          "description": "Owning artifact key when the page belongs to a specific artifact.",
+          "examples": [
+            "runtime"
+          ],
           "title": "Artifactkey"
         },
         "canonicalUrl": {
@@ -27,13 +31,22 @@
             }
           ],
           "default": null,
+          "description": "Explicit canonical URL for the page when it should differ from `publicUrl`.",
           "title": "Canonicalurl"
         },
         "componentPath": {
+          "description": "Public root path for the owning component.",
+          "examples": [
+            "/spark/"
+          ],
           "title": "Componentpath",
           "type": "string"
         },
         "componentSlug": {
+          "description": "Owning component slug for the staged page.",
+          "examples": [
+            "spark"
+          ],
           "title": "Componentslug",
           "type": "string"
         },
@@ -47,10 +60,12 @@
             }
           ],
           "default": null,
+          "description": "Absolute URL root for the owning component, if known.",
           "title": "Componenturl"
         },
         "defaultLocale": {
           "default": false,
+          "description": "Whether the staged page represents the default locale within its translation group.",
           "title": "Defaultlocale",
           "type": "boolean"
         },
@@ -64,6 +79,10 @@
             }
           ],
           "default": null,
+          "description": "Shorter link title extracted during staging, if present.",
+          "examples": [
+            "Start"
+          ],
           "title": "Linktitle"
         },
         "locale": {
@@ -76,17 +95,33 @@
             }
           ],
           "default": null,
+          "description": "Locale key for the staged page when localization is enabled.",
+          "examples": [
+            "en"
+          ],
           "title": "Locale"
         },
         "originKey": {
+          "description": "Origin key selected for the staged page.",
+          "examples": [
+            "archive"
+          ],
           "title": "Originkey",
           "type": "string"
         },
         "pageKind": {
+          "description": "Short page-kind label for the staged page.",
+          "examples": [
+            "docsPage"
+          ],
           "title": "Pagekind",
           "type": "string"
         },
         "publicPath": {
+          "description": "Published public path for the staged page.",
+          "examples": [
+            "/spark/4.0.0/docs/getting-started/"
+          ],
           "title": "Publicpath",
           "type": "string"
         },
@@ -100,17 +135,30 @@
             }
           ],
           "default": null,
+          "description": "Canonical absolute URL for the staged page, if known.",
           "title": "Publicurl"
         },
         "section": {
+          "description": "Higher-level section label for the staged page.",
+          "examples": [
+            "documentation"
+          ],
           "title": "Section",
           "type": "string"
         },
         "sourcePath": {
+          "description": "Source file path that produced the staged page.",
+          "examples": [
+            "docs/runtime/getting-started.md"
+          ],
           "title": "Sourcepath",
           "type": "string"
         },
         "stageRelativePath": {
+          "description": "Stage-relative file path of the staged page contribution.",
+          "examples": [
+            "content/spark/4.0.0/docs/getting-started/index.md"
+          ],
           "title": "Stagerelativepath",
           "type": "string"
         },
@@ -124,6 +172,10 @@
             }
           ],
           "default": null,
+          "description": "Primary page title extracted during staging.",
+          "examples": [
+            "Getting Started"
+          ],
           "title": "Title"
         },
         "translationKey": {
@@ -136,6 +188,10 @@
             }
           ],
           "default": null,
+          "description": "Shared key that ties translated sibling pages together.",
+          "examples": [
+            "spark-overview"
+          ],
           "title": "Translationkey"
         },
         "version": {
@@ -148,6 +204,10 @@
             }
           ],
           "default": null,
+          "description": "Exact version string associated with the staged page, if present.",
+          "examples": [
+            "4.0.0"
+          ],
           "title": "Version"
         },
         "versionContext": {
@@ -161,6 +221,7 @@
             }
           ],
           "default": null,
+          "description": "Serialized version-context payload associated with the staged page.",
           "title": "Versioncontext"
         },
         "versionKind": {
@@ -173,6 +234,10 @@
             }
           ],
           "default": null,
+          "description": "Version-record kind associated with the staged page, if present.",
+          "examples": [
+            "release"
+          ],
           "title": "Versionkind"
         },
         "versionRef": {
@@ -185,6 +250,10 @@
             }
           ],
           "default": null,
+          "description": "Source-control ref associated with the staged page, if present.",
+          "examples": [
+            "refs/tags/v4.0.0"
+          ],
           "title": "Versionref"
         }
       },
@@ -207,6 +276,7 @@
       "properties": {
         "pages": {
           "default": [],
+          "description": "Staged page contributions emitted by the worker for later aggregation.",
           "items": {
             "$ref": "#/$defs/StagedPageContributionWire"
           },
@@ -214,6 +284,10 @@
           "type": "array"
         },
         "unitId": {
+          "description": "Worker unit identifier that owns this contribution manifest.",
+          "examples": [
+            "component:spark:runtime"
+          ],
           "title": "Unitid",
           "type": "string"
         }
@@ -229,15 +303,44 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "Stable per-unit page contribution manifests retained in the visible stage.",
+  "examples": [
+    {
+      "schemaVersion": 1,
+      "units": [
+        {
+          "pages": [
+            {
+              "artifactKey": "runtime",
+              "componentPath": "/spark/",
+              "componentSlug": "spark",
+              "defaultLocale": false,
+              "originKey": "archive",
+              "pageKind": "docsPage",
+              "publicPath": "/spark/4.0.0/docs/getting-started/",
+              "section": "documentation",
+              "sourcePath": "docs/runtime/getting-started.md",
+              "stageRelativePath": "content/spark/4.0.0/docs/getting-started/index.md",
+              "title": "Getting Started",
+              "version": "4.0.0",
+              "versionKind": "released"
+            }
+          ],
+          "unitId": "component:spark:runtime"
+        }
+      ]
+    }
+  ],
   "properties": {
     "schemaVersion": {
       "const": 1,
       "default": 1,
+      "description": "Schema version for the persisted unit-contribution manifest file.",
       "title": "Schemaversion",
       "type": "integer"
     },
     "units": {
       "default": [],
+      "description": "Worker contribution manifests retained for every staged unit that currently owns visible output.",
       "items": {
         "$ref": "#/$defs/UnitContributionManifestWire"
       },
@@ -251,6 +354,6 @@
     "category": "emitted",
     "filePath": "data/_pipeline/unit-contributions.json",
     "ownership": "pipeline-derived",
-    "summary": "Pipeline-emitted unit contribution map."
+    "summary": "Per-unit page contribution manifests retained in the visible stage."
   }
 }

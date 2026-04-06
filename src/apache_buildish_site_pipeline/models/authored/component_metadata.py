@@ -58,16 +58,31 @@ class ContentRoots(SitePipelineBaseModel):
 
 
 class SupportStatusDefinition(SitePipelineBaseModel):
-    """Definition of one support-status vocabulary entry."""
+    """One reusable support-status label, description, and default lifecycle behavior."""
 
-    display_name: NonEmptyString
-    order: int | None = None
-    description: NonEmptyString | None = None
-    default_maintenance_phase: NonEmptyString | None = None
+    display_name: NonEmptyString = Field(
+        description="Human-readable status label shown to readers, such as `Supported` or `Security fixes only`.",
+        examples=["Supported"],
+    )
+    order: int | None = Field(
+        default=None,
+        description="Optional sort order used when several support statuses should appear in a stable display order.",
+        examples=[10],
+    )
+    description: NonEmptyString | None = Field(
+        default=None,
+        description="Human-readable explanation of what this support status means in practice.",
+        examples=["Receives regular fixes and new patch releases."],
+    )
+    default_maintenance_phase: NonEmptyString | None = Field(
+        default=None,
+        description="Default maintenance-phase label to apply when a release uses this support status and does not provide a more specific phase.",
+        examples=["active"],
+    )
 
 
 class ComponentLifecycleHints(SitePipelineBaseModel):
-    """Optional high-level lifecycle defaults for a component."""
+    """Optional lifecycle defaults shared across all artifacts in a component repository."""
 
     latest_stable: VersionString | None = Field(
         default=None,
@@ -85,11 +100,11 @@ class ComponentMetadataDocumentV1(SitePipelineBaseModel):
     contract_documentation: ClassVar[ContractDocumentation] = ContractDocumentation(
         category="authored",
         ownership="component-owned",
-        summary="Component-owned metadata input.",
+        summary="Stable component identity, repository content roots, and shared lifecycle hints.",
         file_path="site/component.yaml",
         reference=ReferenceDocumentation(
             summary=ReferenceMarkdown(
-                "Component-owned metadata that describes stable identity and repository content roots."
+                "Canonical component metadata that defines stable identity, repository content roots, and optional lifecycle defaults shared across a component repository."
             ),
             sections=(
                 ReferenceSection(

@@ -255,6 +255,223 @@ def _provider_snapshot_example_document() -> ProviderSnapshotDocumentV1:
     )
 
 
+def _materialization_report_example_document() -> ResolvedMaterializationReportV1:
+    """Return a representative planning report example used in generated docs."""
+
+    return ResolvedMaterializationReportV1.model_validate(
+        {
+            "schemaVersion": 1,
+            "generatedAt": "2026-04-06T08:30:00Z",
+            "target": "build",
+            "entries": [
+                {
+                    "sourceKey": "apache-spark",
+                    "inputKind": "released",
+                    "componentSlug": "spark",
+                    "artifactKey": "runtime",
+                    "version": "4.0.0",
+                    "tag": "v4.0.0",
+                    "expectedLocalPath": ".buildish/materialized/apache-spark/v4.0.0",
+                    "status": "present",
+                    "watchEligible": False,
+                    "reason": "Release docs are staged from the release tag checkout.",
+                }
+            ],
+            "diagnostics": [],
+        }
+    )
+
+
+def _check_report_example_document() -> CheckReportV1:
+    """Return a representative validation report example used in generated docs."""
+
+    return CheckReportV1.model_validate(
+        {
+            "schemaVersion": 1,
+            "generatedAt": "2026-04-06T08:35:00Z",
+            "command": "check",
+            "summary": {
+                "status": "warnings",
+                "passed": True,
+                "failOnSeverity": "error",
+                "errorCount": 0,
+                "warningCount": 1,
+                "infoCount": 0,
+            },
+            "diagnostics": [
+                {
+                    "severity": "warning",
+                    "code": "catalog.redirectReasonMissing",
+                    "message": "Redirect /spark/docs/current/ has no reader-facing reason.",
+                    "componentSlug": "spark",
+                    "targetId": "/spark/docs/current/",
+                }
+            ],
+        }
+    )
+
+
+def _stage_run_report_example_document() -> StageRunReportV1:
+    """Return a representative stage run report example used in generated docs."""
+
+    return StageRunReportV1.model_validate(
+        {
+            "schemaVersion": 1,
+            "generatedAt": "2026-04-06T08:40:00Z",
+            "command": "build",
+            "summary": {
+                "status": "clean",
+                "succeeded": True,
+                "wroteStage": True,
+                "stageUsable": True,
+                "errorCount": 0,
+                "warningCount": 0,
+                "infoCount": 2,
+            },
+            "stageRootPath": ".buildish/stage/current",
+            "manifestPath": ".buildish/stage/current/manifest.json",
+            "diagnostics": [],
+        }
+    )
+
+
+def _stage_manifest_example_document() -> StageManifestV1:
+    """Return a representative stage manifest example used in generated docs."""
+
+    return StageManifestV1.model_validate(
+        {
+            "schemaVersion": 1,
+            "stageLayoutVersion": 1,
+            "generatedAt": "2026-04-06T08:40:00Z",
+            "command": "build",
+            "frontMatterFormat": "yaml",
+            "aggregateFormat": "json",
+            "roots": {"content": "content", "static": "static", "data": "data"},
+            "dataFiles": {
+                "components": "data/components.json",
+                "artifacts": "data/artifacts.json",
+                "routes": "data/routes.json",
+                "redirects": "data/redirects.json",
+                "releases": "data/releases.json",
+                "refs": "data/refs.json",
+                "contentIndex": "data/content-index.json",
+            },
+        }
+    )
+
+
+def _front_matter_namespace_example_document() -> PipelineFrontMatterNamespace:
+    """Return a representative staged front matter example used in generated docs."""
+
+    return PipelineFrontMatterNamespace.model_validate(
+        {
+            "component": {
+                "slug": "spark",
+                "displayName": "Apache Spark",
+                "publication": {
+                    "origin": {
+                        "key": "archive",
+                        "baseUrl": "https://archive.apache.org/dist/spark",
+                        "hostname": "archive.apache.org",
+                    },
+                    "paths": {
+                        "component": "/spark/",
+                        "development": "/spark/main/",
+                        "docs": "/spark/docs/",
+                        "assets": "/spark/assets/",
+                    },
+                    "urls": {
+                        "component": "https://archive.apache.org/dist/spark/",
+                        "development": "https://archive.apache.org/dist/spark/main/",
+                        "docs": "https://archive.apache.org/dist/spark/docs/",
+                        "assets": "https://archive.apache.org/dist/spark/assets/",
+                    },
+                },
+            },
+            "page": {
+                "kind": "docsPage",
+                "section": "documentation",
+                "artifactKey": "runtime",
+                "path": "/spark/4.0.0/docs/getting-started/",
+                "url": "https://archive.apache.org/dist/spark/4.0.0/docs/getting-started/",
+                "componentPath": "/spark/",
+                "componentUrl": "https://archive.apache.org/dist/spark/",
+                "version": {"kind": "released", "label": "4.0.0", "tag": "v4.0.0"},
+            },
+        }
+    )
+
+
+def _unit_contributions_example_document() -> PersistedUnitContributionsV1:
+    """Return a representative unit contribution map example used in generated docs."""
+
+    return PersistedUnitContributionsV1.model_validate(
+        {
+            "schemaVersion": 1,
+            "units": [
+                {
+                    "unitId": "component:spark:runtime",
+                    "pages": [
+                        {
+                            "stageRelativePath": "content/spark/4.0.0/docs/getting-started/index.md",
+                            "componentSlug": "spark",
+                            "artifactKey": "runtime",
+                            "section": "documentation",
+                            "pageKind": "docsPage",
+                            "publicPath": "/spark/4.0.0/docs/getting-started/",
+                            "componentPath": "/spark/",
+                            "originKey": "archive",
+                            "versionKind": "released",
+                            "version": "4.0.0",
+                            "title": "Getting Started",
+                            "sourcePath": "docs/runtime/getting-started.md",
+                        }
+                    ],
+                }
+            ],
+        }
+    )
+
+
+def _output_ownership_example_document() -> OutputOwnershipMapV1:
+    """Return a representative output ownership example used in generated docs."""
+
+    return OutputOwnershipMapV1.model_validate(
+        {
+            "schemaVersion": 1,
+            "claims": [
+                {
+                    "ownerId": "artifact:spark/runtime",
+                    "unitId": "component:spark:runtime",
+                    "pathKind": "directory",
+                    "stageRelativePath": "content/spark/4.0.0",
+                },
+                {
+                    "ownerId": "coordinator",
+                    "pathKind": "file",
+                    "stageRelativePath": "data/components.json",
+                },
+            ],
+        }
+    )
+
+
+def _aggregate_dependencies_example_document() -> AggregateDependencyMapV1:
+    """Return a representative aggregate dependency example used in generated docs."""
+
+    return AggregateDependencyMapV1.model_validate(
+        {
+            "schemaVersion": 1,
+            "entries": [
+                {
+                    "stageRelativePath": "data/components.json",
+                    "dependentUnitIds": ["component:spark:runtime", "component:spark:site"],
+                }
+            ],
+        }
+    )
+
+
 _SCHEMA_EXPORTS = (
     SchemaExport(
         filename="site-pipeline-catalog-v1.schema.json",
@@ -264,7 +481,7 @@ _SCHEMA_EXPORTS = (
         reference_roots=(SiteCatalogDocumentV1,),
         examples=(
             SchemaExample(
-                summary="Catalog with one component, one artifact, and release selection policy.",
+                summary="Catalog with a single component, a single artifact, and release selection policy.",
                 value_builder=_catalog_example_document,
                 render_format="yaml",
             ),
@@ -303,6 +520,12 @@ _SCHEMA_EXPORTS = (
         schema_builder=_model_schema(ResolvedMaterializationReportV1),
         documentation=contract_documentation_for(ResolvedMaterializationReportV1),
         reference_roots=(ResolvedMaterializationReportV1,),
+        examples=(
+            SchemaExample(
+                summary="Planning report with one required release checkout.",
+                value_builder=_materialization_report_example_document,
+            ),
+        ),
     ),
     SchemaExport(
         filename="site-pipeline-check-report-v1.schema.json",
@@ -310,6 +533,12 @@ _SCHEMA_EXPORTS = (
         schema_builder=_model_schema(CheckReportV1),
         documentation=contract_documentation_for(CheckReportV1),
         reference_roots=(CheckReportV1,),
+        examples=(
+            SchemaExample(
+                summary="Validation report with one warning that does not fail the run.",
+                value_builder=_check_report_example_document,
+            ),
+        ),
     ),
     SchemaExport(
         filename="site-pipeline-stage-run-report-v1.schema.json",
@@ -317,6 +546,12 @@ _SCHEMA_EXPORTS = (
         schema_builder=_model_schema(StageRunReportV1),
         documentation=contract_documentation_for(StageRunReportV1),
         reference_roots=(StageRunReportV1,),
+        examples=(
+            SchemaExample(
+                summary="Successful build report with a usable stage manifest.",
+                value_builder=_stage_run_report_example_document,
+            ),
+        ),
     ),
     SchemaExport(
         filename="site-pipeline-stage-manifest-v1.schema.json",
@@ -324,6 +559,12 @@ _SCHEMA_EXPORTS = (
         schema_builder=_model_schema(StageManifestV1),
         documentation=contract_documentation_for(StageManifestV1),
         reference_roots=(StageManifestV1,),
+        examples=(
+            SchemaExample(
+                summary="Stage manifest that points at content, static, and aggregate roots.",
+                value_builder=_stage_manifest_example_document,
+            ),
+        ),
     ),
     SchemaExport(
         filename="site-pipeline-front-matter-namespace-v1.schema.json",
@@ -331,6 +572,13 @@ _SCHEMA_EXPORTS = (
         schema_builder=_model_schema(PipelineFrontMatterNamespace),
         documentation=contract_documentation_for(PipelineFrontMatterNamespace),
         reference_roots=(PipelineFrontMatterNamespace,),
+        examples=(
+            SchemaExample(
+                summary="Injected front matter for a component page and a released version.",
+                value_builder=_front_matter_namespace_example_document,
+                render_format="yaml",
+            ),
+        ),
     ),
     SchemaExport(
         filename="site-pipeline-components-data-v1.schema.json",
@@ -342,7 +590,7 @@ _SCHEMA_EXPORTS = (
             items_description="Component aggregate entries emitted into `data/components.json`.",
         ),
         documentation=_pipeline_file_documentation(
-            summary="Pipeline-emitted component aggregate file.",
+            summary="Published component inventory with resolved routes, origins, and artifact summaries.",
             file_path="data/components.json",
         ),
         reference_roots=(ComponentsDataEntry,),
@@ -357,7 +605,7 @@ _SCHEMA_EXPORTS = (
             items_description="Artifact aggregate entries emitted into `data/artifacts.json`.",
         ),
         documentation=_pipeline_file_documentation(
-            summary="Pipeline-emitted artifact aggregate file.",
+            summary="Published artifact inventory with version discovery rules, lifecycle hints, and latest-version summaries.",
             file_path="data/artifacts.json",
         ),
         reference_roots=(ArtifactsDataEntry,),
@@ -372,7 +620,7 @@ _SCHEMA_EXPORTS = (
             items_description="Route aggregate entries emitted into `data/routes.json`.",
         ),
         documentation=_pipeline_file_documentation(
-            summary="Pipeline-emitted route aggregate file.",
+            summary="Flat inventory of published routes with resolved URLs, labels, and ownership metadata.",
             file_path="data/routes.json",
         ),
         reference_roots=(RouteAggregateEntry,),
@@ -387,7 +635,7 @@ _SCHEMA_EXPORTS = (
             items_description="Redirect aggregate entries emitted into `data/redirects.json`.",
         ),
         documentation=_pipeline_file_documentation(
-            summary="Pipeline-emitted redirect aggregate file.",
+            summary="Flat inventory of published redirects and their resolved destination URLs.",
             file_path="data/redirects.json",
         ),
         reference_roots=(RedirectAggregateEntry,),
@@ -402,7 +650,7 @@ _SCHEMA_EXPORTS = (
             items_description="Provider summary entries emitted into `data/providers.json`.",
         ),
         documentation=_pipeline_file_documentation(
-            summary="Pipeline-emitted provider summary aggregate file.",
+            summary="Loaded provider inventory with display names, base URLs, and fetch timestamps.",
             file_path="data/providers.json",
         ),
         reference_roots=(ProvidersDataEntry,),
@@ -417,7 +665,7 @@ _SCHEMA_EXPORTS = (
             items_description="Released-version aggregate entries emitted into `data/releases.json`.",
         ),
         documentation=_pipeline_file_documentation(
-            summary="Pipeline-emitted release aggregate file.",
+            summary="Published released-version inventory with lifecycle, support, and asset metadata.",
             file_path="data/releases.json",
         ),
         reference_roots=(ReleaseAggregateEntry,),
@@ -432,7 +680,7 @@ _SCHEMA_EXPORTS = (
             items_description="Candidate-version aggregate entries emitted into `data/candidates.json`.",
         ),
         documentation=_pipeline_file_documentation(
-            summary="Pipeline-emitted candidate aggregate file.",
+            summary="Published release-candidate inventory with vote status and downloadable assets.",
             file_path="data/candidates.json",
         ),
         reference_roots=(CandidateAggregateEntry,),
@@ -447,7 +695,7 @@ _SCHEMA_EXPORTS = (
             items_description="Named-ref aggregate entries emitted into `data/refs.json`.",
         ),
         documentation=_pipeline_file_documentation(
-            summary="Pipeline-emitted named-ref aggregate file.",
+            summary="Published development, line-head, and named-ref inventory for version navigation.",
             file_path="data/refs.json",
         ),
         reference_roots=(RefAggregateEntry,),
@@ -462,7 +710,7 @@ _SCHEMA_EXPORTS = (
             items_description="Translation-set aggregate entries emitted into `data/translations.json`.",
         ),
         documentation=_pipeline_file_documentation(
-            summary="Pipeline-emitted translation aggregate file.",
+            summary="Translation sibling groups keyed by one shared translation identifier.",
             file_path="data/translations.json",
         ),
         reference_roots=(TranslationSetAggregateEntry,),
@@ -477,7 +725,7 @@ _SCHEMA_EXPORTS = (
             items_description="Compatibility aggregate entries emitted into `data/compatibility.json`.",
         ),
         documentation=_pipeline_file_documentation(
-            summary="Pipeline-emitted compatibility aggregate file.",
+            summary="Declared compatibility relationships between published identities.",
             file_path="data/compatibility.json",
         ),
         reference_roots=(CompatibilityAggregateEntry,),
@@ -492,7 +740,7 @@ _SCHEMA_EXPORTS = (
             items_description="Mount aggregate entries emitted into `data/mounts.json`.",
         ),
         documentation=_pipeline_file_documentation(
-            summary="Pipeline-emitted mount aggregate file.",
+            summary="Mounted content and asset subtrees published under resolved public paths.",
             file_path="data/mounts.json",
         ),
         reference_roots=(MountAggregateEntry,),
@@ -507,7 +755,7 @@ _SCHEMA_EXPORTS = (
             items_description="Content-index entries emitted into `data/content-index.json`.",
         ),
         documentation=_pipeline_file_documentation(
-            summary="Pipeline-emitted content index file.",
+            summary="Search and navigation index for staged pages with titles, ancestry, and version metadata.",
             file_path="data/content-index.json",
         ),
         reference_roots=(ContentIndexEntry,),
@@ -518,7 +766,7 @@ _SCHEMA_EXPORTS = (
         description="Public staged diagnostics file at ``data/diagnostics.json``.",
         schema_builder=_list_schema(list[PipelineDiagnosticEntry]),
         documentation=_pipeline_file_documentation(
-            summary="Pipeline-emitted diagnostics file.",
+            summary="Structured diagnostics emitted during planning, checking, or staging.",
             file_path="data/diagnostics.json",
         ),
         reference_roots=(PipelineDiagnosticEntry,),
@@ -529,6 +777,12 @@ _SCHEMA_EXPORTS = (
         schema_builder=_model_schema(PersistedUnitContributionsV1),
         documentation=contract_documentation_for(PersistedUnitContributionsV1),
         reference_roots=(PersistedUnitContributionsV1,),
+        examples=(
+            SchemaExample(
+                summary="Retained per-unit contribution map with one staged page.",
+                value_builder=_unit_contributions_example_document,
+            ),
+        ),
     ),
     SchemaExport(
         filename="site-pipeline-output-ownership-v1.schema.json",
@@ -536,6 +790,12 @@ _SCHEMA_EXPORTS = (
         schema_builder=_model_schema(OutputOwnershipMapV1),
         documentation=contract_documentation_for(OutputOwnershipMapV1),
         reference_roots=(OutputOwnershipMapV1,),
+        examples=(
+            SchemaExample(
+                summary="Ownership claims for one unit directory and one coordinator aggregate file.",
+                value_builder=_output_ownership_example_document,
+            ),
+        ),
     ),
     SchemaExport(
         filename="site-pipeline-aggregate-dependencies-v1.schema.json",
@@ -543,6 +803,12 @@ _SCHEMA_EXPORTS = (
         schema_builder=_model_schema(AggregateDependencyMapV1),
         documentation=contract_documentation_for(AggregateDependencyMapV1),
         reference_roots=(AggregateDependencyMapV1,),
+        examples=(
+            SchemaExample(
+                summary="Aggregate dependency map that marks which units can invalidate one shared file.",
+                value_builder=_aggregate_dependencies_example_document,
+            ),
+        ),
     ),
 )
 

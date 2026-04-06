@@ -34,7 +34,7 @@
     },
     "ComponentLifecycleHints": {
       "additionalProperties": false,
-      "description": "Optional high-level lifecycle defaults for a component.",
+      "description": "Optional lifecycle defaults shared across all artifacts in a component repository.",
       "properties": {
         "latestStable": {
           "anyOf": [
@@ -125,7 +125,7 @@
     },
     "SupportStatusDefinition": {
       "additionalProperties": false,
-      "description": "Definition of one support-status vocabulary entry.",
+      "description": "One reusable support-status label, description, and default lifecycle behavior.",
       "properties": {
         "defaultMaintenancePhase": {
           "anyOf": [
@@ -138,6 +138,10 @@
             }
           ],
           "default": null,
+          "description": "Default maintenance-phase label to apply when a release uses this support status and does not provide a more specific phase.",
+          "examples": [
+            "active"
+          ],
           "title": "Defaultmaintenancephase"
         },
         "description": {
@@ -151,9 +155,17 @@
             }
           ],
           "default": null,
+          "description": "Human-readable explanation of what this support status means in practice.",
+          "examples": [
+            "Receives regular fixes and new patch releases."
+          ],
           "title": "Description"
         },
         "displayName": {
+          "description": "Human-readable status label shown to readers, such as `Supported` or `Security fixes only`.",
+          "examples": [
+            "Supported"
+          ],
           "minLength": 1,
           "title": "Displayname",
           "type": "string"
@@ -168,6 +180,10 @@
             }
           ],
           "default": null,
+          "description": "Optional sort order used when several support statuses should appear in a stable display order.",
+          "examples": [
+            10
+          ],
           "title": "Order"
         }
       },
@@ -250,6 +266,6 @@
     "category": "authored",
     "filePath": "site/component.yaml",
     "ownership": "component-owned",
-    "summary": "Component-owned metadata input."
+    "summary": "Stable component identity, repository content roots, and shared lifecycle hints."
   }
 }

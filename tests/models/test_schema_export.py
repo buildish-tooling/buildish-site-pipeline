@@ -63,7 +63,7 @@ class SchemaExportTests(unittest.TestCase):
             {
                 "category": "authored",
                 "ownership": "consumer-owned",
-                "summary": "Consumer-authored site catalog input.",
+                "summary": "Catalog of components, defaults, sources, origins, and publication rules for one site.",
                 "filePath": "site/catalog.yaml",
             },
         )
@@ -96,7 +96,7 @@ class SchemaExportTests(unittest.TestCase):
         self.assertEqual(components_data_schema["description"], "Public staged aggregate file at ``data/components.json``.")
         self.assertEqual(
             components_data_schema["x-buildish-contract"]["summary"],
-            "Pipeline-emitted component aggregate file.",
+            "Published component inventory with resolved routes, origins, and artifact summaries.",
         )
         self.assertEqual(
             components_data_schema["x-buildish-contract"]["filePath"],
@@ -136,18 +136,17 @@ class SchemaExportTests(unittest.TestCase):
             self.assertIn("### Pipeline-emitted non-file root contracts", generated_reference_text)
             self.assertNotIn("(/schemas/", generated_reference_text)
             self.assertIn(
-                "- [SiteCatalogDocumentV1](#sitecatalogdocumentv1) — Consumer-owned catalog input",
+                "- [SiteCatalogDocumentV1](#sitecatalogdocumentv1) — Canonical site catalog that lists participating components, shared defaults, source bindings, publication origins, and publication policy for one site.",
                 generated_reference_text,
             )
             self.assertIn("- file contract: (inner type)", generated_reference_text)
-            self.assertIn(
-                "**UX warning:** field description missing; this violates the project's UX requirements. (not documented)",
-                generated_reference_text,
-            )
+            self.assertNotIn("**UX warning:**", generated_reference_text)
             self.assertIn(
                 "| <a id=\"componentcatalogentry-displayname\"></a>`displayName` | [NonEmptyString](#nonemptystring) | no |",
                 generated_reference_text,
             )
+            self.assertIn("#### Selected field examples", generated_reference_text)
+            self.assertIn("- `developmentRef`: Example: `\"main\"`", generated_reference_text)
 
     def test_undocumented_model_sections_emit_explicit_ux_warnings(self) -> None:
         class UndocumentedModel(SitePipelineBaseModel):

@@ -3,9 +3,13 @@
   "$defs": {
     "ArtifactVersioningConfig": {
       "additionalProperties": false,
-      "description": "Artifact-specific version-discovery configuration.",
+      "description": "How the pipeline discovers development, maintenance, tag, and named-ref versions.",
       "properties": {
         "developmentRef": {
+          "description": "Source-control ref that represents the moving development docs for this artifact.",
+          "examples": [
+            "main"
+          ],
           "minLength": 1,
           "title": "Developmentref",
           "type": "string"
@@ -21,6 +25,10 @@
             }
           ],
           "default": null,
+          "description": "Pattern used to derive maintenance branch refs from a release-line key, usually with `{line}` as the substitution placeholder.",
+          "examples": [
+            "release/{line}"
+          ],
           "title": "Maintenancerefpattern"
         },
         "namedRefs": {
@@ -36,9 +44,14 @@
             }
           ],
           "default": null,
+          "description": "Additional intentionally named version contexts, such as preview or stable branches, that should be selectable by key.",
           "title": "Namedrefs"
         },
         "tagPattern": {
+          "description": "Regular expression used to recognize provider tags that belong to this artifact's version stream.",
+          "examples": [
+            "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
+          ],
           "minLength": 1,
           "title": "Tagpattern",
           "type": "string"
@@ -66,6 +79,10 @@
             }
           ],
           "default": null,
+          "description": "Numeric ordering hint for the candidate, usually the `rc` sequence number.",
+          "examples": [
+            1
+          ],
           "title": "Candidatesequence"
         },
         "displayVersion": {
@@ -79,6 +96,7 @@
             }
           ],
           "default": null,
+          "description": "Human-readable candidate label when it should differ from the raw version string.",
           "title": "Displayversion"
         },
         "version": {
@@ -92,6 +110,10 @@
             }
           ],
           "default": null,
+          "description": "Candidate version string when the provider exposes one.",
+          "examples": [
+            "4.1.0-rc1"
+          ],
           "title": "Version"
         },
         "voteStatus": {
@@ -105,6 +127,10 @@
             }
           ],
           "default": null,
+          "description": "Vote-status label for the latest candidate when it is known.",
+          "examples": [
+            "passed"
+          ],
           "title": "Votestatus"
         }
       },
@@ -126,6 +152,7 @@
             }
           ],
           "default": null,
+          "description": "Human-readable label for the latest release when it should differ from the raw version string.",
           "title": "Displayversion"
         },
         "publicationState": {
@@ -137,7 +164,8 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "Publication-state label for the latest release, such as published or withdrawn."
         },
         "publishedAt": {
           "anyOf": [
@@ -150,6 +178,7 @@
             }
           ],
           "default": null,
+          "description": "Timestamp when the latest release became publicly available.",
           "title": "Publishedat"
         },
         "tag": {
@@ -163,9 +192,17 @@
             }
           ],
           "default": null,
+          "description": "Tag associated with the latest release, if known.",
+          "examples": [
+            "v4.0.1"
+          ],
           "title": "Tag"
         },
         "version": {
+          "description": "Exact version string of the latest known release.",
+          "examples": [
+            "4.0.1"
+          ],
           "minLength": 1,
           "title": "Version",
           "type": "string"
@@ -179,7 +216,7 @@
     },
     "NamedRefConfig": {
       "additionalProperties": false,
-      "description": "Authored named ref intentionally exposed as a publishable version context.",
+      "description": "Named source-control ref intentionally exposed as a stable version context.",
       "properties": {
         "description": {
           "anyOf": [
@@ -192,6 +229,10 @@
             }
           ],
           "default": null,
+          "description": "Human-readable explanation of what this named ref contains or who should use it.",
+          "examples": [
+            "Early access docs for the next planned minor release."
+          ],
           "title": "Description"
         },
         "displayName": {
@@ -205,9 +246,17 @@
             }
           ],
           "default": null,
+          "description": "Human-readable label shown in version pickers, breadcrumbs, or other rendered UI.",
+          "examples": [
+            "Preview"
+          ],
           "title": "Displayname"
         },
         "key": {
+          "description": "Stable identifier used elsewhere in the catalog to select this named ref.",
+          "examples": [
+            "preview"
+          ],
           "minLength": 1,
           "title": "Key",
           "type": "string"
@@ -223,9 +272,17 @@
             }
           ],
           "default": null,
+          "description": "Short maturity label that explains how stable or experimental this named ref should be treated.",
+          "examples": [
+            "preview"
+          ],
           "title": "Maturity"
         },
         "ref": {
+          "description": "Exact source-control ref to resolve when this named context is selected.",
+          "examples": [
+            "refs/heads/preview"
+          ],
           "minLength": 1,
           "title": "Ref",
           "type": "string"
@@ -266,11 +323,19 @@
       "description": "Entry in ``data/refs.json``.",
       "properties": {
         "artifactKey": {
+          "description": "Owning artifact key for the ref context.",
+          "examples": [
+            "runtime"
+          ],
           "minLength": 1,
           "title": "Artifactkey",
           "type": "string"
         },
         "componentSlug": {
+          "description": "Owning component slug for the ref context.",
+          "examples": [
+            "spark"
+          ],
           "minLength": 1,
           "title": "Componentslug",
           "type": "string"
@@ -286,6 +351,10 @@
             }
           ],
           "default": null,
+          "description": "Human-readable label for the ref context.",
+          "examples": [
+            "main"
+          ],
           "title": "Displayversion"
         },
         "externalId": {
@@ -299,6 +368,7 @@
             }
           ],
           "default": null,
+          "description": "Provider-specific stable identifier for the upstream ref record.",
           "title": "Externalid"
         },
         "externalUrl": {
@@ -312,10 +382,12 @@
             }
           ],
           "default": null,
+          "description": "Human-browsable upstream URL for the ref record.",
           "title": "Externalurl"
         },
         "kind": {
-          "$ref": "#/$defs/RecordKind"
+          "$ref": "#/$defs/RecordKind",
+          "description": "Ref context kind, limited to development, named-ref, and line-head entries."
         },
         "maturity": {
           "anyOf": [
@@ -328,6 +400,10 @@
             }
           ],
           "default": null,
+          "description": "Maturity label associated with the ref context.",
+          "examples": [
+            "preview"
+          ],
           "title": "Maturity"
         },
         "namedRefKey": {
@@ -341,6 +417,10 @@
             }
           ],
           "default": null,
+          "description": "Catalog-authored named-ref key when this entry represents a named ref.",
+          "examples": [
+            "preview"
+          ],
           "title": "Namedrefkey"
         },
         "provider": {
@@ -354,9 +434,14 @@
             }
           ],
           "default": null,
+          "description": "Provider key for the upstream system that supplied this ref record.",
           "title": "Provider"
         },
         "ref": {
+          "description": "Exact source-control ref for the published ref context.",
+          "examples": [
+            "refs/heads/main"
+          ],
           "minLength": 1,
           "title": "Ref",
           "type": "string"
@@ -372,6 +457,10 @@
             }
           ],
           "default": null,
+          "description": "Release-line key when the ref context represents a line head.",
+          "examples": [
+            "4.0"
+          ],
           "title": "Releaseline"
         }
       },
@@ -386,7 +475,7 @@
     },
     "ReleaseLineSummary": {
       "additionalProperties": false,
-      "description": "Compact release-line summary embedded into front matter.",
+      "description": "Small release-line summary embedded into page or component front matter.",
       "properties": {
         "aliases": {
           "anyOf": [
@@ -402,6 +491,12 @@
             }
           ],
           "default": null,
+          "description": "Alternate labels that should also refer to this release line.",
+          "examples": [
+            [
+              "stable"
+            ]
+          ],
           "title": "Aliases"
         },
         "headRef": {
@@ -415,9 +510,17 @@
             }
           ],
           "default": null,
+          "description": "Maintenance or line-head ref associated with this release line, if known.",
+          "examples": [
+            "refs/heads/release-4.0"
+          ],
           "title": "Headref"
         },
         "key": {
+          "description": "Release-line key, such as `4.0`, for the summarized line.",
+          "examples": [
+            "4.0"
+          ],
           "minLength": 1,
           "title": "Key",
           "type": "string"
@@ -433,6 +536,10 @@
             }
           ],
           "default": null,
+          "description": "Latest released version currently associated with this line.",
+          "examples": [
+            "4.0.1"
+          ],
           "title": "Latest"
         },
         "parent": {
@@ -446,6 +553,10 @@
             }
           ],
           "default": null,
+          "description": "Optional parent release-line key when lineage should be preserved in front matter.",
+          "examples": [
+            "4.x"
+          ],
           "title": "Parent"
         },
         "supportStatus": {
@@ -459,6 +570,10 @@
             }
           ],
           "default": null,
+          "description": "Support-status key or label for the release line.",
+          "examples": [
+            "supported"
+          ],
           "title": "Supportstatus"
         },
         "supportWindow": {
@@ -470,7 +585,8 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "Lifecycle dates and support notes for the release line."
         }
       },
       "required": [
@@ -481,7 +597,7 @@
     },
     "SupportStatusDefinition": {
       "additionalProperties": false,
-      "description": "Definition of one support-status vocabulary entry.",
+      "description": "One reusable support-status label, description, and default lifecycle behavior.",
       "properties": {
         "defaultMaintenancePhase": {
           "anyOf": [
@@ -494,6 +610,10 @@
             }
           ],
           "default": null,
+          "description": "Default maintenance-phase label to apply when a release uses this support status and does not provide a more specific phase.",
+          "examples": [
+            "active"
+          ],
           "title": "Defaultmaintenancephase"
         },
         "description": {
@@ -507,9 +627,17 @@
             }
           ],
           "default": null,
+          "description": "Human-readable explanation of what this support status means in practice.",
+          "examples": [
+            "Receives regular fixes and new patch releases."
+          ],
           "title": "Description"
         },
         "displayName": {
+          "description": "Human-readable status label shown to readers, such as `Supported` or `Security fixes only`.",
+          "examples": [
+            "Supported"
+          ],
           "minLength": 1,
           "title": "Displayname",
           "type": "string"
@@ -524,6 +652,10 @@
             }
           ],
           "default": null,
+          "description": "Optional sort order used when several support statuses should appear in a stable display order.",
+          "examples": [
+            10
+          ],
           "title": "Order"
         }
       },
@@ -535,7 +667,7 @@
     },
     "SupportWindow": {
       "additionalProperties": false,
-      "description": "Structured support-window metadata for a line or exact release.",
+      "description": "Lifecycle dates and support notes for one release line or exact release.",
       "properties": {
         "endOfActiveSupportDate": {
           "anyOf": [
@@ -548,6 +680,7 @@
             }
           ],
           "default": null,
+          "description": "Date after which the release no longer receives full active support.",
           "title": "Endofactivesupportdate"
         },
         "endOfLifeDate": {
@@ -561,6 +694,7 @@
             }
           ],
           "default": null,
+          "description": "Final retirement date after which the release should be treated as fully end-of-life.",
           "title": "Endoflifedate"
         },
         "endOfSupportDate": {
@@ -574,6 +708,7 @@
             }
           ],
           "default": null,
+          "description": "Date after which the release is no longer supported in normal maintenance channels.",
           "title": "Endofsupportdate"
         },
         "maintenancePhase": {
@@ -587,6 +722,10 @@
             }
           ],
           "default": null,
+          "description": "Short label for the current maintenance phase, such as general availability, maintenance, or security-only support.",
+          "examples": [
+            "security-fixes"
+          ],
           "title": "Maintenancephase"
         },
         "notes": {
@@ -600,6 +739,7 @@
             }
           ],
           "default": null,
+          "description": "Additional notes that clarify exceptions, migration advice, or support caveats.",
           "title": "Notes"
         },
         "releaseDate": {
@@ -613,6 +753,10 @@
             }
           ],
           "default": null,
+          "description": "Release date for the line or version that this support window describes.",
+          "examples": [
+            "2026-04-01T00:00:00Z"
+          ],
           "title": "Releasedate"
         },
         "supportPolicyUrl": {
@@ -626,6 +770,7 @@
             }
           ],
           "default": null,
+          "description": "Canonical URL that explains the support policy referenced by this support window.",
           "title": "Supportpolicyurl"
         }
       },
@@ -645,6 +790,10 @@
         "description": "Entry in ``data/artifacts.json``.",
         "properties": {
           "componentSlug": {
+            "description": "Owning component slug for the artifact.",
+            "examples": [
+              "spark"
+            ],
             "minLength": 1,
             "title": "Componentslug",
             "type": "string"
@@ -660,6 +809,10 @@
               }
             ],
             "default": null,
+            "description": "Human-readable artifact label shown in navigation and metadata.",
+            "examples": [
+              "Runtime"
+            ],
             "title": "Displayname"
           },
           "docsRoot": {
@@ -673,9 +826,17 @@
               }
             ],
             "default": null,
+            "description": "Repository-relative docs root for the artifact when it differs from the component default.",
+            "examples": [
+              "docs/runtime"
+            ],
             "title": "Docsroot"
           },
           "key": {
+            "description": "Stable artifact key used by routes, aggregates, and typed references.",
+            "examples": [
+              "runtime"
+            ],
             "minLength": 1,
             "title": "Key",
             "type": "string"
@@ -689,7 +850,8 @@
                 "type": "null"
               }
             ],
-            "default": null
+            "default": null,
+            "description": "Compact summary of the latest known release candidate for the artifact."
           },
           "latestRelease": {
             "anyOf": [
@@ -700,7 +862,8 @@
                 "type": "null"
               }
             ],
-            "default": null
+            "default": null,
+            "description": "Compact summary of the latest known release for the artifact."
           },
           "latestStable": {
             "anyOf": [
@@ -713,6 +876,10 @@
               }
             ],
             "default": null,
+            "description": "Most recent stable version recommended for readers.",
+            "examples": [
+              "4.0.1"
+            ],
             "title": "Lateststable"
           },
           "namedRefs": {
@@ -728,6 +895,7 @@
               }
             ],
             "default": null,
+            "description": "Published development, line-head, or named-ref contexts associated with the artifact.",
             "title": "Namedrefs"
           },
           "providerKeys": {
@@ -744,6 +912,12 @@
               }
             ],
             "default": null,
+            "description": "Provider keys that contributed version metadata for this artifact.",
+            "examples": [
+              [
+                "github-releases"
+              ]
+            ],
             "title": "Providerkeys"
           },
           "releaseLines": {
@@ -759,6 +933,7 @@
               }
             ],
             "default": null,
+            "description": "Release-line summaries associated with the artifact.",
             "title": "Releaselines"
           },
           "sourceKey": {
@@ -772,6 +947,10 @@
               }
             ],
             "default": null,
+            "description": "Named source binding that owns the artifact's docs and assets.",
+            "examples": [
+              "apache-spark"
+            ],
             "title": "Sourcekey"
           },
           "supportPolicyUrl": {
@@ -785,6 +964,7 @@
               }
             ],
             "default": null,
+            "description": "Canonical URL for the support policy document associated with this artifact.",
             "title": "Supportpolicyurl"
           },
           "supportStatusVocabulary": {
@@ -803,6 +983,7 @@
               }
             ],
             "default": null,
+            "description": "Reusable support-status definitions that release lines and releases for this artifact can refer to by key.",
             "title": "Supportstatusvocabulary"
           },
           "versioning": {
@@ -814,7 +995,8 @@
                 "type": "null"
               }
             ],
-            "default": null
+            "default": null,
+            "description": "Version-discovery rules that explain how development refs, tags, and named refs are derived for the artifact."
           }
         },
         "required": [
@@ -837,6 +1019,6 @@
     "category": "emitted",
     "filePath": "data/artifacts.json",
     "ownership": "pipeline-derived",
-    "summary": "Pipeline-emitted artifact aggregate file."
+    "summary": "Published artifact inventory with version discovery rules, lifecycle hints, and latest-version summaries."
   }
 }

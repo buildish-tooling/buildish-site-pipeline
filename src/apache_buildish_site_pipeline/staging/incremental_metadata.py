@@ -20,6 +20,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import ClassVar, Literal, cast
 
+from pydantic import Field
+
 from ..models.documentation import (
     ContractDocumentation,
     PipelineDerivedModel as SitePipelineBaseModel,
@@ -41,21 +43,39 @@ class PersistedUnitContributionsV1(SitePipelineBaseModel):
     contract_documentation: ClassVar[ContractDocumentation] = ContractDocumentation(
         category="emitted",
         ownership="pipeline-derived",
-        summary="Pipeline-emitted unit contribution map.",
+        summary="Per-unit page contribution manifests retained in the visible stage.",
         file_path="data/_pipeline/unit-contributions.json",
     )
 
-    schema_version: Literal[1] = 1
-    units: tuple[UnitContributionManifestWire, ...] = ()
+    schema_version: Literal[1] = Field(
+        default=1,
+        description="Schema version for the persisted unit-contribution manifest file.",
+    )
+    units: tuple[UnitContributionManifestWire, ...] = Field(
+        default=(),
+        description="Worker contribution manifests retained for every staged unit that currently owns visible output.",
+    )
 
 
 class OutputOwnershipClaimV1(SitePipelineBaseModel):
     """One exact published file or directory root together with its logical owner."""
 
-    owner_id: str
-    unit_id: str | None = None
-    path_kind: Literal["directory", "file"]
-    stage_relative_path: StageRelativePath
+    owner_id: str = Field(
+        description="Logical owner identifier for the output, such as a unit owner id or the coordinator.",
+        examples=["coordinator"],
+    )
+    unit_id: str | None = Field(
+        default=None,
+        description="Unit identifier when the owning output belongs to one concrete staging unit.",
+        examples=["component:spark:runtime"],
+    )
+    path_kind: Literal["directory", "file"] = Field(
+        description="Whether the owned stage-relative path refers to one exact file or one directory root."
+    )
+    stage_relative_path: StageRelativePath = Field(
+        description="Owned path inside the visible stage.",
+        examples=["content/spark"],
+    )
 
 
 class OutputOwnershipMapV1(SitePipelineBaseModel):
@@ -64,19 +84,31 @@ class OutputOwnershipMapV1(SitePipelineBaseModel):
     contract_documentation: ClassVar[ContractDocumentation] = ContractDocumentation(
         category="emitted",
         ownership="pipeline-derived",
-        summary="Pipeline-emitted output ownership map.",
+        summary="Ownership map for staged files and directories retained across rebuilds.",
         file_path="data/_pipeline/output-ownership.json",
     )
 
-    schema_version: Literal[1] = 1
-    claims: tuple[OutputOwnershipClaimV1, ...] = ()
+    schema_version: Literal[1] = Field(
+        default=1,
+        description="Schema version for the output-ownership map.",
+    )
+    claims: tuple[OutputOwnershipClaimV1, ...] = Field(
+        default=(),
+        description="Ownership claims for every retained stage file or directory root.",
+    )
 
 
 class AggregateDependencyEntryV1(SitePipelineBaseModel):
     """One coordinator-owned aggregate and the units that may change its payload."""
 
-    stage_relative_path: StageRelativePath
-    dependent_unit_ids: tuple[str, ...] = ()
+    stage_relative_path: StageRelativePath = Field(
+        description="Coordinator-owned aggregate file inside the visible stage.",
+        examples=["data/components.json"],
+    )
+    dependent_unit_ids: tuple[str, ...] = Field(
+        default=(),
+        description="Unit identifiers whose output can invalidate or change this aggregate file.",
+    )
 
 
 class AggregateDependencyMapV1(SitePipelineBaseModel):
@@ -85,12 +117,18 @@ class AggregateDependencyMapV1(SitePipelineBaseModel):
     contract_documentation: ClassVar[ContractDocumentation] = ContractDocumentation(
         category="emitted",
         ownership="pipeline-derived",
-        summary="Pipeline-emitted aggregate dependency map.",
+        summary="Coordinator aggregate files and the units that can invalidate them.",
         file_path="data/_pipeline/aggregate-dependencies.json",
     )
 
-    schema_version: Literal[1] = 1
-    entries: tuple[AggregateDependencyEntryV1, ...] = ()
+    schema_version: Literal[1] = Field(
+        default=1,
+        description="Schema version for the aggregate-dependency map.",
+    )
+    entries: tuple[AggregateDependencyEntryV1, ...] = Field(
+        default=(),
+        description="Coordinator-owned aggregate files together with the units that may change them.",
+    )
 
 
 @dataclass(frozen=True, slots=True)

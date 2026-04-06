@@ -3,7 +3,7 @@
   "$defs": {
     "ProviderAsset": {
       "additionalProperties": false,
-      "description": "Optional file-level metadata attached to a provider record.",
+      "description": "Downloadable asset attached to one provider release or candidate record.",
       "properties": {
         "checksums": {
           "anyOf": [
@@ -22,6 +22,7 @@
             }
           ],
           "default": null,
+          "description": "Checksum values keyed by algorithm name, such as `sha512` or `sha256`.",
           "title": "Checksums"
         },
         "kind": {
@@ -35,6 +36,10 @@
             }
           ],
           "default": null,
+          "description": "Short asset kind label, for example `binary`, `source`, `signature`, or `sbom`.",
+          "examples": [
+            "binary"
+          ],
           "title": "Kind"
         },
         "mediaType": {
@@ -48,9 +53,17 @@
             }
           ],
           "default": null,
+          "description": "Declared media type for the asset payload when the provider exposes it.",
+          "examples": [
+            "application/gzip"
+          ],
           "title": "Mediatype"
         },
         "name": {
+          "description": "Filename or display label of the downloadable asset.",
+          "examples": [
+            "spark-4.0.0-bin.tgz"
+          ],
           "minLength": 1,
           "title": "Name",
           "type": "string"
@@ -66,6 +79,7 @@
             }
           ],
           "default": null,
+          "description": "URL of provenance or attestation metadata associated with this asset, if available.",
           "title": "Provenanceurl"
         },
         "sbomUrl": {
@@ -79,6 +93,7 @@
             }
           ],
           "default": null,
+          "description": "URL of the asset's software bill of materials, if available.",
           "title": "Sbomurl"
         },
         "signatureUrl": {
@@ -92,6 +107,7 @@
             }
           ],
           "default": null,
+          "description": "URL of the detached signature file, if available.",
           "title": "Signatureurl"
         },
         "size": {
@@ -105,9 +121,17 @@
             }
           ],
           "default": null,
+          "description": "Asset size in bytes when the provider exposes it.",
+          "examples": [
+            125004321
+          ],
           "title": "Size"
         },
         "url": {
+          "description": "Canonical download URL for the asset.",
+          "examples": [
+            "https://downloads.example.org/spark-4.0.0-bin.tgz"
+          ],
           "minLength": 1,
           "title": "Url",
           "type": "string"
@@ -133,6 +157,10 @@
         "description": "Entry in ``data/candidates.json``.",
         "properties": {
           "artifactKey": {
+            "description": "Owning artifact key for the candidate.",
+            "examples": [
+              "runtime"
+            ],
             "minLength": 1,
             "title": "Artifactkey",
             "type": "string"
@@ -150,6 +178,7 @@
               }
             ],
             "default": null,
+            "description": "Downloadable assets attached to the candidate.",
             "title": "Assets"
           },
           "candidateSequence": {
@@ -163,9 +192,17 @@
               }
             ],
             "default": null,
+            "description": "Numeric ordering hint for the candidate, usually the `rc` sequence number.",
+            "examples": [
+              1
+            ],
             "title": "Candidatesequence"
           },
           "componentSlug": {
+            "description": "Owning component slug for the candidate.",
+            "examples": [
+              "spark"
+            ],
             "minLength": 1,
             "title": "Componentslug",
             "type": "string"
@@ -181,6 +218,7 @@
               }
             ],
             "default": null,
+            "description": "Timestamp when the candidate record was first created.",
             "title": "Createdat"
           },
           "displayVersion": {
@@ -194,6 +232,7 @@
               }
             ],
             "default": null,
+            "description": "Human-readable candidate label when it should differ from the raw version string.",
             "title": "Displayversion"
           },
           "externalId": {
@@ -207,6 +246,7 @@
               }
             ],
             "default": null,
+            "description": "Provider-specific stable identifier for the upstream candidate record.",
             "title": "Externalid"
           },
           "externalUrl": {
@@ -220,6 +260,7 @@
               }
             ],
             "default": null,
+            "description": "Human-browsable upstream URL for the candidate record.",
             "title": "Externalurl"
           },
           "maturity": {
@@ -233,6 +274,10 @@
               }
             ],
             "default": null,
+            "description": "Maturity label associated with the candidate.",
+            "examples": [
+              "preview"
+            ],
             "title": "Maturity"
           },
           "provider": {
@@ -246,6 +291,7 @@
               }
             ],
             "default": null,
+            "description": "Provider key for the upstream system that supplied this candidate record.",
             "title": "Provider"
           },
           "publishedAt": {
@@ -259,6 +305,7 @@
               }
             ],
             "default": null,
+            "description": "Timestamp when the candidate became publicly visible.",
             "title": "Publishedat"
           },
           "releaseLine": {
@@ -272,9 +319,17 @@
               }
             ],
             "default": null,
+            "description": "Release-line key that the candidate belongs to, if known.",
+            "examples": [
+              "4.1"
+            ],
             "title": "Releaseline"
           },
           "version": {
+            "description": "Candidate version string represented by this aggregate entry.",
+            "examples": [
+              "4.1.0-rc1"
+            ],
             "minLength": 1,
             "title": "Version",
             "type": "string"
@@ -290,6 +345,10 @@
               }
             ],
             "default": null,
+            "description": "Vote-status label for the candidate, if known.",
+            "examples": [
+              "passed"
+            ],
             "title": "Votestatus"
           }
         },
@@ -314,6 +373,6 @@
     "category": "emitted",
     "filePath": "data/candidates.json",
     "ownership": "pipeline-derived",
-    "summary": "Pipeline-emitted candidate aggregate file."
+    "summary": "Published release-candidate inventory with vote status and downloadable assets."
   }
 }

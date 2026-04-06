@@ -151,7 +151,7 @@ class TrustClass(StrEnum):
 
 
 class RouteMode(StrEnum):
-    """Locale routing strategy for one publication surface."""
+    """Locale routing strategy for a published route set."""
 
     NONE = "none"
     PREFIX_ALL = "prefixAll"

@@ -3,9 +3,13 @@
   "$defs": {
     "TranslationLinkSummary": {
       "additionalProperties": false,
-      "description": "Compact translation sibling reference.",
+      "description": "Compact link to one translated sibling page.",
       "properties": {
         "locale": {
+          "description": "Locale key for the translated sibling page.",
+          "examples": [
+            "de"
+          ],
           "minLength": 1,
           "title": "Locale",
           "type": "string"
@@ -21,6 +25,10 @@
             }
           ],
           "default": null,
+          "description": "Public path for the translated sibling page, if available.",
+          "examples": [
+            "/de/spark/overview/"
+          ],
           "title": "Path"
         },
         "title": {
@@ -34,9 +42,14 @@
             }
           ],
           "default": null,
+          "description": "Localized page title for the translated sibling page.",
+          "examples": [
+            "\u00dcbersicht"
+          ],
           "title": "Title"
         },
         "url": {
+          "description": "Absolute URL for the translated sibling page.",
           "minLength": 1,
           "title": "Url",
           "type": "string"
@@ -72,14 +85,23 @@
               }
             ],
             "default": null,
+            "description": "Owning artifact key when the translation set belongs to a specific artifact.",
+            "examples": [
+              "runtime"
+            ],
             "title": "Artifactkey"
           },
           "componentSlug": {
+            "description": "Owning component slug for the translation set.",
+            "examples": [
+              "spark"
+            ],
             "minLength": 1,
             "title": "Componentslug",
             "type": "string"
           },
           "entries": {
+            "description": "Translated sibling pages that belong to the same translation set.",
             "items": {
               "$ref": "#/$defs/TranslationLinkSummary"
             },
@@ -88,6 +110,10 @@
             "type": "array"
           },
           "translationKey": {
+            "description": "Shared key that ties all translated sibling pages in this set together.",
+            "examples": [
+              "spark-overview"
+            ],
             "minLength": 1,
             "title": "Translationkey",
             "type": "string"
@@ -114,6 +140,6 @@
     "category": "emitted",
     "filePath": "data/translations.json",
     "ownership": "pipeline-derived",
-    "summary": "Pipeline-emitted translation aggregate file."
+    "summary": "Translation sibling groups keyed by one shared translation identifier."
   }
 }

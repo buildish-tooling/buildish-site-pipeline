@@ -13,7 +13,7 @@
     },
     "PipelineDiagnosticEntry": {
       "additionalProperties": false,
-      "description": "Structured pipeline diagnostic entry.",
+      "description": "Structured diagnostic emitted during planning, checking, or staging.",
       "properties": {
         "artifactKey": {
           "anyOf": [
@@ -26,9 +26,17 @@
             }
           ],
           "default": null,
+          "description": "Artifact key associated with the diagnostic when a specific artifact is directly affected.",
+          "examples": [
+            "runtime"
+          ],
           "title": "Artifactkey"
         },
         "code": {
+          "description": "Stable machine-readable diagnostic code.",
+          "examples": [
+            "catalog.invalidRedirectTarget"
+          ],
           "minLength": 1,
           "title": "Code",
           "type": "string"
@@ -44,6 +52,10 @@
             }
           ],
           "default": null,
+          "description": "Component slug associated with the diagnostic when a specific component is directly affected.",
+          "examples": [
+            "spark"
+          ],
           "title": "Componentslug"
         },
         "details": {
@@ -60,15 +72,21 @@
             }
           ],
           "default": null,
+          "description": "Structured detail payload for the diagnostic, or a bounded summary when the original detail payload was too large.",
           "title": "Details"
         },
         "message": {
+          "description": "Primary human-readable diagnostic message.",
+          "examples": [
+            "Redirect target route:/spark/missing/ could not be resolved."
+          ],
           "minLength": 1,
           "title": "Message",
           "type": "string"
         },
         "severity": {
-          "$ref": "#/$defs/DiagnosticSeverity"
+          "$ref": "#/$defs/DiagnosticSeverity",
+          "description": "Diagnostic severity level that callers can use for gating and presentation."
         },
         "targetId": {
           "anyOf": [
@@ -81,6 +99,10 @@
             }
           ],
           "default": null,
+          "description": "Additional target identifier, such as a path, ref, or release key, that helps callers locate the problem precisely.",
+          "examples": [
+            "/spark/docs/current/"
+          ],
           "title": "Targetid"
         }
       },
@@ -94,9 +116,13 @@
     },
     "ReducedDiagnosticDetailsSummary": {
       "additionalProperties": false,
-      "description": "Bounded replacement object for oversized diagnostic details.",
+      "description": "Compact placeholder used when full diagnostic details were too large to keep.",
       "properties": {
         "actualBytes": {
+          "description": "Actual serialized size of the original diagnostic details payload in bytes.",
+          "examples": [
+            524288
+          ],
           "exclusiveMinimum": 0,
           "title": "Actualbytes",
           "type": "integer"
@@ -112,20 +138,27 @@
             }
           ],
           "default": null,
+          "description": "Stable fingerprint that lets tooling correlate repeated oversized payloads without storing the full payload.",
           "title": "Fingerprint"
         },
         "limitBytes": {
+          "description": "Configured byte limit that the original diagnostic details exceeded.",
+          "examples": [
+            65536
+          ],
           "exclusiveMinimum": 0,
           "title": "Limitbytes",
           "type": "integer"
         },
         "omitted": {
           "const": true,
+          "description": "Always `true`, signalling that the original diagnostic details were intentionally omitted.",
           "title": "Omitted",
           "type": "boolean"
         },
         "reason": {
           "const": "sizeLimitExceeded",
+          "description": "Reason why the original diagnostic details were replaced by this bounded summary.",
           "title": "Reason",
           "type": "string"
         },
@@ -140,6 +173,7 @@
             }
           ],
           "default": null,
+          "description": "Short human-readable summary of the omitted details payload.",
           "title": "Summary"
         }
       },
@@ -173,35 +207,42 @@
     },
     "StageRunSummary": {
       "additionalProperties": false,
-      "description": "Outcome summary for one stage-producing run or watch cycle.",
+      "description": "Outcome counts and usability flags for one stage-producing run or watch cycle.",
       "properties": {
         "errorCount": {
+          "description": "Number of error diagnostics emitted during the run.",
           "minimum": 0,
           "title": "Errorcount",
           "type": "integer"
         },
         "infoCount": {
+          "description": "Number of informational diagnostics emitted during the run.",
           "minimum": 0,
           "title": "Infocount",
           "type": "integer"
         },
         "stageUsable": {
+          "description": "Whether downstream tooling may safely use the stage after this run finished.",
           "title": "Stageusable",
           "type": "boolean"
         },
         "status": {
-          "$ref": "#/$defs/RunStatus"
+          "$ref": "#/$defs/RunStatus",
+          "description": "Overall diagnostic status for the run after counts were evaluated."
         },
         "succeeded": {
+          "description": "Whether the run finished with a usable stage and should be treated as successful.",
           "title": "Succeeded",
           "type": "boolean"
         },
         "warningCount": {
+          "description": "Number of warning diagnostics emitted during the run.",
           "minimum": 0,
           "title": "Warningcount",
           "type": "integer"
         },
         "wroteStage": {
+          "description": "Whether the run actually wrote or refreshed stage output on disk.",
           "title": "Wrotestage",
           "type": "boolean"
         }
@@ -223,9 +264,29 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "Machine-readable result of ``build`` or one completed watch cycle.",
+  "examples": [
+    {
+      "command": "build",
+      "diagnostics": [],
+      "generatedAt": "2026-04-06T08:40:00Z",
+      "manifestPath": ".buildish/stage/current/manifest.json",
+      "schemaVersion": 1,
+      "stageRootPath": ".buildish/stage/current",
+      "summary": {
+        "errorCount": 0,
+        "infoCount": 2,
+        "stageUsable": true,
+        "status": "clean",
+        "succeeded": true,
+        "warningCount": 0,
+        "wroteStage": true
+      }
+    }
+  ],
   "properties": {
     "command": {
-      "$ref": "#/$defs/StageCommand"
+      "$ref": "#/$defs/StageCommand",
+      "description": "Stage-producing command that produced this report, such as `build` or `watch`."
     },
     "cycle": {
       "anyOf": [
@@ -238,9 +299,14 @@
         }
       ],
       "default": null,
+      "description": "Completed watch-cycle number for watch reports; omitted for one-shot build reports.",
+      "examples": [
+        3
+      ],
       "title": "Cycle"
     },
     "diagnostics": {
+      "description": "Structured diagnostics emitted during the stage-producing run.",
       "items": {
         "$ref": "#/$defs/PipelineDiagnosticEntry"
       },
@@ -248,6 +314,7 @@
       "type": "array"
     },
     "generatedAt": {
+      "description": "Timestamp when the stage run report was generated.",
       "format": "date-time",
       "title": "Generatedat",
       "type": "string"
@@ -263,10 +330,12 @@
         }
       ],
       "default": null,
+      "description": "Local path to the generated stage manifest when the stage is usable.",
       "title": "Manifestpath"
     },
     "schemaVersion": {
       "const": 1,
+      "description": "Schema version for the stage run report.",
       "title": "Schemaversion",
       "type": "integer"
     },
@@ -281,10 +350,12 @@
         }
       ],
       "default": null,
+      "description": "Local path to the root of the stage tree, if the run produced one.",
       "title": "Stagerootpath"
     },
     "summary": {
-      "$ref": "#/$defs/StageRunSummary"
+      "$ref": "#/$defs/StageRunSummary",
+      "description": "Outcome summary with success state, stage usability, and diagnostic counts for the run."
     }
   },
   "required": [
@@ -299,6 +370,6 @@
   "x-buildish-contract": {
     "category": "emitted",
     "ownership": "pipeline-derived",
-    "summary": "Pipeline-emitted stage execution report."
+    "summary": "Execution result for one `build` run or completed watch cycle."
   }
 }

@@ -139,7 +139,7 @@ def build_reference_markdown(exports: Iterable[SchemaExport]) -> str:
         "",
         "## How to read this reference",
         "",
-        "- contract-file tables identify the stable on-disk file for each root contract when one exists",
+        "- contract-file tables identify the stable on-disk file for each root contract, if applicable",
         "- field names are shown in their wire-format aliases",
         "- type, enum, and scalar names link to their definitions below",
         "- schema files are listed by checked-in filename for the matching root contract",
@@ -385,6 +385,9 @@ def _render_model_section(
             f"| <a id=\"{field_anchor}\"></a>`{alias}` | {_escape_table_cell(rendered_type)} | {'yes' if field.is_required() else 'no'} | {_escape_table_cell(description)} |"
         )
     lines.append("")
+    field_example_lines = _render_field_examples_section(model)
+    if field_example_lines:
+        lines.extend(field_example_lines)
     if documentation is not None and documentation.reference is not None:
         for section in documentation.reference.sections:
             lines.append(f"#### {section.title}")
@@ -418,6 +421,27 @@ def _render_example_block(example: SchemaExample) -> str:
 
         rendered = json.dumps(data, indent=2, sort_keys=False)
     return f"```{example.render_format}\n{rendered}\n```"
+
+
+def _render_field_examples_section(model: type[SitePipelineBaseModel]) -> list[str]:
+    entries: list[str] = []
+    for field_name, field in model.model_fields.items():
+        if not field.examples:
+            continue
+        alias = field.alias or to_camel_case(field_name)
+        rendered_examples = ", ".join(_render_inline_example_value(value) for value in field.examples)
+        label = "Example" if len(field.examples) == 1 else "Examples"
+        entries.append(f"- `{alias}`: {label}: {rendered_examples}")
+    if not entries:
+        return []
+    return ["#### Selected field examples", "", *entries, ""]
+
+
+def _render_inline_example_value(value: Any) -> str:
+    import json
+
+    serialized = json.dumps(_serialize_example_value(value), separators=(",", ": "), sort_keys=False)
+    return f"`{serialized}`"
 
 
 def _examples_by_root_model(

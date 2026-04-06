@@ -6,10 +6,15 @@
       "description": "One exact published file or directory root together with its logical owner.",
       "properties": {
         "ownerId": {
+          "description": "Logical owner identifier for the output, such as a unit owner id or the coordinator.",
+          "examples": [
+            "coordinator"
+          ],
           "title": "Ownerid",
           "type": "string"
         },
         "pathKind": {
+          "description": "Whether the owned stage-relative path refers to one exact file or one directory root.",
           "enum": [
             "directory",
             "file"
@@ -18,6 +23,10 @@
           "type": "string"
         },
         "stageRelativePath": {
+          "description": "Owned path inside the visible stage.",
+          "examples": [
+            "content/spark"
+          ],
           "minLength": 1,
           "title": "Stagerelativepath",
           "type": "string"
@@ -32,6 +41,10 @@
             }
           ],
           "default": null,
+          "description": "Unit identifier when the owning output belongs to one concrete staging unit.",
+          "examples": [
+            "component:spark:runtime"
+          ],
           "title": "Unitid"
         }
       },
@@ -48,9 +61,28 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "Published ownership inventory used to prune retained stages safely.",
+  "examples": [
+    {
+      "claims": [
+        {
+          "ownerId": "artifact:spark/runtime",
+          "pathKind": "directory",
+          "stageRelativePath": "content/spark/4.0.0",
+          "unitId": "component:spark:runtime"
+        },
+        {
+          "ownerId": "coordinator",
+          "pathKind": "file",
+          "stageRelativePath": "data/components.json"
+        }
+      ],
+      "schemaVersion": 1
+    }
+  ],
   "properties": {
     "claims": {
       "default": [],
+      "description": "Ownership claims for every retained stage file or directory root.",
       "items": {
         "$ref": "#/$defs/OutputOwnershipClaimV1"
       },
@@ -60,6 +92,7 @@
     "schemaVersion": {
       "const": 1,
       "default": 1,
+      "description": "Schema version for the output-ownership map.",
       "title": "Schemaversion",
       "type": "integer"
     }
@@ -70,6 +103,6 @@
     "category": "emitted",
     "filePath": "data/_pipeline/output-ownership.json",
     "ownership": "pipeline-derived",
-    "summary": "Pipeline-emitted output ownership map."
+    "summary": "Ownership map for staged files and directories retained across rebuilds."
   }
 }

@@ -3,7 +3,7 @@
   "$defs": {
     "ProviderAsset": {
       "additionalProperties": false,
-      "description": "Optional file-level metadata attached to a provider record.",
+      "description": "Downloadable asset attached to one provider release or candidate record.",
       "properties": {
         "checksums": {
           "anyOf": [
@@ -22,6 +22,7 @@
             }
           ],
           "default": null,
+          "description": "Checksum values keyed by algorithm name, such as `sha512` or `sha256`.",
           "title": "Checksums"
         },
         "kind": {
@@ -35,6 +36,10 @@
             }
           ],
           "default": null,
+          "description": "Short asset kind label, for example `binary`, `source`, `signature`, or `sbom`.",
+          "examples": [
+            "binary"
+          ],
           "title": "Kind"
         },
         "mediaType": {
@@ -48,9 +53,17 @@
             }
           ],
           "default": null,
+          "description": "Declared media type for the asset payload when the provider exposes it.",
+          "examples": [
+            "application/gzip"
+          ],
           "title": "Mediatype"
         },
         "name": {
+          "description": "Filename or display label of the downloadable asset.",
+          "examples": [
+            "spark-4.0.0-bin.tgz"
+          ],
           "minLength": 1,
           "title": "Name",
           "type": "string"
@@ -66,6 +79,7 @@
             }
           ],
           "default": null,
+          "description": "URL of provenance or attestation metadata associated with this asset, if available.",
           "title": "Provenanceurl"
         },
         "sbomUrl": {
@@ -79,6 +93,7 @@
             }
           ],
           "default": null,
+          "description": "URL of the asset's software bill of materials, if available.",
           "title": "Sbomurl"
         },
         "signatureUrl": {
@@ -92,6 +107,7 @@
             }
           ],
           "default": null,
+          "description": "URL of the detached signature file, if available.",
           "title": "Signatureurl"
         },
         "size": {
@@ -105,9 +121,17 @@
             }
           ],
           "default": null,
+          "description": "Asset size in bytes when the provider exposes it.",
+          "examples": [
+            125004321
+          ],
           "title": "Size"
         },
         "url": {
+          "description": "Canonical download URL for the asset.",
+          "examples": [
+            "https://downloads.example.org/spark-4.0.0-bin.tgz"
+          ],
           "minLength": 1,
           "title": "Url",
           "type": "string"
@@ -122,7 +146,7 @@
     },
     "ProviderDescriptor": {
       "additionalProperties": false,
-      "description": "Descriptor for one loaded provider.",
+      "description": "Metadata about one provider that contributed records to the snapshot.",
       "properties": {
         "baseUrl": {
           "anyOf": [
@@ -135,6 +159,10 @@
             }
           ],
           "default": null,
+          "description": "Base URL for the provider service when records can link back to a human-browsable origin.",
+          "examples": [
+            "https://github.com/apache"
+          ],
           "title": "Baseurl"
         },
         "displayName": {
@@ -148,19 +176,35 @@
             }
           ],
           "default": null,
+          "description": "Human-readable provider label shown in diagnostics or rendered metadata.",
+          "examples": [
+            "GitHub Releases"
+          ],
           "title": "Displayname"
         },
         "fetchedAt": {
+          "description": "Timestamp when this provider snapshot section was fetched or refreshed.",
+          "examples": [
+            "2026-04-03T18:00:00Z"
+          ],
           "format": "date-time",
           "title": "Fetchedat",
           "type": "string"
         },
         "key": {
+          "description": "Stable provider identifier referenced by every record emitted from this provider.",
+          "examples": [
+            "github-releases"
+          ],
           "minLength": 1,
           "title": "Key",
           "type": "string"
         },
         "type": {
+          "description": "Provider implementation type, such as `github`, `git`, or another fetcher-specific backend name.",
+          "examples": [
+            "github"
+          ],
           "minLength": 1,
           "title": "Type",
           "type": "string"
@@ -176,9 +220,13 @@
     },
     "ProviderRecord": {
       "additionalProperties": false,
-      "description": "Normalized release, candidate, or ref record from a provider.",
+      "description": "Normalized provider fact about one release, candidate, or ref context.",
       "properties": {
         "artifactKey": {
+          "description": "Artifact key that this provider record belongs to.",
+          "examples": [
+            "runtime"
+          ],
           "minLength": 1,
           "title": "Artifactkey",
           "type": "string"
@@ -196,6 +244,7 @@
             }
           ],
           "default": null,
+          "description": "Downloadable assets attached to the record, including checksums and related provenance links when available.",
           "title": "Assets"
         },
         "candidateSequence": {
@@ -209,6 +258,10 @@
             }
           ],
           "default": null,
+          "description": "Numeric ordering hint for release candidates, usually the `rc` sequence number.",
+          "examples": [
+            1
+          ],
           "title": "Candidatesequence"
         },
         "commitSha": {
@@ -222,9 +275,17 @@
             }
           ],
           "default": null,
+          "description": "Resolved commit SHA for the record when the provider exposes it.",
+          "examples": [
+            "6f0fd1f7b2c4a6d8e9f00123456789abcdef0123"
+          ],
           "title": "Commitsha"
         },
         "componentSlug": {
+          "description": "Component slug that this provider record belongs to.",
+          "examples": [
+            "spark"
+          ],
           "minLength": 1,
           "title": "Componentslug",
           "type": "string"
@@ -240,6 +301,7 @@
             }
           ],
           "default": null,
+          "description": "Timestamp when the upstream record was first created.",
           "title": "Createdat"
         },
         "displayVersion": {
@@ -253,6 +315,10 @@
             }
           ],
           "default": null,
+          "description": "Human-readable version label when the raw version string needs a friendlier presentation.",
+          "examples": [
+            "4.0.0 GA"
+          ],
           "title": "Displayversion"
         },
         "externalId": {
@@ -266,6 +332,10 @@
             }
           ],
           "default": null,
+          "description": "Provider-specific stable identifier used to deduplicate and revisit the same upstream record.",
+          "examples": [
+            "github:release:runtime-4.0.0"
+          ],
           "title": "Externalid"
         },
         "externalUrl": {
@@ -279,10 +349,12 @@
             }
           ],
           "default": null,
+          "description": "Human-browsable upstream URL for the release, tag, or ref record.",
           "title": "Externalurl"
         },
         "kind": {
-          "$ref": "#/$defs/RecordKind"
+          "$ref": "#/$defs/RecordKind",
+          "description": "Record kind, such as exact release, release candidate, development ref, line head, or named ref."
         },
         "maturity": {
           "anyOf": [
@@ -295,6 +367,10 @@
             }
           ],
           "default": null,
+          "description": "Maturity label such as preview, beta, or stable that readers can use to judge readiness.",
+          "examples": [
+            "stable"
+          ],
           "title": "Maturity"
         },
         "namedRefKey": {
@@ -308,9 +384,17 @@
             }
           ],
           "default": null,
+          "description": "Catalog-authored named-ref key that this provider record enriches when the record represents a named ref.",
+          "examples": [
+            "preview"
+          ],
           "title": "Namedrefkey"
         },
         "provider": {
+          "description": "Provider key that identifies which fetched provider emitted this record.",
+          "examples": [
+            "github-releases"
+          ],
           "minLength": 1,
           "title": "Provider",
           "type": "string"
@@ -324,7 +408,8 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "Publication state for the record, such as published, withdrawn, or tombstoned."
         },
         "publishedAt": {
           "anyOf": [
@@ -337,6 +422,7 @@
             }
           ],
           "default": null,
+          "description": "Timestamp when the upstream record became publicly available.",
           "title": "Publishedat"
         },
         "ref": {
@@ -350,6 +436,10 @@
             }
           ],
           "default": null,
+          "description": "Exact source-control ref associated with this record, especially for development, line-head, or named-ref contexts.",
+          "examples": [
+            "refs/heads/main"
+          ],
           "title": "Ref"
         },
         "releaseLine": {
@@ -363,6 +453,10 @@
             }
           ],
           "default": null,
+          "description": "Release-line key that groups this record with related versions such as `4.0`.",
+          "examples": [
+            "4.0"
+          ],
           "title": "Releaseline"
         },
         "releaseLineAncestors": {
@@ -379,6 +473,13 @@
             }
           ],
           "default": null,
+          "description": "Ancestor release-line keys, ordered from nearest to farthest, used when lineage matters to selection or rendering.",
+          "examples": [
+            [
+              "4.x",
+              "stable"
+            ]
+          ],
           "title": "Releaselineancestors"
         },
         "sourceKey": {
@@ -392,6 +493,10 @@
             }
           ],
           "default": null,
+          "description": "Optional source binding key when the provider record came from one named catalog source.",
+          "examples": [
+            "apache-spark"
+          ],
           "title": "Sourcekey"
         },
         "supportStatus": {
@@ -405,6 +510,10 @@
             }
           ],
           "default": null,
+          "description": "Support-status key or label associated with this record.",
+          "examples": [
+            "supported"
+          ],
           "title": "Supportstatus"
         },
         "tag": {
@@ -418,6 +527,10 @@
             }
           ],
           "default": null,
+          "description": "Exact provider tag associated with this record when tags are available.",
+          "examples": [
+            "v4.0.0"
+          ],
           "title": "Tag"
         },
         "updatedAt": {
@@ -431,6 +544,7 @@
             }
           ],
           "default": null,
+          "description": "Timestamp of the most recent upstream update observed for this record.",
           "title": "Updatedat"
         },
         "urls": {
@@ -450,6 +564,7 @@
             }
           ],
           "default": null,
+          "description": "Additional named URLs related to the record, such as notes, signatures, vote threads, or changelogs.",
           "title": "Urls"
         },
         "version": {
@@ -463,6 +578,10 @@
             }
           ],
           "default": null,
+          "description": "Exact version string for release and candidate records when the provider exposes one.",
+          "examples": [
+            "4.0.0"
+          ],
           "title": "Version"
         },
         "voteStatus": {
@@ -476,6 +595,10 @@
             }
           ],
           "default": null,
+          "description": "Vote status label for a candidate release when the provider exposes release-vote state.",
+          "examples": [
+            "passed"
+          ],
           "title": "Votestatus"
         }
       },
@@ -553,6 +676,7 @@
   ],
   "properties": {
     "providers": {
+      "description": "Provider descriptors for every provider that contributed records to this snapshot.",
       "items": {
         "$ref": "#/$defs/ProviderDescriptor"
       },
@@ -560,6 +684,7 @@
       "type": "array"
     },
     "records": {
+      "description": "Normalized provider records for releases, candidates, tags, refs, and related downloadable assets.",
       "items": {
         "$ref": "#/$defs/ProviderRecord"
       },
@@ -568,6 +693,7 @@
     },
     "schemaVersion": {
       "const": 1,
+      "description": "Schema version for the provider snapshot document.",
       "title": "Schemaversion",
       "type": "integer"
     }
@@ -583,6 +709,6 @@
     "category": "provider",
     "filePath": "site/provider-snapshot.json",
     "ownership": "provider-derived",
-    "summary": "Provider-derived release snapshot input."
+    "summary": "Normalized provider inventory of releases, candidates, refs, and downloadable assets."
   }
 }

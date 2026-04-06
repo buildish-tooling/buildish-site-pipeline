@@ -3,7 +3,7 @@
   "$defs": {
     "ArtifactConfig": {
       "additionalProperties": false,
-      "description": "Independently versioned release unit within a component.",
+      "description": "One independently versioned release unit inside a component.",
       "properties": {
         "assetsRoot": {
           "anyOf": [
@@ -16,6 +16,10 @@
             }
           ],
           "default": null,
+          "description": "Artifact-specific asset root that overrides inherited component asset locations for this artifact's versioned output.",
+          "examples": [
+            "docs/runtime/assets"
+          ],
           "title": "Assetsroot"
         },
         "compatibility": {
@@ -31,6 +35,7 @@
             }
           ],
           "default": null,
+          "description": "Compatibility statements that should be emitted for this artifact in staged metadata.",
           "title": "Compatibility"
         },
         "displayName": {
@@ -44,6 +49,10 @@
             }
           ],
           "default": null,
+          "description": "Human-readable artifact label shown to readers when the raw key is not ideal UI text.",
+          "examples": [
+            "Runtime"
+          ],
           "title": "Displayname"
         },
         "docsRoot": {
@@ -57,9 +66,17 @@
             }
           ],
           "default": null,
+          "description": "Artifact-specific docs root that overrides any inherited docs location when versioned docs live in a custom subdirectory.",
+          "examples": [
+            "docs/runtime"
+          ],
           "title": "Docsroot"
         },
         "key": {
+          "description": "Stable artifact identifier used in typed references, staged metadata, and provider records.",
+          "examples": [
+            "runtime"
+          ],
           "minLength": 1,
           "title": "Key",
           "type": "string"
@@ -73,7 +90,8 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "Lifecycle metadata for stable versions, release lines, and support policy for this artifact."
         },
         "mounts": {
           "anyOf": [
@@ -88,6 +106,7 @@
             }
           ],
           "default": null,
+          "description": "Mounted generated or imported subtrees that belong to this artifact's published surface.",
           "title": "Mounts"
         },
         "publicationSelection": {
@@ -99,15 +118,21 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "Artifact-specific override for which version contexts should be staged and published."
         },
         "source": {
+          "description": "Named source entry that owns the versioned docs and assets for this artifact.",
+          "examples": [
+            "apache-spark"
+          ],
           "minLength": 1,
           "title": "Source",
           "type": "string"
         },
         "versioning": {
-          "$ref": "#/$defs/ArtifactVersioningConfig"
+          "$ref": "#/$defs/ArtifactVersioningConfig",
+          "description": "Rules for discovering development refs, maintenance refs, tags, and named refs for this artifact."
         }
       },
       "required": [
@@ -120,7 +145,7 @@
     },
     "ArtifactLifecycleConfig": {
       "additionalProperties": false,
-      "description": "Artifact-authored lifecycle metadata.",
+      "description": "Lifecycle metadata for an artifact's stable versions, release lines, and support policy.",
       "properties": {
         "defaultSupportWindow": {
           "anyOf": [
@@ -131,7 +156,8 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "Fallback lifecycle window applied when a line or exact release does not provide a more specific support window."
         },
         "latestStable": {
           "anyOf": [
@@ -144,6 +170,10 @@
             }
           ],
           "default": null,
+          "description": "Most recent stable version that readers should treat as the default recommendation for this artifact.",
+          "examples": [
+            "4.0.1"
+          ],
           "title": "Lateststable"
         },
         "releaseLines": {
@@ -159,6 +189,7 @@
             }
           ],
           "default": null,
+          "description": "Release-line definitions for this artifact, including latest versions and optional support metadata.",
           "title": "Releaselines"
         },
         "releases": {
@@ -174,6 +205,7 @@
             }
           ],
           "default": null,
+          "description": "Per-version lifecycle metadata and publication overrides for exact released versions.",
           "title": "Releases"
         },
         "supportPolicyUrl": {
@@ -187,6 +219,7 @@
             }
           ],
           "default": null,
+          "description": "Canonical URL for the support policy document that readers should consult for this artifact.",
           "title": "Supportpolicyurl"
         },
         "supportStatusVocabulary": {
@@ -205,6 +238,7 @@
             }
           ],
           "default": null,
+          "description": "Reusable support-status definitions that release lines and exact releases can refer to by key.",
           "title": "Supportstatusvocabulary"
         }
       },
@@ -213,9 +247,13 @@
     },
     "ArtifactVersioningConfig": {
       "additionalProperties": false,
-      "description": "Artifact-specific version-discovery configuration.",
+      "description": "How the pipeline discovers development, maintenance, tag, and named-ref versions.",
       "properties": {
         "developmentRef": {
+          "description": "Source-control ref that represents the moving development docs for this artifact.",
+          "examples": [
+            "main"
+          ],
           "minLength": 1,
           "title": "Developmentref",
           "type": "string"
@@ -231,6 +269,10 @@
             }
           ],
           "default": null,
+          "description": "Pattern used to derive maintenance branch refs from a release-line key, usually with `{line}` as the substitution placeholder.",
+          "examples": [
+            "release/{line}"
+          ],
           "title": "Maintenancerefpattern"
         },
         "namedRefs": {
@@ -246,9 +288,14 @@
             }
           ],
           "default": null,
+          "description": "Additional intentionally named version contexts, such as preview or stable branches, that should be selectable by key.",
           "title": "Namedrefs"
         },
         "tagPattern": {
+          "description": "Regular expression used to recognize provider tags that belong to this artifact's version stream.",
+          "examples": [
+            "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
+          ],
           "minLength": 1,
           "title": "Tagpattern",
           "type": "string"
@@ -273,7 +320,7 @@
     },
     "CandidateSelectionPolicy": {
       "additionalProperties": false,
-      "description": "Selection policy for release candidates.",
+      "description": "Rule for which release candidates should become published contexts.",
       "properties": {
         "externalIds": {
           "anyOf": [
@@ -289,10 +336,17 @@
             }
           ],
           "default": null,
+          "description": "Provider-specific candidate identifiers to include when version strings alone are not enough to identify the desired candidate records.",
+          "examples": [
+            [
+              "github:runtime-4.1.0-rc1"
+            ]
+          ],
           "title": "Externalids"
         },
         "mode": {
-          "$ref": "#/$defs/CandidateSelectionMode"
+          "$ref": "#/$defs/CandidateSelectionMode",
+          "description": "Selection strategy for candidate releases, such as disabling them or selecting an explicit set."
         },
         "versions": {
           "anyOf": [
@@ -308,6 +362,12 @@
             }
           ],
           "default": null,
+          "description": "Candidate version strings to include when `mode` is `explicit` and provider versions are available.",
+          "examples": [
+            [
+              "4.1.0-rc1"
+            ]
+          ],
           "title": "Versions"
         }
       },
@@ -407,7 +467,7 @@
     },
     "CompatibilityAssertionConfig": {
       "additionalProperties": false,
-      "description": "Authored compatibility relationship between published identities.",
+      "description": "Compatibility statement between two published identities, such as an artifact and a supported platform.",
       "properties": {
         "confidence": {
           "anyOf": [
@@ -420,6 +480,10 @@
             }
           ],
           "default": null,
+          "description": "Optional confidence label that tells readers how strong or direct the supporting evidence is.",
+          "examples": [
+            "verified"
+          ],
           "title": "Confidence"
         },
         "notes": {
@@ -433,9 +497,14 @@
             }
           ],
           "default": null,
+          "description": "Additional human-readable explanation, caveats, or migration advice for the compatibility statement.",
           "title": "Notes"
         },
         "relation": {
+          "description": "Relationship label that names the compatibility statement, such as `testedWith`, `requires`, or `incompatibleWith`.",
+          "examples": [
+            "testedWith"
+          ],
           "minLength": 1,
           "title": "Relation",
           "type": "string"
@@ -451,14 +520,26 @@
             }
           ],
           "default": null,
+          "description": "Optional scope label that narrows the compatibility statement to one subsystem, API surface, or deployment mode.",
+          "examples": [
+            "kubernetes"
+          ],
           "title": "Scope"
         },
         "subjectRef": {
+          "description": "Typed internal reference string for the thing whose compatibility is being described.",
+          "examples": [
+            "artifact:spark/runtime"
+          ],
           "minLength": 1,
           "title": "Subjectref",
           "type": "string"
         },
         "targetRef": {
+          "description": "Typed internal reference string for the thing that the subject is compatible with or constrained by.",
+          "examples": [
+            "artifact:spark/operator"
+          ],
           "minLength": 1,
           "title": "Targetref",
           "type": "string"
@@ -474,7 +555,7 @@
     },
     "ComponentCatalogEntry": {
       "additionalProperties": false,
-      "description": "One component entry in the consumer catalog.",
+      "description": "Component entry in the consumer catalog.",
       "properties": {
         "artifacts": {
           "anyOf": [
@@ -642,7 +723,7 @@
     },
     "ComponentContentSelection": {
       "additionalProperties": false,
-      "description": "Selection of the source that owns shared component content.",
+      "description": "Source selection for a component's shared pages, docs, and assets.",
       "properties": {
         "source": {
           "anyOf": [
@@ -664,7 +745,7 @@
     },
     "ExactReleaseConfig": {
       "additionalProperties": false,
-      "description": "Authored exact-release metadata or publication override for one version.",
+      "description": "Per-version lifecycle metadata and publication overrides for one exact release.",
       "properties": {
         "publicationState": {
           "anyOf": [
@@ -675,7 +756,8 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "Publication-state override for this version, such as published, withdrawn, or tombstoned."
         },
         "reason": {
           "anyOf": [
@@ -688,6 +770,10 @@
             }
           ],
           "default": null,
+          "description": "Human-readable explanation of the withdrawal, redirect, or support-state override for this release.",
+          "examples": [
+            "Superseded by 4.0.1."
+          ],
           "title": "Reason"
         },
         "redirectTarget": {
@@ -701,6 +787,10 @@
             }
           ],
           "default": null,
+          "description": "Replacement route or external URL to send readers to when `withdrawalBehavior` is `redirect`.",
+          "examples": [
+            "route:/spark/releases/4.0.1/"
+          ],
           "title": "Redirecttarget"
         },
         "releaseLine": {
@@ -714,6 +804,10 @@
             }
           ],
           "default": null,
+          "description": "Release-line key that this version belongs to when the provider data alone does not already make that relationship obvious.",
+          "examples": [
+            "4.0"
+          ],
           "title": "Releaseline"
         },
         "supportStatus": {
@@ -727,6 +821,10 @@
             }
           ],
           "default": null,
+          "description": "Support-status key or label that should override the line-level status for this exact version.",
+          "examples": [
+            "withdrawn"
+          ],
           "title": "Supportstatus"
         },
         "supportWindow": {
@@ -738,9 +836,14 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "Lifecycle dates and support notes that apply only to this exact release."
         },
         "version": {
+          "description": "Exact released version that this metadata entry applies to.",
+          "examples": [
+            "4.0.0"
+          ],
           "minLength": 1,
           "title": "Version",
           "type": "string"
@@ -754,7 +857,8 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "What readers should experience when this release has been withdrawn, for example a redirect or a hard removal."
         }
       },
       "required": [
@@ -765,7 +869,7 @@
     },
     "GroupConfig": {
       "additionalProperties": false,
-      "description": "Reusable defaults for a set of components.",
+      "description": "Reusable defaults and grouping hints shared by several components.",
       "properties": {
         "displayName": {
           "anyOf": [
@@ -860,7 +964,7 @@
     },
     "LineHeadSelectionPolicy": {
       "additionalProperties": false,
-      "description": "Selection policy for release-line head refs.",
+      "description": "Rule for which release-line head refs should appear as publishable contexts.",
       "properties": {
         "keys": {
           "anyOf": [
@@ -876,10 +980,18 @@
             }
           ],
           "default": null,
+          "description": "Explicit release-line keys to publish when `mode` is `explicit`.",
+          "examples": [
+            [
+              "3.5",
+              "4.0"
+            ]
+          ],
           "title": "Keys"
         },
         "mode": {
-          "$ref": "#/$defs/LineHeadSelectionMode"
+          "$ref": "#/$defs/LineHeadSelectionMode",
+          "description": "Selection strategy for release-line head contexts, such as taking all lines or only an explicit subset."
         }
       },
       "required": [
@@ -955,7 +1067,7 @@
     },
     "MountConfig": {
       "additionalProperties": false,
-      "description": "Generated or imported subtree mounted into the publication surface.",
+      "description": "Mounted subtree, such as generated API docs or imported assets, published below one public path.",
       "properties": {
         "indexBehavior": {
           "anyOf": [
@@ -966,9 +1078,14 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "How the mounted subtree should participate in generated indexes, listings, or navigation structures."
         },
         "kind": {
+          "description": "Short kind label that tells renderers and tooling what sort of mounted content this is.",
+          "examples": [
+            "generatedApi"
+          ],
           "minLength": 1,
           "title": "Kind",
           "type": "string"
@@ -984,9 +1101,14 @@
             }
           ],
           "default": null,
+          "description": "Small JSON-like extension object for extra mount metadata that downstream tooling may consume.",
           "title": "Metadata"
         },
         "mountPath": {
+          "description": "Public path where the mounted subtree should appear in the published site.",
+          "examples": [
+            "/spark/api/"
+          ],
           "minLength": 1,
           "title": "Mountpath",
           "type": "string"
@@ -1002,15 +1124,24 @@
             }
           ],
           "default": null,
+          "description": "Logical owner label used in staged metadata to explain who is responsible for this mounted subtree.",
+          "examples": [
+            "runtime-docs"
+          ],
           "title": "Ownership"
         },
         "source": {
+          "description": "Typed source reference that identifies the generated or imported subtree to mount.",
+          "examples": [
+            "generated/api"
+          ],
           "minLength": 1,
           "title": "Source",
           "type": "string"
         },
         "trustClass": {
-          "$ref": "#/$defs/TrustClass"
+          "$ref": "#/$defs/TrustClass",
+          "description": "Trust level for the mounted content, used by downstream tooling to decide how much confidence to place in its structure or metadata."
         },
         "versionScope": {
           "anyOf": [
@@ -1023,6 +1154,10 @@
             }
           ],
           "default": null,
+          "description": "Optional label describing which version context this mount belongs to, when the same component can expose several mounted trees.",
+          "examples": [
+            "release"
+          ],
           "title": "Versionscope"
         }
       },
@@ -1037,7 +1172,7 @@
     },
     "NamedRefConfig": {
       "additionalProperties": false,
-      "description": "Authored named ref intentionally exposed as a publishable version context.",
+      "description": "Named source-control ref intentionally exposed as a stable version context.",
       "properties": {
         "description": {
           "anyOf": [
@@ -1050,6 +1185,10 @@
             }
           ],
           "default": null,
+          "description": "Human-readable explanation of what this named ref contains or who should use it.",
+          "examples": [
+            "Early access docs for the next planned minor release."
+          ],
           "title": "Description"
         },
         "displayName": {
@@ -1063,9 +1202,17 @@
             }
           ],
           "default": null,
+          "description": "Human-readable label shown in version pickers, breadcrumbs, or other rendered UI.",
+          "examples": [
+            "Preview"
+          ],
           "title": "Displayname"
         },
         "key": {
+          "description": "Stable identifier used elsewhere in the catalog to select this named ref.",
+          "examples": [
+            "preview"
+          ],
           "minLength": 1,
           "title": "Key",
           "type": "string"
@@ -1081,9 +1228,17 @@
             }
           ],
           "default": null,
+          "description": "Short maturity label that explains how stable or experimental this named ref should be treated.",
+          "examples": [
+            "preview"
+          ],
           "title": "Maturity"
         },
         "ref": {
+          "description": "Exact source-control ref to resolve when this named context is selected.",
+          "examples": [
+            "refs/heads/preview"
+          ],
           "minLength": 1,
           "title": "Ref",
           "type": "string"
@@ -1098,7 +1253,7 @@
     },
     "OriginConfig": {
       "additionalProperties": false,
-      "description": "Named publication origin.",
+      "description": "Named public base URL that published routes can resolve against.",
       "properties": {
         "baseUrl": {
           "description": "Base public URL for this publication origin.",
@@ -1145,7 +1300,7 @@
     },
     "PublicationConfig": {
       "additionalProperties": false,
-      "description": "Explicit publication configuration or inherited publication defaults.",
+      "description": "Resolved-or-authored route layout choices for a component or artifact.",
       "properties": {
         "aliases": {
           "anyOf": [
@@ -1244,7 +1399,10 @@
             }
           ],
           "default": null,
-          "description": "Explicit public root path for the component publication surface.",
+          "description": "Explicit public root path for the component's published content.",
+          "examples": [
+            "/spark/"
+          ],
           "title": "Mountpath"
         },
         "origin": {
@@ -1361,7 +1519,7 @@
     },
     "PublicationSelectionPolicy": {
       "additionalProperties": false,
-      "description": "Planning-time policy for which version contexts are staged and surfaced.",
+      "description": "Planning-time rule set for which version contexts are staged and linked.",
       "properties": {
         "candidates": {
           "anyOf": [
@@ -1372,7 +1530,8 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "Rule for including release-candidate contexts when they should be visible to readers."
         },
         "development": {
           "anyOf": [
@@ -1384,6 +1543,7 @@
             }
           ],
           "default": null,
+          "description": "Whether to publish the moving development context represented by the artifact's `developmentRef`.",
           "title": "Development"
         },
         "lineHeads": {
@@ -1395,7 +1555,8 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "Rule for including release-line head contexts such as `4.0` or `3.5`."
         },
         "namedRefs": {
           "anyOf": [
@@ -1411,6 +1572,13 @@
             }
           ],
           "default": null,
+          "description": "Named ref keys to include as publishable contexts in addition to development, line-head, or released versions.",
+          "examples": [
+            [
+              "preview",
+              "stable"
+            ]
+          ],
           "title": "Namedrefs"
         },
         "releases": {
@@ -1422,7 +1590,8 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "Rule for including exact released-version contexts such as `4.0.1`."
         }
       },
       "title": "PublicationSelectionPolicy",
@@ -1441,7 +1610,7 @@
     },
     "RedirectRuleConfig": {
       "additionalProperties": false,
-      "description": "Authored redirect rule resolved into deployment-neutral redirect metadata.",
+      "description": "Redirect rule that sends one published path to another internal or external target.",
       "properties": {
         "fromOrigin": {
           "anyOf": [
@@ -1454,9 +1623,17 @@
             }
           ],
           "default": null,
+          "description": "Optional origin override when the redirect should only exist on one named publication origin.",
+          "examples": [
+            "archive"
+          ],
           "title": "Fromorigin"
         },
         "fromPath": {
+          "description": "Public path that should redirect instead of serving its own content.",
+          "examples": [
+            "/spark/docs/current/"
+          ],
           "minLength": 1,
           "title": "Frompath",
           "type": "string"
@@ -1472,6 +1649,10 @@
             }
           ],
           "default": null,
+          "description": "Short explanation of why the redirect exists, for example to describe a rename, consolidation, or withdrawn release route.",
+          "examples": [
+            "Current docs live on the latest release route."
+          ],
           "title": "Reason"
         },
         "status": {
@@ -1484,9 +1665,17 @@
             }
           ],
           "default": null,
+          "description": "HTTP redirect status to emit; when omitted, downstream tooling applies its default redirect status.",
+          "examples": [
+            308
+          ],
           "title": "Status"
         },
         "target": {
+          "description": "Destination of the redirect, either as a typed internal reference string or as a fully qualified external URL.",
+          "examples": [
+            "route:/spark/latest/"
+          ],
           "minLength": 1,
           "title": "Target",
           "type": "string"
@@ -1501,7 +1690,7 @@
     },
     "ReleaseLineConfig": {
       "additionalProperties": false,
-      "description": "Artifact-authored release-line definition.",
+      "description": "One logical release line, such as `4.0`, together with its lifecycle metadata.",
       "properties": {
         "aliases": {
           "anyOf": [
@@ -1517,6 +1706,12 @@
             }
           ],
           "default": null,
+          "description": "Alternate labels that should also resolve to this release line in generated metadata or UI.",
+          "examples": [
+            [
+              "stable"
+            ]
+          ],
           "title": "Aliases"
         },
         "displayName": {
@@ -1530,14 +1725,26 @@
             }
           ],
           "default": null,
+          "description": "Human-readable label shown to readers when the raw line key is not ideal UI text.",
+          "examples": [
+            "4.0 line"
+          ],
           "title": "Displayname"
         },
         "key": {
+          "description": "Stable key for the release line, typically matching the family label used in URLs and navigation.",
+          "examples": [
+            "4.0"
+          ],
           "minLength": 1,
           "title": "Key",
           "type": "string"
         },
         "latest": {
+          "description": "Latest released version currently considered the head of this release line.",
+          "examples": [
+            "4.0.1"
+          ],
           "minLength": 1,
           "title": "Latest",
           "type": "string"
@@ -1553,6 +1760,10 @@
             }
           ],
           "default": null,
+          "description": "Explicit maintenance branch ref for the line when it should not be derived from `maintenanceRefPattern`.",
+          "examples": [
+            "refs/heads/release-4.0"
+          ],
           "title": "Maintenanceref"
         },
         "parent": {
@@ -1566,6 +1777,10 @@
             }
           ],
           "default": null,
+          "description": "Optional parent release-line key used to model lineage such as `4.x` inheriting from `3.x` policy or navigation structure.",
+          "examples": [
+            "3.5"
+          ],
           "title": "Parent"
         },
         "supportStatus": {
@@ -1579,6 +1794,10 @@
             }
           ],
           "default": null,
+          "description": "Support-status key or label that should be shown for the line as a whole.",
+          "examples": [
+            "supported"
+          ],
           "title": "Supportstatus"
         },
         "supportWindow": {
@@ -1590,7 +1809,8 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "Lifecycle dates and support notes that apply to the release line."
         }
       },
       "required": [
@@ -1613,7 +1833,7 @@
     },
     "ReleaseSelectionPolicy": {
       "additionalProperties": false,
-      "description": "Selection policy for exact released versions.",
+      "description": "Rule for which exact released versions should become published contexts.",
       "properties": {
         "count": {
           "anyOf": [
@@ -1626,10 +1846,15 @@
             }
           ],
           "default": null,
+          "description": "How many most-recent releases to include when `mode` is `latestN`.",
+          "examples": [
+            3
+          ],
           "title": "Count"
         },
         "mode": {
-          "$ref": "#/$defs/ReleaseSelectionMode"
+          "$ref": "#/$defs/ReleaseSelectionMode",
+          "description": "Selection strategy for released versions, for example the latest `n` releases or one explicit version list."
         },
         "versions": {
           "anyOf": [
@@ -1645,6 +1870,13 @@
             }
           ],
           "default": null,
+          "description": "Exact released versions to include when `mode` is `explicit`.",
+          "examples": [
+            [
+              "4.0.0",
+              "4.0.1"
+            ]
+          ],
           "title": "Versions"
         }
       },
@@ -1656,7 +1888,7 @@
     },
     "RouteAliasConfig": {
       "additionalProperties": false,
-      "description": "Additional route resolving to the same published target.",
+      "description": "Additional public route that resolves to the same published destination.",
       "properties": {
         "label": {
           "anyOf": [
@@ -1669,6 +1901,10 @@
             }
           ],
           "default": null,
+          "description": "Human-readable label that renderers can use when presenting this alias in navigation or metadata.",
+          "examples": [
+            "stable"
+          ],
           "title": "Label"
         },
         "origin": {
@@ -1682,9 +1918,17 @@
             }
           ],
           "default": null,
+          "description": "Optional origin override when the alias should only exist on one named publication origin.",
+          "examples": [
+            "archive"
+          ],
           "title": "Origin"
         },
         "path": {
+          "description": "Alternate public path that should resolve to the same page family or landing target as the primary route.",
+          "examples": [
+            "/spark/stable/"
+          ],
           "minLength": 1,
           "title": "Path",
           "type": "string"
@@ -1697,7 +1941,7 @@
       "type": "object"
     },
     "RouteMode": {
-      "description": "Locale routing strategy for one publication surface.",
+      "description": "Locale routing strategy for a published route set.",
       "enum": [
         "none",
         "prefixAll"
@@ -1707,7 +1951,7 @@
     },
     "SiteContentConfig": {
       "additionalProperties": false,
-      "description": "Consumer-owned top-level site pages, assets, and vendor assets.",
+      "description": "Top-level pages and asset trees that belong to the site as a whole.",
       "properties": {
         "assetsRoot": {
           "anyOf": [
@@ -1759,7 +2003,7 @@
     },
     "SourceConfig": {
       "additionalProperties": false,
-      "description": "Repository or checkout definition.",
+      "description": "Named repository or checkout binding reused by components and artifacts.",
       "properties": {
         "defaultBranch": {
           "anyOf": [
@@ -1818,7 +2062,7 @@
     },
     "SupportStatusDefinition": {
       "additionalProperties": false,
-      "description": "Definition of one support-status vocabulary entry.",
+      "description": "One reusable support-status label, description, and default lifecycle behavior.",
       "properties": {
         "defaultMaintenancePhase": {
           "anyOf": [
@@ -1831,6 +2075,10 @@
             }
           ],
           "default": null,
+          "description": "Default maintenance-phase label to apply when a release uses this support status and does not provide a more specific phase.",
+          "examples": [
+            "active"
+          ],
           "title": "Defaultmaintenancephase"
         },
         "description": {
@@ -1844,9 +2092,17 @@
             }
           ],
           "default": null,
+          "description": "Human-readable explanation of what this support status means in practice.",
+          "examples": [
+            "Receives regular fixes and new patch releases."
+          ],
           "title": "Description"
         },
         "displayName": {
+          "description": "Human-readable status label shown to readers, such as `Supported` or `Security fixes only`.",
+          "examples": [
+            "Supported"
+          ],
           "minLength": 1,
           "title": "Displayname",
           "type": "string"
@@ -1861,6 +2117,10 @@
             }
           ],
           "default": null,
+          "description": "Optional sort order used when several support statuses should appear in a stable display order.",
+          "examples": [
+            10
+          ],
           "title": "Order"
         }
       },
@@ -1872,7 +2132,7 @@
     },
     "SupportWindow": {
       "additionalProperties": false,
-      "description": "Structured support-window metadata for a line or exact release.",
+      "description": "Lifecycle dates and support notes for one release line or exact release.",
       "properties": {
         "endOfActiveSupportDate": {
           "anyOf": [
@@ -1885,6 +2145,7 @@
             }
           ],
           "default": null,
+          "description": "Date after which the release no longer receives full active support.",
           "title": "Endofactivesupportdate"
         },
         "endOfLifeDate": {
@@ -1898,6 +2159,7 @@
             }
           ],
           "default": null,
+          "description": "Final retirement date after which the release should be treated as fully end-of-life.",
           "title": "Endoflifedate"
         },
         "endOfSupportDate": {
@@ -1911,6 +2173,7 @@
             }
           ],
           "default": null,
+          "description": "Date after which the release is no longer supported in normal maintenance channels.",
           "title": "Endofsupportdate"
         },
         "maintenancePhase": {
@@ -1924,6 +2187,10 @@
             }
           ],
           "default": null,
+          "description": "Short label for the current maintenance phase, such as general availability, maintenance, or security-only support.",
+          "examples": [
+            "security-fixes"
+          ],
           "title": "Maintenancephase"
         },
         "notes": {
@@ -1937,6 +2204,7 @@
             }
           ],
           "default": null,
+          "description": "Additional notes that clarify exceptions, migration advice, or support caveats.",
           "title": "Notes"
         },
         "releaseDate": {
@@ -1950,6 +2218,10 @@
             }
           ],
           "default": null,
+          "description": "Release date for the line or version that this support window describes.",
+          "examples": [
+            "2026-04-01T00:00:00Z"
+          ],
           "title": "Releasedate"
         },
         "supportPolicyUrl": {
@@ -1963,6 +2235,7 @@
             }
           ],
           "default": null,
+          "description": "Canonical URL that explains the support policy referenced by this support window.",
           "title": "Supportpolicyurl"
         }
       },
@@ -1971,7 +2244,7 @@
     },
     "TopLevelAssetConfig": {
       "additionalProperties": false,
-      "description": "Top-level imported asset tree mounted under site assets.",
+      "description": "Imported asset tree mounted into the shared site asset space.",
       "properties": {
         "kind": {
           "anyOf": [
@@ -1984,6 +2257,10 @@
             }
           ],
           "default": null,
+          "description": "Short renderer-facing kind label that distinguishes this asset tree from other mounted assets.",
+          "examples": [
+            "brandAssets"
+          ],
           "title": "Kind"
         },
         "mountPath": {
@@ -1997,6 +2274,10 @@
             }
           ],
           "default": null,
+          "description": "Public path below the site asset space where this imported tree should appear.",
+          "examples": [
+            "/assets/vendor/brand/"
+          ],
           "title": "Mountpath"
         },
         "ownership": {
@@ -2010,9 +2291,17 @@
             }
           ],
           "default": null,
+          "description": "Logical owner label used by tooling to explain where this imported asset tree came from.",
+          "examples": [
+            "site-branding"
+          ],
           "title": "Ownership"
         },
         "source": {
+          "description": "Repository-relative source directory that should be copied or mounted into the published site assets.",
+          "examples": [
+            "vendor/brand"
+          ],
           "minLength": 1,
           "title": "Source",
           "type": "string"
@@ -2222,6 +2511,6 @@
     "category": "authored",
     "filePath": "site/catalog.yaml",
     "ownership": "consumer-owned",
-    "summary": "Consumer-authored site catalog input."
+    "summary": "Catalog of components, defaults, sources, origins, and publication rules for one site."
   }
 }

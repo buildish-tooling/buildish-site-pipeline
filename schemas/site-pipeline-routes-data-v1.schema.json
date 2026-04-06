@@ -22,9 +22,14 @@
               }
             ],
             "default": null,
+            "description": "Owning artifact key when the route belongs to a specific artifact.",
+            "examples": [
+              "runtime"
+            ],
             "title": "Artifactkey"
           },
           "baseUrl": {
+            "description": "Base URL for the route's origin.",
             "minLength": 1,
             "title": "Baseurl",
             "type": "string"
@@ -39,9 +44,14 @@
               }
             ],
             "default": null,
+            "description": "Whether this route should be treated as the canonical route among equivalent alternatives.",
             "title": "Canonical"
           },
           "componentSlug": {
+            "description": "Owning component slug for the route.",
+            "examples": [
+              "spark"
+            ],
             "minLength": 1,
             "title": "Componentslug",
             "type": "string"
@@ -57,6 +67,10 @@
               }
             ],
             "default": null,
+            "description": "Human-readable label for the route, if present.",
+            "examples": [
+              "4.0 docs"
+            ],
             "title": "Label"
           },
           "locale": {
@@ -70,14 +84,26 @@
               }
             ],
             "default": null,
+            "description": "Locale key when the route belongs to a localized page family.",
+            "examples": [
+              "en"
+            ],
             "title": "Locale"
           },
           "originKey": {
+            "description": "Origin key that this public route belongs to.",
+            "examples": [
+              "archive"
+            ],
             "minLength": 1,
             "title": "Originkey",
             "type": "string"
           },
           "path": {
+            "description": "Public path for the route.",
+            "examples": [
+              "/spark/4.0.0/docs/"
+            ],
             "minLength": 1,
             "title": "Path",
             "type": "string"
@@ -93,6 +119,10 @@
               }
             ],
             "default": null,
+            "description": "Short route-kind label such as component root, docs root, alias, or release page.",
+            "examples": [
+              "docsRoot"
+            ],
             "title": "Routekind"
           },
           "section": {
@@ -106,6 +136,10 @@
               }
             ],
             "default": null,
+            "description": "Higher-level section label for the route, if present.",
+            "examples": [
+              "documentation"
+            ],
             "title": "Section"
           },
           "targetId": {
@@ -119,9 +153,14 @@
               }
             ],
             "default": null,
+            "description": "Stable target identifier used to correlate equivalent routes or aliases.",
+            "examples": [
+              "spark-runtime-4.0.0-docs"
+            ],
             "title": "Targetid"
           },
           "url": {
+            "description": "Absolute URL for the route after joining `baseUrl` and `path`.",
             "minLength": 1,
             "title": "Url",
             "type": "string"
@@ -150,6 +189,6 @@
     "category": "emitted",
     "filePath": "data/routes.json",
     "ownership": "pipeline-derived",
-    "summary": "Pipeline-emitted route aggregate file."
+    "summary": "Flat inventory of published routes with resolved URLs, labels, and ownership metadata."
   }
 }

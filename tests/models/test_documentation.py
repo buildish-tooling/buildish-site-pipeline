@@ -65,7 +65,7 @@ class ContractDocumentationTests(unittest.TestCase):
         reference = documentation.reference
         if reference is None:
             raise AssertionError("expected generated reference metadata for SiteCatalogDocumentV1")
-        self.assertIn("Consumer-owned catalog input", reference.summary.source)
+        self.assertIn("Canonical site catalog", reference.summary.source)
         self.assertEqual(reference.sections[0].title, "Inheritance")
 
 

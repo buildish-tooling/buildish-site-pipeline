@@ -3,7 +3,7 @@
   "$defs": {
     "ArtifactFrontMatterSummary": {
       "additionalProperties": false,
-      "description": "Compact artifact summary embedded in component front matter.",
+      "description": "Small artifact summary embedded in component front matter.",
       "properties": {
         "displayName": {
           "anyOf": [
@@ -16,9 +16,17 @@
             }
           ],
           "default": null,
+          "description": "Human-readable artifact label shown in page chrome or listings.",
+          "examples": [
+            "Runtime"
+          ],
           "title": "Displayname"
         },
         "key": {
+          "description": "Artifact key used to identify the artifact in page links and typed references.",
+          "examples": [
+            "runtime"
+          ],
           "minLength": 1,
           "title": "Key",
           "type": "string"
@@ -34,6 +42,10 @@
             }
           ],
           "default": null,
+          "description": "Most recent stable version that readers should treat as the default recommendation.",
+          "examples": [
+            "4.0.1"
+          ],
           "title": "Lateststable"
         },
         "releaseLines": {
@@ -49,6 +61,7 @@
             }
           ],
           "default": null,
+          "description": "Compact release-line summaries that the page can use for navigation or version selection.",
           "title": "Releaselines"
         }
       },
@@ -60,7 +73,7 @@
     },
     "ReleaseLineSummary": {
       "additionalProperties": false,
-      "description": "Compact release-line summary embedded into front matter.",
+      "description": "Small release-line summary embedded into page or component front matter.",
       "properties": {
         "aliases": {
           "anyOf": [
@@ -76,6 +89,12 @@
             }
           ],
           "default": null,
+          "description": "Alternate labels that should also refer to this release line.",
+          "examples": [
+            [
+              "stable"
+            ]
+          ],
           "title": "Aliases"
         },
         "headRef": {
@@ -89,9 +108,17 @@
             }
           ],
           "default": null,
+          "description": "Maintenance or line-head ref associated with this release line, if known.",
+          "examples": [
+            "refs/heads/release-4.0"
+          ],
           "title": "Headref"
         },
         "key": {
+          "description": "Release-line key, such as `4.0`, for the summarized line.",
+          "examples": [
+            "4.0"
+          ],
           "minLength": 1,
           "title": "Key",
           "type": "string"
@@ -107,6 +134,10 @@
             }
           ],
           "default": null,
+          "description": "Latest released version currently associated with this line.",
+          "examples": [
+            "4.0.1"
+          ],
           "title": "Latest"
         },
         "parent": {
@@ -120,6 +151,10 @@
             }
           ],
           "default": null,
+          "description": "Optional parent release-line key when lineage should be preserved in front matter.",
+          "examples": [
+            "4.x"
+          ],
           "title": "Parent"
         },
         "supportStatus": {
@@ -133,6 +168,10 @@
             }
           ],
           "default": null,
+          "description": "Support-status key or label for the release line.",
+          "examples": [
+            "supported"
+          ],
           "title": "Supportstatus"
         },
         "supportWindow": {
@@ -144,7 +183,8 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "Lifecycle dates and support notes for the release line."
         }
       },
       "required": [
@@ -155,19 +195,31 @@
     },
     "ResolvedOrigin": {
       "additionalProperties": false,
-      "description": "Resolved publication origin information.",
+      "description": "Resolved origin details for the current publication target.",
       "properties": {
         "baseUrl": {
+          "description": "Fully qualified base URL for the selected origin.",
+          "examples": [
+            "https://archive.apache.org/dist/spark"
+          ],
           "minLength": 1,
           "title": "Baseurl",
           "type": "string"
         },
         "hostname": {
+          "description": "Hostname extracted from `baseUrl` for callers that need it without reparsing the URL.",
+          "examples": [
+            "archive.apache.org"
+          ],
           "minLength": 1,
           "title": "Hostname",
           "type": "string"
         },
         "key": {
+          "description": "Origin key selected for this published route or page.",
+          "examples": [
+            "archive"
+          ],
           "minLength": 1,
           "title": "Key",
           "type": "string"
@@ -183,24 +235,40 @@
     },
     "ResolvedPathSet": {
       "additionalProperties": false,
-      "description": "Resolved public paths for one component.",
+      "description": "Resolved public path roots for a component.",
       "properties": {
         "assets": {
+          "description": "Public root path for shared component assets.",
+          "examples": [
+            "/spark/assets/"
+          ],
           "minLength": 1,
           "title": "Assets",
           "type": "string"
         },
         "component": {
+          "description": "Public root path for the component as a whole.",
+          "examples": [
+            "/spark/"
+          ],
           "minLength": 1,
           "title": "Component",
           "type": "string"
         },
         "development": {
+          "description": "Public root path for development-version content.",
+          "examples": [
+            "/spark/main/"
+          ],
           "minLength": 1,
           "title": "Development",
           "type": "string"
         },
         "docs": {
+          "description": "Public root path for versioned documentation content.",
+          "examples": [
+            "/spark/docs/"
+          ],
           "minLength": 1,
           "title": "Docs",
           "type": "string"
@@ -217,16 +285,19 @@
     },
     "ResolvedPublication": {
       "additionalProperties": false,
-      "description": "Resolved route and URL bundle for one component.",
+      "description": "Resolved origin, path roots, and absolute URLs for a component.",
       "properties": {
         "origin": {
-          "$ref": "#/$defs/ResolvedOrigin"
+          "$ref": "#/$defs/ResolvedOrigin",
+          "description": "Origin details used to resolve paths into absolute URLs."
         },
         "paths": {
-          "$ref": "#/$defs/ResolvedPathSet"
+          "$ref": "#/$defs/ResolvedPathSet",
+          "description": "Resolved public path roots for the component."
         },
         "urls": {
-          "$ref": "#/$defs/ResolvedUrlSet"
+          "$ref": "#/$defs/ResolvedUrlSet",
+          "description": "Resolved absolute URLs for the same publication roots."
         }
       },
       "required": [
@@ -239,24 +310,40 @@
     },
     "ResolvedUrlSet": {
       "additionalProperties": false,
-      "description": "Resolved fully qualified URLs for one component.",
+      "description": "Resolved absolute URLs for a component.",
       "properties": {
         "assets": {
+          "description": "Absolute URL for the shared component asset root.",
+          "examples": [
+            "https://archive.apache.org/dist/spark/assets/"
+          ],
           "minLength": 1,
           "title": "Assets",
           "type": "string"
         },
         "component": {
+          "description": "Absolute URL for the component root.",
+          "examples": [
+            "https://archive.apache.org/dist/spark/"
+          ],
           "minLength": 1,
           "title": "Component",
           "type": "string"
         },
         "development": {
+          "description": "Absolute URL for the development-version root.",
+          "examples": [
+            "https://archive.apache.org/dist/spark/main/"
+          ],
           "minLength": 1,
           "title": "Development",
           "type": "string"
         },
         "docs": {
+          "description": "Absolute URL for the versioned docs root.",
+          "examples": [
+            "https://archive.apache.org/dist/spark/docs/"
+          ],
           "minLength": 1,
           "title": "Docs",
           "type": "string"
@@ -273,7 +360,7 @@
     },
     "SupportWindow": {
       "additionalProperties": false,
-      "description": "Structured support-window metadata for a line or exact release.",
+      "description": "Lifecycle dates and support notes for one release line or exact release.",
       "properties": {
         "endOfActiveSupportDate": {
           "anyOf": [
@@ -286,6 +373,7 @@
             }
           ],
           "default": null,
+          "description": "Date after which the release no longer receives full active support.",
           "title": "Endofactivesupportdate"
         },
         "endOfLifeDate": {
@@ -299,6 +387,7 @@
             }
           ],
           "default": null,
+          "description": "Final retirement date after which the release should be treated as fully end-of-life.",
           "title": "Endoflifedate"
         },
         "endOfSupportDate": {
@@ -312,6 +401,7 @@
             }
           ],
           "default": null,
+          "description": "Date after which the release is no longer supported in normal maintenance channels.",
           "title": "Endofsupportdate"
         },
         "maintenancePhase": {
@@ -325,6 +415,10 @@
             }
           ],
           "default": null,
+          "description": "Short label for the current maintenance phase, such as general availability, maintenance, or security-only support.",
+          "examples": [
+            "security-fixes"
+          ],
           "title": "Maintenancephase"
         },
         "notes": {
@@ -338,6 +432,7 @@
             }
           ],
           "default": null,
+          "description": "Additional notes that clarify exceptions, migration advice, or support caveats.",
           "title": "Notes"
         },
         "releaseDate": {
@@ -351,6 +446,10 @@
             }
           ],
           "default": null,
+          "description": "Release date for the line or version that this support window describes.",
+          "examples": [
+            "2026-04-01T00:00:00Z"
+          ],
           "title": "Releasedate"
         },
         "supportPolicyUrl": {
@@ -364,6 +463,7 @@
             }
           ],
           "default": null,
+          "description": "Canonical URL that explains the support policy referenced by this support window.",
           "title": "Supportpolicyurl"
         }
       },
@@ -395,6 +495,7 @@
               }
             ],
             "default": null,
+            "description": "Compact artifact summaries used by component listings and page chrome.",
             "title": "Artifacts"
           },
           "displayName": {
@@ -408,6 +509,10 @@
               }
             ],
             "default": null,
+            "description": "Human-readable component name shown in navigation, listings, and generated metadata.",
+            "examples": [
+              "Apache Spark"
+            ],
             "title": "Displayname"
           },
           "group": {
@@ -421,9 +526,17 @@
               }
             ],
             "default": null,
+            "description": "Optional group key copied from the authored catalog to support grouped rendering or filtering.",
+            "examples": [
+              "data-platform"
+            ],
             "title": "Group"
           },
           "originKey": {
+            "description": "Origin key selected for this component's primary published route set.",
+            "examples": [
+              "archive"
+            ],
             "minLength": 1,
             "title": "Originkey",
             "type": "string"
@@ -442,12 +555,23 @@
               }
             ],
             "default": null,
+            "description": "Provider keys that contributed version metadata for this component's artifacts.",
+            "examples": [
+              [
+                "github-releases"
+              ]
+            ],
             "title": "Providerkeys"
           },
           "publication": {
-            "$ref": "#/$defs/ResolvedPublication"
+            "$ref": "#/$defs/ResolvedPublication",
+            "description": "Resolved publication roots and URLs for the component."
           },
           "slug": {
+            "description": "Stable component slug used by routes, aggregates, and typed references.",
+            "examples": [
+              "spark"
+            ],
             "minLength": 1,
             "title": "Slug",
             "type": "string"
@@ -487,6 +611,6 @@
     "category": "emitted",
     "filePath": "data/components.json",
     "ownership": "pipeline-derived",
-    "summary": "Pipeline-emitted component aggregate file."
+    "summary": "Published component inventory with resolved routes, origins, and artifact summaries."
   }
 }

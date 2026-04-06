@@ -22,6 +22,7 @@
               }
             ],
             "default": null,
+            "description": "Base URL of the provider service when records can link back to a human-browsable upstream origin.",
             "title": "Baseurl"
           },
           "displayName": {
@@ -35,19 +36,32 @@
               }
             ],
             "default": null,
+            "description": "Human-readable provider label shown in generated metadata or diagnostics.",
+            "examples": [
+              "GitHub Releases"
+            ],
             "title": "Displayname"
           },
           "fetchedAt": {
+            "description": "Timestamp when this provider descriptor was fetched or refreshed.",
             "format": "date-time",
             "title": "Fetchedat",
             "type": "string"
           },
           "key": {
+            "description": "Stable provider identifier used by aggregate entries that originate from this provider.",
+            "examples": [
+              "github-releases"
+            ],
             "minLength": 1,
             "title": "Key",
             "type": "string"
           },
           "type": {
+            "description": "Provider implementation type, such as `github` or another fetcher backend label.",
+            "examples": [
+              "github"
+            ],
             "minLength": 1,
             "title": "Type",
             "type": "string"
@@ -74,6 +88,6 @@
     "category": "emitted",
     "filePath": "data/providers.json",
     "ownership": "pipeline-derived",
-    "summary": "Pipeline-emitted provider summary aggregate file."
+    "summary": "Loaded provider inventory with display names, base URLs, and fetch timestamps."
   }
 }

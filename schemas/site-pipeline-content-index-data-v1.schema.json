@@ -50,6 +50,13 @@
               }
             ],
             "default": null,
+            "description": "Ancestor page identifiers ordered from nearest to farthest.",
+            "examples": [
+              [
+                "spark-runtime-4.0.0-docs-root",
+                "spark-runtime-root"
+              ]
+            ],
             "title": "Ancestorids"
           },
           "artifactKey": {
@@ -63,6 +70,10 @@
               }
             ],
             "default": null,
+            "description": "Owning artifact key when the page belongs to a specific artifact.",
+            "examples": [
+              "runtime"
+            ],
             "title": "Artifactkey"
           },
           "candidateSequence": {
@@ -76,6 +87,10 @@
               }
             ],
             "default": null,
+            "description": "Release-candidate sequence number when the page belongs to a candidate context.",
+            "examples": [
+              1
+            ],
             "title": "Candidatesequence"
           },
           "canonicalUrl": {
@@ -89,9 +104,14 @@
               }
             ],
             "default": null,
+            "description": "Explicit canonical URL when it should differ from `url`.",
             "title": "Canonicalurl"
           },
           "componentSlug": {
+            "description": "Owning component slug for the indexed page.",
+            "examples": [
+              "spark"
+            ],
             "minLength": 1,
             "title": "Componentslug",
             "type": "string"
@@ -106,6 +126,7 @@
               }
             ],
             "default": null,
+            "description": "Whether the page represents the default locale within its translation group.",
             "title": "Defaultlocale"
           },
           "description": {
@@ -119,6 +140,7 @@
               }
             ],
             "default": null,
+            "description": "Longer page description intended for metadata or search snippets.",
             "title": "Description"
           },
           "externalId": {
@@ -132,9 +154,14 @@
               }
             ],
             "default": null,
+            "description": "Provider-specific stable identifier for the upstream record that informed the page.",
             "title": "Externalid"
           },
           "id": {
+            "description": "Stable identifier for the indexed page entry.",
+            "examples": [
+              "spark-runtime-4.0.0-getting-started"
+            ],
             "minLength": 1,
             "title": "Id",
             "type": "string"
@@ -150,6 +177,10 @@
               }
             ],
             "default": null,
+            "description": "Shorter title variant used in navigation or link lists.",
+            "examples": [
+              "Start"
+            ],
             "title": "Linktitle"
           },
           "locale": {
@@ -163,6 +194,10 @@
               }
             ],
             "default": null,
+            "description": "Locale key for the page when the page participates in localization.",
+            "examples": [
+              "en"
+            ],
             "title": "Locale"
           },
           "maturity": {
@@ -176,14 +211,26 @@
               }
             ],
             "default": null,
+            "description": "Maturity label such as preview, beta, or stable.",
+            "examples": [
+              "stable"
+            ],
             "title": "Maturity"
           },
           "originKey": {
+            "description": "Origin key that this indexed page belongs to.",
+            "examples": [
+              "archive"
+            ],
             "minLength": 1,
             "title": "Originkey",
             "type": "string"
           },
           "pageKind": {
+            "description": "Short page-kind label used for filtering and presentation.",
+            "examples": [
+              "docsPage"
+            ],
             "minLength": 1,
             "title": "Pagekind",
             "type": "string"
@@ -199,9 +246,17 @@
               }
             ],
             "default": null,
+            "description": "Identifier of the parent indexed page when the page belongs to a hierarchy.",
+            "examples": [
+              "spark-runtime-4.0.0-docs-root"
+            ],
             "title": "Parentid"
           },
           "path": {
+            "description": "Published public path for the page.",
+            "examples": [
+              "/spark/4.0.0/docs/getting-started/"
+            ],
             "minLength": 1,
             "title": "Path",
             "type": "string"
@@ -217,6 +272,7 @@
               }
             ],
             "default": null,
+            "description": "Provider key for the upstream record that informed the page's version metadata.",
             "title": "Provider"
           },
           "publicationState": {
@@ -228,7 +284,8 @@
                 "type": "null"
               }
             ],
-            "default": null
+            "default": null,
+            "description": "Publication-state label attached to the page's version context."
           },
           "releaseLine": {
             "anyOf": [
@@ -241,6 +298,10 @@
               }
             ],
             "default": null,
+            "description": "Release-line key attached to the page, if present.",
+            "examples": [
+              "4.0"
+            ],
             "title": "Releaseline"
           },
           "section": {
@@ -254,6 +315,10 @@
               }
             ],
             "default": null,
+            "description": "Higher-level section label used for navigation or filtering.",
+            "examples": [
+              "documentation"
+            ],
             "title": "Section"
           },
           "sourcePath": {
@@ -267,6 +332,10 @@
               }
             ],
             "default": null,
+            "description": "Repository-relative source file path for the page when it is known.",
+            "examples": [
+              "docs/runtime/getting-started.md"
+            ],
             "title": "Sourcepath"
           },
           "summary": {
@@ -280,6 +349,7 @@
               }
             ],
             "default": null,
+            "description": "Short summary used for listings, cards, or lightweight search results.",
             "title": "Summary"
           },
           "supportStatus": {
@@ -293,6 +363,10 @@
               }
             ],
             "default": null,
+            "description": "Support-status key or label attached to the page's version context.",
+            "examples": [
+              "supported"
+            ],
             "title": "Supportstatus"
           },
           "title": {
@@ -306,6 +380,10 @@
               }
             ],
             "default": null,
+            "description": "Primary page title shown to readers.",
+            "examples": [
+              "Getting Started"
+            ],
             "title": "Title"
           },
           "translationKey": {
@@ -319,9 +397,14 @@
               }
             ],
             "default": null,
+            "description": "Shared key that ties translated sibling pages together.",
+            "examples": [
+              "spark-overview"
+            ],
             "title": "Translationkey"
           },
           "url": {
+            "description": "Canonical absolute URL for the page.",
             "minLength": 1,
             "title": "Url",
             "type": "string"
@@ -335,7 +418,8 @@
                 "type": "null"
               }
             ],
-            "default": null
+            "default": null,
+            "description": "Version-context kind attached when the page belongs to a versioned route set."
           },
           "versionLabel": {
             "anyOf": [
@@ -348,6 +432,10 @@
               }
             ],
             "default": null,
+            "description": "Human-readable version label attached to the page, if present.",
+            "examples": [
+              "4.0.0"
+            ],
             "title": "Versionlabel"
           },
           "voteStatus": {
@@ -361,6 +449,10 @@
               }
             ],
             "default": null,
+            "description": "Vote-status label when the page belongs to a candidate context.",
+            "examples": [
+              "passed"
+            ],
             "title": "Votestatus"
           },
           "weight": {
@@ -373,6 +465,10 @@
               }
             ],
             "default": null,
+            "description": "Optional ordering hint used by renderers for listings or navigation.",
+            "examples": [
+              100
+            ],
             "title": "Weight"
           }
         },
@@ -400,6 +496,6 @@
     "category": "emitted",
     "filePath": "data/content-index.json",
     "ownership": "pipeline-derived",
-    "summary": "Pipeline-emitted content index file."
+    "summary": "Search and navigation index for staged pages with titles, ancestry, and version metadata."
   }
 }

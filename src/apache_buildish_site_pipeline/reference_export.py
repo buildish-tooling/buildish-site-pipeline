@@ -47,10 +47,17 @@ if TYPE_CHECKING:
     from apache_buildish_site_pipeline.schema_export import SchemaExample
 
 _GENERATED_REFERENCE_COMMENT = (
-    "Generated from the Site Pipeline Pydantic models and checked-in reference metadata. "
-    "Do not edit by hand; regenerate with `make schemas`."
+    "This reference is generated from the Site Pipeline Pydantic models and checked-in reference metadata. "
+    "Do not edit it by hand; regenerate it with `make schemas`."
 )
 _TOKEN_PATTERN = re.compile(r"\b[A-Za-z_][A-Za-z0-9_]*\b")
+_INNER_TYPE_PLACEHOLDER = "(inner type)"
+_NOT_DOCUMENTED_PLACEHOLDER = "(not documented)"
+_TYPE_SUMMARY_WARNING = "**UX warning:** type summary missing; this violates the project's UX requirements."
+_FIELD_DESCRIPTION_WARNING = (
+    "**UX warning:** field description missing; this violates the project's UX requirements. "
+    f"{_NOT_DOCUMENTED_PLACEHOLDER}"
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -126,11 +133,13 @@ def build_reference_markdown(exports: Iterable[SchemaExport]) -> str:
         "",
         _GENERATED_REFERENCE_COMMENT,
         "",
-        "This page is generated from the public model layer and the checked-in schema export registry.",
-        "It is the typed reference companion to the narrative maintenance and how-to docs.",
+        "This reference describes the current public contracts exposed by the Site Pipeline model layer.",
+        "It covers authored inputs, provider inputs, pipeline-emitted outputs, shared scalars, enums, and the detailed field rules for each typed contract.",
+        "Use the contract-file tables to find the governing file or schema root, then use the linked type sections below for the exact field-level contract.",
         "",
-        "## Scope and conventions",
+        "## How to read this reference",
         "",
+        "- contract-file tables identify the stable on-disk file for each root contract when one exists",
         "- field names are shown in their wire-format aliases",
         "- type, enum, and scalar names link to their definitions below",
         "- schema files are listed by checked-in filename for the matching root contract",
@@ -294,7 +303,7 @@ def _render_enum_section(enums: tuple[type[Enum], ...], anchors: AnchorIndex) ->
     for enum_type in enums:
         anchor = anchors.type_anchors[enum_type.__name__]
         values = ", ".join(f"`{member.value}`" for member in enum_type)
-        description = getdoc(enum_type) or "—"
+        description = getdoc(enum_type) or _NOT_DOCUMENTED_PLACEHOLDER
         lines.append(
             f"| <a id=\"{anchor}\"></a>`{enum_type.__name__}` | {values} | {_escape_table_cell(description)} |"
         )
@@ -340,18 +349,16 @@ def _render_model_section(
     examples: tuple[SchemaExample, ...],
 ) -> list[str]:
     documentation = contract_documentation_for(model)
-    summary_source = (
-        documentation.reference.summary.source
-        if documentation is not None and documentation.reference is not None and documentation.reference.summary is not None
-        else getdoc(model) or "No model summary documented."
-    )
     lines = [
         f"<a id=\"{anchors.type_anchors[model.__name__]}\"></a>",
         f"### {model.__name__}",
         "",
-        _render_markdown_fragment(summary_source, anchors),
-        "",
     ]
+    summary_source = _model_summary_source(model)
+    if summary_source is None:
+        lines.extend([_TYPE_SUMMARY_WARNING, "", _NOT_DOCUMENTED_PLACEHOLDER, ""])
+    else:
+        lines.extend([_render_markdown_fragment(summary_source, anchors), ""])
     if documentation is not None:
         lines.extend(
             [
@@ -359,7 +366,7 @@ def _render_model_section(
                 f"- ownership: `{documentation.ownership}`",
                 f"- file contract: `{documentation.file_path}`"
                 if documentation.file_path is not None
-                else "- file contract: —",
+                else f"- file contract: {_INNER_TYPE_PLACEHOLDER}",
                 "",
             ]
         )
@@ -372,11 +379,10 @@ def _render_model_section(
     for field_name, field in model.model_fields.items():
         alias = field.alias or to_camel_case(field_name)
         field_anchor = anchors.field_anchors[(model.__name__, alias)]
-        raw_type = model.__annotations__.get(field_name, repr(field.annotation))
-        rendered_type = anchors.link_type_expression(str(raw_type))
-        description = field.description or "—"
+        rendered_type = _render_field_type_expression(model, field_name, field.is_required(), anchors)
+        description = _render_field_description(field.description, anchors)
         lines.append(
-            f"| <a id=\"{field_anchor}\"></a>`{alias}` | {_escape_table_cell(rendered_type)} | {'yes' if field.is_required() else 'no'} | {_escape_table_cell(_render_markdown_fragment(description, anchors) if description != '—' else description)} |"
+            f"| <a id=\"{field_anchor}\"></a>`{alias}` | {_escape_table_cell(rendered_type)} | {'yes' if field.is_required() else 'no'} | {_escape_table_cell(description)} |"
         )
     lines.append("")
     if documentation is not None and documentation.reference is not None:
@@ -449,25 +455,25 @@ def _file_contract_index_groups() -> tuple[FileContractIndexGroup, ...]:
     return (
         FileContractIndexGroup(
             title="Authored input contracts",
-            description="Consumer-owned and component-owned source-tree contracts.",
+            description="Consumer-owned and component-owned source-tree contracts that the pipeline reads.",
             category="authored",
             has_contract_file=True,
         ),
         FileContractIndexGroup(
             title="Provider input contracts",
-            description="Provider-derived snapshot contracts consumed by the pipeline.",
+            description="Provider-derived snapshot contracts that the pipeline reads.",
             category="provider",
             has_contract_file=True,
         ),
         FileContractIndexGroup(
             title="Pipeline-emitted file contracts",
-            description="Stable files emitted by the pipeline into staged or published output trees.",
+            description="Stable files that the pipeline writes into staged or published output trees.",
             category="emitted",
             has_contract_file=True,
         ),
         FileContractIndexGroup(
             title="Pipeline-emitted non-file root contracts",
-            description="Schema-root report and namespace types without one stable checked-in file path hint.",
+            description="Schema-root report and namespace types that do not correspond to one stable checked-in file path.",
             category="emitted",
             has_contract_file=False,
         ),
@@ -491,7 +497,7 @@ def _file_contract_sort_key(export: SchemaExport) -> tuple[int, str, str]:
 def _contract_file_path(export: SchemaExport) -> str:
     documentation = export.documentation
     if documentation is None or documentation.file_path is None:
-        return "—"
+        return _INNER_TYPE_PLACEHOLDER
     return documentation.file_path
 
 
@@ -505,20 +511,99 @@ def _export_summary(export: SchemaExport) -> str:
     documentation = export.documentation
     if documentation is not None and documentation.summary is not None:
         return documentation.summary
-    return export.description or "—"
+    return export.description or _NOT_DOCUMENTED_PLACEHOLDER
 
 
 def _model_index_summary(model: type[SitePipelineBaseModel]) -> str:
-    return _first_sentence(_model_summary_text(model))
+    summary_text = _model_summary_text(model)
+    return _first_sentence(summary_text) if summary_text is not None else _NOT_DOCUMENTED_PLACEHOLDER
 
 
-def _model_summary_text(model: type[SitePipelineBaseModel]) -> str:
+def _model_summary_source(model: type[SitePipelineBaseModel]) -> str | None:
+    documentation = contract_documentation_for(model)
+    if documentation is not None and documentation.reference is not None and documentation.reference.summary is not None:
+        return documentation.reference.summary.source
+    model_doc = cleandoc(model.__doc__) if model.__doc__ else None
+    return model_doc if model_doc else None
+
+
+def _model_summary_text(model: type[SitePipelineBaseModel]) -> str | None:
+    summary_source = _model_summary_source(model)
+    if summary_source is None:
+        return None
     documentation = contract_documentation_for(model)
     if documentation is not None and documentation.reference is not None and documentation.reference.summary is not None:
         return _normalize_summary_text(
-            render_reference_schema_text(parse_reference_document(cleandoc(documentation.reference.summary.source)))
+            render_reference_schema_text(parse_reference_document(cleandoc(summary_source)))
         )
-    return _normalize_summary_text(getdoc(model) or "No model summary documented.")
+    return _normalize_summary_text(summary_source)
+
+
+def _render_field_type_expression(
+    model: type[SitePipelineBaseModel],
+    field_name: str,
+    required: bool,
+    anchors: AnchorIndex,
+) -> str:
+    raw_type = model.__annotations__.get(field_name)
+    type_expression = str(raw_type) if raw_type is not None else "object"
+    if not required:
+        type_expression = _strip_top_level_optional_none(type_expression)
+    return anchors.link_type_expression(type_expression)
+
+
+def _render_field_description(description: str | None, anchors: AnchorIndex) -> str:
+    if description is None or not description.strip():
+        return _FIELD_DESCRIPTION_WARNING
+    return _render_markdown_fragment(description, anchors)
+
+
+def _strip_top_level_optional_none(type_expression: str) -> str:
+    stripped = type_expression.strip()
+    for prefix in ("Optional[", "typing.Optional["):
+        if stripped.startswith(prefix) and stripped.endswith("]"):
+            return stripped[len(prefix) : -1]
+    union_prefixes = ("Union[", "typing.Union[")
+    for prefix in union_prefixes:
+        if stripped.startswith(prefix) and stripped.endswith("]"):
+            union_members = _split_top_level_values(stripped[len(prefix) : -1], separator=",")
+            non_none_members = [member.strip() for member in union_members if member.strip() != "None"]
+            if len(non_none_members) != len(union_members) and non_none_members:
+                return f"{prefix}{', '.join(non_none_members)}]"
+            return stripped
+    union_members = _split_top_level_values(stripped, separator="|")
+    non_none_members = [member.strip() for member in union_members if member.strip() != "None"]
+    if len(non_none_members) != len(union_members) and non_none_members:
+        return " | ".join(non_none_members)
+    return stripped
+
+
+def _split_top_level_values(source: str, *, separator: str) -> tuple[str, ...]:
+    values: list[str] = []
+    current: list[str] = []
+    square_depth = 0
+    round_depth = 0
+    brace_depth = 0
+    for character in source:
+        if character == "[":
+            square_depth += 1
+        elif character == "]":
+            square_depth -= 1
+        elif character == "(":
+            round_depth += 1
+        elif character == ")":
+            round_depth -= 1
+        elif character == "{":
+            brace_depth += 1
+        elif character == "}":
+            brace_depth -= 1
+        if character == separator and square_depth == 0 and round_depth == 0 and brace_depth == 0:
+            values.append("".join(current))
+            current = []
+            continue
+        current.append(character)
+    values.append("".join(current))
+    return tuple(values)
 
 
 def _first_sentence(value: str) -> str:

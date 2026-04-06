@@ -23,6 +23,8 @@ import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
 
+from apache_buildish_site_pipeline.models.base import SitePipelineBaseModel
+from apache_buildish_site_pipeline.reference_export import _build_anchor_index, _render_model_section
 from apache_buildish_site_pipeline.schema_export import (
     _build_parser,
     authored_schema_exports,
@@ -125,6 +127,11 @@ class SchemaExportTests(unittest.TestCase):
                 checked_in_reference_path.read_text(encoding="utf-8"),
                 generated_reference_text,
             )
+            self.assertIn(
+                "This reference describes the current public contracts exposed by the Site Pipeline model layer.",
+                generated_reference_text,
+            )
+            self.assertIn("## How to read this reference", generated_reference_text)
             self.assertIn("### Authored input contracts", generated_reference_text)
             self.assertIn("### Pipeline-emitted non-file root contracts", generated_reference_text)
             self.assertNotIn("(/schemas/", generated_reference_text)
@@ -132,6 +139,27 @@ class SchemaExportTests(unittest.TestCase):
                 "- [SiteCatalogDocumentV1](#sitecatalogdocumentv1) — Consumer-owned catalog input",
                 generated_reference_text,
             )
+            self.assertIn("- file contract: (inner type)", generated_reference_text)
+            self.assertIn(
+                "**UX warning:** field description missing; this violates the project's UX requirements. (not documented)",
+                generated_reference_text,
+            )
+            self.assertIn(
+                "| <a id=\"componentcatalogentry-displayname\"></a>`displayName` | [NonEmptyString](#nonemptystring) | no |",
+                generated_reference_text,
+            )
+
+    def test_undocumented_model_sections_emit_explicit_ux_warnings(self) -> None:
+        class UndocumentedModel(SitePipelineBaseModel):
+            optional_value: str | None = None
+
+        anchors = _build_anchor_index(models=(UndocumentedModel,), enums=(), scalar_entries=())
+
+        rendered_section = "\n".join(_render_model_section(UndocumentedModel, anchors, ()))
+
+        self.assertIn("**UX warning:** type summary missing; this violates the project's UX requirements.", rendered_section)
+        self.assertIn("**UX warning:** field description missing; this violates the project's UX requirements.", rendered_section)
+        self.assertIn("| <a id=\"undocumentedmodel-optionalvalue\"></a>`optionalValue` | str | no |", rendered_section)
 
     def test_export_inventory_covers_inputs_and_outputs(self) -> None:
         export_names = {export.filename for export in schema_exports()}

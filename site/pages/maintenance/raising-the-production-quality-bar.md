@@ -20,98 +20,178 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-## Highest-leverage improvements
+## Current assessment
 
-### 1. Reduce orchestration density
+This codebase is no longer at the earlier "good but still obviously duplicated"
+stage. Recent work already landed some of the highest-value cleanup:
 
-The biggest quality jump would come from keeping branch-heavy orchestration thin.
-Large functions that parse inputs, apply policy, perform I/O, and map failures at
-the same time are still understandable, but they are harder to review and easier
-to drift.
+- thinner CLI invocation orchestration
+- typed artifact identities in reference lookups
+- one canonical symlink-ancestry trust helper
+- one shared public-path helper reused by planning, staging, and evaluation
+- explicit result objects for watch follow-up cycles
+- better maintainer-facing docs around shared public-path behavior
 
-Prefer:
+That means the remaining gap to an excellent rating is narrower now. It is less
+about broad cleanup themes and more about finishing a few specific shape
+improvements across production code, tests, and docs.
 
-- small pure decision helpers
-- thin top-level orchestration that mostly wires calls together
-- clear splits between normalization, policy, I/O, and diagnostic mapping
+## What still needs to change in production code
 
-### 2. Encode more invariants in types and constructors
+### 1. Thin the remaining heavy coordinators
 
-The code already validates a lot. The next step is to make more invalid states
-hard to represent at all.
+The biggest production-code gap is not general correctness. It is that a few
+important entry points still carry too much orchestration in one place.
 
-Prefer:
+The main examples are:
 
-- dedicated value types or enums over semantically overloaded raw strings
-- constructors or validators that only return already-safe objects
-- fewer partially valid objects that require repeated later revalidation
+- `src/apache_buildish_site_pipeline/staging/coordinator.py`
+- `src/apache_buildish_site_pipeline/planning/__init__.py`
+- `src/apache_buildish_site_pipeline/evaluation/execution.py`
 
-### 3. Centralize trust-boundary rules more aggressively
+These modules are understandable, but they still combine phase ordering,
+boundary decisions, result assembly, and failure cleanup closely enough that
+future review work will stay heavier than it needs to be.
 
-Path safety, symlink handling, output-root rules, publication safety, and other
-trust checks should stay single-sourced. The quality bar rises when maintainers
-can point to one obvious helper for each sensitive rule and know that nearby code
-is not re-implementing a slightly different version.
+The excellent-bar target is:
 
-Prefer:
+- top-level functions that mostly wire phases together
+- phase-local result objects instead of ad hoc handoff shapes
+- decision helpers that separate policy from filesystem mutation or report
+  assembly
 
-- one canonical helper per trust rule
-- shared reuse instead of similar local checks
-- explicit documentation of which helper is the source of truth
+### 2. Finish replacing mixed return shapes with explicit result models
 
-### 4. Single-source policy across planning, evaluation, and staging
+The code is better here than before, but one notable example still stands out:
+`planning.build_plan.build_effective_build_plan()` returns
+`tuple[PlanToBuildBridge, EffectiveBuildPlan | None]`.
 
-Some rules naturally span multiple layers, especially selection, publication,
-route resolution, readiness, and shared validation. The codebase gets stronger
-when those rules are interpreted in one place and reused rather than mirrored in
-parallel implementations.
+That is still a mixed "status plus optional payload" shape. It works, but it is
+exactly the kind of contract that gets misread later.
 
-Prefer:
+The excellent-bar target is:
 
-- one canonical decision path for each major policy
-- shared helpers for route, selection, and publication semantics
-- refactors that remove parallel interpretations of the same contract
+- one named result type per important transition
+- no important branch encoded as positional tuple meaning
+- constructors that make the allowed states obvious to readers
 
-### 5. Make lifecycle transitions more explicit
+### 3. Add a few deliberate internal impossibility checks
 
-Watch, build, and stage behavior is already careful, but the quality bar rises
-again when state transitions are easier to see and harder to misuse.
+Edge validation is strong already. The next improvement is to fail louder when
+internal layers contradict each other after validation has already succeeded.
 
-Prefer:
+The best candidates are the boundaries between:
 
-- explicit transition helpers or state-machine-like structure
-- fewer implicit flag combinations
-- stronger assertions around allowed transition paths
+- planning and build-plan handoff
+- publication index and route inventory assembly
+- worker results and aggregate-file assembly
 
-## Secondary improvements that still matter
+These checks should not duplicate user-input validation. They should assert
+maintainer-facing invariants that "must already be true here".
 
-### 6. Add more maintainer-facing module docs
+### 4. Remove compatibility fossils once they stop protecting a real boundary
 
-Short internal docs should make it obvious:
+One good example is `staging.worker_protocol.WorkerResultWire`, which still keeps
+legacy flat counters and a `normalized()` compatibility path next to the newer
+`output_stats` shape.
 
-- what a module owns
-- what it assumes is already validated
-- what it must revalidate itself
-- what public data it is allowed to emit
+If older worker payloads are no longer a real supported boundary, the excellent
+version of the code should remove that compatibility baggage instead of carrying
+it forever.
 
-### 7. Add deliberate internal impossibility checks
+The rule here is simple: keep defensive compatibility code only when it protects
+a real, documented boundary that still exists.
 
-Good validation at the edges is not enough. Internal contradictions should also
-fail loudly so contract drift is caught early during development and review.
+## What still needs to change in the test codebase
 
-### 8. Prune defensive fossils when they stop paying for themselves
+### 1. Put more weight on scenario tests that cross layers
 
-After long audit or hardening waves, some modules naturally collect extra guards
-and fallback branches. Periodic cleanup should remove defensive code that is no
-longer meaningfully reachable or no longer explains a real invariant.
+The current test suite is already strong in focused unit coverage, and it also
+has meaningful integration-style coverage for build and watch flows.
 
-## What to prioritize first
+What is still thinner than ideal is end-to-end scenario coverage for one feature
+that should stay consistent across planning, evaluation, staging, and watch.
 
-If maintainers only take three actions, start here:
+The excellent-bar target is a small set of canonical workspace scenarios that
+assert the same fact through multiple layers, for example:
 
-1. refactor orchestration-heavy modules into smaller decision layers
-2. encode more invariants in types and constructors
-3. centralize trust and path-safety rules into fewer canonical helpers
+- a route and its redirect behavior
+- a selected version context and its staged output
+- an internal link rule as seen in both `check` and staged content
 
-These three shifts give the biggest payoff in reviewability, refactor safety, and
-long-term semantic consistency.
+That kind of test catches cross-layer drift better than adding more helper-only
+tests.
+
+### 2. Verify documentation examples against real fixtures where possible
+
+Right now the docs and the tests both contain useful examples, but they are not
+tied together tightly enough.
+
+For an excellent bar, the most important onboarding and how-to examples should be
+grounded in reusable fixtures or generated output that the test suite already
+knows how to build.
+
+That does not mean testing every prose snippet. It means protecting the few
+example packets that readers are most likely to copy.
+
+## What still needs to change in the documentation
+
+### 1. Keep the larger getting-started pages as concrete as the tiny-site docs
+
+The docs root, concepts pages, and tiny-site onboarding are in much better shape
+than before. The remaining reader-facing gap is that the larger size-band pages
+are still more abstract than the tiny-site material.
+
+For example, `site/pages/getting-started/tiny.md` already gives readers a small
+workspace shape, a catalog example, commands to run, and staged files to inspect.
+Pages like `medium.md` and `large.md` still lean more on reading paths and mental
+models than on reusable example packets.
+
+The excellent-bar target is for each size-band page to show:
+
+- the smallest concrete repo shape for that band
+- one representative `catalog.yaml` fragment
+- the command the reader runs
+- the first staged file or aggregate file to inspect
+
+### 2. Add more maintainer-facing ownership notes in heavy internal modules
+
+The maintenance pages are stronger now, but a few implementation-heavy modules
+still rely too much on readers inferring boundaries from code alone.
+
+The highest-value doc additions are short module-level notes for places like:
+
+- `staging/coordinator.py`
+- `evaluation/execution.py`
+- `planning/build_plan.py`
+
+Each note should explain:
+
+- what the module owns
+- what inputs it assumes are already validated
+- what invariants it enforces itself
+- what kind of object it is allowed to emit downstream
+
+### 3. Keep maintenance notes current when cleanup lands
+
+An excellent documentation bar is not only about adding new pages. It is also
+about removing stale maintainer advice quickly.
+
+If a refactor theme has already landed, the maintenance notes should stop talking
+about it as open work and instead describe the smaller remaining gap.
+
+This page exists partly to enforce that rule.
+
+## What to prioritize next
+
+If maintainers only take four next actions, start here:
+
+1. replace `build_effective_build_plan()` with one explicit result object
+2. split the remaining heavy orchestration in `staging/coordinator.py`
+3. add two or three cross-layer scenario tests that assert one rule through
+   planning, evaluation, staging, and watch
+4. upgrade `medium.md` and `large.md` with real example packets and expected
+   staged outputs
+
+Those four changes would do the most to move the repo from "already strong" to
+"excellent and easier to keep excellent".

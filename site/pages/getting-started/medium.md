@@ -26,10 +26,36 @@ limitations under the License.
 - multiple visible versions or lifecycle states
 - imported docs, generated refs, or mounted content are common
 
-## Smallest useful mental model
+## Smallest working shape
 
 At this size, the pipeline is no longer just a file copier. It is a boundary
 between publication policy, local materialized inputs, and stable staged output.
+
+One concrete starter layout is:
+
+```text
+site/
+  catalog.yaml
+  provider-snapshot.json
+components/
+  runtime/
+    docs/
+      runtime/
+        guide/
+          index.md
+        releases/
+          4.0.0/
+            guide/
+              index.md
+  api/
+    docs/
+      reference/
+        index.md
+      releases/
+        4.0.0/
+          reference/
+            index.md
+```
 
 You will usually need to think about:
 
@@ -37,6 +63,94 @@ You will usually need to think about:
 - shared defaults across related publication surfaces
 - planning which contexts should exist before staging starts
 - lifecycle and publication state in addition to plain route layout
+
+One representative `site/catalog.yaml` looks like this:
+
+```yaml
+schemaVersion: 1
+defaults:
+  docsRoot: docs
+  publication:
+    origin: docs
+origins:
+  docs:
+    baseUrl: https://docs.example.org
+sources:
+  runtime:
+    localDir: components/runtime
+  api:
+    localDir: components/api
+components:
+  - slug: spark
+    content:
+      source: runtime
+    publication:
+      mountPath: /spark/
+    artifacts:
+      - key: runtime
+        source: runtime
+        docsRoot: docs/runtime
+        versioning:
+          developmentRef: main
+          tagPattern: ^v.*$
+        publicationSelection:
+          development: true
+          releases:
+            mode: latestPerLine
+        lifecycle:
+          releaseLines:
+            - key: "4.0"
+              maintenanceRef: maintenance/4.0
+              latest: "4.0.0"
+          releases:
+            - version: "4.0.0"
+      - key: api
+        source: api
+        docsRoot: docs
+        versioning:
+          developmentRef: main
+          tagPattern: ^api-v.*$
+        publicationSelection:
+          development: true
+          releases:
+            mode: latestPerLine
+        lifecycle:
+          releaseLines:
+            - key: "4.0"
+              maintenanceRef: maintenance/4.0
+              latest: "4.0.0"
+          releases:
+            - version: "4.0.0"
+```
+
+That is the smallest useful medium-site packet because it already makes three
+important things explicit:
+
+- one public component route can carry several independently versioned artifacts
+- `provider-snapshot.json` tells planning which development and release contexts
+  actually exist before staging starts
+- staged output is something you inspect directly, not something you infer from
+  the source tree alone
+
+The first commands are usually:
+
+```bash
+site-pipeline plan
+site-pipeline check
+site-pipeline build
+```
+
+After `build`, inspect at least:
+
+```text
+site/.stage/
+  content/spark/development/guide/index.md
+  content/spark/development/reference/index.md
+  content/spark/releases/4.0.0/guide/index.md
+  content/spark/releases/4.0.0/reference/index.md
+  data/content-index.json
+  data/routes.json
+```
 
 ## Read these first
 

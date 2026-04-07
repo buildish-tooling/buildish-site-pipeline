@@ -136,9 +136,9 @@ class ComponentAndSitePageUnitTests(unittest.TestCase):
 
             manifest = read_unit_manifest(fragment_path)
             self.assertTrue(result.succeeded)
-            self.assertEqual(result.files_written, 5)
-            self.assertEqual(result.page_files_written, 2)
-            self.assertEqual(result.asset_files_written, 2)
+            self.assertEqual(result.output_stats.files_written, 5)
+            self.assertEqual(result.output_stats.page_files_written, 2)
+            self.assertEqual(result.output_stats.asset_files_written, 2)
             self.assertTrue((component_stage_root / "index.md").is_file())
             self.assertTrue((component_stage_root / "robots.txt").is_file())
             self.assertTrue((component_assets_stage_root / "logo.svg").is_file())
@@ -219,7 +219,7 @@ class ComponentAndSitePageUnitTests(unittest.TestCase):
 
             manifest = read_unit_manifest(fragment_path)
             self.assertTrue(result.succeeded)
-            self.assertEqual(result.page_files_written, 1)
+            self.assertEqual(result.output_stats.page_files_written, 1)
             self.assertTrue((development_stage_root / "index.md").is_file())
             self.assertEqual(manifest.pages[0].artifact_key, None)
             self.assertEqual(manifest.pages[0].public_path, "/components/site-pipeline/development")
@@ -268,8 +268,8 @@ class ComponentAndSitePageUnitTests(unittest.TestCase):
                 )
             )
             self.assertTrue(result.succeeded)
-            self.assertEqual(result.files_written, 3)
-            self.assertEqual(result.page_files_written, 2)
+            self.assertEqual(result.output_stats.files_written, 3)
+            self.assertEqual(result.output_stats.page_files_written, 2)
             self.assertTrue((target_root / "index.md").is_file())
             self.assertTrue((target_root / "guide.adoc").is_file())
             self.assertEqual(

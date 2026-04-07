@@ -71,41 +71,22 @@ class WorkerResultWire(SitePipelineBaseModel):
 
     unit_id: str = Field(description="Worker unit identifier that produced this result.", examples=["component:spark:runtime"])
     succeeded: bool = Field(default=True, description="Whether the worker completed safely and produced usable output.")
-    files_written: int = Field(default=0, description="Legacy total file counter preserved for compatibility with older worker payloads.")
-    page_files_written: int = Field(default=0, description="Legacy page-file counter preserved for compatibility with older worker payloads.")
-    asset_files_written: int = Field(default=0, description="Legacy asset-file counter preserved for compatibility with older worker payloads.")
     output_stats: WorkerOutputStats = Field(default_factory=WorkerOutputStats, description="Normalized bounded counters summarizing the worker's staged outputs.")
     failure: WorkerFailureWire | None = Field(default=None, description="Failure payload when the worker could not complete safely.")
     contribution_files: ContributionFileRefs = Field(default_factory=ContributionFileRefs, description="Paths of worker-emitted contribution fragments kept in the private work area.")
     stage_meta: WorkerStageMetaWire = Field(default_factory=WorkerStageMetaWire, description="Stage roots written by the worker during this run.")
 
-    def normalized(self) -> WorkerResultWire:
-        """Return a copy with nested counters populated from the legacy fields."""
-
-        if self.output_stats == WorkerOutputStats():
-            return self.model_copy(
-                update={
-                    "output_stats": WorkerOutputStats(
-                        files_written=self.files_written,
-                        page_files_written=self.page_files_written,
-                        asset_files_written=self.asset_files_written,
-                    ),
-                },
-            )
-        return self
-
     def require_success(self) -> WorkerResultWire:
         """Raise a staging integrity error when the worker reported failure."""
 
-        normalized = self.normalized()
-        if normalized.succeeded:
-            return normalized
+        if self.succeeded:
+            return self
         failure = (
-            normalized.failure.message
-            if normalized.failure is not None
+            self.failure.message
+            if self.failure is not None
             else "unknown worker failure"
         )
-        raise StageIntegrityError(f"Worker {normalized.unit_id!r} failed: {failure}")
+        raise StageIntegrityError(f"Worker {self.unit_id!r} failed: {failure}")
 
 
 class LocalizationWire(SitePipelineBaseModel):

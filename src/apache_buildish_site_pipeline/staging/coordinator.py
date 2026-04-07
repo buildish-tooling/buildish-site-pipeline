@@ -267,7 +267,7 @@ def _run_worker_subprocess(spec: WorkerSpecWire) -> WorkerResultWire:
             f"Worker {spec.unit_id!r} exited with status {completed.returncode}: {stderr or 'no stderr output'}",
         )
     try:
-        return WorkerResultWire.model_validate_json(completed.stdout).normalized()
+        return WorkerResultWire.model_validate_json(completed.stdout)
     except ValidationError as exc:
         raise StageIntegrityError(
             f"Worker {spec.unit_id!r} returned malformed JSON"

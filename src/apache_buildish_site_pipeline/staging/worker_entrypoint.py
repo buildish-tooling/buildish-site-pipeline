@@ -43,12 +43,12 @@ def execute_worker_spec(spec: WorkerSpecWire) -> WorkerResultWire:
 
     try:
         if unit_kind is OwnedUnitKind.SITE_PAGES:
-            return run_site_pages_unit(spec).normalized()
+            return run_site_pages_unit(spec)
         if unit_kind is OwnedUnitKind.SITE_ASSETS:
-            return run_site_assets_unit(spec).normalized()
+            return run_site_assets_unit(spec)
         if unit_kind is OwnedUnitKind.VENDOR_ASSETS:
-            return run_vendor_assets_unit(spec).normalized()
-        return run_component_unit(spec).normalized()
+            return run_vendor_assets_unit(spec)
+        return run_component_unit(spec)
     except (
         Exception
     ) as exc:  # pragma: no cover - exercised through the subprocess boundary.

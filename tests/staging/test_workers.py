@@ -154,7 +154,11 @@ class StagingWorkerTests(unittest.TestCase):
             site_pages_source="/workspace/site/content",
             stage_meta={"content_roots": ("/workspace/site/.stage/content",)},
         )
-        result = WorkerResultWire(unit_id="site-pages", succeeded=True, files_written=1)
+        result = WorkerResultWire(
+            unit_id="site-pages",
+            succeeded=True,
+            output_stats={"files_written": 1},
+        )
         stdin = io.StringIO(spec.model_dump_json(by_alias=True))
         stdout = io.StringIO()
 

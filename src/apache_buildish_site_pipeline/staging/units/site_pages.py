@@ -21,7 +21,12 @@ from pathlib import Path
 
 from ..front_matter import is_page_path, stage_authored_page
 from ..source_tree import iter_source_tree_files
-from ..worker_protocol import ContributionFileRefs, WorkerResultWire, WorkerSpecWire
+from ..worker_protocol import (
+    ContributionFileRefs,
+    WorkerOutputStats,
+    WorkerResultWire,
+    WorkerSpecWire,
+)
 
 
 def run_site_pages_unit(spec: WorkerSpecWire) -> WorkerResultWire:
@@ -46,8 +51,10 @@ def run_site_pages_unit(spec: WorkerSpecWire) -> WorkerResultWire:
         files_written += 1
     return WorkerResultWire(
         unit_id=spec.unit_id,
-        files_written=files_written,
-        page_files_written=page_files_written,
+        output_stats=WorkerOutputStats(
+            files_written=files_written,
+            page_files_written=page_files_written,
+        ),
         contribution_files=ContributionFileRefs(),
         stage_meta=spec.stage_meta,
     )

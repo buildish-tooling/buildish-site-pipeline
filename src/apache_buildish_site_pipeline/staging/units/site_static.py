@@ -20,7 +20,7 @@ import shutil
 from pathlib import Path
 
 from ..source_tree import iter_source_tree_files
-from ..worker_protocol import WorkerResultWire, WorkerSpecWire
+from ..worker_protocol import WorkerOutputStats, WorkerResultWire, WorkerSpecWire
 
 
 def run_site_assets_unit(spec: WorkerSpecWire) -> WorkerResultWire:
@@ -31,8 +31,10 @@ def run_site_assets_unit(spec: WorkerSpecWire) -> WorkerResultWire:
     )
     return WorkerResultWire(
         unit_id=spec.unit_id,
-        files_written=files_written,
-        asset_files_written=files_written,
+        output_stats=WorkerOutputStats(
+            files_written=files_written,
+            asset_files_written=files_written,
+        ),
         stage_meta=spec.stage_meta,
     )
 
@@ -48,8 +50,10 @@ def run_vendor_assets_unit(spec: WorkerSpecWire) -> WorkerResultWire:
         files_written += _copy_tree(source_root, target_root)
     return WorkerResultWire(
         unit_id=spec.unit_id,
-        files_written=files_written,
-        asset_files_written=files_written,
+        output_stats=WorkerOutputStats(
+            files_written=files_written,
+            asset_files_written=files_written,
+        ),
         stage_meta=spec.stage_meta,
     )
 

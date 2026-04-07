@@ -40,6 +40,7 @@ from ..worker_protocol import (
     ContributionFileRefs,
     StagedPageContributionWire,
     UnitContributionManifestWire,
+    WorkerOutputStats,
     WorkerResultWire,
     WorkerSpecWire,
     write_unit_manifest,
@@ -129,9 +130,11 @@ def run_component_unit(spec: WorkerSpecWire) -> WorkerResultWire:
     )
     return WorkerResultWire(
         unit_id=spec.unit_id,
-        files_written=files_written,
-        page_files_written=page_files_written,
-        asset_files_written=asset_files_written,
+        output_stats=WorkerOutputStats(
+            files_written=files_written,
+            page_files_written=page_files_written,
+            asset_files_written=asset_files_written,
+        ),
         contribution_files=contribution_files,
         stage_meta=spec.stage_meta,
     )

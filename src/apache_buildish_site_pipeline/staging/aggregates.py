@@ -12,7 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Aggregate builders for finalized stage data files and page metadata."""
+"""Aggregate builders for finalized stage data files and page metadata.
+
+Maintainer note: workers own staged content and static trees, while this module
+owns the coordinator-written aggregate files under `data/`.
+
+- Inputs here must already be trusted coordinator inputs: the effective build
+  plan, provider snapshot, worker manifests, and staged page contributions.
+- This module summarizes those inputs into emitted contracts; it must not
+  rediscover content, invent route ownership, or mutate worker-owned trees
+  except for final front matter normalization.
+- Renderer-facing files live directly under `data/*.json`. Incremental and
+  ownership metadata stays private under `data/_pipeline/*.json`.
+
+If a change needs to answer "who owns this staged path?" or "which unit may
+rewrite this aggregate?", keep that answer in the explicit `_pipeline`
+metadata instead of burying it in ad hoc coordinator logic.
+"""
 
 from __future__ import annotations
 
@@ -104,7 +120,7 @@ def finalize_pages_and_write_aggregates(
     retained_unit_manifests: tuple[UnitContributionManifestWire, ...] = (),
     owned_units: tuple[OwnedUnit, ...] | None = None,
 ) -> StageManifestV1:
-    """Finalize page metadata, write aggregate files, and emit the stage manifest."""
+    """Finalize worker outputs into public aggregates plus coordinator metadata."""
 
     unit_contribution_manifests = _load_unit_contribution_manifests(
         layout=layout,
@@ -213,7 +229,11 @@ def _write_aggregate_files(
     unit_contribution_manifests: tuple[UnitContributionManifestWire, ...],
     owned_units: tuple[OwnedUnit, ...],
 ) -> StageDataFiles:
+    """Write renderer-facing aggregates first, then private coordinator indexes."""
+
     data_root = layout.data_root
+    # These files are the public renderer contract. They should describe the
+    # already-selected site state without exposing coordinator-only internals.
     components_path = _write_items_file(
         data_root / "components.json", _build_components_entries(build_plan)
     )
@@ -270,6 +290,9 @@ def _write_aggregate_files(
         else None
     )
 
+    # Diagnostics are emitted publicly only after stripping private workspace
+    # and work-root details. Raw coordinator paths must never leak into the
+    # renderer-facing stage contract.
     public_diagnostics = sanitize_public_diagnostics(
         diagnostics,
         workspace_root=build_plan.workspace_root,
@@ -286,6 +309,9 @@ def _write_aggregate_files(
         diagnostics_path = data_root / "diagnostics.json"
         _write_json_file(diagnostics_path, list(public_diagnostics))
 
+    # These files are coordinator-only incremental metadata. Watch-mode reuse,
+    # pruning, and ownership checks rely on them, but renderers should ignore
+    # them completely.
     internal_data_root = data_root / "_pipeline"
     unit_contributions_path = internal_data_root / "unit-contributions.json"
     output_ownership_path = internal_data_root / "output-ownership.json"
@@ -333,6 +359,8 @@ def _write_aggregate_files(
 def _build_components_entries(
     build_plan: EffectiveBuildPlan,
 ) -> list[ComponentsDataEntry]:
+    """Emit one component row per resolved component, enriched by selected contexts."""
+
     provider_keys_by_component: dict[str, set[str]] = defaultdict(set)
     for context in build_plan.selected_versions:
         if context.provider_record is not None:
@@ -884,6 +912,8 @@ def _build_translation_entries(
 def _build_compatibility_entries(
     build_plan: EffectiveBuildPlan,
 ) -> list[CompatibilityAggregateEntry]:
+    """Emit authored compatibility assertions without letting providers redefine them."""
+
     entries = []
     for component in build_plan.site.components:
         for assertion in component.authored.compatibility or ():

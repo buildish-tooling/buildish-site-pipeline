@@ -12,7 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Effective authored-configuration resolution for planning."""
+"""Effective authored-configuration resolution for planning.
+
+Maintainer note: this module is the ownership boundary between authored site
+inputs and the normalized planning view that later phases consume.
+
+- The site catalog owns publication policy, grouping, source bindings, and
+  vendor assets.
+- Component repository metadata may refine content roots and support-status
+  vocabulary, but it must not redefine public origin or route policy.
+- Provider snapshots do not participate here at all; they join later against
+  the resolved component and artifact identities emitted from this module.
+
+Keep that split obvious. If a later change wants provider data or staged-output
+details to influence these resolved values, it almost certainly belongs in a
+different layer.
+"""
 
 from __future__ import annotations
 
@@ -53,7 +68,12 @@ def resolve_site_config(
     workspace_root: Path,
     component_documents: dict[str, ComponentMetadataDocumentV1] | None = None,
 ) -> ResolvedSiteConfig:
-    """Resolve defaults, groups, and component/artifact projections for planning."""
+    """Resolve authored inputs into one planning-only read model.
+
+    This function normalizes repo-relative paths and merges catalog defaults,
+    group policy, and optional component metadata. It does not inspect provider
+    snapshots or staged output.
+    """
 
     component_documents = component_documents or {}
     normalized_workspace_root = workspace_root.resolve(strict=False)
@@ -72,6 +92,9 @@ def resolve_site_config(
         for key, origin in origin_configs.items()
     }
 
+    # Source bindings are the only place where authored repo-relative paths turn
+    # into trusted workspace paths. Keep that normalization centralized here so
+    # later phases can treat the resolved model as authoritative.
     sources = {}
     for key, source in source_configs.items():
         local_dir = _resolve_repo_path(normalized_workspace_root, source.local_dir)
@@ -151,6 +174,8 @@ def _resolve_component(
     sources: dict[str, ResolvedSourceBinding],
     workspace_root: Path,
 ) -> ResolvedComponentConfig:
+    """Resolve one component while preserving authored ownership boundaries."""
+
     groups = catalog.groups or {}
     group = groups.get(component.group) if component.group is not None else None
     content_source = _resolve_component_content_source(
@@ -161,6 +186,9 @@ def _resolve_component(
         if catalog.defaults is not None
         else None,
     )
+    # Publication stays catalog-owned even when component metadata exists. The
+    # repository document may refine content roots, but it must never silently
+    # move public URLs away from what the site owner authored in the catalog.
     publication = _resolve_publication(
         catalog=catalog,
         component=component,
@@ -212,6 +240,9 @@ def _resolve_component(
             if artifact.lifecycle and artifact.lifecycle.support_status_vocabulary
             else None
         )
+        # Component metadata provides the shared vocabulary baseline while the
+        # artifact lifecycle can layer on additional statuses for that specific
+        # publication surface.
         support_status_vocabulary = dict(component_vocabulary or {})
         support_status_vocabulary.update(artifact_vocabulary or {})
         artifacts.append(
@@ -278,6 +309,13 @@ def _resolve_publication(
     group_path_prefix: str | None,
     origins: dict[str, ResolvedOrigin],
 ) -> ResolvedPublicationPolicy:
+    """Resolve the catalog-owned publication contract for one component.
+
+    Precedence is intentionally local and explicit: component override, then
+    group policy, then site defaults. Component metadata and provider records
+    never participate in public-origin or route-path resolution.
+    """
+
     defaults = catalog.defaults.publication if catalog.defaults is not None else None
     publication = component.publication
     groups = catalog.groups or {}

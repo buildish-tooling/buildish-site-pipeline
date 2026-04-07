@@ -162,7 +162,7 @@ cat site/.stage/data/content-index.json
 
 ## Read this next
 
-- [../concepts/staged-output-and-consumers.md](../concepts/staged-output-and-consumers/)
-- [http-server-config-how-to.md](http-server-config-how-to/)
+- [../concepts/staged-output-and-consumers.md](../../concepts/staged-output-and-consumers/)
+- [http-server-config-how-to.md](../http-server-config-how-to/)
 - [staged output contract](/components/site-pipeline/development/reference/staged-output-contract/)
 - [pipeline model schema reference](/components/site-pipeline/development/reference/pipeline-model-schema-reference/)

@@ -538,17 +538,17 @@ contracts, not as reasons to widen the core API boundary.
 
 - [architecture overview](/architecture/architecture-overview/) for the high-level system
    picture
-- [staged-output-contract.md](staged-output-contract/) for the staged-tree
+- [staged-output-contract.md](../staged-output-contract/) for the staged-tree
    layout and `manifest.json` contract
 - [source resolution and materialization](/architecture/source-resolution-and-materialization/)
    for version selection and materialized content inputs
-- [validation-and-check.md](validation-and-check/) for non-mutating validation,
+- [validation-and-check.md](../validation-and-check/) for non-mutating validation,
    diagnostics, and `site-pipeline check`
 - [build architecture](/architecture/build-architecture/) for the recommended execution
    shape of `build` and `watch`
 - [code maintenance](/maintenance/code-maintenance/) for maintainer-facing internal
    boundaries and watch/publication guardrails
-- [security-and-trust-model.md](security-and-trust-model/) for path-safety,
+- [security-and-trust-model.md](../security-and-trust-model/) for path-safety,
    trust-boundary, and XSS-defense expectations
-- [flexible-component-publication.md](flexible-component-publication/) for the
+- [flexible-component-publication.md](../flexible-component-publication/) for the
    publication and lifecycle model

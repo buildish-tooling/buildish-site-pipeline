@@ -146,7 +146,7 @@ Recommended rules:
   overall status so callers do not need to recompute them
 
 The canonical typed shape lives in
- [pipeline-model-schema-reference.md](pipeline-model-schema-reference/).
+ [pipeline-model-schema-reference.md](../pipeline-model-schema-reference/).
 
 ## Relationship to planning and staging
 
@@ -209,12 +209,12 @@ boundary between validation, materialization, and staging.
 
 ## Read next
 
-- [api-contract.md](api-contract/) for the stable CLI boundary
+- [api-contract.md](../api-contract/) for the stable CLI boundary
 - [source resolution and materialization](/architecture/source-resolution-and-materialization/)
    for planning and local-input readiness
 - [code maintenance](/maintenance/code-maintenance/) for maintainer-facing planning,
    evaluation, staging, and watch guardrails
-- [flexible-component-publication.md](flexible-component-publication/) for the
+- [flexible-component-publication.md](../flexible-component-publication/) for the
    validation rules `check` should enforce
-- [pipeline-model-schema-reference.md](pipeline-model-schema-reference/) for
+- [pipeline-model-schema-reference.md](../pipeline-model-schema-reference/) for
    `CheckReport` and `PipelineDiagnosticEntry`

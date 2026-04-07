@@ -128,6 +128,6 @@ That output is the important boundary:
 
 ## Read next
 
-- [../how-to/create-a-tiny-site.md](../how-to/create-a-tiny-site/)
-- [staged-output-and-consumers.md](staged-output-and-consumers/)
-- [../getting-started/tiny.md](../getting-started/tiny/)
+- [../how-to/create-a-tiny-site.md](../../how-to/create-a-tiny-site/)
+- [staged-output-and-consumers.md](../staged-output-and-consumers/)
+- [../getting-started/tiny.md](../../getting-started/tiny/)

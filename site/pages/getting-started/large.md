@@ -174,9 +174,9 @@ show up in their own emitted aggregates instead of being hidden in route hacks.
 
 ## Read these first
 
-1. [../how-to/organize-grouped-components-and-publication-policy.md](../how-to/organize-grouped-components-and-publication-policy/)
-2. [../how-to/plan-publication-and-materialization.md](../how-to/plan-publication-and-materialization/)
-3. [../how-to/integrate-provider-compatibility-and-translation-data.md](../how-to/integrate-provider-compatibility-and-translation-data/)
+1. [../how-to/organize-grouped-components-and-publication-policy.md](../../how-to/organize-grouped-components-and-publication-policy/)
+2. [../how-to/plan-publication-and-materialization.md](../../how-to/plan-publication-and-materialization/)
+3. [../how-to/integrate-provider-compatibility-and-translation-data.md](../../how-to/integrate-provider-compatibility-and-translation-data/)
 
 ## Usually still background material
 
@@ -185,7 +185,7 @@ For many large sites, those topics are already close to the critical path.
 
 ## Read this next when you grow
 
-Move to [very-large.md](very-large/) when the site spans many repositories or
+Move to [very-large.md](../very-large/) when the site spans many repositories or
 product families and needs stronger operational boundaries, localization policy,
 or very large redirect inventories.
 

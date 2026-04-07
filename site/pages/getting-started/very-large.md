@@ -34,9 +34,9 @@ outputs. The public staged contract matters more than any single source layout.
 
 ## Read these first
 
-1. [../how-to/integrate-provider-compatibility-and-translation-data.md](../how-to/integrate-provider-compatibility-and-translation-data/)
-2. [../how-to/scale-site-pipeline-operations.md](../how-to/scale-site-pipeline-operations/)
-3. [../how-to/http-server-config-how-to.md](../how-to/http-server-config-how-to/)
+1. [../how-to/integrate-provider-compatibility-and-translation-data.md](../../how-to/integrate-provider-compatibility-and-translation-data/)
+2. [../how-to/scale-site-pipeline-operations.md](../../how-to/scale-site-pipeline-operations/)
+3. [../how-to/http-server-config-how-to.md](../../how-to/http-server-config-how-to/)
 
 ## What you should treat as first-class concerns
 
@@ -52,7 +52,7 @@ reference pass through the contracts and security model.
 
 ## Deeper reference trail
 
-- [../architecture/architecture-overview.md](../architecture/architecture-overview/)
+- [../architecture/architecture-overview.md](../../architecture/architecture-overview/)
 - [staged output contract](/components/site-pipeline/development/reference/staged-output-contract/)
 - [security and trust model](/components/site-pipeline/development/reference/security-and-trust-model/)
 - [pipeline model schema reference](/components/site-pipeline/development/reference/pipeline-model-schema-reference/)

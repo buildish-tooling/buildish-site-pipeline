@@ -199,8 +199,8 @@ The user-facing site is in good shape when a new reader can:
 
 ## Read next
 
-- [code-maintenance.md](code-maintenance/) for durable maintainer guidance
-- [../architecture/architecture-overview.md](../architecture/architecture-overview/)
+- [code-maintenance.md](../code-maintenance/) for durable maintainer guidance
+- [../architecture/architecture-overview.md](../../architecture/architecture-overview/)
   for the current architectural explanation that the user-facing site should
   gradually expose more accessibly
 - [api contract](/components/site-pipeline/development/reference/api-contract/) for the stable

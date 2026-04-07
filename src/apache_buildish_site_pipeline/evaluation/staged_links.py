@@ -20,6 +20,7 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import urljoin, urlsplit
 
 from apache_buildish_site_pipeline.models.enums import DiagnosticSeverity, LinkCheckMode
+from apache_buildish_site_pipeline.page_support import strips_suffix_in_pretty_route
 from apache_buildish_site_pipeline.public_paths import normalize_public_path
 from apache_buildish_site_pipeline.staging.front_matter import public_page_path
 
@@ -125,9 +126,17 @@ def _file_html_public_path(base_public_path: str, relative_path: Path) -> str:
 
 def _resolution_base_path(*, page: InventoryPage, mode: LinkCheckMode) -> str:
     current_path = _page_public_path(page, mode=mode)
-    if mode is LinkCheckMode.DIRECTORY and Path(page.routed_relative_path).stem in {"index", "_index"}:
+    if mode is LinkCheckMode.DIRECTORY and _uses_directory_root_resolution(
+        Path(page.routed_relative_path)
+    ):
         return current_path if current_path == "/" else f"{current_path.rstrip('/')}/"
     return current_path
+
+
+def _uses_directory_root_resolution(relative_path: Path) -> bool:
+    return relative_path.stem in {"index", "_index"} or strips_suffix_in_pretty_route(
+        relative_path
+    )
 
 
 def _looks_like_page_target(path: str) -> bool:

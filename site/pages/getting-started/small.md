@@ -40,9 +40,9 @@ For this size band, the important model shift is:
 
 ## Read these first
 
-1. [../how-to/model-versioning-and-redirects.md](../how-to/model-versioning-and-redirects/)
-2. [../how-to/inspect-staged-output-and-routes.md](../how-to/inspect-staged-output-and-routes/)
-3. [../how-to/http-server-config-how-to.md](../how-to/http-server-config-how-to/)
+1. [../how-to/model-versioning-and-redirects.md](../../how-to/model-versioning-and-redirects/)
+2. [../how-to/inspect-staged-output-and-routes.md](../../how-to/inspect-staged-output-and-routes/)
+3. [../how-to/http-server-config-how-to.md](../../how-to/http-server-config-how-to/)
 
 ## Ignore for now
 
@@ -55,7 +55,7 @@ Most small sites can defer:
 
 ## Read this next when you grow
 
-Move to [medium.md](medium/) when the site has multiple artifacts, imported or
+Move to [medium.md](../medium/) when the site has multiple artifacts, imported or
 generated docs become normal, or publication planning/materialization becomes a
 real step in the workflow.
 

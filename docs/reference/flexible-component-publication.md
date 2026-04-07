@@ -1281,7 +1281,7 @@ The pipeline should reject:
 - any configuration that leaves a component without a resolvable public mount.
 
 Detailed path-safety, XSS-defense, redirect-safety, and mounted-content trust
- rules are defined in [security-and-trust-model.md](security-and-trust-model/).
+ rules are defined in [security-and-trust-model.md](../security-and-trust-model/).
 
 ## Opinionated recommendation
 

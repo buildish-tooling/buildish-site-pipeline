@@ -22,7 +22,7 @@ limitations under the License.
 
 For maintainers who need the internal package boundaries, shared execution-path
 rules, and watch/publication guardrails that support this architecture, see
-[`../maintenance/code-maintenance.md`](../maintenance/code-maintenance/).
+[`../maintenance/code-maintenance.md`](../../maintenance/code-maintenance/).
 
 It is intentionally about **implementation structure only**. It does not define
 the public CLI, the publication model, the catalog schema, or the staged-output
@@ -297,4 +297,4 @@ core execution path.
 
 For the maintainer-facing watch and publication guardrails that should remain
 true as the implementation evolves, see
-[`../maintenance/code-maintenance.md`](../maintenance/code-maintenance/).
+[`../maintenance/code-maintenance.md`](../../maintenance/code-maintenance/).

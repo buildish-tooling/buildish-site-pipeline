@@ -168,7 +168,7 @@ May also add:
 - large redirect inventories for preserved permalinks
 - deployment adapters for multiple hosting targets
 
-The cross-check in [model-fit-cross-check.md](model-fit-cross-check/) is the
+The cross-check in [model-fit-cross-check.md](../model-fit-cross-check/) is the
 best place to see how those pressures show up in real projects.
 
 ## Why redirect and deployment metadata are separate from content
@@ -179,7 +179,7 @@ metadata. They are poor places to express deployment policy.
 That is why the pipeline should emit server-neutral route and redirect metadata,
 while deployment adapters remain responsible for concrete outputs such as Apache
 `httpd`, Nginx, CDN, or static-host configuration. For the practical adapter
-workflow, see [../how-to/http-server-config-how-to.md](../how-to/http-server-config-how-to/).
+workflow, see [../how-to/http-server-config-how-to.md](../../how-to/http-server-config-how-to/).
 
 ## Main staged outputs
 
@@ -199,11 +199,11 @@ After this overview, the most useful next docs are usually:
   boundaries
 - [staged output contract](/components/site-pipeline/development/reference/staged-output-contract/) for the staged-tree
   layout and manifest contract
-- [source-resolution-and-materialization.md](source-resolution-and-materialization/)
+- [source-resolution-and-materialization.md](../source-resolution-and-materialization/)
   for version selection and local materialization strategy
 - [validation and check](/components/site-pipeline/development/reference/validation-and-check/) for validation semantics,
   diagnostics, and `site-pipeline check`
-- [build-architecture.md](build-architecture/) for build/watch execution shape
+- [build-architecture.md](../build-architecture/) for build/watch execution shape
 - [security and trust model](/components/site-pipeline/development/reference/security-and-trust-model/) for trust,
   validation, and content-safety boundaries
 - [flexible component publication](/components/site-pipeline/development/reference/flexible-component-publication/) for the

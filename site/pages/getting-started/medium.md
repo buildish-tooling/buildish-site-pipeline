@@ -154,9 +154,9 @@ site/.stage/
 
 ## Read these first
 
-1. [../how-to/plan-publication-and-materialization.md](../how-to/plan-publication-and-materialization/)
-2. [../how-to/model-versioning-and-redirects.md](../how-to/model-versioning-and-redirects/)
-3. [../architecture/source-resolution-and-materialization.md](../architecture/source-resolution-and-materialization/)
+1. [../how-to/plan-publication-and-materialization.md](../../how-to/plan-publication-and-materialization/)
+2. [../how-to/model-versioning-and-redirects.md](../../how-to/model-versioning-and-redirects/)
+3. [../architecture/source-resolution-and-materialization.md](../../architecture/source-resolution-and-materialization/)
 
 ## Ignore for now
 
@@ -168,7 +168,7 @@ You can still often postpone:
 
 ## Read this next when you grow
 
-Move to [large.md](large/) when you need grouped components, strong
+Move to [large.md](../large/) when you need grouped components, strong
 compatibility relationships, or provider-enriched publication state across a
 larger ecosystem.
 

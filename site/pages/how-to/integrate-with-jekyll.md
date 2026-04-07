@@ -45,6 +45,8 @@ fits without changing the Site Pipeline contract.
 
 ## Read this next
 
-- [inspect staged output and routes](inspect-staged-output-and-routes/)
-- [../concepts/staged-output-and-consumers.md](../concepts/staged-output-and-consumers/)
-- [staged output contract](/components/site-pipeline/development/reference/staged-output-contract/)
+- [Inspect staged output and routes](../inspect-staged-output-and-routes/)
+- [Staged output and consumers](../../concepts/staged-output-and-consumers/)
+- [Create a tiny site](../create-a-tiny-site/)
+- [Staged output contract](../../development/reference/staged-output-contract/)
+- [Pipeline model schema reference](../../development/reference/pipeline-model-schema-reference/)

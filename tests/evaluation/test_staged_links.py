@@ -303,6 +303,68 @@ Inline example: `<a href="missing/">Missing</a>`
 
         self.assertEqual(collector.build(), ())
 
+    def test_directory_mode_treats_pretty_leaf_pages_as_directory_roots(self) -> None:
+        collector = DiagnosticCollector()
+        planning = self._planning(
+            mode=LinkCheckMode.DIRECTORY,
+            check_root_absolute=False,
+        )
+        inventory = PageInventory(
+            pages=(
+                self._page(
+                    "how-to/integrate-with-hugo.md",
+                    "[Inspect](../inspect-staged-output-and-routes/) "
+                    "[Concepts](../../concepts/staged-output-and-consumers/)",
+                    base_public_path="/components/site-pipeline",
+                    component_slug="site-pipeline",
+                    artifact_key=None,
+                ),
+                self._page(
+                    "how-to/inspect-staged-output-and-routes.md",
+                    "Guide body",
+                    base_public_path="/components/site-pipeline",
+                    component_slug="site-pipeline",
+                    artifact_key=None,
+                ),
+                self._page(
+                    "concepts/staged-output-and-consumers.md",
+                    "Concept body",
+                    base_public_path="/components/site-pipeline",
+                    component_slug="site-pipeline",
+                    artifact_key=None,
+                ),
+            )
+        )
+
+        validate_staged_links(
+            planning=planning,
+            page_inventory=inventory,
+            collector=collector,
+        )
+
+        self.assertEqual(collector.build(), ())
+
+    def test_directory_mode_keeps_html_leaf_pages_file_relative(self) -> None:
+        collector = DiagnosticCollector()
+        planning = self._planning(
+            mode=LinkCheckMode.DIRECTORY,
+            check_root_absolute=False,
+        )
+        inventory = PageInventory(
+            pages=(
+                self._page("guide/page.html", "[Sibling](sibling.html)"),
+                self._page("guide/sibling.html", "Sibling body"),
+            )
+        )
+
+        validate_staged_links(
+            planning=planning,
+            page_inventory=inventory,
+            collector=collector,
+        )
+
+        self.assertEqual(collector.build(), ())
+
     def test_file_html_mode_treats_section_index_pages_as_index_html(self) -> None:
         collector = DiagnosticCollector()
         planning = self._planning(

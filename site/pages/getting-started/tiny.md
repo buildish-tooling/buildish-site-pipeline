@@ -104,10 +104,10 @@ site/.stage/
 
 ## Read these first
 
-1. [../concepts/tiny-site-shape.md](../concepts/tiny-site-shape/)
-2. [../concepts/staged-output-and-consumers.md](../concepts/staged-output-and-consumers/)
-3. [../how-to/create-a-tiny-site.md](../how-to/create-a-tiny-site/)
-4. [../how-to/inspect-staged-output-and-routes.md](../how-to/inspect-staged-output-and-routes/)
+1. [../concepts/tiny-site-shape.md](../../concepts/tiny-site-shape/)
+2. [../concepts/staged-output-and-consumers.md](../../concepts/staged-output-and-consumers/)
+3. [../how-to/create-a-tiny-site.md](../../how-to/create-a-tiny-site/)
+4. [../how-to/inspect-staged-output-and-routes.md](../../how-to/inspect-staged-output-and-routes/)
 5. [staged output contract](/components/site-pipeline/development/reference/staged-output-contract/)
 
 ## Ignore for now
@@ -123,7 +123,7 @@ You can usually ignore these until the site grows:
 
 ## Read this next when you grow
 
-Move to [small.md](small/) when the site adds stable version navigation,
+Move to [small.md](../small/) when the site adds stable version navigation,
 redirects, or one mounted imported/generated docs subtree.
 
 ## Deeper reference trail

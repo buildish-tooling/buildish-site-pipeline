@@ -113,6 +113,6 @@ They should use the staged output instead.
 
 ## Read next
 
-- [../how-to/inspect-staged-output-and-routes.md](../how-to/inspect-staged-output-and-routes/)
+- [../how-to/inspect-staged-output-and-routes.md](../../how-to/inspect-staged-output-and-routes/)
 - [staged output contract](/components/site-pipeline/development/reference/staged-output-contract/)
 - [api contract](/components/site-pipeline/development/reference/api-contract/)

@@ -47,5 +47,5 @@ to mirror repository layout or organization charts.
 ## Read this next
 
 - [flexible component publication](/components/site-pipeline/development/reference/flexible-component-publication/)
-- [plan-publication-and-materialization.md](plan-publication-and-materialization/)
+- [plan-publication-and-materialization.md](../plan-publication-and-materialization/)
 - [pipeline model schema reference](/components/site-pipeline/development/reference/pipeline-model-schema-reference/)

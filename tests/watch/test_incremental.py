@@ -25,6 +25,7 @@ import unittest.mock
 from apache_buildish_site_pipeline.cli import _run
 from apache_buildish_site_pipeline.commands.shared import load_workspace_inputs
 from apache_buildish_site_pipeline.evaluation import EvaluationMode, EvaluationRequest, run_evaluation
+from apache_buildish_site_pipeline.models.enums import RecordKind
 from apache_buildish_site_pipeline.models.enums import PlanningTarget
 from apache_buildish_site_pipeline.planning import evaluate_planning
 from apache_buildish_site_pipeline.staging.coordinator import materialize_stage_tree
@@ -216,6 +217,82 @@ class WatchIncrementalTests(unittest.TestCase):
 
         self.assertEqual(build_exit_code, 0)
         self.assertEqual(watch_snapshot, build_snapshot)
+
+    def test_latest_candidate_selection_stays_consistent_across_planning_build_and_watch(
+        self,
+    ) -> None:
+        with _workspace(with_content_file=True, topology="rich_lifecycle") as workspace_root:
+            loaded_inputs = load_workspace_inputs(workspace_root)
+            planning = evaluate_planning(
+                target=PlanningTarget.BUILD,
+                catalog=loaded_inputs.catalog,
+                provider_snapshot=loaded_inputs.provider_snapshot,
+                workspace_root=workspace_root,
+                component_documents=loaded_inputs.component_documents,
+                stage_root=workspace_root / "site/.stage",
+                work_root=workspace_root / ".buildish/work",
+            )
+
+            self.assertEqual(
+                _selected_context_summary(planning.selected_versions),
+                {
+                    (RecordKind.DEVELOPMENT, None, None),
+                    (RecordKind.LINE_HEAD, None, "4.0"),
+                    (RecordKind.LINE_HEAD, None, "4.1"),
+                    (RecordKind.RELEASED, "4.0.2", None),
+                    (RecordKind.RELEASED, "4.1.0", None),
+                    (RecordKind.CANDIDATE, "4.2.0-rc2", None),
+                },
+            )
+
+            evaluation = run_evaluation(
+                request=EvaluationRequest(mode=EvaluationMode.BUILD),
+                planning=planning,
+            )
+
+            self.assertTrue(evaluation.stage_gate.allowed)
+            self.assertIsNotNone(evaluation.build_plan)
+            self.assertEqual(
+                _selected_context_summary(evaluation.build_plan.selected_versions),
+                _selected_context_summary(planning.selected_versions),
+            )
+
+            build_exit_code, _build_snapshot = _run_clean_build_snapshot(workspace_root)
+            watch_snapshot = _run_watch_then_snapshot(
+                workspace_root=workspace_root,
+                responses=[(True, None)],
+            )
+            clean_stage_root = workspace_root / "site/.stage-clean"
+            watch_stage_root = workspace_root / "site/.stage"
+            clean_route_paths = _route_path_by_target_id(clean_stage_root)
+            clean_candidate_versions = _candidate_versions(clean_stage_root)
+            clean_snapshot = _stage_snapshot_without_manifest(clean_stage_root)
+            watch_route_paths = _route_path_by_target_id(watch_stage_root)
+            watch_candidate_versions = _candidate_versions(watch_stage_root)
+
+        self.assertEqual(build_exit_code, 0)
+        self.assertEqual(
+            clean_route_paths["candidate:spark:runtime:4.2.0-rc2"],
+            "/spark/development/candidates/4.2.0-rc2/",
+        )
+        self.assertNotIn(
+            "candidate:spark:runtime:4.2.0-rc1",
+            clean_route_paths,
+        )
+        self.assertEqual(clean_candidate_versions, ["4.2.0-rc2"])
+        self.assertEqual(
+            watch_route_paths["candidate:spark:runtime:4.2.0-rc2"],
+            "/spark/development/candidates/4.2.0-rc2/",
+        )
+        self.assertNotIn(
+            "candidate:spark:runtime:4.2.0-rc1",
+            watch_route_paths,
+        )
+        self.assertEqual(watch_candidate_versions, ["4.2.0-rc2"])
+        self.assertEqual(
+            watch_snapshot,
+            clean_snapshot,
+        )
 
 
     def test_noisy_watch_event_burst_matches_fresh_clean_build(self) -> None:
@@ -423,3 +500,25 @@ def _install_artifact_mount(catalog_path) -> None:
             ),
         ),
     )
+
+
+def _selected_context_summary(selected_versions) -> set[tuple[RecordKind, str | None, str | None]]:
+    contexts = (
+        selected_versions.contexts
+        if hasattr(selected_versions, "contexts")
+        else selected_versions
+    )
+    return {
+        (context.kind, context.version, context.release_line)
+        for context in contexts
+    }
+
+
+def _route_path_by_target_id(stage_root) -> dict[str, str]:
+    items = json.loads((stage_root / "data/routes.json").read_text(encoding="utf-8"))["items"]
+    return {entry["targetId"]: entry["path"] for entry in items}
+
+
+def _candidate_versions(stage_root) -> list[str]:
+    items = json.loads((stage_root / "data/candidates.json").read_text(encoding="utf-8"))["items"]
+    return [entry["version"] for entry in items]

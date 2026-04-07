@@ -463,6 +463,69 @@ class StagingPipelineTests(unittest.TestCase):
             "withdrawal",
         )
 
+    def test_check_reports_missing_internal_page_link_and_build_preserves_authored_page_links(
+        self,
+    ) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            components_path = workspace_root / "site/catalog.yaml"
+            release_root = workspace_root / "components/runtime/docs/releases/4.0.0"
+            _replace_file_text_once(
+                components_path,
+                "site: {}\n",
+                "site: {}\nvalidation:\n  linkChecks:\n    enabled: true\n    checkRootAbsolute: true\n    internalPrefixes:\n      - /spark/\n",
+            )
+            (release_root / "guide.md").write_text("guide page\n", encoding="utf-8")
+            (release_root / "index.md").write_text(
+                "[Guide](/spark/releases/4.0.0/guide/) [Missing](/spark/releases/4.0.0/missing/)\n",
+                encoding="utf-8",
+            )
+
+            check_stdout = io.StringIO()
+            check_stderr = io.StringIO()
+            with _cwd(workspace_root):
+                check_exit_code = _run(
+                    argv=["check", "--report-format", "json", "--report-schema-version", "1"],
+                    stdout=check_stdout,
+                    stderr=check_stderr,
+                )
+            check_report = json.loads(check_stdout.getvalue())
+            missing_diagnostic = next(
+                diagnostic
+                for diagnostic in check_report["diagnostics"]
+                if diagnostic["code"] == "page-link-target-missing"
+            )
+
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            with _cwd(workspace_root):
+                build_exit_code = _run(argv=["build"], stdout=stdout, stderr=stderr)
+            stage_root = workspace_root / "site/.stage"
+            staged_development_index = (
+                stage_root / "content/spark/development/releases/4.0.0/index.md"
+            ).read_text(encoding="utf-8")
+            staged_release_index = (stage_root / "content/spark/releases/4.0.0/index.md").read_text(
+                encoding="utf-8"
+            )
+            staged_development_guide_exists = (
+                stage_root / "content/spark/development/releases/4.0.0/guide.md"
+            ).is_file()
+            staged_release_guide_exists = (stage_root / "content/spark/releases/4.0.0/guide.md").is_file()
+
+        self.assertEqual(check_exit_code, 0)
+        self.assertEqual(check_stderr.getvalue(), "")
+        self.assertTrue(check_report["summary"]["passed"])
+        self.assertEqual(check_report["summary"]["warningCount"], 1)
+        self.assertEqual(missing_diagnostic["details"]["sourceRoute"], "/spark/development/releases/4.0.0")
+        self.assertEqual(missing_diagnostic["details"]["resolvedPath"], "/spark/releases/4.0.0/missing")
+        self.assertEqual(build_exit_code, 0)
+        self.assertEqual(stderr.getvalue(), "")
+        self.assertTrue(staged_development_guide_exists)
+        self.assertTrue(staged_release_guide_exists)
+        self.assertIn("[Guide](/spark/releases/4.0.0/guide/)", staged_development_index)
+        self.assertIn("[Missing](/spark/releases/4.0.0/missing/)", staged_development_index)
+        self.assertIn("[Guide](/spark/releases/4.0.0/guide/)", staged_release_index)
+        self.assertIn("[Missing](/spark/releases/4.0.0/missing/)", staged_release_index)
+
     def test_build_emits_multi_origin_alias_routes_and_origin_scoped_redirects(
         self,
     ) -> None:

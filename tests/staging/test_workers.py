@@ -477,6 +477,35 @@ class StagingWorkerTests(unittest.TestCase):
             with self.assertRaisesRegex(StageIntegrityError, "returned malformed JSON"):
                 _run_worker_subprocess(spec)
 
+    def test_run_worker_subprocess_preserves_output_stats_contract(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            source_root = workspace_root / "site/content"
+            source_root.mkdir(parents=True, exist_ok=True)
+            (source_root / "index.md").write_text(
+                "---\ntitle: Home\n---\nbody\n",
+                encoding="utf-8",
+            )
+            layout = _work_layout(workspace_root)
+            stage_root = layout.next_stage_root / "content"
+            spec = WorkerSpecWire(
+                unit_id="site-pages",
+                unit_kind="site-pages",
+                owner_id="site-pages",
+                workspace_root=str(workspace_root),
+                fragment_path=str(layout.fragments_root / "site-pages.json"),
+                site_pages_source=str(source_root),
+                stage_meta={"content_roots": (str(stage_root),)},
+            )
+
+            result = _run_worker_subprocess(spec)
+
+            self.assertTrue(result.succeeded)
+            self.assertEqual(result.output_stats.files_written, 1)
+            self.assertEqual(result.output_stats.page_files_written, 1)
+            self.assertEqual(result.output_stats.asset_files_written, 0)
+            self.assertTrue((stage_root / "index.md").is_file())
+
     def test_context_wire_maps_candidate_and_named_ref_sections(self) -> None:
         with _workspace(with_content_file=True) as workspace_root:
             request = _build_request(workspace_root, pool_size=1)

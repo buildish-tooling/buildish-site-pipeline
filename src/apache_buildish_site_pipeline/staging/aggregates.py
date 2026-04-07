@@ -1201,25 +1201,53 @@ def _load_unit_contribution_manifests(
     worker_results: tuple[WorkerResultWire, ...],
     retained_unit_manifests: tuple[UnitContributionManifestWire, ...],
 ) -> tuple[UnitContributionManifestWire, ...]:
-    manifests: list[UnitContributionManifestWire] = [*retained_unit_manifests]
+    manifests: list[UnitContributionManifestWire] = []
+    seen_unit_ids: set[str] = set()
+    for manifest in retained_unit_manifests:
+        _register_loaded_unit_manifest(seen_unit_ids=seen_unit_ids, manifest=manifest)
+        manifests.append(manifest)
     for result in worker_results:
         manifest_path = _validated_unit_manifest_path(layout=layout, result=result)
         if manifest_path is None:
             continue
         manifest = read_unit_manifest(manifest_path)
-        manifests.append(
-            manifest.model_copy(
-                update={
-                    "pages": tuple(
-                        _normalize_page_contribution(
-                            layout=layout, contribution=contribution
-                        )
-                        for contribution in manifest.pages
-                    ),
-                },
-            ),
+        _validate_manifest_matches_worker_result(result=result, manifest=manifest)
+        normalized_manifest = manifest.model_copy(
+            update={
+                "pages": tuple(
+                    _normalize_page_contribution(
+                        layout=layout, contribution=contribution
+                    )
+                    for contribution in manifest.pages
+                ),
+            },
         )
+        _register_loaded_unit_manifest(
+            seen_unit_ids=seen_unit_ids,
+            manifest=normalized_manifest,
+        )
+        manifests.append(normalized_manifest)
     return tuple(manifests)
+
+
+def _validate_manifest_matches_worker_result(
+    *, result: WorkerResultWire, manifest: UnitContributionManifestWire
+) -> None:
+    if manifest.unit_id != result.unit_id:
+        raise StageIntegrityError(
+            "Worker contribution manifest unit id does not match the worker result: "
+            f"expected {result.unit_id!r}, got {manifest.unit_id!r}"
+        )
+
+
+def _register_loaded_unit_manifest(
+    *, seen_unit_ids: set[str], manifest: UnitContributionManifestWire
+) -> None:
+    if manifest.unit_id in seen_unit_ids:
+        raise StageIntegrityError(
+            f"Duplicate worker contribution manifest for unit {manifest.unit_id!r}"
+        )
+    seen_unit_ids.add(manifest.unit_id)
 
 
 def _normalize_page_contribution(

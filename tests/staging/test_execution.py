@@ -149,6 +149,60 @@ class StagingExecutionTests(unittest.TestCase):
 
             self.assertIn("normal file", str(raised.exception))
 
+    def test_page_contribution_loading_rejects_manifest_with_mismatched_unit_id(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            layout = _work_layout(workspace_root)
+            manifest_path = layout.fragments_root / "component_spark.json"
+            write_unit_manifest(
+                manifest_path,
+                UnitContributionManifestWire(unit_id="component:other"),
+            )
+
+            with self.assertRaises(StageIntegrityError) as raised:
+                _load_unit_contribution_manifests(
+                    layout=layout,
+                    worker_results=(
+                        WorkerResultWire(
+                            unit_id="component:spark",
+                            contribution_files=ContributionFileRefs(
+                                unit_manifest=str(manifest_path)
+                            ),
+                        ),
+                    ),
+                    retained_unit_manifests=(),
+                )
+
+            self.assertIn("does not match the worker result", str(raised.exception))
+
+    def test_page_contribution_loading_rejects_duplicate_unit_manifests(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            layout = _work_layout(workspace_root)
+            manifest_path = layout.fragments_root / "component_spark.json"
+            write_unit_manifest(
+                manifest_path,
+                UnitContributionManifestWire(unit_id="component:spark"),
+            )
+
+            with self.assertRaises(StageIntegrityError) as raised:
+                _load_unit_contribution_manifests(
+                    layout=layout,
+                    worker_results=(
+                        WorkerResultWire(
+                            unit_id="component:spark",
+                            contribution_files=ContributionFileRefs(
+                                unit_manifest=str(manifest_path)
+                            ),
+                        ),
+                    ),
+                    retained_unit_manifests=(
+                        UnitContributionManifestWire(unit_id="component:spark"),
+                    ),
+                )
+
+            self.assertIn("Duplicate worker contribution manifest", str(raised.exception))
+
     def test_publication_rejects_stage_root_with_symlinked_parent(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             workspace_root = Path(tempdir)

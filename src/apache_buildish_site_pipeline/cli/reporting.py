@@ -18,11 +18,13 @@ from __future__ import annotations
 
 import os
 import tempfile
+from collections.abc import Sequence
 from pathlib import Path
 from typing import TextIO
 
 from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
     CheckReportV1,
+    PipelineDiagnosticEntry,
     ResolvedMaterializationReportV1,
 )
 from apache_buildish_site_pipeline.path_trust import path_resolves_through_symlink
@@ -193,7 +195,17 @@ def _serialize_report(
 
 
 def render_text_report(report: ReportModel) -> str:
-    """Render a compact human-readable report summary."""
+    """Render a human-readable report summary plus diagnostic entries."""
+
+    summary = render_text_report_summary(report)
+    rendered_diagnostics = _render_text_diagnostics(report.diagnostics)
+    if not rendered_diagnostics:
+        return summary
+    return f"{summary}\ndiagnostics:\n{rendered_diagnostics}"
+
+
+def render_text_report_summary(report: ReportModel) -> str:
+    """Render a compact one-line human-readable report summary."""
 
     if isinstance(report, ResolvedMaterializationReportV1):
         return (
@@ -213,6 +225,22 @@ def render_text_report(report: ReportModel) -> str:
         f"stage={'usable' if stage_summary.stage_usable else 'unusable'}, "
         f"errors={stage_summary.error_count}, warnings={stage_summary.warning_count}, infos={stage_summary.info_count}"
     )
+
+
+def _render_text_diagnostics(diagnostics: Sequence[PipelineDiagnosticEntry]) -> str:
+    return "\n".join(_render_text_diagnostic(entry) for entry in diagnostics)
+
+
+def _render_text_diagnostic(entry: PipelineDiagnosticEntry) -> str:
+    context_parts: list[str] = []
+    if entry.component_slug is not None:
+        context_parts.append(f"component={entry.component_slug}")
+    if entry.artifact_key is not None:
+        context_parts.append(f"artifact={entry.artifact_key}")
+    if entry.target_id is not None:
+        context_parts.append(f"target={entry.target_id}")
+    context_suffix = f" [{' '.join(context_parts)}]" if context_parts else ""
+    return f"- {entry.severity.value} {entry.code}{context_suffix}: {entry.message}"
 
 
 def _validate_safe_output_path(

@@ -41,6 +41,7 @@ from apache_buildish_site_pipeline.staging.publication_paths import public_path_
 
 from . import diagnostic_codes
 from .collector import DiagnosticCollector
+from .link_references import extract_link_references
 from .types import InventoryPage, PageInventory
 
 _PAGE_INPUT_KINDS = {
@@ -190,7 +191,6 @@ def _scan_page_file(
 ) -> InventoryPage:
     relative_path = entry.relative_to(context.root).as_posix()
     translation_key: str | None = None
-    body_text: str | None = None
     try:
         text = entry.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError) as exc:
@@ -207,10 +207,10 @@ def _scan_page_file(
             entry=entry,
             relative_path=relative_path,
             translation_key=None,
-            body_text=None,
+            extracted_links=(),
         )
 
-    front_matter, body_text = _extract_front_matter(
+    front_matter, body_text, source_line_offset = _extract_front_matter(
         text=text,
         relative_path=relative_path,
         context=context,
@@ -244,20 +244,29 @@ def _scan_page_file(
                 )
             else:
                 translation_key = translation.translation_key
+    extracted_links = (
+        extract_link_references(
+            source_path=entry,
+            text=body_text,
+            source_line_offset=source_line_offset,
+        )
+        if body_text is not None
+        else ()
+    )
     return _page_record(
         context=context,
         entry=entry,
         relative_path=relative_path,
         translation_key=translation_key,
-        body_text=body_text,
+        extracted_links=extracted_links,
     )
 
 
 def _extract_front_matter(
     *, text: str, relative_path: str, context: _PageRootContext, collector: DiagnosticCollector
-) -> tuple[dict[str, object] | None, str | None]:
+) -> tuple[dict[str, object] | None, str | None, int]:
     if not text.startswith("---\n"):
-        return None, text
+        return None, text, 0
     end_marker = text.find("\n---\n", 4)
     if end_marker == -1:
         end_marker = text.find("\n...\n", 4)
@@ -270,13 +279,14 @@ def _extract_front_matter(
             artifact_key=context.artifact_key,
             details={"inputId": context.input_id, "path": relative_path},
         )
-        return None, None
+        return None, None, 0
     raw_front_matter = text[4:end_marker]
     body_text = text[end_marker + 5 :]
+    source_line_offset = text[: end_marker + 5].count("\n")
     if raw_front_matter.strip() == "":
-        return {}, body_text
+        return {}, body_text, source_line_offset
     try:
-        return dict(load_yaml_mapping(raw_front_matter)), body_text
+        return dict(load_yaml_mapping(raw_front_matter)), body_text, source_line_offset
     except LoadingError as exc:
         collector.add(
             severity=DiagnosticSeverity.ERROR,
@@ -286,7 +296,7 @@ def _extract_front_matter(
             artifact_key=context.artifact_key,
             details={"inputId": context.input_id, "path": relative_path, "reason": str(exc)},
         )
-        return None, body_text
+        return None, body_text, source_line_offset
 
 
 def _page_record(
@@ -295,7 +305,7 @@ def _page_record(
     entry: Path,
     relative_path: str,
     translation_key: str | None,
-    body_text: str | None,
+    extracted_links,
 ) -> InventoryPage:
     _, _, routed_relative_path = detect_locale(Path(relative_path), context.localization)
     return InventoryPage(
@@ -307,7 +317,7 @@ def _page_record(
         source_path=entry,
         base_public_path=context.base_public_path,
         translation_key=translation_key,
-        body_text=body_text,
+        extracted_links=tuple(extracted_links),
     )
 
 

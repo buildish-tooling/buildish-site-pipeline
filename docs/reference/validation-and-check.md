@@ -118,6 +118,8 @@ The recommended stable command shape is:
 Recommended flag meanings are:
 
 - `--report-format` accepts `text` or `json`; default is `text`
+- text reports are human-readable summaries and list individual diagnostics when
+  present
 - `--report-schema-version` selects the requested `CheckReport.schemaVersion`
   and is required when `--report-format json` is selected
 - `--report-output` selects the report destination; `-` means stdout and is the
@@ -138,6 +140,8 @@ Recommended rules:
 - the emitted report includes the effective `schemaVersion`
 - unsupported requested versions fail fast
 - the report always includes a diagnostic array, even when it is empty
+- text and JSON reports should both surface the same collected diagnostics,
+  with JSON remaining the authoritative machine-readable form
 - the summary includes diagnostic counts, the active failure threshold, and an
   overall status so callers do not need to recompute them
 
@@ -181,6 +185,11 @@ implementation must emit a bounded summary object, informally called
 preserving a valid diagnostic entry. The recommended replacement fields are
 `omitted`, `reason`, `actualBytes`, `limitBytes`, optional short `summary`, and
 optional `fingerprint`.
+
+When a validator can point at an authored source location, the human-readable
+message should surface that location directly in a scan-friendly form such as
+`path/to/page.md:314:17:` or `path/to/page.md:~314:` when only an approximate
+line can be reported, while JSON `details` carry the structured location fields.
 
 When `build` or `watch` reporting is requested, those commands should reuse the
 same collected diagnostics and summary counts in their machine-readable run

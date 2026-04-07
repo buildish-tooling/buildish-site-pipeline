@@ -20,17 +20,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-## Raising the production quality bar
-
-The repo-wide audit ended with the implementation in a good state overall, but a
-few higher-level refactoring themes still stand out for maintainers who want to
-push the codebase from "strong" toward "very strong" or better.
-
- See [raising-the-production-quality-bar.md](../../../maintenance/raising-the-production-quality-bar/)
-for the short maintainer checklist. The highest-leverage themes are thinner
-orchestration, more explicit invariants in types, and more aggressively
-single-sourced trust-boundary and policy rules.
-
 ## CI changed-files gating after previous failures
 
 The current CI changed-files detection compares the current head only against the
@@ -124,79 +113,75 @@ basic event-stream introduction. Follow-ups worth evaluating include:
 This work should improve operator ergonomics without changing the current safety
 rules around trusted-stage publication or weakening the manifest-last contract.
 
+## Future watch-report ergonomics for long-running sessions
+
+`plan`, `build`, and `check` can emit a full text report because they are
+finite snapshot-style commands. `watch` is different: replaying the full warning
+or error list on every cycle would quickly become noisy once a workspace has a
+large steady-state diagnostic set.
+
+The deferred follow-up here is not "print full text reports every cycle". It is
+to decide whether `watch` should grow a more explicit reporting contract for
+long-running sessions.
+
+If this grows, the design should likely keep the current boundary:
+
+- lifecycle logging stays concise and summary-oriented per cycle
+- a report sink may still hold the latest full snapshot when explicitly
+  requested
+- any terminal-facing detailed output should prefer changed or newly introduced
+  diagnostics over replaying the entire unchanged set every cycle
+- delta or incremental reporting should be treated as a separate explicit
+  feature with a testable contract, not as an accidental side effect of the
+  current snapshot report path
+
+This should be treated as operator-ergonomics work, not as a reason to make the
+default `watch` terminal output much noisier.
+
 ## Optional staged-tree link checking for renderer-specific relative links
 
-Some authored Markdown links are valid as repository-relative source references
-but do not survive unchanged once a downstream renderer maps source files to
-pretty output URLs.
+This is no longer purely deferred work. Site Pipeline now has a narrow but real
+first slice of optional internal page-link checking.
 
-One concrete example is a source link such as `../foo/bar.md`. That may look
-reasonable while editing in the repository tree, but a renderer such as Hugo may
-publish the target as a directory-style URL like `../../foo/bar/` instead. In
-that shape, a literal carry-through of the authored Markdown link is wrong even
-though the intent was clear.
+The current shipped shape is:
 
-The deferred follow-up is to decide whether site-pipeline should support
-optional automatic link diagnostics for staged content and, if so, where the
-policy belongs.
+- consumers can opt in through `validation.linkChecks` in `site/catalog.yaml`
+- `check` validates authored internal page links against the resolved staged
+  public routes
+- the policy is explicit about URL-shape assumptions via `mode`, currently only
+  `directory` and `file-html`
+- root-absolute links can also be checked when `checkRootAbsolute` is enabled
+  and `internalPrefixes` declares which public-path prefixes are truly internal
+- findings are reported as individual warnings such as
+  `page-link-target-missing`
+- the implementation intentionally validates only; it does not rewrite authored
+  links
 
-Current design direction:
+That means the original question of whether this belongs in the catalog is now
+answered: yes, but only as a small consumer-owned validation policy rather than
+as a renderer-specific rewriting system.
 
-- link checking likely belongs in scope because broken staged links are a real
-  publication-quality problem
-- blind generic link rewriting in the core pipeline likely does not, because
-  link semantics depend on renderer behavior, URL shape policy, and site-local
-  conventions that site-pipeline does not fully own
-- if the project grows first-class support here, it should be implemented as a
-  real supported feature with shared page inventory or equivalent shared page
-  facts, not as two unrelated page-tree scans that happen to stay in sync
-- the first production slice should support only the clearly modeled URL-shape
-  categories `directory` and `file-html`
-- `route-mapped` should stay deferred until the project has a concrete,
-  testable contract for custom permalink systems instead of a hand-wavy escape
-  hatch
-- any consumer-owned rule set should be explicit about renderer assumptions and
-  should not silently rewrite links unless the contract is narrow, testable, and
-  unambiguous
-- a future site-pipeline-native link syntax may be worth exploring if authors
-  need a way to express page identity or intent without hand-encoding the final
-  renderer-shaped URL, but that would add a pipeline-owned authoring surface and
-  should therefore stay a later design topic rather than part of the first link
-  checking implementation
-- broken internal links should still be reported individually rather than hidden
-  behind arbitrary per-page, per-component, or global quotas; if report volume
-  becomes a real problem, the better answer is reporting compaction or an
-  overflow summary diagnostic, not a correctness threshold
+What is still intentionally limited:
 
-Implementation follow-up worth evaluating before this grows further:
+- the feature only covers clearly modeled URL-resolution modes `directory` and
+  `file-html`
+- renderer-owned expansion mechanisms such as Hugo `ref`/`relref`, shortcodes,
+  or other custom permalink systems are still out of scope
+- generic link rewriting is still out of scope because the pipeline does not own
+  renderer semantics tightly enough to do that safely
+- the diagnostics focus on internal page targets; they are not a full general
+  web-link or asset-link checker
 
-- the current page inventory keeps `InventoryPage.body_text`, which means the
-  aggregator can retain full authored page bodies in memory longer than link
-  checking actually needs them
-- a leaner design may be to extract `LinkDescription`-style facts eagerly
-  (`target`, `line`, `column`, plus any other minimal routing context), validate
-  links as soon as the relevant local route facts are available, and retain only
-  the unresolved cross-component links for the final aggregation pass
-- that would likely reduce steady-state memory pressure and make the ownership
-  split clearer: component-local validation during or after each component pass,
-  cross-component validation only in the main aggregator once the full staged
-  route inventory exists
-- any such refactor must keep diagnostics stable and precise; losing source
-  location fidelity or deferring too little information would not be acceptable
+Remaining follow-up worth evaluating if this grows further:
 
-Questions worth answering before implementation:
+- whether component-local link facts can be validated earlier, with only the
+  unresolved cross-component cases carried into the final aggregation pass
+- whether future route modes beyond `directory` and `file-html` can be added as
+  real tested contracts instead of vague renderer-specific escape hatches
+- whether better compaction is needed if warning volume ever becomes noisy;
+  broken internal links should still be reported individually rather than hidden
+  behind arbitrary quotas
 
-- should the catalog expose this as a general `linkChecks` capability rather
-  than a more implementation-leaking `stagedLinkChecks` name
-- should site-pipeline only report suspicious links, or also support an
-  explicit transformation mode
-- how would such rules interact with pretty URLs, index pages, page bundles,
-  aliases, mounted content, and non-Hugo renderers
-- can the pipeline validate links against the staged output tree without making
-  incorrect assumptions about renderer-only features such as shortcodes or
-  `ref`/`relref`-style link expansion
-- is a pipeline-native link syntax worth the portability cost if it lets
-  site-pipeline emit the correct renderer-facing link shape automatically
-
-This should be treated as optional publish-quality assistance for consumers, not
-as a reason to make the shared authored contract renderer-specific by default.
+For now, this should still be treated as optional publish-quality assistance for
+consumers, not as a reason to make the shared authored contract renderer-
+specific by default.

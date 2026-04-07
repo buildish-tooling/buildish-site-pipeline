@@ -25,7 +25,11 @@ from unittest import mock
 from apache_buildish_site_pipeline.evaluation.collector import DiagnosticCollector
 from apache_buildish_site_pipeline.evaluation.localization import validate_localization
 from apache_buildish_site_pipeline.evaluation.page_scan import validate_page_scan
-from apache_buildish_site_pipeline.evaluation.types import PageScanResult, ScannedPage
+from apache_buildish_site_pipeline.evaluation.types import (
+    ExtractedLinkReference,
+    PageScanResult,
+    ScannedPage,
+)
 from apache_buildish_site_pipeline.models.enums import (
     MaterializationInputKind,
     MaterializationStatus,
@@ -180,7 +184,36 @@ class LocalizationAndPageScanTests(unittest.TestCase):
         )
         self.assertEqual(scanned.pages[0].routed_relative_path, "Guide.MDX")
         self.assertEqual(scanned.pages[0].base_public_path, "/")
-        self.assertEqual(scanned.pages[0].body_text, "body\n")
+        self.assertEqual(scanned.pages[0].extracted_links, ())
+
+    def test_validate_page_scan_preserves_source_line_offsets_for_extracted_links(self) -> None:
+        collector = DiagnosticCollector()
+        with TemporaryDirectory() as temp_dir:
+            docs_root = Path(temp_dir) / "docs"
+            docs_root.mkdir()
+            (docs_root / "guide.md").write_text(
+                "---\ntitle: Guide\n---\n[Guide](guide/)\n",
+                encoding="utf-8",
+            )
+
+            scanned = validate_page_scan(
+                self._planning(self._local_input(docs_root)),
+                collector,
+            )
+
+        self.assertEqual(collector.build(), ())
+        self.assertEqual(
+            scanned.pages[0].extracted_links,
+            (
+                ExtractedLinkReference(
+                    href="guide/",
+                    occurrence_index=0,
+                    source_line=4,
+                    source_column=9,
+                    approximate_line_column=False,
+                ),
+            ),
+        )
 
     def test_validate_page_scan_reports_root_escape_and_read_failures(self) -> None:
         collector = DiagnosticCollector()
@@ -307,7 +340,7 @@ class LocalizationAndPageScanTests(unittest.TestCase):
         self.assertEqual(len(scanned.pages), 1)
         self.assertEqual(scanned.pages[0].input_id, "componentPages:spark")
         self.assertEqual(scanned.pages[0].base_public_path, "/spark")
-        self.assertEqual(scanned.pages[0].body_text, "guide body\n")
+        self.assertEqual(scanned.pages[0].extracted_links, ())
 
     @staticmethod
     def _component(
@@ -342,7 +375,7 @@ class LocalizationAndPageScanTests(unittest.TestCase):
         artifact_key: str | None = "runtime",
         routed_relative_path: str | None = None,
         base_public_path: str = "/",
-        body_text: str | None = None,
+        extracted_links: tuple[ExtractedLinkReference, ...] = (),
     ) -> ScannedPage:
         return ScannedPage(
             input_id=input_id,
@@ -353,7 +386,7 @@ class LocalizationAndPageScanTests(unittest.TestCase):
             source_path=Path(relative_path),
             base_public_path=base_public_path,
             translation_key=translation_key,
-            body_text=body_text,
+            extracted_links=extracted_links,
         )
 
     @staticmethod

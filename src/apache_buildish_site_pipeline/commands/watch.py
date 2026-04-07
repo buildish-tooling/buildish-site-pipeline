@@ -92,6 +92,7 @@ from ..cli.logging_support import log_lifecycle, log_trace
 from ..cli.reporting import (
     emit_report,
     render_text_report,
+    render_text_report_summary,
     revalidate_report_request,
     revalidate_watch_event_request,
 )
@@ -192,7 +193,10 @@ class _WatchIo:
         """Write optional human-facing watch progress logs."""
 
         log_lifecycle(
-            _LOGGER, "watch cycle %s: %s", report.cycle, render_text_report(report)
+            _LOGGER,
+            "watch cycle %s: %s",
+            report.cycle,
+            render_text_report_summary(report),
         )
         if _LOGGER.isEnabledFor(logging.INFO):
             if dirty_paths:

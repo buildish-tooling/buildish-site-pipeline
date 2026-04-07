@@ -36,11 +36,13 @@ from apache_buildish_site_pipeline.cli.reporting import (
     build_watch_event_request,
     emit_report,
     render_text_report,
+    render_text_report_summary,
     revalidate_report_request,
     revalidate_watch_event_request,
 )
 from apache_buildish_site_pipeline.models.enums import (
     CheckFailureThreshold,
+    DiagnosticSeverity,
     PlanningTarget,
     RunStatus,
     StageCommand,
@@ -48,6 +50,7 @@ from apache_buildish_site_pipeline.models.enums import (
 from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
     CheckReportV1,
     CheckSummary,
+    PipelineDiagnosticEntry,
     ResolvedMaterializationReportV1,
     StageRunReportV1,
     StageRunSummary,
@@ -321,10 +324,20 @@ class CliReportingTests(unittest.TestCase):
 
             self.assertEqual(list(root.glob(".report.txt.*.tmp")), [])
 
-    def test_render_text_report_formats_plan_check_and_stage_reports(self) -> None:
-        self.assertIn("plan build", render_text_report(self._plan_report()))
-        self.assertIn("check warnings", render_text_report(self._check_report()))
-        self.assertIn("build errors", render_text_report(self._stage_report()))
+    def test_render_text_report_summary_formats_plan_check_and_stage_reports(self) -> None:
+        self.assertIn("plan build", render_text_report_summary(self._plan_report()))
+        self.assertIn("check warnings", render_text_report_summary(self._check_report()))
+        self.assertIn("build errors", render_text_report_summary(self._stage_report()))
+
+    def test_render_text_report_appends_diagnostic_entries(self) -> None:
+        rendered = render_text_report(self._check_report())
+
+        self.assertIn("check warnings", rendered)
+        self.assertIn("diagnostics:", rendered)
+        self.assertIn(
+            "- warning demo.warning [component=spark artifact=runtime target=/spark/releases/4.0.0/index]: demo warning",
+            rendered,
+        )
 
     @staticmethod
     def _plan_report() -> ResolvedMaterializationReportV1:
@@ -350,7 +363,16 @@ class CliReportingTests(unittest.TestCase):
                 warning_count=1,
                 info_count=0,
             ),
-            diagnostics=[],
+            diagnostics=[
+                PipelineDiagnosticEntry(
+                    severity=DiagnosticSeverity.WARNING,
+                    code="demo.warning",
+                    message="demo warning",
+                    component_slug="spark",
+                    artifact_key="runtime",
+                    target_id="/spark/releases/4.0.0/index",
+                )
+            ],
         )
 
     @staticmethod

@@ -515,6 +515,8 @@ class StagingPipelineTests(unittest.TestCase):
         self.assertEqual(check_stderr.getvalue(), "")
         self.assertTrue(check_report["summary"]["passed"])
         self.assertEqual(check_report["summary"]["warningCount"], 1)
+        self.assertEqual(missing_diagnostic["details"]["sourceRelativePath"], "releases/4.0.0/index.md")
+        self.assertEqual(missing_diagnostic["details"]["sourceLine"], 1)
         self.assertEqual(missing_diagnostic["details"]["sourceRoute"], "/spark/development/releases/4.0.0")
         self.assertEqual(missing_diagnostic["details"]["resolvedPath"], "/spark/releases/4.0.0/missing")
         self.assertEqual(build_exit_code, 0)

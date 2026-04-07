@@ -16,14 +16,8 @@
 
 from __future__ import annotations
 
-import re
-from collections.abc import Iterable
 from pathlib import Path, PurePosixPath
-from typing import cast
 from urllib.parse import urljoin, urlsplit
-
-from mistletoe import Document
-from mistletoe.span_token import AutoLink, Link
 
 from apache_buildish_site_pipeline.models.enums import DiagnosticSeverity, LinkCheckMode
 from apache_buildish_site_pipeline.public_paths import normalize_public_path
@@ -31,13 +25,9 @@ from apache_buildish_site_pipeline.staging.front_matter import public_page_path
 
 from . import diagnostic_codes
 from .collector import DiagnosticCollector
-from .types import InventoryPage, PageInventory
+from .types import ExtractedLinkReference, InventoryPage, PageInventory
 
 _AUTHORED_PAGE_SUFFIXES = {".md", ".mdx", ".adoc", ".asciidoc", ".html"}
-_MARKDOWN_SUFFIXES = {".md", ".mdx"}
-_ASCIIDOC_SUFFIXES = {".adoc", ".asciidoc"}
-_HTML_HREF_PATTERN = re.compile(r"href\s*=\s*[\"']([^\"']+)[\"']", re.IGNORECASE)
-_ASCIIDOC_LINK_PATTERN = re.compile(r"(?:^|[^A-Za-z0-9_])link:([^\[]+)\[[^\]]*\]")
 
 
 def validate_staged_links(
@@ -52,69 +42,45 @@ def validate_staged_links(
     known_paths = {
         _page_public_path(page, mode=policy.mode) for page in page_inventory.pages
     }
-    seen: set[tuple[str, str, str]] = set()
-
+    seen_occurrences: set[tuple[str, int, str, str]] = set()
     for page in page_inventory.pages:
-        if page.body_text is None:
-            continue
-        for href in _extract_link_targets(page):
+        for reference in page.extracted_links:
+            href = reference.href
             resolved = _resolve_link_target(page=page, href=href, policy=policy)
             if resolved is None or resolved in known_paths:
                 continue
-            dedupe_key = (str(page.source_path), href, resolved)
-            if dedupe_key in seen:
+            occurrence_key = (
+                str(page.source_path.resolve(strict=False)),
+                reference.occurrence_index,
+                href,
+                resolved,
+            )
+            if occurrence_key in seen_occurrences:
                 continue
-            seen.add(dedupe_key)
+            seen_occurrences.add(occurrence_key)
             collector.add(
                 severity=DiagnosticSeverity.WARNING,
                 code=diagnostic_codes.PAGE_LINK_TARGET_MISSING,
                 message=(
-                    f"Internal page link {href!r} in {page.relative_path} resolves to missing staged page {resolved}"
+                    f"{_diagnostic_source_location(page.relative_path, reference)}: "
+                    f"internal page link {href!r} resolves to missing staged page {resolved}"
                 ),
                 component_slug=page.component_slug,
                 artifact_key=page.artifact_key,
                 details={
                     "inputId": page.input_id,
                     "sourcePath": str(page.source_path),
+                    "sourceRelativePath": page.relative_path,
+                    "occurrenceIndex": reference.occurrence_index,
+                    "sourceLine": reference.source_line,
+                    "sourceColumn": reference.source_column,
+                    "approximateLineColumn": reference.approximate_line_column,
                     "sourceRoute": _page_public_path(page, mode=policy.mode),
                     "href": href,
                     "resolvedPath": resolved,
                     "mode": policy.mode.value,
                 },
             )
-
-
-def _extract_link_targets(page: InventoryPage) -> tuple[str, ...]:
-    suffix = page.source_path.suffix.lower()
-    if suffix in _MARKDOWN_SUFFIXES:
-        return tuple(_markdown_links(page.body_text or ""))
-    if suffix in _ASCIIDOC_SUFFIXES:
-        return tuple(_asciidoc_links(page.body_text or ""))
-    return tuple(_html_links(page.body_text or ""))
-
-
-def _markdown_links(text: str) -> set[str]:
-    links: set[str] = set(_html_links(text))
-    document = Document(text)
-    stack: list[object] = list(cast(Iterable[object], document.children or ()))
-    while stack:
-        node = stack.pop()
-        if isinstance(node, (Link, AutoLink)):
-            target = getattr(node, "target", None)
-            if isinstance(target, str) and target:
-                links.add(target)
-        children = getattr(node, "children", None)
-        if children:
-            stack.extend(cast(Iterable[object], children))
-    return links
-
-
-def _html_links(text: str) -> set[str]:
-    return {match.group(1) for match in _HTML_HREF_PATTERN.finditer(text)}
-
-
-def _asciidoc_links(text: str) -> set[str]:
-    return {match.group(1).strip() for match in _ASCIIDOC_LINK_PATTERN.finditer(text)}
 
 
 def _resolve_link_target(*, page: InventoryPage, href: str, policy) -> str | None:
@@ -178,3 +144,15 @@ def _matches_internal_prefix(path: str, internal_prefixes: tuple[str, ...]) -> b
 
 def _normalize_public_path(path: str) -> str:
     return normalize_public_path(path, trailing_slash=False)
+
+
+def _diagnostic_source_location(relative_path: str, reference: ExtractedLinkReference) -> str:
+    if reference.source_line is None:
+        return relative_path
+    prefix = "~" if reference.approximate_line_column else ""
+    if reference.source_column is None:
+        return f"{relative_path}:{prefix}{reference.source_line}"
+    return (
+        f"{relative_path}:{prefix}{reference.source_line}:"
+        f"{prefix}{reference.source_column}"
+    )

@@ -21,6 +21,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from apache_buildish_site_pipeline.evaluation.collector import DiagnosticCollector
+from apache_buildish_site_pipeline.evaluation.link_references import extract_link_references
 from apache_buildish_site_pipeline.evaluation.staged_links import validate_staged_links
 from apache_buildish_site_pipeline.evaluation.types import InventoryPage, PageInventory
 from apache_buildish_site_pipeline.models.enums import LinkCheckMode
@@ -54,6 +55,14 @@ class StagedLinksTests(unittest.TestCase):
         self.assertEqual(len(diagnostics), 1)
         self.assertEqual(diagnostics[0].details["resolvedPath"], "/missing")
         self.assertEqual(diagnostics[0].code, "page-link-target-missing")
+        self.assertEqual(diagnostics[0].details["sourceLine"], 1)
+        self.assertEqual(diagnostics[0].details["occurrenceIndex"], 1)
+        self.assertEqual(diagnostics[0].details["sourceColumn"], 27)
+        self.assertFalse(diagnostics[0].details["approximateLineColumn"])
+        self.assertEqual(
+            diagnostics[0].message,
+            "index.md:1:27: internal page link 'missing/' resolves to missing staged page /missing",
+        )
 
     def test_file_html_mode_resolves_html_links(self) -> None:
         collector = DiagnosticCollector()
@@ -78,6 +87,65 @@ class StagedLinksTests(unittest.TestCase):
         self.assertEqual(len(diagnostics), 1)
         self.assertEqual(diagnostics[0].details["resolvedPath"], "/missing.html")
         self.assertEqual(diagnostics[0].details["mode"], "file-html")
+
+    def test_markdown_html_links_outside_code_blocks_are_checked(self) -> None:
+        collector = DiagnosticCollector()
+        planning = self._planning(
+            mode=LinkCheckMode.DIRECTORY,
+            check_root_absolute=False,
+        )
+        inventory = PageInventory(
+            pages=(
+                self._page(
+                    "index.md",
+                    '<a href="guide/">Guide</a> <a href="missing/">Missing</a>',
+                ),
+                self._page("guide.md", "Guide body"),
+            )
+        )
+
+        validate_staged_links(
+            planning=planning,
+            page_inventory=inventory,
+            collector=collector,
+        )
+
+        diagnostics = collector.build()
+        self.assertEqual(len(diagnostics), 1)
+        self.assertEqual(diagnostics[0].details["resolvedPath"], "/missing")
+        self.assertEqual(diagnostics[0].details["sourceColumn"], 37)
+
+    def test_markdown_ignores_html_links_inside_code_blocks_and_inline_code(self) -> None:
+        collector = DiagnosticCollector()
+        planning = self._planning(
+            mode=LinkCheckMode.DIRECTORY,
+            check_root_absolute=False,
+        )
+        inventory = PageInventory(
+            pages=(
+                self._page(
+                    "index.md",
+                    """
+Literal shortcode example:
+
+```go-html-template
+<li><a href="{{ index $entry \"path\" }}">{{ index $entry "title" }}</a></li>
+```
+
+Inline example: `<a href="missing/">Missing</a>`
+""",
+                ),
+            )
+        )
+
+        validate_staged_links(
+            planning=planning,
+            page_inventory=inventory,
+            collector=collector,
+        )
+
+        diagnostics = collector.build()
+        self.assertEqual(diagnostics, ())
 
     def test_root_absolute_links_require_declared_internal_prefixes(self) -> None:
         collector = DiagnosticCollector()
@@ -110,6 +178,109 @@ class StagedLinksTests(unittest.TestCase):
         diagnostics = collector.build()
         self.assertEqual(len(diagnostics), 1)
         self.assertEqual(diagnostics[0].details["resolvedPath"], "/components/missing/guide")
+
+    def test_reports_each_missing_occurrence_instead_of_deduplicating_by_target(self) -> None:
+        collector = DiagnosticCollector()
+        planning = self._planning(
+            mode=LinkCheckMode.DIRECTORY,
+            check_root_absolute=False,
+        )
+        inventory = PageInventory(
+            pages=(
+                self._page(
+                    "index.md",
+                    "[Missing](missing/)\nAgain [Missing](missing/)",
+                ),
+            )
+        )
+
+        validate_staged_links(
+            planning=planning,
+            page_inventory=inventory,
+            collector=collector,
+        )
+
+        diagnostics = collector.build()
+        self.assertEqual(len(diagnostics), 2)
+        self.assertEqual([entry.details["sourceLine"] for entry in diagnostics], [1, 2])
+        self.assertEqual([entry.details["occurrenceIndex"] for entry in diagnostics], [0, 1])
+
+    def test_reference_style_links_can_fall_back_to_approximate_line_only(self) -> None:
+        collector = DiagnosticCollector()
+        planning = self._planning(
+            mode=LinkCheckMode.DIRECTORY,
+            check_root_absolute=False,
+        )
+        inventory = PageInventory(
+            pages=(
+                self._page(
+                    "index.md",
+                    "[Missing][missing]\n\n[missing]: missing/\n",
+                ),
+            )
+        )
+
+        validate_staged_links(
+            planning=planning,
+            page_inventory=inventory,
+            collector=collector,
+        )
+
+        diagnostics = collector.build()
+        self.assertEqual(len(diagnostics), 1)
+        self.assertEqual(diagnostics[0].details["sourceLine"], 1)
+        self.assertIsNone(diagnostics[0].details["sourceColumn"])
+        self.assertTrue(diagnostics[0].details["approximateLineColumn"])
+        self.assertEqual(
+            diagnostics[0].message,
+            "index.md:~1: internal page link 'missing/' resolves to missing staged page /missing",
+        )
+
+    def test_approximate_same_line_occurrences_are_not_collapsed(self) -> None:
+        collector = DiagnosticCollector()
+        planning = self._planning(
+            mode=LinkCheckMode.DIRECTORY,
+            check_root_absolute=False,
+        )
+        inventory = PageInventory(
+            pages=(
+                self._page(
+                    "index.md",
+                    "[First][missing] [Second][missing]\n\n[missing]: missing/\n",
+                ),
+            )
+        )
+
+        validate_staged_links(
+            planning=planning,
+            page_inventory=inventory,
+            collector=collector,
+        )
+
+        diagnostics = collector.build()
+        self.assertEqual(len(diagnostics), 2)
+        self.assertEqual([entry.details["occurrenceIndex"] for entry in diagnostics], [0, 1])
+        self.assertEqual([entry.details["sourceLine"] for entry in diagnostics], [1, 1])
+        self.assertEqual([entry.details["sourceColumn"] for entry in diagnostics], [None, None])
+
+    def test_duplicate_inventory_views_of_same_occurrence_are_collapsed(self) -> None:
+        collector = DiagnosticCollector()
+        planning = self._planning(
+            mode=LinkCheckMode.DIRECTORY,
+            check_root_absolute=False,
+        )
+        page = self._page("index.md", "[Missing](missing/)")
+        inventory = PageInventory(pages=(page, page))
+
+        validate_staged_links(
+            planning=planning,
+            page_inventory=inventory,
+            collector=collector,
+        )
+
+        diagnostics = collector.build()
+        self.assertEqual(len(diagnostics), 1)
+        self.assertEqual(diagnostics[0].details["occurrenceIndex"], 0)
 
     def test_asciidoc_link_syntax_is_checked(self) -> None:
         collector = DiagnosticCollector()
@@ -170,5 +341,5 @@ class StagedLinksTests(unittest.TestCase):
             source_path=source_path,
             base_public_path=base_public_path,
             translation_key=None,
-            body_text=body_text,
+            extracted_links=extract_link_references(source_path=source_path, text=body_text),
         )

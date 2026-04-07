@@ -97,6 +97,17 @@ class RouteInventory:
 
 
 @dataclass(frozen=True, slots=True)
+class ExtractedLinkReference:
+    """One authored link occurrence extracted from a page body for later checks."""
+
+    href: str
+    occurrence_index: int
+    source_line: int | None
+    source_column: int | None
+    approximate_line_column: bool | None
+
+
+@dataclass(frozen=True, slots=True)
 class InventoryPage:
     """One discovered authored page plus the routing facts later checks reuse."""
 
@@ -108,7 +119,7 @@ class InventoryPage:
     source_path: Path
     base_public_path: str
     translation_key: str | None
-    body_text: str | None
+    extracted_links: tuple[ExtractedLinkReference, ...]
 
 
 @dataclass(frozen=True, slots=True)

@@ -141,6 +141,36 @@ class CliTests(unittest.TestCase):
         self.assertGreaterEqual(len(report["entries"]), 1)
         self.assertEqual(stderr.getvalue(), "")
 
+    def test_plan_watch_text_report_file_includes_diagnostics(self) -> None:
+        with _workspace() as workspace_root:
+            report_path = workspace_root / "components/runtime/docs/watch-report.txt"
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+
+            with _cwd(workspace_root):
+                exit_code = _run(
+                    argv=[
+                        "plan",
+                        "--for",
+                        "watch",
+                        "--report-format",
+                        "text",
+                        "--report-output",
+                        str(report_path),
+                    ],
+                    stdout=stdout,
+                    stderr=stderr,
+                )
+
+            report_text = report_path.read_text(encoding="utf-8")
+
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(stdout.getvalue(), "")
+        self.assertIn("plan watch:", report_text)
+        self.assertIn("diagnostics:", report_text)
+        self.assertIn("warning watch-root-conflict", report_text)
+        self.assertEqual(stderr.getvalue(), "")
+
     def test_check_json_report_respects_fail_on(self) -> None:
         with _workspace() as workspace_root:
             stdout = io.StringIO()
@@ -156,6 +186,64 @@ class CliTests(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         self.assertTrue(report["summary"]["passed"])
         self.assertEqual(stderr.getvalue(), "")
+
+    def test_check_text_and_json_reports_include_warning_diagnostics(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            self._configure_missing_page_link_warning_workspace(workspace_root)
+            text_stdout = io.StringIO()
+            text_stderr = io.StringIO()
+            json_stdout = io.StringIO()
+            json_stderr = io.StringIO()
+
+            with _cwd(workspace_root):
+                text_exit_code = _run(
+                    argv=["check", "--report-format", "text", "--report-output", "-"],
+                    stdout=text_stdout,
+                    stderr=text_stderr,
+                )
+                json_exit_code = _run(
+                    argv=[
+                        "check",
+                        "--report-format",
+                        "json",
+                        "--report-schema-version",
+                        "1",
+                        "--report-output",
+                        "-",
+                    ],
+                    stdout=json_stdout,
+                    stderr=json_stderr,
+                )
+
+        text_report = text_stdout.getvalue()
+        json_report = json.loads(json_stdout.getvalue())
+
+        self.assertEqual(text_exit_code, 0)
+        self.assertIn(
+            "check warnings: passed=yes, errors=0, warnings=1, infos=0",
+            text_report,
+        )
+        self.assertIn("diagnostics:", text_report)
+        self.assertIn("warning page-link-target-missing", text_report)
+        self.assertIn("component=spark", text_report)
+        self.assertIn(
+            "releases/4.0.0/index.md:1:",
+            text_report,
+        )
+        self.assertIn(
+            "internal page link '/spark/releases/4.0.0/missing/'",
+            text_report,
+        )
+        self.assertEqual(text_stderr.getvalue(), "")
+
+        self.assertEqual(json_exit_code, 0)
+        self.assertEqual(json_report["summary"]["warningCount"], 1)
+        self.assertEqual(len(json_report["diagnostics"]), 1)
+        self.assertEqual(
+            json_report["diagnostics"][0]["code"],
+            "page-link-target-missing",
+        )
+        self.assertEqual(json_stderr.getvalue(), "")
 
     def test_build_creates_stage_and_manifest(self) -> None:
         with _workspace(with_content_file=True) as workspace_root:
@@ -177,6 +265,54 @@ class CliTests(unittest.TestCase):
             self.assertTrue(manifest_path.exists())
             self.assertTrue(staged_file.exists())
             self.assertEqual(stderr.getvalue(), "")
+
+    def test_build_text_report_to_stdout_includes_warning_diagnostics(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            self._configure_missing_page_link_warning_workspace(workspace_root)
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+
+            with _cwd(workspace_root):
+                exit_code = _run(
+                    argv=["build", "--report-format", "text", "--report-output", "-"],
+                    stdout=stdout,
+                    stderr=stderr,
+                )
+
+        report_text = stdout.getvalue()
+
+        self.assertEqual(exit_code, 0)
+        self.assertIn(
+            "build warnings: succeeded=yes, stage=usable, errors=0, warnings=1, infos=0",
+            report_text,
+        )
+        self.assertIn("diagnostics:", report_text)
+        self.assertIn("warning page-link-target-missing", report_text)
+        self.assertIn("component=spark", report_text)
+        self.assertIn(
+            "releases/4.0.0/index.md:1:",
+            report_text,
+        )
+        self.assertEqual(stderr.getvalue(), "")
+
+    @staticmethod
+    def _configure_missing_page_link_warning_workspace(workspace_root: Path) -> None:
+        catalog_path = workspace_root / "site/catalog.yaml"
+        release_root = workspace_root / "components/runtime/docs/releases/4.0.0"
+        catalog_text = catalog_path.read_text(encoding="utf-8")
+        catalog_path.write_text(
+            catalog_text.replace(
+                "site: {}\n",
+                "site: {}\nvalidation:\n  linkChecks:\n    enabled: true\n    checkRootAbsolute: true\n    internalPrefixes:\n      - /spark/\n",
+                1,
+            ),
+            encoding="utf-8",
+        )
+        (release_root / "guide.md").write_text("guide page\n", encoding="utf-8")
+        (release_root / "index.md").write_text(
+            "[Guide](/spark/releases/4.0.0/guide/) [Missing](/spark/releases/4.0.0/missing/)\n",
+            encoding="utf-8",
+        )
 
     def test_build_supports_explicit_workspace_root_and_catalog(self) -> None:
         with _workspace(with_content_file=True) as workspace_root, tempfile.TemporaryDirectory() as runner_dir, tempfile.TemporaryDirectory() as catalog_dir:

@@ -294,6 +294,57 @@ class WatchIncrementalTests(unittest.TestCase):
             clean_snapshot,
         )
 
+    def test_release_redirect_resolution_stays_consistent_across_check_build_and_watch(
+        self,
+    ) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            _expand_workspace_for_multiple_owned_units(workspace_root)
+            catalog_path = workspace_root / "site/catalog.yaml"
+            _rewrite_catalog(
+                catalog_path,
+                replacements=(
+                    (
+                        "    publication:\n      mountPath: /spark/\n",
+                        "    publication:\n      mountPath: /spark/\n      redirects:\n        - fromPath: /spark/development/docs/\n          target: release:spark/runtime@4.0.0\n          reason: Current docs live on the latest release route.\n",
+                    ),
+                ),
+            )
+
+            check_exit_code, check_report = _run_check_json_report(workspace_root)
+            build_exit_code, clean_snapshot = _run_clean_build_snapshot(workspace_root)
+            watch_snapshot = _run_watch_then_snapshot(
+                workspace_root=workspace_root,
+                responses=[(True, None)],
+            )
+            clean_stage_root = workspace_root / "site/.stage-clean"
+            watch_stage_root = workspace_root / "site/.stage"
+            clean_redirects = _redirect_entry_by_source(clean_stage_root)
+            watch_redirects = _redirect_entry_by_source(watch_stage_root)
+
+        self.assertEqual(check_exit_code, 0)
+        self.assertTrue(check_report["summary"]["passed"])
+        self.assertFalse(
+            any(diagnostic["code"].startswith("redirect-") for diagnostic in check_report["diagnostics"])
+        )
+        self.assertEqual(build_exit_code, 0)
+        self.assertEqual(
+            clean_redirects["https://docs.example.org/spark/development/docs/"]["toUrl"],
+            "https://docs.example.org/spark/releases/4.0.0/",
+        )
+        self.assertEqual(
+            clean_redirects["https://docs.example.org/spark/development/docs/"]["reason"],
+            "Current docs live on the latest release route.",
+        )
+        self.assertEqual(
+            watch_redirects["https://docs.example.org/spark/development/docs/"]["toUrl"],
+            "https://docs.example.org/spark/releases/4.0.0/",
+        )
+        self.assertEqual(
+            watch_redirects["https://docs.example.org/spark/development/docs/"]["reason"],
+            "Current docs live on the latest release route.",
+        )
+        self.assertEqual(watch_snapshot, clean_snapshot)
+
 
     def test_noisy_watch_event_burst_matches_fresh_clean_build(self) -> None:
         with _workspace(with_content_file=True) as workspace_root:
@@ -447,6 +498,21 @@ def _run_watch_then_snapshot_from_raw_batches(
     return _stage_snapshot_without_manifest(workspace_root / "site/.stage")
 
 
+def _run_check_json_report(workspace_root) -> tuple[int, dict[str, object]]:
+    stdout = io.StringIO()
+    stderr = io.StringIO()
+    with _cwd(workspace_root):
+        exit_code = _run(
+            argv=["check", "--report-format", "json", "--report-schema-version", "1"],
+            stdout=stdout,
+            stderr=stderr,
+        )
+
+    if stderr.getvalue() != "":
+        raise AssertionError(f"check wrote unexpected stderr: {stderr.getvalue()}")
+    return exit_code, json.loads(stdout.getvalue())
+
+
 def _run_clean_build_snapshot(workspace_root) -> tuple[int, dict[str, object]]:
     clean_stage_root = workspace_root / "site/.stage-clean"
     loaded_inputs = load_workspace_inputs(workspace_root)
@@ -522,3 +588,8 @@ def _route_path_by_target_id(stage_root) -> dict[str, str]:
 def _candidate_versions(stage_root) -> list[str]:
     items = json.loads((stage_root / "data/candidates.json").read_text(encoding="utf-8"))["items"]
     return [entry["version"] for entry in items]
+
+
+def _redirect_entry_by_source(stage_root) -> dict[str, dict[str, object]]:
+    items = json.loads((stage_root / "data/redirects.json").read_text(encoding="utf-8"))["items"]
+    return {entry["fromUrl"]: entry for entry in items}

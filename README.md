@@ -88,6 +88,31 @@ By default this writes wheels plus `dist/snapshots/latest.json`. That manifest
 includes the exact `file://` dependency spec a local consumer can use while the
 project is still only being shared on one machine.
 
+## Preliminary release-legal drafts
+
+Generate a review-oriented legal bundle for the runtime dependency set with:
+
+- `make release-legal-preliminary`
+
+By default this writes generated preliminary `LICENSE` and `NOTICE` drafts under
+`dist-release-legal/preliminary/`.
+
+The larger generated review bundle stays under `dist/release-legal-preliminary/`
+and includes `inventory.json`, `inventory.md`, and copied per-package legal
+files.
+
+The helper derives the runtime package set from `uv.lock` via
+`uv export --no-dev --frozen`, then inspects the installed Python distributions
+available to the current interpreter.
+
+The output is intentionally **preliminary**. It is meant to speed up ASF
+release-legal review, not to replace human review of license compatibility,
+bundled notices, or final `LICENSE` / `NOTICE` wording.
+
+The checked-in container-image legal payload lives separately under
+`dist-release-legal/`. Maintainer workflow details are documented in
+`docs/maintenance/release-legal.md`.
+
 
 ## Container image
 

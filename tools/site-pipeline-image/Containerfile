@@ -26,6 +26,8 @@ COPY README.md pyproject.toml uv.lock main.py ./
 COPY src ./src
 RUN uv sync --frozen --no-dev --no-editable \
     && uv pip install --python /opt/site-pipeline/.venv/bin/python --no-deps .
+COPY DISCLAIMER ./DISCLAIMER
+COPY dist-release-legal/LICENSE dist-release-legal/NOTICE ./
 
 ENV PATH=/opt/site-pipeline/.venv/bin:$PATH
 WORKDIR /workspace

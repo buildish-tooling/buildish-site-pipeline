@@ -74,3 +74,26 @@ The pinned local registry image reference is sourced from `tools/site-pipeline-i
 ## GitHub Actions
 
 `.github/workflows/ci.yml` runs `make check`, builds the multi-platform image for `linux/amd64` and `linux/arm64`, and publishes it to GHCR on trusted Apache-owned pushes.
+
+## Preliminary image legal review helper
+
+For ASF release preparation, the repository also provides a preliminary legal
+review helper via:
+
+- `make release-legal-preliminary`
+
+That helper derives the runtime dependency set from `uv.lock`, inspects the
+installed Python distributions in the current environment, and writes draft
+`LICENSE` / `NOTICE` files under `dist-release-legal/preliminary/`.
+
+The supporting generated inventory plus copied legal texts stay under
+`dist/release-legal-preliminary/`.
+
+The generated files are deliberately review-oriented and must be checked by a
+human before they are used in any published container image or other binary
+distribution.
+
+The final image build copies `dist-release-legal/LICENSE`,
+`dist-release-legal/NOTICE`, and the repository-root `DISCLAIMER` into the
+container image. See `docs/maintenance/release-legal.md` for the maintainer
+workflow that connects the preliminary generator output with those final files.

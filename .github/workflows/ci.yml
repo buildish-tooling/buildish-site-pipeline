@@ -75,6 +75,11 @@ jobs:
       - name: Run make check
         run: make check
 
+      - name: Fail when checks leave Git changes behind
+        run: |
+          modified="$(git status --short)"
+          test -z "$modified" || { printf 'Checks left Git changes behind:\n%s\n' "$modified"; exit 1; }
+
   container-image:
     name: Site Pipeline image
     needs: changes

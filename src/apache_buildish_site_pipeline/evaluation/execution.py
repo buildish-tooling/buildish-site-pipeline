@@ -46,6 +46,7 @@ def run_evaluation(
 ) -> EvaluationResult:
     """Run the shared contextual validation pipeline."""
 
+    build_plan_result = planning.build_plan_result
     collector = DiagnosticCollector()
     publication_index = validate_publication(planning, collector)
     validate_references(
@@ -69,7 +70,7 @@ def run_evaluation(
         page_inventory=page_inventory,
         collector=collector,
     )
-    if planning.build_plan_candidate is None:
+    if build_plan_result.candidate is None:
         collector.add(
             severity=DiagnosticSeverity.ERROR,
             code=diagnostic_codes.BUILD_PLAN_UNAVAILABLE,
@@ -90,9 +91,7 @@ def run_evaluation(
         for diagnostic in diagnostics
         if diagnostic.severity is DiagnosticSeverity.ERROR
     )
-    stage_allowed = (
-        not blocking_conditions and planning.build_plan_candidate is not None
-    )
+    stage_allowed = not blocking_conditions and build_plan_result.candidate is not None
     return EvaluationResult(
         request=request,
         planning=planning,
@@ -102,7 +101,7 @@ def run_evaluation(
         stage_gate=StageGateDecision(
             allowed=stage_allowed, blocking_conditions=blocking_conditions
         ),
-        build_plan=planning.build_plan_candidate if stage_allowed else None,
+        build_plan=build_plan_result.candidate if stage_allowed else None,
         artifacts=EvaluationArtifacts(
             publication_index=publication_index,
             route_inventory=route_inventory,

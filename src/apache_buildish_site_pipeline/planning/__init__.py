@@ -78,7 +78,7 @@ def evaluate_planning(
         report_output=report_output,
     )
     diagnostics: tuple[PipelineDiagnosticEntry, ...] = ()
-    build_bridge, build_plan_candidate = build_effective_build_plan(
+    build_plan_result = build_effective_build_plan(
         target=target,
         site=site,
         selected_versions=selected_versions,
@@ -92,9 +92,8 @@ def evaluate_planning(
         selected_versions=selected_versions,
         local_inputs=watched_inputs,
         watch_plan=watch_plan,
-        build_bridge=build_bridge,
+        build_plan_result=build_plan_result,
         diagnostics=diagnostics,
-        build_plan_candidate=build_plan_candidate,
     )
 
 

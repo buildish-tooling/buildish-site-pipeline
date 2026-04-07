@@ -57,8 +57,8 @@ class StagingPipelineTests(unittest.TestCase):
                 work_root=workspace_root / ".buildish/work",
             )
 
-        self.assertIsNotNone(planning.build_plan_candidate)
-        units = build_owned_units(planning.build_plan_candidate)
+        self.assertIsNotNone(planning.build_plan_result.candidate)
+        units = build_owned_units(planning.build_plan_result.candidate)
         self.assertEqual([unit.kind for unit in units], [OwnedUnitKind.COMPONENT])
         component_unit = units[0]
         self.assertEqual(component_unit.owner_id, "component:spark")
@@ -109,8 +109,8 @@ class StagingPipelineTests(unittest.TestCase):
                 work_root=workspace_root / ".buildish/work",
             )
 
-        self.assertIsNotNone(planning.build_plan_candidate)
-        units = build_owned_units(planning.build_plan_candidate)
+        self.assertIsNotNone(planning.build_plan_result.candidate)
+        units = build_owned_units(planning.build_plan_result.candidate)
         component_unit = units[0]
         self.assertEqual(
             [root.as_posix() for root in component_unit.content_stage_roots],
@@ -614,9 +614,9 @@ class StagingPipelineTests(unittest.TestCase):
                 work_root=workspace_root / ".buildish/work",
             )
 
-        self.assertIsNotNone(planning.build_plan_candidate)
+        self.assertIsNotNone(planning.build_plan_result.candidate)
         with self.assertRaises(StageIntegrityError):
-            _build_redirect_entries(planning.build_plan_candidate)
+            _build_redirect_entries(planning.build_plan_result.candidate)
 
     def test_write_utf8_text_file_preserves_mtime_for_identical_bytes(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:

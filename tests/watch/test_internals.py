@@ -1254,7 +1254,7 @@ def _build_plan(workspace_root: Path):
         stage_root=workspace_root / "site/.stage",
         work_root=workspace_root / ".buildish/work",
     )
-    return planning.build_plan_candidate
+    return planning.build_plan_result.candidate
 
 
 def _watch_invocation(

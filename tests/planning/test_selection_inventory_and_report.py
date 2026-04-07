@@ -20,6 +20,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from typing import cast
 
 from apache_buildish_site_pipeline.cli.errors import CommandExecutionError
 from apache_buildish_site_pipeline.models import (
@@ -29,11 +30,34 @@ from apache_buildish_site_pipeline.models import (
 )
 from apache_buildish_site_pipeline.models.enums import MaterializationInputKind, MaterializationStatus
 from apache_buildish_site_pipeline.planning import build_resolved_materialization_report, evaluate_planning
-from apache_buildish_site_pipeline.planning.types import InputReadiness, LocalInputIdentity, MaterializationStatusReason, ResolvedLocalInput
+from apache_buildish_site_pipeline.planning.types import EffectiveBuildPlanResult, InputReadiness, LocalInputIdentity, MaterializationStatusReason, PlanToBuildBridge, ResolvedLocalInput
+from apache_buildish_site_pipeline.staging.types import EffectiveBuildPlan
 from apache_buildish_site_pipeline.planning.watch_roots import derive_watch_plan
 
 
 class PlanningEvaluationTests(unittest.TestCase):
+    def test_build_plan_result_rejects_inconsistent_ready_and_candidate_states(self) -> None:
+        with self.assertRaises(ValueError):
+            EffectiveBuildPlanResult.unavailable(
+                bridge=PlanToBuildBridge(
+                    ready=True,
+                    blocking_inputs=(),
+                    deterministic=True,
+                    watch_ready=True,
+                ),
+            )
+
+        with self.assertRaises(ValueError):
+            EffectiveBuildPlanResult.available(
+                bridge=PlanToBuildBridge(
+                    ready=False,
+                    blocking_inputs=(),
+                    deterministic=True,
+                    watch_ready=True,
+                ),
+                candidate=cast(EffectiveBuildPlan, object()),
+            )
+
     def test_build_target_creates_ready_build_plan(self) -> None:
         catalog = _sample_catalog()
         provider_snapshot = _sample_provider_snapshot()
@@ -54,8 +78,8 @@ class PlanningEvaluationTests(unittest.TestCase):
             )
 
         self.assertTrue(evaluation.selected_versions.deterministic)
-        self.assertTrue(evaluation.build_bridge.ready)
-        self.assertIsNotNone(evaluation.build_plan_candidate)
+        self.assertTrue(evaluation.build_plan_result.bridge.ready)
+        self.assertIsNotNone(evaluation.build_plan_result.candidate)
         self.assertTrue(all(local_input.watch_eligible is not None for local_input in evaluation.local_inputs))
 
     def test_build_target_reports_site_owned_local_inputs(self) -> None:
@@ -290,9 +314,9 @@ class PlanningEvaluationTests(unittest.TestCase):
 
         self.assertIsNotNone(evaluation.watch_plan)
         self.assertEqual(evaluation.watch_plan.roots, ())
-        self.assertFalse(evaluation.build_bridge.watch_ready)
-        self.assertFalse(evaluation.build_bridge.ready)
-        self.assertIsNone(evaluation.build_plan_candidate)
+        self.assertFalse(evaluation.build_plan_result.bridge.watch_ready)
+        self.assertFalse(evaluation.build_plan_result.bridge.ready)
+        self.assertIsNone(evaluation.build_plan_result.candidate)
         self.assertTrue(all(diagnostic.code == "watch-root-conflict" for diagnostic in evaluation.watch_plan.diagnostics))
 
     def test_watch_target_rejects_more_than_32_watch_roots_with_clear_limit_error(self) -> None:

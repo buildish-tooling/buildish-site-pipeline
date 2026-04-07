@@ -19,7 +19,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from apache_buildish_site_pipeline.models.authored.site_catalog import (
     ArtifactLifecycleConfig,
@@ -343,6 +343,36 @@ class PlanToBuildBridge:
 
 
 @dataclass(frozen=True, slots=True)
+class EffectiveBuildPlanResult:
+    """Explicit planning-to-staging handoff result for one planning pass."""
+
+    bridge: PlanToBuildBridge
+    candidate: EffectiveBuildPlan | None
+
+    def __post_init__(self) -> None:
+        """Reject contradictory states where readiness disagrees with the payload."""
+
+        if self.bridge.ready != (self.candidate is not None):
+            raise ValueError(
+                "Build-plan readiness must agree with candidate availability"
+            )
+
+    @classmethod
+    def unavailable(cls, *, bridge: PlanToBuildBridge) -> Self:
+        """Build a blocked result with no staging candidate."""
+
+        return cls(bridge=bridge, candidate=None)
+
+    @classmethod
+    def available(
+        cls, *, bridge: PlanToBuildBridge, candidate: EffectiveBuildPlan
+    ) -> Self:
+        """Build a ready result with one staging candidate."""
+
+        return cls(bridge=bridge, candidate=candidate)
+
+
+@dataclass(frozen=True, slots=True)
 class PlanningEvaluation:
     """Whole planning pass result before later validation and staging."""
 
@@ -352,6 +382,5 @@ class PlanningEvaluation:
     selected_versions: SelectedVersionSet
     local_inputs: tuple[ResolvedLocalInput, ...]
     watch_plan: WatchInputPlan | None
-    build_bridge: PlanToBuildBridge
+    build_plan_result: EffectiveBuildPlanResult
     diagnostics: tuple[PipelineDiagnosticEntry, ...]
-    build_plan_candidate: EffectiveBuildPlan | None

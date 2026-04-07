@@ -24,6 +24,7 @@ from apache_buildish_site_pipeline.models.enums import (
 from apache_buildish_site_pipeline.staging.types import EffectiveBuildPlan
 
 from .types import (
+    EffectiveBuildPlanResult,
     PlanToBuildBridge,
     ResolvedLocalInput,
     ResolvedSiteConfig,
@@ -39,7 +40,7 @@ def build_effective_build_plan(
     selected_versions: SelectedVersionSet,
     local_inputs: tuple[ResolvedLocalInput, ...],
     watch_plan: WatchInputPlan | None,
-) -> tuple[PlanToBuildBridge, EffectiveBuildPlan | None]:
+) -> EffectiveBuildPlanResult:
     """Build the staging handoff document when planning is usable."""
 
     blocking_inputs = tuple(
@@ -57,10 +58,10 @@ def build_effective_build_plan(
         watch_ready=watch_ready,
     )
     if not bridge.ready:
-        return bridge, None
-    return (
-        bridge,
-        EffectiveBuildPlan(
+        return EffectiveBuildPlanResult.unavailable(bridge=bridge)
+    return EffectiveBuildPlanResult.available(
+        bridge=bridge,
+        candidate=EffectiveBuildPlan(
             target=target,
             workspace_root=site.workspace_root,
             site=site,

@@ -23,10 +23,9 @@ from .collector import DiagnosticCollector
 from .phases import collect_evaluation_artifacts
 from .summary import build_check_summary, build_run_status
 from .types import (
-    BlockingCondition,
     EvaluationRequest,
     EvaluationResult,
-    StageGateDecision,
+    StageReadinessResult,
 )
 
 from apache_buildish_site_pipeline.planning.types import PlanningEvaluation
@@ -50,28 +49,18 @@ def run_evaluation(
     diagnostics = collector.build()
     counts = collector.counts()
     run_status = build_run_status(counts)
-    blocking_conditions = tuple(
-        BlockingCondition(
-            code=diagnostic.code,
-            message=diagnostic.message,
-            component_slug=diagnostic.component_slug,
-            artifact_key=diagnostic.artifact_key,
-            target_id=diagnostic.target_id,
-        )
-        for diagnostic in diagnostics
-        if diagnostic.severity is DiagnosticSeverity.ERROR
+    stage_readiness = StageReadinessResult.from_diagnostics(
+        diagnostics=diagnostics,
+        build_plan_candidate=build_plan_result.candidate,
     )
-    stage_allowed = not blocking_conditions and build_plan_result.candidate is not None
     return EvaluationResult(
         request=request,
         planning=planning,
         diagnostics=diagnostics,
         counts=counts,
         run_status=run_status,
-        stage_gate=StageGateDecision(
-            allowed=stage_allowed, blocking_conditions=blocking_conditions
-        ),
-        build_plan=build_plan_result.candidate if stage_allowed else None,
+        stage_gate=stage_readiness.gate,
+        build_plan=stage_readiness.build_plan,
         artifacts=artifacts,
         check_summary=build_check_summary(
             counts=counts,

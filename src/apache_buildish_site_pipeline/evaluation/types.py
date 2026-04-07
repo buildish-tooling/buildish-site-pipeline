@@ -19,8 +19,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
+from typing import Self
 
-from apache_buildish_site_pipeline.models.enums import CheckFailureThreshold, RunStatus
+from apache_buildish_site_pipeline.models.enums import (
+    CheckFailureThreshold,
+    DiagnosticSeverity,
+    RunStatus,
+)
 from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
     CheckSummary,
     PipelineDiagnosticEntry,
@@ -132,6 +137,69 @@ class StageGateDecision:
 
     allowed: bool
     blocking_conditions: tuple[BlockingCondition, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class StageReadinessResult:
+    """Explicit evaluation-to-staging handoff once diagnostics are finalized."""
+
+    gate: StageGateDecision
+    build_plan: EffectiveBuildPlan | None
+
+    def __post_init__(self) -> None:
+        """Reject contradictory states where gating and plan availability disagree."""
+
+        if self.gate.allowed != (self.build_plan is not None):
+            raise ValueError(
+                "Stage-gate allowance must agree with build-plan availability"
+            )
+        if self.gate.allowed and self.gate.blocking_conditions:
+            raise ValueError("Allowed stage gates may not carry blocking conditions")
+
+    @classmethod
+    def blocked(cls, *, blocking_conditions: tuple[BlockingCondition, ...]) -> Self:
+        """Build a blocked handoff with no staging candidate."""
+
+        return cls(
+            gate=StageGateDecision(
+                allowed=False,
+                blocking_conditions=blocking_conditions,
+            ),
+            build_plan=None,
+        )
+
+    @classmethod
+    def available(cls, *, build_plan: EffectiveBuildPlan) -> Self:
+        """Build a ready handoff with one staging candidate."""
+
+        return cls(
+            gate=StageGateDecision(allowed=True, blocking_conditions=()),
+            build_plan=build_plan,
+        )
+
+    @classmethod
+    def from_diagnostics(
+        cls,
+        *,
+        diagnostics: tuple[PipelineDiagnosticEntry, ...],
+        build_plan_candidate: EffectiveBuildPlan | None,
+    ) -> Self:
+        """Normalize finalized diagnostics into one stage handoff contract."""
+
+        blocking_conditions = tuple(
+            BlockingCondition(
+                code=diagnostic.code,
+                message=diagnostic.message,
+                component_slug=diagnostic.component_slug,
+                artifact_key=diagnostic.artifact_key,
+                target_id=diagnostic.target_id,
+            )
+            for diagnostic in diagnostics
+            if diagnostic.severity is DiagnosticSeverity.ERROR
+        )
+        if build_plan_candidate is None or blocking_conditions:
+            return cls.blocked(blocking_conditions=blocking_conditions)
+        return cls.available(build_plan=build_plan_candidate)
 
 
 @dataclass(frozen=True, slots=True)

@@ -20,13 +20,28 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
+from typing import Any, cast
 from unittest.mock import patch
 
 from apache_buildish_site_pipeline.evaluation.collector import DiagnosticCollector
 from apache_buildish_site_pipeline.evaluation.limits import _count_watch_entries, validate_limits
 from apache_buildish_site_pipeline.evaluation.summary import build_check_summary, build_run_status
-from apache_buildish_site_pipeline.evaluation.types import DiagnosticCounts, PageInventory, RouteInventory
-from apache_buildish_site_pipeline.models.enums import CheckFailureThreshold, RunStatus
+from apache_buildish_site_pipeline.evaluation.types import (
+    BlockingCondition,
+    DiagnosticCounts,
+    PageInventory,
+    RouteInventory,
+    StageGateDecision,
+    StageReadinessResult,
+)
+from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
+    PipelineDiagnosticEntry,
+)
+from apache_buildish_site_pipeline.models.enums import (
+    CheckFailureThreshold,
+    DiagnosticSeverity,
+    RunStatus,
+)
 
 
 class SummaryAndLimitsTests(unittest.TestCase):
@@ -52,6 +67,60 @@ class SummaryAndLimitsTests(unittest.TestCase):
 
         self.assertFalse(summary.passed)
         self.assertEqual(summary.status, RunStatus.WARNINGS)
+
+    def test_stage_readiness_result_normalizes_stage_gate_contract(self) -> None:
+        build_plan = cast(Any, object())
+
+        ready = StageReadinessResult.from_diagnostics(
+            diagnostics=(),
+            build_plan_candidate=build_plan,
+        )
+        blocked = StageReadinessResult.from_diagnostics(
+            diagnostics=(
+                PipelineDiagnosticEntry(
+                    severity=DiagnosticSeverity.ERROR,
+                    code="route-bad",
+                    message="bad route",
+                ),
+            ),
+            build_plan_candidate=build_plan,
+        )
+        unavailable = StageReadinessResult.from_diagnostics(
+            diagnostics=(),
+            build_plan_candidate=None,
+        )
+
+        self.assertTrue(ready.gate.allowed)
+        self.assertIs(ready.build_plan, build_plan)
+        self.assertFalse(blocked.gate.allowed)
+        self.assertEqual(blocked.gate.blocking_conditions[0].code, "route-bad")
+        self.assertIsNone(blocked.build_plan)
+        self.assertFalse(unavailable.gate.allowed)
+        self.assertEqual(unavailable.gate.blocking_conditions, ())
+
+    def test_stage_readiness_result_rejects_contradictory_states(self) -> None:
+        with self.assertRaisesRegex(
+            ValueError,
+            "allowance must agree with build-plan availability",
+        ):
+            StageReadinessResult(
+                gate=StageGateDecision(allowed=True, blocking_conditions=()),
+                build_plan=None,
+            )
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "may not carry blocking conditions",
+        ):
+            StageReadinessResult(
+                gate=StageGateDecision(
+                    allowed=True,
+                    blocking_conditions=(
+                        BlockingCondition(code="bad", message="bad"),
+                    ),
+                ),
+                build_plan=cast(Any, object()),
+            )
 
     def test_validate_limits_emits_diagnostics_for_each_exceeded_metric(self) -> None:
         collector = DiagnosticCollector()

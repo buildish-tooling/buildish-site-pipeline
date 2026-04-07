@@ -20,19 +20,10 @@ from apache_buildish_site_pipeline.models.enums import DiagnosticSeverity
 
 from . import diagnostic_codes
 from .collector import DiagnosticCollector
-from .inputs import validate_inputs
-from .limits import validate_limits
-from .localization import validate_localization
-from .page_scan import validate_page_scan
-from .providers import validate_providers
-from .publication import validate_publication
-from .reference_index import validate_references
-from .routes import validate_routes
-from .staged_links import validate_staged_links
+from .phases import collect_evaluation_artifacts
 from .summary import build_check_summary, build_run_status
 from .types import (
     BlockingCondition,
-    EvaluationArtifacts,
     EvaluationRequest,
     EvaluationResult,
     StageGateDecision,
@@ -48,28 +39,7 @@ def run_evaluation(
 
     build_plan_result = planning.build_plan_result
     collector = DiagnosticCollector()
-    publication_index = validate_publication(planning, collector)
-    validate_references(
-        planning=planning,
-        publication_targets=publication_index.targets,
-        collector=collector,
-    )
-    route_inventory = validate_routes(planning, publication_index, collector)
-    page_inventory = validate_page_scan(planning, collector)
-    validate_localization(
-        planning=planning, page_scan=page_inventory, collector=collector
-    )
-    validate_staged_links(
-        planning=planning, page_inventory=page_inventory, collector=collector
-    )
-    validate_providers(planning, collector)
-    validate_inputs(planning, collector)
-    validate_limits(
-        planning=planning,
-        route_inventory=route_inventory,
-        page_inventory=page_inventory,
-        collector=collector,
-    )
+    artifacts = collect_evaluation_artifacts(planning=planning, collector=collector)
     if build_plan_result.candidate is None:
         collector.add(
             severity=DiagnosticSeverity.ERROR,
@@ -102,11 +72,7 @@ def run_evaluation(
             allowed=stage_allowed, blocking_conditions=blocking_conditions
         ),
         build_plan=build_plan_result.candidate if stage_allowed else None,
-        artifacts=EvaluationArtifacts(
-            publication_index=publication_index,
-            route_inventory=route_inventory,
-            page_inventory=page_inventory,
-        ),
+        artifacts=artifacts,
         check_summary=build_check_summary(
             counts=counts,
             fail_on_severity=request.fail_on_severity,

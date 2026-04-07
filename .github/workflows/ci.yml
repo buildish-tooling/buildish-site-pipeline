@@ -32,7 +32,6 @@ jobs:
     name: Detect relevant changes
     runs-on: ubuntu-latest
     outputs:
-      check: ${{ steps.filter.outputs.check }}
       container_image: ${{ steps.filter.outputs.container_image }}
     steps:
       - name: Check out repository

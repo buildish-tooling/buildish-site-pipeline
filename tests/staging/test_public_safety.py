@@ -70,7 +70,7 @@ class PublicSafetyTests(unittest.TestCase):
         self.assertEqual(sanitized[0].details["count"], 7)
         self.assertEqual(sanitized[0].details["items"], [True, 3, {"note": None}])
 
-    def test_preserves_absolute_paths_for_non_local_field_names(self) -> None:
+    def test_preserves_absolute_paths_for_explicit_public_route_fields(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             workspace_root = Path(tempdir)
             sanitized = sanitize_public_diagnostics(
@@ -93,6 +93,32 @@ class PublicSafetyTests(unittest.TestCase):
             "/srv/public/mirror/index.json",
         )
         self.assertEqual(sanitized[0].details["relativeHint"], "docs/index.md")
+
+    def test_redacts_absolute_paths_for_unknown_field_names(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            sanitized = sanitize_public_diagnostics(
+                (
+                    PipelineDiagnosticEntry(
+                        severity=DiagnosticSeverity.WARNING,
+                        code="demo.warning",
+                        message="demo",
+                        details={
+                            "unexpectedPath": "/srv/private/build/root/output.json",
+                            "nested": {
+                                "otherPath": "/srv/private/render-cache/result.json"
+                            },
+                        },
+                    ),
+                ),
+                workspace_root=workspace_root,
+            )
+
+        self.assertEqual(sanitized[0].details["unexpectedPath"], REDACTED_LOCAL_PATH)
+        self.assertEqual(
+            sanitized[0].details["nested"]["otherPath"],
+            REDACTED_LOCAL_PATH,
+        )
 
     def test_public_source_path_returns_repo_relative_path_only_for_workspace_sources(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:

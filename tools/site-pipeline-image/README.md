@@ -22,6 +22,21 @@ The image intentionally stays renderer-agnostic. It installs the extracted Pytho
 
 That split keeps the image useful for container-first CI pipelines while letting consumers build their own derived images with renderer-specific tooling on top.
 
+## Runtime user contract
+
+The published runtime image now starts as a dedicated non-root `site-pipeline`
+user. That reduces the blast radius for normal CLI execution and avoids
+creating root-owned files in writable container-local paths.
+
+Consumers that build derived images can still switch to `USER root` for package
+installation or other privileged image-build steps, then switch back to
+`USER site-pipeline` for the final runtime layer.
+
+When a host workspace is bind-mounted at `/workspace`, the usual container file
+permission rules still apply. If a downstream environment needs a specific
+numeric UID/GID mapping, it can continue to override the runtime user with the
+container engine's normal `--user` option.
+
 ## Local multi-platform image build script
 
 Use `build-image.sh` for the actual image automation.

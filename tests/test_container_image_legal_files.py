@@ -24,9 +24,28 @@ class ContainerImageLegalFilesTests(unittest.TestCase):
 
         self.assertIn("COPY DISCLAIMER ./DISCLAIMER", containerfile_text)
         self.assertIn(
-            "COPY dist-release-legal/LICENSE dist-release-legal/NOTICE ./dist-release-legal/",
+            "COPY dist-release-legal/LICENSE dist-release-legal/NOTICE ./",
             containerfile_text,
         )
+
+    def test_containerfile_runs_as_dedicated_non_root_runtime_user(self) -> None:
+        containerfile_text = Path("tools/site-pipeline-image/Containerfile").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("groupadd --system --gid 10001 site-pipeline", containerfile_text)
+        self.assertIn(
+            "useradd --system --uid 10001 --gid site-pipeline --create-home --home-dir /home/site-pipeline site-pipeline",
+            containerfile_text,
+        )
+        self.assertIn(
+            "chown -R site-pipeline:site-pipeline /home/site-pipeline /workspace",
+            containerfile_text,
+        )
+        self.assertIn("HOME=/home/site-pipeline", containerfile_text)
+        self.assertIn("PYTHONDONTWRITEBYTECODE=1", containerfile_text)
+        self.assertIn("WORKDIR /workspace", containerfile_text)
+        self.assertIn("USER site-pipeline", containerfile_text)
 
     def test_final_release_legal_files_exist(self) -> None:
         self.assertTrue(Path("DISCLAIMER").is_file())

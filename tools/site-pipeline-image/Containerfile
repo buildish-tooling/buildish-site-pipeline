@@ -26,10 +26,17 @@ COPY README.md pyproject.toml uv.lock main.py ./
 COPY src ./src
 RUN uv sync --frozen --no-dev --no-editable \
     && uv pip install --python /opt/site-pipeline/.venv/bin/python --no-deps .
+RUN groupadd --system --gid 10001 site-pipeline \
+    && useradd --system --uid 10001 --gid site-pipeline --create-home --home-dir /home/site-pipeline site-pipeline \
+    && mkdir -p /workspace \
+    && chown -R site-pipeline:site-pipeline /home/site-pipeline /workspace
 COPY DISCLAIMER ./DISCLAIMER
 COPY dist-release-legal/LICENSE dist-release-legal/NOTICE ./
 
-ENV PATH=/opt/site-pipeline/.venv/bin:$PATH
+ENV PATH=/opt/site-pipeline/.venv/bin:$PATH \
+    HOME=/home/site-pipeline \
+    PYTHONDONTWRITEBYTECODE=1
 WORKDIR /workspace
+USER site-pipeline
 ENTRYPOINT ["site-pipeline"]
 CMD ["--help"]

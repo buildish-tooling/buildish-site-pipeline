@@ -39,6 +39,20 @@ _LOCAL_DETAIL_FIELDS = frozenset(
         "workspaceroot",
     },
 )
+_PUBLIC_ABSOLUTE_DETAIL_FIELDS = frozenset(
+    {
+        # These detail keys represent public route/path contracts rather than
+        # machine-local filesystem locations. Keep this list intentionally small
+        # and add a focused regression test whenever a new field is allowlisted.
+        "canonicalpath",
+        "frompath",
+        "href",
+        "mirrorpath",
+        "path",
+        "resolvedpath",
+        "sourceroute",
+    },
+)
 
 
 def sanitize_public_diagnostics(
@@ -149,7 +163,9 @@ def _sanitize_detail_string(
         return normalized_candidate.relative_to(workspace_root).as_posix()
     if field_name is not None and field_name.lower() in _LOCAL_DETAIL_FIELDS:
         return REDACTED_LOCAL_PATH
-    return value
+    if field_name is not None and field_name.lower() in _PUBLIC_ABSOLUTE_DETAIL_FIELDS:
+        return value
+    return REDACTED_LOCAL_PATH
 
 
 def _is_within_private_roots(path: Path, private_roots: tuple[Path, ...]) -> bool:

@@ -34,10 +34,8 @@ from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import
 )
 from apache_buildish_site_pipeline.staging.aggregates import _build_content_index_entries, _write_aggregate_files
 from apache_buildish_site_pipeline.staging.coordinator import (
-    _context_wire,
     _run_worker_subprocess,
     _seed_next_stage_root,
-    _worker_spec_for_unit,
     cleanup_after_publication,
     materialize_stage_tree,
     publish_stage,
@@ -45,6 +43,7 @@ from apache_buildish_site_pipeline.staging.coordinator import (
 )
 from apache_buildish_site_pipeline.staging.ownership import OwnedUnit, OwnedUnitKind, build_owned_units
 from apache_buildish_site_pipeline.staging.public_safety import REDACTED_LOCAL_PATH, sanitize_public_diagnostics
+from apache_buildish_site_pipeline.staging.spec_builder import build_context_wire, build_worker_spec_for_unit
 from apache_buildish_site_pipeline.staging import worker_entrypoint
 from apache_buildish_site_pipeline.staging.worker_entrypoint import execute_worker_spec
 from apache_buildish_site_pipeline.staging.worker_protocol import StagedPageContributionWire, WorkerResultWire, WorkerSpecWire
@@ -105,9 +104,10 @@ class StagingWorkerTests(unittest.TestCase):
             layout = _work_layout(workspace_root)
             unit = self._component_unit(request)
 
-            spec = _worker_spec_for_unit(
+            spec = build_worker_spec_for_unit(
                 unit=unit,
-                request=request,
+                workspace_root=request.build_plan.workspace_root,
+                site_components=request.build_plan.site.components,
                 run_workspace=RunWorkspace(workspace_root=workspace_root, layout=layout),
             )
 
@@ -507,12 +507,12 @@ class StagingWorkerTests(unittest.TestCase):
                 ),
             )
 
-            candidate_wire = _context_wire(
+            candidate_wire = build_context_wire(
                 component=component,
                 owned_context=candidate_owned_context,
                 layout=layout,
             )
-            named_ref_wire = _context_wire(
+            named_ref_wire = build_context_wire(
                 component=component,
                 owned_context=named_ref_owned_context,
                 layout=layout,

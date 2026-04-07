@@ -45,6 +45,6 @@ metadata.
 
 ## Read this next
 
-- [inspect staged output and routes](../inspect-staged-output-and-routes/)
-- [../concepts/staged-output-and-consumers.md](../../concepts/staged-output-and-consumers/)
+- [inspect staged output and routes](inspect-staged-output-and-routes/)
+- [../concepts/staged-output-and-consumers.md](../concepts/staged-output-and-consumers/)
 - [staged output contract](/components/site-pipeline/development/reference/staged-output-contract/)

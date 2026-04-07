@@ -229,7 +229,7 @@ The stage contract follows these rules:
 
 The typed definitions for this contract live in:
 
-- [pipeline-model-schema-reference.md](../pipeline-model-schema-reference/)
+- [pipeline-model-schema-reference.md](pipeline-model-schema-reference/)
    - `StageManifest`
    - `StageRoots`
    - `StageDataFiles`
@@ -237,8 +237,8 @@ The typed definitions for this contract live in:
 
 ## Read next
 
-- [api-contract.md](../api-contract/) for the stable invocation and output
+- [api-contract.md](api-contract/) for the stable invocation and output
    boundary
 - [build architecture](/architecture/build-architecture/) for build/watch execution shape
-- [security-and-trust-model.md](../security-and-trust-model/) for content-safety,
+- [security-and-trust-model.md](security-and-trust-model/) for content-safety,
    path-safety, and trust-boundary rules

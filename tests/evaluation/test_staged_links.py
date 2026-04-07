@@ -282,6 +282,48 @@ Inline example: `<a href="missing/">Missing</a>`
         self.assertEqual(len(diagnostics), 1)
         self.assertEqual(diagnostics[0].details["occurrenceIndex"], 0)
 
+    def test_section_index_pages_resolve_relative_targets_from_directory_root(self) -> None:
+        collector = DiagnosticCollector()
+        planning = self._planning(
+            mode=LinkCheckMode.DIRECTORY,
+            check_root_absolute=False,
+        )
+        inventory = PageInventory(
+            pages=(
+                self._page("guide/_index.md", "[Concepts](../concepts/)"),
+                self._page("concepts/_index.md", "Section body"),
+            )
+        )
+
+        validate_staged_links(
+            planning=planning,
+            page_inventory=inventory,
+            collector=collector,
+        )
+
+        self.assertEqual(collector.build(), ())
+
+    def test_file_html_mode_treats_section_index_pages_as_index_html(self) -> None:
+        collector = DiagnosticCollector()
+        planning = self._planning(
+            mode=LinkCheckMode.FILE_HTML,
+            check_root_absolute=False,
+        )
+        inventory = PageInventory(
+            pages=(
+                self._page("guide/_index.md", "[Concepts](../concepts/index.html)"),
+                self._page("concepts/_index.md", "Section body"),
+            )
+        )
+
+        validate_staged_links(
+            planning=planning,
+            page_inventory=inventory,
+            collector=collector,
+        )
+
+        self.assertEqual(collector.build(), ())
+
     def test_asciidoc_link_syntax_is_checked(self) -> None:
         collector = DiagnosticCollector()
         planning = self._planning(mode=LinkCheckMode.FILE_HTML, check_root_absolute=False)

@@ -208,15 +208,15 @@ set is not yet consumable enough.
 ## Read next
 
 - [api contract](/components/site-pipeline/development/reference/api-contract/) for the public CLI boundary
-- [../architecture/source-resolution-and-materialization.md](../../architecture/source-resolution-and-materialization/)
+- [../architecture/source-resolution-and-materialization.md](../architecture/source-resolution-and-materialization/)
   for planning inputs and materialized-source boundaries
 - [validation and check](/components/site-pipeline/development/reference/validation-and-check/) for shared validation
   semantics and `site-pipeline check`
-- [../architecture/build-architecture.md](../../architecture/build-architecture/) for coordinator/worker execution
+- [../architecture/build-architecture.md](../architecture/build-architecture/) for coordinator/worker execution
   structure and scaling shape
 - [staged output contract](/components/site-pipeline/development/reference/staged-output-contract/) for the renderer-visible
   stage contract
 - [security and trust model](/components/site-pipeline/development/reference/security-and-trust-model/) for path, URL, and
   trust-boundary requirements
-- [user-facing-docs-strategy.md](../user-facing-docs-strategy/) for the planned
+- [user-facing-docs-strategy.md](user-facing-docs-strategy/) for the planned
   user-facing documentation site shape

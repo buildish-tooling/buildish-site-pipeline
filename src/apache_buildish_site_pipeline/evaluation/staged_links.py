@@ -113,7 +113,10 @@ def _page_public_path(page: InventoryPage, *, mode: LinkCheckMode) -> str:
 
 
 def _file_html_public_path(base_public_path: str, relative_path: Path) -> str:
-    html_relative = relative_path.with_suffix(".html").as_posix().strip("/")
+    if relative_path.stem in {"index", "_index"}:
+        html_relative = relative_path.parent.joinpath("index.html").as_posix().strip("/")
+    else:
+        html_relative = relative_path.with_suffix(".html").as_posix().strip("/")
     normalized_base = "/" + base_public_path.strip("/") if base_public_path.strip("/") else "/"
     if not html_relative:
         return f"{normalized_base.rstrip('/')}/index.html" if normalized_base != "/" else "/index.html"
@@ -122,7 +125,7 @@ def _file_html_public_path(base_public_path: str, relative_path: Path) -> str:
 
 def _resolution_base_path(*, page: InventoryPage, mode: LinkCheckMode) -> str:
     current_path = _page_public_path(page, mode=mode)
-    if mode is LinkCheckMode.DIRECTORY and Path(page.routed_relative_path).stem == "index":
+    if mode is LinkCheckMode.DIRECTORY and Path(page.routed_relative_path).stem in {"index", "_index"}:
         return current_path if current_path == "/" else f"{current_path.rstrip('/')}/"
     return current_path
 

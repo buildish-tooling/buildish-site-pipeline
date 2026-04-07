@@ -214,9 +214,9 @@ Security is shared across layers:
 
 ## Read next
 
-- [flexible-component-publication.md](../flexible-component-publication/) for the
+- [flexible-component-publication.md](flexible-component-publication/) for the
    publication model and validation rules
-- [staged-output-contract.md](../staged-output-contract/) for the staged-tree
+- [staged-output-contract.md](staged-output-contract/) for the staged-tree
    contract
 - [source resolution and materialization](/architecture/source-resolution-and-materialization/)
    for local input and cache boundaries

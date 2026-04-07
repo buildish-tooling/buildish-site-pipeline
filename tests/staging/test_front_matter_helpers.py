@@ -222,6 +222,12 @@ class FrontMatterHelpersTests(unittest.TestCase):
             "https://docs.example.org/spark/docs/guide",
         )
 
+    def test_public_page_path_treats_section_index_like_directory_root(self) -> None:
+        self.assertEqual(
+            public_page_path("/spark/docs/", Path("guide/_index.md")),
+            "/spark/docs/guide",
+        )
+
     def test_public_page_path_treats_asciidoc_like_markdown_for_pretty_routes(self) -> None:
         self.assertEqual(
             public_page_path("/spark/docs/", Path("guide/install.adoc")),

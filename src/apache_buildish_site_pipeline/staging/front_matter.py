@@ -609,7 +609,7 @@ def public_page_path(base_path: str, relative_path: Path) -> str:
 
     normalized_relative = relative_path.as_posix().strip("/")
     stem = relative_path.stem
-    if stem == "index":
+    if stem in {"index", "_index"}:
         parent = relative_path.parent.as_posix().strip(".")
         return _join_public_path(base_path, parent)
     if strips_suffix_in_pretty_route(relative_path):

@@ -399,8 +399,8 @@ logic back into the pipeline or hard-coding public URLs in page content.
 
 ## Read this next
 
-- [Inspect staged output and routes](../inspect-staged-output-and-routes/)
-- [Staged output and consumers](../../concepts/staged-output-and-consumers/)
-- [Create a tiny site](../create-a-tiny-site/)
-- [Staged output contract](../../development/reference/staged-output-contract/)
-- [Pipeline model schema reference](../../development/reference/pipeline-model-schema-reference/)
+- [Inspect staged output and routes](inspect-staged-output-and-routes/)
+- [Staged output and consumers](../concepts/staged-output-and-consumers/)
+- [Create a tiny site](create-a-tiny-site/)
+- [Staged output contract](../development/reference/staged-output-contract/)
+- [Pipeline model schema reference](../development/reference/pipeline-model-schema-reference/)

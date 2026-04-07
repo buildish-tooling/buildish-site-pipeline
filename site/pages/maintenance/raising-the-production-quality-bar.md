@@ -22,94 +22,54 @@ limitations under the License.
 
 ## Current assessment
 
-This codebase is no longer at the earlier "good but still obviously duplicated"
-stage. Recent work already landed some of the highest-value cleanup:
+This codebase is already in the "strong" range. The main remaining gap is no
+longer broad correctness or missing validation. It is making the current design
+easier to keep correct, easier to review, and easier for new maintainers to
+understand without reading several modules side by side.
 
-- thinner CLI invocation orchestration
-- typed artifact identities in reference lookups
-- one canonical symlink-ancestry trust helper
-- one shared public-path helper reused by planning, staging, and evaluation
-- explicit result objects for watch follow-up cycles
-- better maintainer-facing docs around shared public-path behavior
-
-That means the remaining gap to an excellent rating is narrower now. It is less
-about broad cleanup themes and more about finishing a few specific shape
-improvements across production code, tests, and docs.
+The current architecture already relies on explicit contracts between planning,
+evaluation, staging, and watch. The next step is to make the most important
+reader paths just as clear as the runtime paths.
 
 ## What still needs to change in production code
 
-### 1. Thin the remaining heavy coordinators
+### 1. Keep shrinking the remaining heavy orchestration modules
 
-The biggest production-code gap is not general correctness. It is that a few
-important entry points still carry too much orchestration in one place.
+The largest production-code hotspot is still `src/apache_buildish_site_pipeline/evaluation/execution.py`.
+It owns important decisions, but it also still carries enough phase ordering,
+policy application, and report assembly that review work is heavier than it
+should be.
 
-The main examples are:
+The same pattern can still appear in a few adjacent modules, but evaluation is
+the clearest place where the excellent-bar target is still visible.
 
-- `src/apache_buildish_site_pipeline/staging/coordinator.py`
-- `src/apache_buildish_site_pipeline/planning/__init__.py`
-- `src/apache_buildish_site_pipeline/evaluation/execution.py`
-
-These modules are understandable, but they still combine phase ordering,
-boundary decisions, result assembly, and failure cleanup closely enough that
-future review work will stay heavier than it needs to be.
-
-The excellent-bar target is:
+The target remains:
 
 - top-level functions that mostly wire phases together
 - phase-local result objects instead of ad hoc handoff shapes
 - decision helpers that separate policy from filesystem mutation or report
   assembly
 
-### 2. Finish replacing mixed return shapes with explicit result models
+### 2. Keep internal boundaries small and explicit
 
-The code is better here than before, but one notable example still stands out:
-`planning.build_plan.build_effective_build_plan()` returns
-`tuple[PlanToBuildBridge, EffectiveBuildPlan | None]`.
+The codebase now depends on a small number of high-value internal contracts:
 
-That is still a mixed "status plus optional payload" shape. It works, but it is
-exactly the kind of contract that gets misread later.
+- planning outputs that evaluation can trust
+- evaluation outputs that staging can publish safely
+- worker results and aggregate manifests that staging can combine deterministically
 
-The excellent-bar target is:
-
-- one named result type per important transition
-- no important branch encoded as positional tuple meaning
-- constructors that make the allowed states obvious to readers
-
-### 3. Add a few deliberate internal impossibility checks
-
-Edge validation is strong already. The next improvement is to fail louder when
-internal layers contradict each other after validation has already succeeded.
-
-The best candidates are the boundaries between:
-
-- planning and build-plan handoff
-- publication index and route inventory assembly
-- worker results and aggregate-file assembly
-
-These checks should not duplicate user-input validation. They should assert
-maintainer-facing invariants that "must already be true here".
-
-### 4. Remove compatibility fossils once they stop protecting a real boundary
-
-One good example is `staging.worker_protocol.WorkerResultWire`, which still keeps
-legacy flat counters and a `normalized()` compatibility path next to the newer
-`output_stats` shape.
-
-If older worker payloads are no longer a real supported boundary, the excellent
-version of the code should remove that compatibility baggage instead of carrying
-it forever.
-
-The rule here is simple: keep defensive compatibility code only when it protects
-a real, documented boundary that still exists.
+The excellent-bar target is to keep those boundaries narrow, typed, and obvious
+to readers. New compatibility branches, fallback shapes, or hidden implicit
+assumptions should only exist when they protect a real documented boundary.
 
 ## What still needs to change in the test codebase
 
-### 1. Put more weight on scenario tests that cross layers
+### 1. Put more weight on canonical scenario tests that cross layers
 
 The current test suite is already strong in focused unit coverage, and it also
 has meaningful integration-style coverage for build and watch flows.
 
-What is still thinner than ideal is end-to-end scenario coverage for one feature
+What is still thinner than ideal is feature-level scenario coverage for one rule
 that should stay consistent across planning, evaluation, staging, and watch.
 
 The excellent-bar target is a small set of canonical workspace scenarios that
@@ -138,9 +98,8 @@ example packets that readers are most likely to copy.
 
 ### 1. Keep the larger getting-started pages as concrete as the tiny-site docs
 
-The docs root, concepts pages, and tiny-site onboarding are in much better shape
-than before. The remaining reader-facing gap is that the larger size-band pages
-are still more abstract than the tiny-site material.
+The remaining reader-facing gap is that the larger size-band pages are still
+more abstract than the tiny-site material.
 
 For example, `site/pages/getting-started/tiny.md` already gives readers a small
 workspace shape, a catalog example, commands to run, and staged files to inspect.
@@ -156,13 +115,13 @@ The excellent-bar target is for each size-band page to show:
 
 ### 2. Add more maintainer-facing ownership notes in heavy internal modules
 
-The maintenance pages are stronger now, but a few implementation-heavy modules
-still rely too much on readers inferring boundaries from code alone.
+A few implementation-heavy modules still rely too much on readers inferring
+boundaries from code alone.
 
 The highest-value doc additions are short module-level notes for places like:
 
-- `staging/coordinator.py`
 - `evaluation/execution.py`
+- `staging/aggregates.py`
 - `planning/build_plan.py`
 
 Each note should explain:
@@ -177,8 +136,9 @@ Each note should explain:
 An excellent documentation bar is not only about adding new pages. It is also
 about removing stale maintainer advice quickly.
 
-If a refactor theme has already landed, the maintenance notes should stop talking
-about it as open work and instead describe the smaller remaining gap.
+When a refactor theme no longer reflects the live codebase, the maintenance notes
+should stop describing it as active work and instead describe the current
+remaining gap.
 
 This page exists partly to enforce that rule.
 
@@ -186,12 +146,13 @@ This page exists partly to enforce that rule.
 
 If maintainers only take four next actions, start here:
 
-1. replace `build_effective_build_plan()` with one explicit result object
-2. split the remaining heavy orchestration in `staging/coordinator.py`
-3. add two or three cross-layer scenario tests that assert one rule through
-   planning, evaluation, staging, and watch
-4. upgrade `medium.md` and `large.md` with real example packets and expected
+1. tie one high-value documentation example to reusable fixture-backed output
+2. upgrade `medium.md` and `large.md` with real example packets and expected
    staged outputs
+3. add one short ownership-and-invariants note to `evaluation/execution.py` or
+   another implementation-heavy module
+4. add two or three more cross-layer scenario tests that assert one rule through
+   planning, evaluation, staging, and watch
 
 Those four changes would do the most to move the repo from "already strong" to
 "excellent and easier to keep excellent".

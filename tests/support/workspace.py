@@ -53,6 +53,9 @@ def _write_workspace_inputs(
     if topology == "rich_lifecycle":
         _write_rich_lifecycle_workspace_inputs(workspace_root, with_content_file=with_content_file)
         return
+    if topology == "grouped_large":
+        _write_grouped_large_workspace_inputs(workspace_root, with_content_file=with_content_file)
+        return
     raise AssertionError(f"Unknown test workspace topology: {topology}")
 
 
@@ -522,6 +525,155 @@ components:
         )
         (workspace_root / "components/runtime/docs/candidates/4.2.0-rc2/index.md").write_text(
             "candidate 4.2.0-rc2\n",
+            encoding="utf-8",
+        )
+
+
+def _write_grouped_large_workspace_inputs(
+    workspace_root: Path, *, with_content_file: bool
+) -> None:
+    (workspace_root / "site").mkdir(parents=True, exist_ok=True)
+    (workspace_root / "site/catalog.yaml").write_text(
+        """
+schemaVersion: 1
+defaults:
+  docsRoot: docs
+  publication:
+    origin: docs
+site: {}
+origins:
+  docs:
+    baseUrl: https://docs.example.org
+sources:
+  spark:
+    localDir: components/spark
+  operator:
+    localDir: components/operator
+groups:
+  streaming:
+    displayName: Streaming
+    pathPrefix: /platform/
+components:
+  - slug: spark
+    group: streaming
+    content:
+      source: spark
+    publication:
+      pathSegment: spark
+    compatibility:
+      - subjectRef: component:spark
+        targetRef: component:spark-operator
+        relation: testedWith
+        notes: Spark runtime docs assume the matching operator line.
+    artifacts:
+      - key: runtime
+        source: spark
+        versioning:
+          developmentRef: main
+          tagPattern: ^v.*$
+        publicationSelection:
+          development: true
+          releases:
+            mode: latestPerLine
+        lifecycle:
+          releaseLines:
+            - key: '4.0'
+              maintenanceRef: maintenance/4.0
+              latest: '4.0.0'
+          releases:
+            - version: '4.0.0'
+  - slug: spark-operator
+    group: streaming
+    content:
+      source: operator
+    publication:
+      pathSegment: spark-operator
+    artifacts:
+      - key: operator
+        source: operator
+        versioning:
+          developmentRef: main
+          tagPattern: ^operator-v.*$
+        publicationSelection:
+          development: true
+          releases:
+            mode: latestPerLine
+        lifecycle:
+          releaseLines:
+            - key: '1.2'
+              maintenanceRef: maintenance/1.2
+              latest: '1.2.0'
+          releases:
+            - version: '1.2.0'
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+    (workspace_root / "site/provider-snapshot.json").write_text(
+        json.dumps(
+            {
+                "schemaVersion": 1,
+                "providers": [
+                    {
+                        "key": "github",
+                        "type": "githubReleases",
+                        "fetchedAt": "2026-04-03T00:00:00Z",
+                    },
+                ],
+                "records": [
+                    {
+                        "provider": "github",
+                        "kind": "development",
+                        "componentSlug": "spark",
+                        "artifactKey": "runtime",
+                        "ref": "main",
+                    },
+                    {
+                        "provider": "github",
+                        "kind": "released",
+                        "componentSlug": "spark",
+                        "artifactKey": "runtime",
+                        "version": "4.0.0",
+                        "tag": "v4.0.0",
+                    },
+                    {
+                        "provider": "github",
+                        "kind": "development",
+                        "componentSlug": "spark-operator",
+                        "artifactKey": "operator",
+                        "ref": "main",
+                    },
+                    {
+                        "provider": "github",
+                        "kind": "released",
+                        "componentSlug": "spark-operator",
+                        "artifactKey": "operator",
+                        "version": "1.2.0",
+                        "tag": "operator-v1.2.0",
+                    },
+                ],
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (workspace_root / "components/spark/docs/releases/4.0.0").mkdir(parents=True, exist_ok=True)
+    (workspace_root / "components/operator/docs/releases/1.2.0").mkdir(parents=True, exist_ok=True)
+    if with_content_file:
+        (workspace_root / "components/spark/docs/index.md").write_text(
+            "spark development docs\n",
+            encoding="utf-8",
+        )
+        (workspace_root / "components/spark/docs/releases/4.0.0/index.md").write_text(
+            "spark 4.0.0 release docs\n",
+            encoding="utf-8",
+        )
+        (workspace_root / "components/operator/docs/index.md").write_text(
+            "operator development docs\n",
+            encoding="utf-8",
+        )
+        (workspace_root / "components/operator/docs/releases/1.2.0/index.md").write_text(
+            "operator 1.2.0 release docs\n",
             encoding="utf-8",
         )
 

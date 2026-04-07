@@ -101,6 +101,74 @@ class GettingStartedDocsTests(unittest.TestCase):
                 "components/api/docs/releases/4.0.0/reference/index.md",
             )
 
+    def test_large_page_packet_matches_grouped_large_fixture(self) -> None:
+        page_text = Path("site/pages/getting-started/large.md").read_text(encoding="utf-8")
+
+        for expected_text in (
+            "  spark:\n    localDir: components/spark",
+            "  operator:\n    localDir: components/operator",
+            "    pathPrefix: /platform/",
+            "        targetRef: component:spark-operator",
+            "        relation: testedWith",
+            "          tagPattern: ^operator-v.*$",
+            "site-pipeline check",
+            "site-pipeline build",
+            "data/components.json",
+            "data/compatibility.json",
+            "data/releases.json",
+            "data/routes.json",
+        ):
+            self.assertIn(expected_text, page_text)
+
+        with _workspace(with_content_file=True, topology="grouped_large") as workspace_root:
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            with _cwd(workspace_root):
+                exit_code = _run(argv=["build"], stdout=stdout, stderr=stderr)
+
+            stage_root = workspace_root / "site/.stage"
+            components = {
+                entry["slug"]: entry
+                for entry in json.loads((stage_root / "data/components.json").read_text(encoding="utf-8"))["items"]
+            }
+            compatibility = json.loads((stage_root / "data/compatibility.json").read_text(encoding="utf-8"))["items"]
+            releases = {
+                (entry["componentSlug"], entry["version"]): entry
+                for entry in json.loads((stage_root / "data/releases.json").read_text(encoding="utf-8"))["items"]
+            }
+            routes = {
+                entry["path"]: entry["targetId"]
+                for entry in json.loads((stage_root / "data/routes.json").read_text(encoding="utf-8"))["items"]
+            }
+
+            self.assertEqual(exit_code, 0)
+            self.assertEqual(stderr.getvalue(), "")
+            self.assertEqual(components["spark"]["group"], "streaming")
+            self.assertEqual(components["spark-operator"]["group"], "streaming")
+            self.assertTrue(
+                any(
+                    entry["subjectId"] == "component:spark"
+                    and entry["targetId"] == "component:spark-operator"
+                    and entry["relation"] == "testedWith"
+                    for entry in compatibility
+                )
+            )
+            self.assertEqual(
+                components["spark"]["artifacts"][0]["releaseLines"],
+                [{"key": "4.0", "latest": "4.0.0"}],
+            )
+            self.assertEqual(
+                components["spark-operator"]["artifacts"][0]["releaseLines"],
+                [{"key": "1.2", "latest": "1.2.0"}],
+            )
+            self.assertEqual(releases[("spark", "4.0.0")]["tag"], "v4.0.0")
+            self.assertEqual(releases[("spark-operator", "1.2.0")]["tag"], "operator-v1.2.0")
+            self.assertEqual(routes["/platform/spark/releases/4.0.0/"], "released:spark:runtime:4.0.0")
+            self.assertEqual(
+                routes["/platform/spark-operator/releases/1.2.0/"],
+                "released:spark-operator:operator:1.2.0",
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

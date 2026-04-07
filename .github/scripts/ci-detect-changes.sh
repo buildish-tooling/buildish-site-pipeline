@@ -24,7 +24,7 @@ github_output="${GITHUB_OUTPUT:?GITHUB_OUTPUT must be set}"
 
 container_image=false
 
-container_image_pattern='^(\.github/workflows/ci\.yml|\.github/scripts/ci-detect-changes\.sh|\.dockerignore|README\.md|main\.py|pyproject\.toml|uv\.lock|apache_buildish_site_pipeline/|tools/site-pipeline-image/)'
+container_image_pattern='^(\.github/workflows/ci\.yml|\.github/scripts/ci-detect-changes\.sh|\.dockerignore|README\.md|main\.py|pyproject\.toml|uv\.lock|src/|tools/site-pipeline-image/)'
 
 enable_all() {
   container_image=true

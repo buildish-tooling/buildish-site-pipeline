@@ -43,8 +43,8 @@ from apache_buildish_site_pipeline.models.reference_docs.registry import (
 )
 
 if TYPE_CHECKING:
-    from apache_buildish_site_pipeline.schema_export import SchemaExport
-    from apache_buildish_site_pipeline.schema_export import SchemaExample
+    from tools.helpers.schema_export import SchemaExport
+    from tools.helpers.schema_export import SchemaExample
 
 _GENERATED_REFERENCE_COMMENT = (
     "This reference is generated from the Site Pipeline Pydantic models and checked-in reference metadata. "

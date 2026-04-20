@@ -869,14 +869,14 @@ def write_authored_schema_files(output_dir: Path) -> tuple[Path, ...]:
 def write_reference_file(output_path: Path) -> Path:
     """Write the generated Markdown schema reference document."""
 
-    from apache_buildish_site_pipeline.reference_export import write_reference_markdown_file
+    from tools.helpers.reference_export import write_reference_markdown_file
 
     return write_reference_markdown_file(output_path, schema_exports())
 
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="python -m apache_buildish_site_pipeline.schema_export"
+        prog="python -m tools.helpers.schema_export"
     )
     parser.add_argument(
         "--output-dir",

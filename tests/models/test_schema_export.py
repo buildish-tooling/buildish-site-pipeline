@@ -24,8 +24,8 @@ from contextlib import redirect_stdout
 from pathlib import Path
 
 from apache_buildish_site_pipeline.models.base import SitePipelineBaseModel
-from apache_buildish_site_pipeline.reference_export import _build_anchor_index, _render_model_section
-from apache_buildish_site_pipeline.schema_export import (
+from tools.helpers.reference_export import _build_anchor_index, _render_model_section
+from tools.helpers.schema_export import (
     _build_parser,
     authored_schema_exports,
     main,

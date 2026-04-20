@@ -1511,7 +1511,7 @@ def _pipe_prefixed_lines(text: str) -> list[str]:
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="python -m apache_buildish_site_pipeline.release_legal"
+        prog="python -m tools.helpers.release_legal"
     )
     parser.add_argument(
         "--project-dir",

@@ -21,7 +21,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from apache_buildish_site_pipeline.release_legal import (
+from tools.helpers.release_legal import (
     LockedPackage,
     build_release_legal_report,
     generate_release_legal_artifacts,

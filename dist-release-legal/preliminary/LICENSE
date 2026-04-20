@@ -362,7 +362,8 @@ Included license text from licenses/pydantic/LICENSE:
 -------------------------------------------------------------------------------
 This product bundles pydantic_core.
 
-Project URL: https://github.com/pydantic/pydantic-core
+Project URL: https://github.com/pydantic/pydantic
+Repository URL: https://github.com/pydantic/pydantic/tree/main/pydantic-core
 License: MIT
 
 Included license text from licenses/pydantic-core/LICENSE:

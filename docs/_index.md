@@ -1,6 +1,7 @@
 ---
 title: Docs and Reference
 description: "This `docs/` tree now holds the material that belongs under the component's versioned docs root: stable reference pages today, and release-tied docs later."
+weight: 90
 ---
 
 <!--

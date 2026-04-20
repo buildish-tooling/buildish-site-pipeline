@@ -1,6 +1,6 @@
 ---
 title: Use JSON Schema for Site Pipeline file contracts
-description: "Use the checked-in JSON Schema files under `site/pages/schemas/` to get field completion, required-field validation, hover help for authored YAML, and machine-readable contract files for staged outputs and reports."
+description: "Use the published schema URLs to get completion, hover help, and early validation while editing Site Pipeline inputs."
 weight: 23
 ---
 
@@ -20,62 +20,86 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-The schema files are generated from the same Pydantic models that validate or
-emit the pipeline's public file contracts. That means model docstrings and
-Python `Field(description=...)` metadata are the source of truth for schema
-help text.
+Use the published JSON Schema URLs when you want faster feedback while editing
+Site Pipeline inputs. A good editor can use them for:
 
-## Available schema files
+- field completion
+- required-field validation
+- hover help for documented fields
+- early detection of misspelled or misplaced keys
 
-The generated files now cover:
+## Start with the published schema URLs
 
-- authored inputs such as `site/catalog.yaml`, `site/component.yaml`, and `site/provider-snapshot.json`
-- machine-readable CLI reports such as the materialization, check, and stage-run JSON reports
-- staged output contracts such as `manifest.json`, `data/*.json`, and `data/_pipeline/*.json`
-- the reserved `pipeline` front matter namespace embedded into staged page files
+Most users only need the schemas for the authored input files:
+
+- `site/catalog.yaml`: `https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-catalog-v1.schema.json`
+- `site/component.yaml`: `https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-component-v1.schema.json`
+- optional `site/provider-snapshot.json`: `https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-provider-snapshot-v1.schema.json`
+
+If you also validate generated JSON in automation, matching schemas are
+published for stage outputs and CLI reports under:
+
+- `https://buildish.apache.org/components/site-pipeline/schemas/`
+
+## Add schema hints to authored YAML
+
+If your editor supports `yaml-language-server`, add a schema hint comment at
+the top of each authored YAML file.
+
+For `site/catalog.yaml`:
+
+```yaml
+# yaml-language-server: $schema=https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-catalog-v1.schema.json
+schemaVersion: 1
+site: {}
+```
+
+For `site/component.yaml`:
+
+```yaml
+# yaml-language-server: $schema=https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-component-v1.schema.json
+schemaVersion: 1
+component:
+  slug: spark
+```
+
+If you edit `site/provider-snapshot.json` directly, use your editor's JSON
+schema-mapping feature to associate that filename with the published provider
+snapshot schema URL.
+
+## Use the schemas as contract references
+
+The published schema URLs are also useful outside the editor:
+
+- CI checks can validate `manifest.json`, `data/components.json`, or `data/routes.json` against the matching published schema
+- downstream tools can treat those URLs as the stable machine-readable contract
+- teams can share one schema URL across multiple repositories instead of relying on local relative paths
 
 Examples:
 
-- `site/pages/schemas/site-pipeline-catalog-v1.schema.json` for `site/catalog.yaml`
-- `site/pages/schemas/site-pipeline-component-v1.schema.json` for `site/component.yaml`
-- `site/pages/schemas/site-pipeline-stage-manifest-v1.schema.json` for `site/.stage/manifest.json`
-- `site/pages/schemas/site-pipeline-components-data-v1.schema.json` for `site/.stage/data/components.json`
-- `site/pages/schemas/site-pipeline-front-matter-namespace-v1.schema.json` for the staged page `pipeline` front matter namespace
+- [`manifest.json`](/components/site-pipeline/schemas/site-pipeline-stage-manifest-v1.schema.json)
+- [`data/components.json`](/components/site-pipeline/schemas/site-pipeline-components-data-v1.schema.json)
+- [`data/routes.json`](/components/site-pipeline/schemas/site-pipeline-routes-data-v1.schema.json)
 
-## Regenerate the schema files
+Links to all JSON schema files can be found in the [schema reference](../../development/reference/pipeline-model-schema-reference/).
 
-Run:
+## What schemas do not replace
 
-- `make schemas`
+JSON Schema is good at file-shape validation, but it does not replace
+`site-pipeline check`.
 
-This rewrites the checked-in files under `site/pages/schemas/` from the current Python
-model definitions.
+You still need the normal validation pass for:
 
-Each generated schema file also carries a canonical published `$id` under:
+- cross-reference checks across files
+- duplicate or conflicting publication rules
+- provider-data consistency checks
+- higher-order planning and staging rules
 
-- `https://buildish.apache.org/components/site-pipeline/schemas/<filename>`
+Use schemas for fast local feedback, then run `site-pipeline check` before you
+treat the configuration as valid.
 
-That same stable HTTPS path is also a good default for authored YAML
-`yaml-language-server` schema hints. Local relative `$schema` refs still work
-for local-only development, but the published URL is the stable contract
-identifier that can be shared across repositories.
+## Read this next
 
-## Wire the schemas into your editor
-
-For VS Code or other `yaml-language-server` based editors, map the schema files
-to the authored YAML filenames. If you are editing a sibling consumer repo from
-the same checkout, point the mapping at this repository's `site/pages/schemas/`
-directory.
-
-You can also use a per-file schema hint comment when your editor supports it,
-for example with `yaml-language-server`:
-
-- `# yaml-language-server: $schema=https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-catalog-v1.schema.json`
-- `# yaml-language-server: $schema=https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-component-v1.schema.json`
-
-## What the JSON Schema does not replace
-
-The JSON Schema helps with local authoring feedback and downstream contract
-inspection, but it does not replace `site-pipeline check`. Cross-reference
-validation, duplicate detection, and higher-order planning rules still require
-the normal pipeline validation pass.
+- [create a tiny site](../create-a-tiny-site/)
+- [pipeline model schema reference](/components/site-pipeline/development/reference/pipeline-model-schema-reference/)
+- [provider snapshot schema](/components/site-pipeline/development/reference/provider-snapshot-schema/)

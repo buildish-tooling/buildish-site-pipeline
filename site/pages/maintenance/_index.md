@@ -1,7 +1,7 @@
 ---
 title: Maintenance Notes
 description: "This section is for maintainers of the Site Pipeline implementation. It records durable internal boundaries, refactoring guardrails, and documentation-maintainer expectations."
-weight: 30
+weight: 100
 ---
 
 <!--

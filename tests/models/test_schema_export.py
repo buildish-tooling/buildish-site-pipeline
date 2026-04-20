@@ -134,7 +134,14 @@ class SchemaExportTests(unittest.TestCase):
             self.assertIn("## How to read this reference", generated_reference_text)
             self.assertIn("### Authored input contracts", generated_reference_text)
             self.assertIn("### Pipeline-emitted non-file root contracts", generated_reference_text)
-            self.assertNotIn("(/schemas/", generated_reference_text)
+            self.assertIn(
+                "[`site-pipeline-catalog-v1.schema.json`](/components/site-pipeline/schemas/site-pipeline-catalog-v1.schema.json)",
+                generated_reference_text,
+            )
+            self.assertIn(
+                "[`site-pipeline-stage-manifest-v1.schema.json`](/components/site-pipeline/schemas/site-pipeline-stage-manifest-v1.schema.json)",
+                generated_reference_text,
+            )
             self.assertIn(
                 "- [SiteCatalogDocumentV1](#sitecatalogdocumentv1) — Canonical site catalog that lists participating components, shared defaults, source bindings, publication origins, and publication policy for one site.",
                 generated_reference_text,
@@ -174,7 +181,7 @@ class SchemaExportTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tempdir:
             generated_dir = Path(tempdir)
             write_schema_files(generated_dir)
-            checked_in_dir = Path(__file__).resolve().parents[2] / "schemas"
+            checked_in_dir = Path(__file__).resolve().parents[2] / "site/pages/schemas"
 
             self.assertEqual(
                 sorted(path.name for path in checked_in_dir.glob("*.json")),
@@ -210,7 +217,7 @@ class SchemaExportTests(unittest.TestCase):
         parser = _build_parser()
         namespace = parser.parse_args([])
 
-        self.assertEqual(namespace.output_dir, "schemas")
+        self.assertEqual(namespace.output_dir, "site/pages/schemas")
         self.assertEqual(namespace.reference_output, "docs/reference/pipeline-model-schema-reference.md")
 
         with tempfile.TemporaryDirectory() as tempdir:

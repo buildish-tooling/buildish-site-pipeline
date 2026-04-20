@@ -880,7 +880,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--output-dir",
-        default="schemas",
+        default="site/pages/schemas",
         help="Directory that should receive the generated JSON Schema files.",
     )
     parser.add_argument(

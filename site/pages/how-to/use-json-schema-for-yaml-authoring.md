@@ -1,6 +1,6 @@
 ---
 title: Use JSON Schema for Site Pipeline file contracts
-description: "Use the checked-in JSON Schema files under `schemas/` to get field completion, required-field validation, hover help for authored YAML, and machine-readable contract files for staged outputs and reports."
+description: "Use the checked-in JSON Schema files under `site/pages/schemas/` to get field completion, required-field validation, hover help for authored YAML, and machine-readable contract files for staged outputs and reports."
 weight: 23
 ---
 
@@ -36,11 +36,11 @@ The generated files now cover:
 
 Examples:
 
-- `schemas/site-pipeline-catalog-v1.schema.json` for `site/catalog.yaml`
-- `schemas/site-pipeline-component-v1.schema.json` for `site/component.yaml`
-- `schemas/site-pipeline-stage-manifest-v1.schema.json` for `site/.stage/manifest.json`
-- `schemas/site-pipeline-components-data-v1.schema.json` for `site/.stage/data/components.json`
-- `schemas/site-pipeline-front-matter-namespace-v1.schema.json` for the staged page `pipeline` front matter namespace
+- `site/pages/schemas/site-pipeline-catalog-v1.schema.json` for `site/catalog.yaml`
+- `site/pages/schemas/site-pipeline-component-v1.schema.json` for `site/component.yaml`
+- `site/pages/schemas/site-pipeline-stage-manifest-v1.schema.json` for `site/.stage/manifest.json`
+- `site/pages/schemas/site-pipeline-components-data-v1.schema.json` for `site/.stage/data/components.json`
+- `site/pages/schemas/site-pipeline-front-matter-namespace-v1.schema.json` for the staged page `pipeline` front matter namespace
 
 ## Regenerate the schema files
 
@@ -48,7 +48,7 @@ Run:
 
 - `make schemas`
 
-This rewrites the checked-in files under `schemas/` from the current Python
+This rewrites the checked-in files under `site/pages/schemas/` from the current Python
 model definitions.
 
 Each generated schema file also carries a canonical published `$id` under:
@@ -64,7 +64,8 @@ identifier that can be shared across repositories.
 
 For VS Code or other `yaml-language-server` based editors, map the schema files
 to the authored YAML filenames. If you are editing a sibling consumer repo from
-the same checkout, point the mapping at this repository's `schemas/` directory.
+the same checkout, point the mapping at this repository's `site/pages/schemas/`
+directory.
 
 You can also use a per-file schema hint comment when your editor supports it,
 for example with `yaml-language-server`:

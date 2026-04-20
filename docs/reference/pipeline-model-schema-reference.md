@@ -29,7 +29,7 @@ Use the contract-file tables to find the governing file or schema root, then use
 - contract-file tables identify the stable on-disk file for each root contract, if applicable
 - field names are shown in their wire-format aliases
 - type, enum, and scalar names link to their definitions below
-- schema files are listed by checked-in filename for the matching root contract
+- schema files link to the published JSON Schema contract for the matching root type
 
 ## File contract index
 
@@ -39,8 +39,8 @@ Consumer-owned and component-owned source-tree contracts that the pipeline reads
 
 | Contract file | Root type(s) | Schema file | Summary |
 | --- | --- | --- | --- |
-| `site/component.yaml` | [ComponentMetadataDocumentV1](#componentmetadatadocumentv1) | `site-pipeline-component-v1.schema.json` | Stable component identity, repository content roots, and shared lifecycle hints. |
-| `site/catalog.yaml` | [SiteCatalogDocumentV1](#sitecatalogdocumentv1) | `site-pipeline-catalog-v1.schema.json` | Catalog of components, defaults, sources, origins, and publication rules for one site. |
+| `site/component.yaml` | [ComponentMetadataDocumentV1](#componentmetadatadocumentv1) | [`site-pipeline-component-v1.schema.json`](/components/site-pipeline/schemas/site-pipeline-component-v1.schema.json) | Stable component identity, repository content roots, and shared lifecycle hints. |
+| `site/catalog.yaml` | [SiteCatalogDocumentV1](#sitecatalogdocumentv1) | [`site-pipeline-catalog-v1.schema.json`](/components/site-pipeline/schemas/site-pipeline-catalog-v1.schema.json) | Catalog of components, defaults, sources, origins, and publication rules for one site. |
 
 ### Provider input contracts
 
@@ -48,7 +48,7 @@ Provider-derived snapshot contracts that the pipeline reads.
 
 | Contract file | Root type(s) | Schema file | Summary |
 | --- | --- | --- | --- |
-| `site/provider-snapshot.json` | [ProviderSnapshotDocumentV1](#providersnapshotdocumentv1) | `site-pipeline-provider-snapshot-v1.schema.json` | Normalized provider inventory of releases, candidates, refs, and downloadable assets. |
+| `site/provider-snapshot.json` | [ProviderSnapshotDocumentV1](#providersnapshotdocumentv1) | [`site-pipeline-provider-snapshot-v1.schema.json`](/components/site-pipeline/schemas/site-pipeline-provider-snapshot-v1.schema.json) | Normalized provider inventory of releases, candidates, refs, and downloadable assets. |
 
 ### Pipeline-emitted file contracts
 
@@ -56,23 +56,23 @@ Stable files that the pipeline writes into staged or published output trees.
 
 | Contract file | Root type(s) | Schema file | Summary |
 | --- | --- | --- | --- |
-| `data/_pipeline/aggregate-dependencies.json` | [AggregateDependencyMapV1](#aggregatedependencymapv1) | `site-pipeline-aggregate-dependencies-v1.schema.json` | Coordinator aggregate files and the units that can invalidate them. |
-| `data/_pipeline/output-ownership.json` | [OutputOwnershipMapV1](#outputownershipmapv1) | `site-pipeline-output-ownership-v1.schema.json` | Ownership map for staged files and directories retained across rebuilds. |
-| `data/_pipeline/unit-contributions.json` | [PersistedUnitContributionsV1](#persistedunitcontributionsv1) | `site-pipeline-unit-contributions-v1.schema.json` | Per-unit page contribution manifests retained in the visible stage. |
-| `data/artifacts.json` | [ArtifactsDataEntry](#artifactsdataentry) | `site-pipeline-artifacts-data-v1.schema.json` | Published artifact inventory with version discovery rules, lifecycle hints, and latest-version summaries. |
-| `data/candidates.json` | [CandidateAggregateEntry](#candidateaggregateentry) | `site-pipeline-candidates-data-v1.schema.json` | Published release-candidate inventory with vote status and downloadable assets. |
-| `data/compatibility.json` | [CompatibilityAggregateEntry](#compatibilityaggregateentry) | `site-pipeline-compatibility-data-v1.schema.json` | Declared compatibility relationships between published identities. |
-| `data/components.json` | [ComponentsDataEntry](#componentsdataentry) | `site-pipeline-components-data-v1.schema.json` | Published component inventory with resolved routes, origins, and artifact summaries. |
-| `data/content-index.json` | [ContentIndexEntry](#contentindexentry) | `site-pipeline-content-index-data-v1.schema.json` | Search and navigation index for staged pages with titles, ancestry, and version metadata. |
-| `data/diagnostics.json` | [PipelineDiagnosticEntry](#pipelinediagnosticentry) | `site-pipeline-diagnostics-data-v1.schema.json` | Structured diagnostics emitted during planning, checking, or staging. |
-| `data/mounts.json` | [MountAggregateEntry](#mountaggregateentry) | `site-pipeline-mounts-data-v1.schema.json` | Mounted content and asset subtrees published under resolved public paths. |
-| `data/providers.json` | [ProvidersDataEntry](#providersdataentry) | `site-pipeline-providers-data-v1.schema.json` | Loaded provider inventory with display names, base URLs, and fetch timestamps. |
-| `data/redirects.json` | [RedirectAggregateEntry](#redirectaggregateentry) | `site-pipeline-redirects-data-v1.schema.json` | Flat inventory of published redirects and their resolved destination URLs. |
-| `data/refs.json` | [RefAggregateEntry](#refaggregateentry) | `site-pipeline-refs-data-v1.schema.json` | Published development, line-head, and named-ref inventory for version navigation. |
-| `data/releases.json` | [ReleaseAggregateEntry](#releaseaggregateentry) | `site-pipeline-releases-data-v1.schema.json` | Published released-version inventory with lifecycle, support, and asset metadata. |
-| `data/routes.json` | [RouteAggregateEntry](#routeaggregateentry) | `site-pipeline-routes-data-v1.schema.json` | Flat inventory of published routes with resolved URLs, labels, and ownership metadata. |
-| `data/translations.json` | [TranslationSetAggregateEntry](#translationsetaggregateentry) | `site-pipeline-translations-data-v1.schema.json` | Translation sibling groups keyed by one shared translation identifier. |
-| `manifest.json` | [StageManifestV1](#stagemanifestv1) | `site-pipeline-stage-manifest-v1.schema.json` | Entry point for a stage tree, including roots, formats, and aggregate file locations. |
+| `data/_pipeline/aggregate-dependencies.json` | [AggregateDependencyMapV1](#aggregatedependencymapv1) | [`site-pipeline-aggregate-dependencies-v1.schema.json`](/components/site-pipeline/schemas/site-pipeline-aggregate-dependencies-v1.schema.json) | Coordinator aggregate files and the units that can invalidate them. |
+| `data/_pipeline/output-ownership.json` | [OutputOwnershipMapV1](#outputownershipmapv1) | [`site-pipeline-output-ownership-v1.schema.json`](/components/site-pipeline/schemas/site-pipeline-output-ownership-v1.schema.json) | Ownership map for staged files and directories retained across rebuilds. |
+| `data/_pipeline/unit-contributions.json` | [PersistedUnitContributionsV1](#persistedunitcontributionsv1) | [`site-pipeline-unit-contributions-v1.schema.json`](/components/site-pipeline/schemas/site-pipeline-unit-contributions-v1.schema.json) | Per-unit page contribution manifests retained in the visible stage. |
+| `data/artifacts.json` | [ArtifactsDataEntry](#artifactsdataentry) | [`site-pipeline-artifacts-data-v1.schema.json`](/components/site-pipeline/schemas/site-pipeline-artifacts-data-v1.schema.json) | Published artifact inventory with version discovery rules, lifecycle hints, and latest-version summaries. |
+| `data/candidates.json` | [CandidateAggregateEntry](#candidateaggregateentry) | [`site-pipeline-candidates-data-v1.schema.json`](/components/site-pipeline/schemas/site-pipeline-candidates-data-v1.schema.json) | Published release-candidate inventory with vote status and downloadable assets. |
+| `data/compatibility.json` | [CompatibilityAggregateEntry](#compatibilityaggregateentry) | [`site-pipeline-compatibility-data-v1.schema.json`](/components/site-pipeline/schemas/site-pipeline-compatibility-data-v1.schema.json) | Declared compatibility relationships between published identities. |
+| `data/components.json` | [ComponentsDataEntry](#componentsdataentry) | [`site-pipeline-components-data-v1.schema.json`](/components/site-pipeline/schemas/site-pipeline-components-data-v1.schema.json) | Published component inventory with resolved routes, origins, and artifact summaries. |
+| `data/content-index.json` | [ContentIndexEntry](#contentindexentry) | [`site-pipeline-content-index-data-v1.schema.json`](/components/site-pipeline/schemas/site-pipeline-content-index-data-v1.schema.json) | Search and navigation index for staged pages with titles, ancestry, and version metadata. |
+| `data/diagnostics.json` | [PipelineDiagnosticEntry](#pipelinediagnosticentry) | [`site-pipeline-diagnostics-data-v1.schema.json`](/components/site-pipeline/schemas/site-pipeline-diagnostics-data-v1.schema.json) | Structured diagnostics emitted during planning, checking, or staging. |
+| `data/mounts.json` | [MountAggregateEntry](#mountaggregateentry) | [`site-pipeline-mounts-data-v1.schema.json`](/components/site-pipeline/schemas/site-pipeline-mounts-data-v1.schema.json) | Mounted content and asset subtrees published under resolved public paths. |
+| `data/providers.json` | [ProvidersDataEntry](#providersdataentry) | [`site-pipeline-providers-data-v1.schema.json`](/components/site-pipeline/schemas/site-pipeline-providers-data-v1.schema.json) | Loaded provider inventory with display names, base URLs, and fetch timestamps. |
+| `data/redirects.json` | [RedirectAggregateEntry](#redirectaggregateentry) | [`site-pipeline-redirects-data-v1.schema.json`](/components/site-pipeline/schemas/site-pipeline-redirects-data-v1.schema.json) | Flat inventory of published redirects and their resolved destination URLs. |
+| `data/refs.json` | [RefAggregateEntry](#refaggregateentry) | [`site-pipeline-refs-data-v1.schema.json`](/components/site-pipeline/schemas/site-pipeline-refs-data-v1.schema.json) | Published development, line-head, and named-ref inventory for version navigation. |
+| `data/releases.json` | [ReleaseAggregateEntry](#releaseaggregateentry) | [`site-pipeline-releases-data-v1.schema.json`](/components/site-pipeline/schemas/site-pipeline-releases-data-v1.schema.json) | Published released-version inventory with lifecycle, support, and asset metadata. |
+| `data/routes.json` | [RouteAggregateEntry](#routeaggregateentry) | [`site-pipeline-routes-data-v1.schema.json`](/components/site-pipeline/schemas/site-pipeline-routes-data-v1.schema.json) | Flat inventory of published routes with resolved URLs, labels, and ownership metadata. |
+| `data/translations.json` | [TranslationSetAggregateEntry](#translationsetaggregateentry) | [`site-pipeline-translations-data-v1.schema.json`](/components/site-pipeline/schemas/site-pipeline-translations-data-v1.schema.json) | Translation sibling groups keyed by one shared translation identifier. |
+| `manifest.json` | [StageManifestV1](#stagemanifestv1) | [`site-pipeline-stage-manifest-v1.schema.json`](/components/site-pipeline/schemas/site-pipeline-stage-manifest-v1.schema.json) | Entry point for a stage tree, including roots, formats, and aggregate file locations. |
 
 ### Pipeline-emitted non-file root contracts
 
@@ -80,10 +80,10 @@ Schema-root report and namespace types that do not correspond to one stable chec
 
 | Root type(s) | Schema file | Summary |
 | --- | --- | --- |
-| [CheckReportV1](#checkreportv1) | `site-pipeline-check-report-v1.schema.json` | Validation result for one `site-pipeline check` invocation. |
-| [PipelineFrontMatterNamespace](#pipelinefrontmatternamespace) | `site-pipeline-front-matter-namespace-v1.schema.json` | Reserved front matter namespace containing pipeline-derived component and page metadata. |
-| [ResolvedMaterializationReportV1](#resolvedmaterializationreportv1) | `site-pipeline-materialization-report-v1.schema.json` | Planning inventory of required local inputs and their current materialization status. |
-| [StageRunReportV1](#stagerunreportv1) | `site-pipeline-stage-run-report-v1.schema.json` | Execution result for one `build` run or completed watch cycle. |
+| [CheckReportV1](#checkreportv1) | [`site-pipeline-check-report-v1.schema.json`](/components/site-pipeline/schemas/site-pipeline-check-report-v1.schema.json) | Validation result for one `site-pipeline check` invocation. |
+| [PipelineFrontMatterNamespace](#pipelinefrontmatternamespace) | [`site-pipeline-front-matter-namespace-v1.schema.json`](/components/site-pipeline/schemas/site-pipeline-front-matter-namespace-v1.schema.json) | Reserved front matter namespace containing pipeline-derived component and page metadata. |
+| [ResolvedMaterializationReportV1](#resolvedmaterializationreportv1) | [`site-pipeline-materialization-report-v1.schema.json`](/components/site-pipeline/schemas/site-pipeline-materialization-report-v1.schema.json) | Planning inventory of required local inputs and their current materialization status. |
+| [StageRunReportV1](#stagerunreportv1) | [`site-pipeline-stage-run-report-v1.schema.json`](/components/site-pipeline/schemas/site-pipeline-stage-run-report-v1.schema.json) | Execution result for one `build` run or completed watch cycle. |
 
 ## Scalar aliases
 

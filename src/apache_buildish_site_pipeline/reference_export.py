@@ -50,6 +50,7 @@ _GENERATED_REFERENCE_COMMENT = (
     "This reference is generated from the Site Pipeline Pydantic models and checked-in reference metadata. "
     "Do not edit it by hand; regenerate it with `make schemas`."
 )
+_PUBLISHED_SCHEMA_PATH_PREFIX = "/components/site-pipeline/schemas"
 _TOKEN_PATTERN = re.compile(r"\b[A-Za-z_][A-Za-z0-9_]*\b")
 _INNER_TYPE_PLACEHOLDER = "(inner type)"
 _NOT_DOCUMENTED_PLACEHOLDER = "(not documented)"
@@ -140,7 +141,7 @@ def build_reference_markdown(exports: Iterable[SchemaExport]) -> str:
         "- contract-file tables identify the stable on-disk file for each root contract, if applicable",
         "- field names are shown in their wire-format aliases",
         "- type, enum, and scalar names link to their definitions below",
-        "- schema files are listed by checked-in filename for the matching root contract",
+        "- schema files link to the published JSON Schema contract for the matching root type",
         "",
     ]
     lines.extend(_render_file_contract_index(export_list, anchors))
@@ -258,7 +259,7 @@ def _render_file_contract_index(exports: tuple[SchemaExport, ...], anchors: Anch
             )
             for export in grouped_exports:
                 lines.append(
-                    f"| `{_contract_file_path(export)}` | {_render_root_types(export, anchors)} | `{export.filename}` | {_escape_table_cell(_export_summary(export))} |"
+                    f"| `{_contract_file_path(export)}` | {_render_root_types(export, anchors)} | {_render_schema_file_link(export)} | {_escape_table_cell(_export_summary(export))} |"
                 )
         else:
             lines.extend(
@@ -269,7 +270,7 @@ def _render_file_contract_index(exports: tuple[SchemaExport, ...], anchors: Anch
             )
             for export in grouped_exports:
                 lines.append(
-                    f"| {_render_root_types(export, anchors)} | `{export.filename}` | {_escape_table_cell(_export_summary(export))} |"
+                    f"| {_render_root_types(export, anchors)} | {_render_schema_file_link(export)} | {_escape_table_cell(_export_summary(export))} |"
                 )
         lines.append("")
     return lines
@@ -534,6 +535,11 @@ def _export_summary(export: SchemaExport) -> str:
     if documentation is not None and documentation.summary is not None:
         return documentation.summary
     return export.description or _NOT_DOCUMENTED_PLACEHOLDER
+
+
+def _render_schema_file_link(export: SchemaExport) -> str:
+    schema_path = f"{_PUBLISHED_SCHEMA_PATH_PREFIX}/{export.filename}"
+    return f"[`{export.filename}`]({schema_path})"
 
 
 def _model_index_summary(model: type[SitePipelineBaseModel]) -> str:

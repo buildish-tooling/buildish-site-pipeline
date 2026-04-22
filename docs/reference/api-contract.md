@@ -27,9 +27,10 @@ paths, and internal report/publication guardrails, see
 The intended principle is:
 
 > The `site-pipeline` executable is the only supported invocation API for stable
-> planning, validation, and staging operations, specifically `plan`, `check`,
-> `build`, and `watch`; the staged tree and aggregate metadata are the supported
-> output API for downstream renderers and deployment adapters.
+> planning, validation, staging, and local source-root discovery operations,
+> specifically `plan`, `component-source-roots`, `check`, `build`, and `watch`;
+> the staged tree and aggregate metadata are the supported output API for
+> downstream renderers and deployment adapters.
 
 ## Why this boundary exists
 
@@ -49,6 +50,7 @@ The stable control-plane API is the `site-pipeline` CLI.
 The long-term stable commands are:
 
 - `site-pipeline plan`
+- `site-pipeline component-source-roots`
 - `site-pipeline check`
 - `site-pipeline build`
 - `site-pipeline watch`
@@ -56,6 +58,7 @@ The long-term stable commands are:
 Those commands are the supported way to:
 
 - discover required local inputs before staging,
+- discover existing effective component source roots for local wrappers or container mounts,
 - validate the current workspace and local inputs before staging,
 - trigger one-off staging,
 - keep staged outputs fresh during local editing,
@@ -154,6 +157,7 @@ arguments are interpreted relative to the process working directory.
 That shared flag family should apply to:
 
 - `site-pipeline plan`
+- `site-pipeline component-source-roots`
 - `site-pipeline check`
 - `site-pipeline build`
 - `site-pipeline watch`
@@ -217,6 +221,28 @@ Future operator-local path mapping is intentionally separate from the shared
 catalog contract. `--local-overrides <path>` is reserved for that future work
 but is not implemented yet; see the
 [maintenance backlog](/components/site-pipeline/development/maintenance/todos/).
+
+## Stable component source-root command
+
+`site-pipeline component-source-roots` is the stable non-mutating command for
+enumerating effective component source directories.
+
+It should:
+
+- resolve component source roots through the same canonical source-root model the
+  other stable commands use
+- emit one machine-local absolute path per line on `stdout`
+- include only source roots that currently exist as directories
+- deduplicate repeated effective paths in first-seen order
+
+That command is meant for shell-facing local wrappers and container adapters
+that need to mount or otherwise pass through the effective component source
+trees without reimplementing catalog parsing or future operator-local overrides.
+
+Recommended forms are:
+
+- `site-pipeline component-source-roots`
+- `site-pipeline component-source-roots --workspace-root /workspace --catalog /workspace/buildish/site/catalog.yaml`
 
 ## Stable planning command
 

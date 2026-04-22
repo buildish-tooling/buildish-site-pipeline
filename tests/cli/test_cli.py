@@ -356,6 +356,64 @@ class CliTests(unittest.TestCase):
             self.assertTrue(manifest_path.exists())
             self.assertEqual(stderr.getvalue(), "")
 
+    def test_component_source_roots_outputs_existing_absolute_paths(self) -> None:
+        with _workspace(topology="two_artifacts") as workspace_root:
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            with _cwd(workspace_root):
+                exit_code = _run(
+                    argv=["component-source-roots"],
+                    stdout=stdout,
+                    stderr=stderr,
+                )
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(
+            stdout.getvalue().splitlines(),
+            [
+                str((workspace_root / "components/runtime").resolve(strict=False)),
+                str((workspace_root / "components/api").resolve(strict=False)),
+            ],
+        )
+        self.assertEqual(stderr.getvalue(), "")
+
+    def test_component_source_roots_supports_explicit_workspace_root_and_catalog(
+        self,
+    ) -> None:
+        with _workspace(topology="two_artifacts") as workspace_root, tempfile.TemporaryDirectory() as runner_dir, tempfile.TemporaryDirectory() as catalog_dir:
+            runner_root = Path(runner_dir)
+            catalog_site_root = Path(catalog_dir)
+            authored_site_root = workspace_root / "site"
+            (catalog_site_root / "catalog.yaml").write_text(
+                (authored_site_root / "catalog.yaml").read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+
+            with _cwd(runner_root):
+                exit_code = _run(
+                    argv=[
+                        "component-source-roots",
+                        "--workspace-root",
+                        str(workspace_root),
+                        "--catalog",
+                        str(catalog_site_root / "catalog.yaml"),
+                    ],
+                    stdout=stdout,
+                    stderr=stderr,
+                )
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(
+            stdout.getvalue().splitlines(),
+            [
+                str((workspace_root / "components/runtime").resolve(strict=False)),
+                str((workspace_root / "components/api").resolve(strict=False)),
+            ],
+        )
+        self.assertEqual(stderr.getvalue(), "")
+
     def test_build_rejects_non_empty_stage_root(self) -> None:
         with _workspace() as workspace_root:
             stage_root = workspace_root / "site/.stage"

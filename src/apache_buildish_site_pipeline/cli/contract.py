@@ -259,6 +259,13 @@ class BuildInvocation:
 
 
 @dataclass(frozen=True, slots=True)
+class ComponentSourceRootsInvocation:
+    """Parsed `component-source-roots` command invocation."""
+
+    layout: RepositoryLayout
+
+
+@dataclass(frozen=True, slots=True)
 class WatchInvocation:
     """Parsed `watch` command invocation."""
 
@@ -268,7 +275,13 @@ class WatchInvocation:
     unstable_event_request: WatchEventRequest | None
 
 
-CommandInvocation = PlanInvocation | CheckInvocation | BuildInvocation | WatchInvocation
+CommandInvocation = (
+    PlanInvocation
+    | CheckInvocation
+    | BuildInvocation
+    | ComponentSourceRootsInvocation
+    | WatchInvocation
+)
 ReportModel = ResolvedMaterializationReportV1 | CheckReportV1 | StageRunReportV1
 
 

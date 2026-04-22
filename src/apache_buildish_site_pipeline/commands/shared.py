@@ -47,6 +47,14 @@ _PROVIDER_SNAPSHOT_CANDIDATE_NAMES = (
 
 
 @dataclass(frozen=True, slots=True)
+class LoadedCatalogInput:
+    """Catalog document plus its resolved path."""
+
+    catalog: SiteCatalogDocumentV1
+    catalog_path: Path
+
+
+@dataclass(frozen=True, slots=True)
 class LoadedWorkspaceInputs:
     """Fully loaded repository inputs for planning/evaluation."""
 
@@ -57,10 +65,10 @@ class LoadedWorkspaceInputs:
     provider_snapshot_path: Path | None
 
 
-def load_workspace_inputs(
+def load_catalog_input(
     workspace_root: Path, catalog_path: Path | None = None
-) -> LoadedWorkspaceInputs:
-    """Load default catalog, provider snapshot, and component metadata inputs."""
+) -> LoadedCatalogInput:
+    """Load the authored catalog document for one workspace."""
 
     resolved_workspace_root = workspace_root.resolve(strict=False)
     resolved_catalog_path = (
@@ -70,27 +78,43 @@ def load_workspace_inputs(
     )
     if not resolved_catalog_path.exists():
         raise InvocationError(f"Missing catalog document: {resolved_catalog_path}")
-    site_root = resolved_catalog_path.parent
-
     try:
         catalog = load_site_catalog_document(
             _read_utf8(resolved_catalog_path),
             document_format=_infer_document_format(resolved_catalog_path),
             source_name=str(resolved_catalog_path),
         )
+    except LoadingError as exc:
+        raise InvocationError(str(exc)) from exc
+    return LoadedCatalogInput(catalog=catalog, catalog_path=resolved_catalog_path)
+
+
+def load_workspace_inputs(
+    workspace_root: Path, catalog_path: Path | None = None
+) -> LoadedWorkspaceInputs:
+    """Load default catalog, provider snapshot, and component metadata inputs."""
+
+    resolved_workspace_root = workspace_root.resolve(strict=False)
+    loaded_catalog = load_catalog_input(
+        resolved_workspace_root,
+        catalog_path,
+    )
+    site_root = loaded_catalog.catalog_path.parent
+
+    try:
         provider_snapshot, provider_snapshot_path = _load_provider_snapshot(site_root)
         component_documents = _load_component_documents(
-            resolved_workspace_root, catalog
+            resolved_workspace_root, loaded_catalog.catalog
         )
     except LoadingError as exc:
         raise InvocationError(str(exc)) from exc
     except ValueError as exc:
         raise InvocationError(str(exc)) from exc
     return LoadedWorkspaceInputs(
-        catalog=catalog,
+        catalog=loaded_catalog.catalog,
         provider_snapshot=provider_snapshot,
         component_documents=component_documents,
-        catalog_path=resolved_catalog_path,
+        catalog_path=loaded_catalog.catalog_path,
         provider_snapshot_path=provider_snapshot_path,
     )
 

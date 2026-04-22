@@ -19,7 +19,9 @@
 Apache Buildish Site Pipeline packages a reusable staging pipeline for
 multi-repository documentation sites. It discovers component checkouts from a
 consumer-owned catalog, validates the content contract, stages normalized site
-inputs, and emits metadata that a downstream renderer can consume.
+inputs, and emits metadata that a downstream renderer can consume. The CLI also
+exposes `site-pipeline component-source-roots` for local wrappers that need the
+effective component source directories.
 
 ## What it includes
 

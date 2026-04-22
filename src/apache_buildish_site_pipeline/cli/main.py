@@ -28,11 +28,13 @@ from apache_buildish_site_pipeline.models.enums import (
     PlanningTarget,
 )
 
+from ..commands.component_source_roots import run_component_source_roots
 from ..commands.watch import run_watch
 from .contract import (
     ApplicationExitCode,
     BuildInvocation,
     CheckInvocation,
+    ComponentSourceRootsInvocation,
     CommandInvocation,
     ReportModel,
     ReportRequest,
@@ -79,6 +81,10 @@ def _run(*, argv: Sequence[str] | None, stdout: TextIO, stderr: TextIO) -> int:
         if isinstance(invocation, WatchInvocation):
             return _run_watch_invocation(
                 invocation=invocation, stdout=stdout, stderr=stderr
+            )
+        if isinstance(invocation, ComponentSourceRootsInvocation):
+            return _run_component_source_roots_invocation(
+                invocation=invocation, stdout=stdout
             )
         return _run_non_watch_invocation(invocation=invocation, stdout=stdout)
     except InvocationError as exc:
@@ -127,6 +133,16 @@ def _run_non_watch_invocation(
         stdout=stdout,
     )
     return int(result.exit_code)
+
+
+def _run_component_source_roots_invocation(
+    *, invocation: ComponentSourceRootsInvocation, stdout: TextIO
+) -> int:
+    source_roots = run_component_source_roots(invocation)
+    if source_roots:
+        stdout.write("".join(f"{path}\n" for path in source_roots))
+        stdout.flush()
+    return int(ApplicationExitCode.SUCCESS)
 
 
 def _revalidate_watch_invocation_outputs(invocation: WatchInvocation) -> WatchInvocation:
@@ -213,48 +229,61 @@ def parse_invocation(argv: Sequence[str] | None = None) -> CommandInvocation:
         stage_root=site_root / ".stage",
         work_root=site_root / ".site-pipeline-work",
     )
-    report_request = build_report_request(
-        cwd=cwd,
-        report_format=namespace.report_format,
-        schema_version=namespace.report_schema_version,
-        report_output=namespace.report_output,
-        forbidden_roots=(layout.stage_root, layout.work_root),
-        forbid_stdout_json=namespace.command == "watch",
-    )
-    watch_event_request = build_watch_event_request(
-        cwd=cwd,
-        event_format=namespace.unstable_events
-        if namespace.command == "watch"
-        else None,
-        event_output=namespace.unstable_events_output
-        if namespace.command == "watch"
-        else None,
-        forbidden_roots=(layout.stage_root, layout.work_root),
-    )
-    if (
-        watch_event_request is not None
-        and watch_event_request.output_path is not None
-        and report_request.output_path is not None
-        and watch_event_request.output_path == report_request.output_path
-    ):
-        raise InvocationError(
-            "--unstable-events-output must differ from --report-output"
+    report_request = None
+    watch_event_request = None
+    if namespace.command in {"plan", "check", "build", "watch"}:
+        report_request = build_report_request(
+            cwd=cwd,
+            report_format=namespace.report_format,
+            schema_version=namespace.report_schema_version,
+            report_output=namespace.report_output,
+            forbidden_roots=(layout.stage_root, layout.work_root),
+            forbid_stdout_json=namespace.command == "watch",
         )
+        watch_event_request = build_watch_event_request(
+            cwd=cwd,
+            event_format=namespace.unstable_events
+            if namespace.command == "watch"
+            else None,
+            event_output=namespace.unstable_events_output
+            if namespace.command == "watch"
+            else None,
+            forbidden_roots=(layout.stage_root, layout.work_root),
+        )
+        if (
+            watch_event_request is not None
+            and watch_event_request.output_path is not None
+            and report_request.output_path is not None
+            and watch_event_request.output_path == report_request.output_path
+        ):
+            raise InvocationError(
+                "--unstable-events-output must differ from --report-output"
+            )
 
     if namespace.command == "plan":
+        if report_request is None:
+            raise AssertionError("plan requires a report request")
         return PlanInvocation(
             layout=layout,
             planning_target=PlanningTarget(namespace.planning_target),
             report_request=report_request,
         )
     if namespace.command == "check":
+        if report_request is None:
+            raise AssertionError("check requires a report request")
         return CheckInvocation(
             layout=layout,
             fail_on_severity=CheckFailureThreshold(namespace.fail_on_severity),
             report_request=report_request,
         )
     if namespace.command == "build":
+        if report_request is None:
+            raise AssertionError("build requires a report request")
         return BuildInvocation(layout=layout, report_request=report_request)
+    if namespace.command == "component-source-roots":
+        return ComponentSourceRootsInvocation(layout=layout)
+    if report_request is None:
+        raise AssertionError("watch requires a report request")
     return WatchInvocation(
         layout=layout,
         fail_on_severity=CheckFailureThreshold(namespace.fail_on_severity),
@@ -293,6 +322,12 @@ def _build_parser() -> argparse.ArgumentParser:
     _add_workspace_arguments(build_parser)
     _add_logging_arguments(build_parser)
     _add_report_arguments(build_parser)
+
+    component_source_roots_parser = subparsers.add_parser(
+        "component-source-roots", allow_abbrev=False
+    )
+    _add_workspace_arguments(component_source_roots_parser)
+    _add_logging_arguments(component_source_roots_parser)
 
     watch_parser = subparsers.add_parser("watch", allow_abbrev=False)
     _add_workspace_arguments(watch_parser)

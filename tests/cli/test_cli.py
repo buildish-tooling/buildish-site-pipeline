@@ -356,7 +356,7 @@ class CliTests(unittest.TestCase):
             self.assertTrue(manifest_path.exists())
             self.assertEqual(stderr.getvalue(), "")
 
-    def test_component_source_roots_outputs_existing_absolute_paths(self) -> None:
+    def test_component_source_roots_outputs_workspace_relative_locators(self) -> None:
         with _workspace(topology="two_artifacts") as workspace_root:
             stdout = io.StringIO()
             stderr = io.StringIO()
@@ -371,8 +371,8 @@ class CliTests(unittest.TestCase):
         self.assertEqual(
             stdout.getvalue().splitlines(),
             [
-                str((workspace_root / "components/runtime").resolve(strict=False)),
-                str((workspace_root / "components/api").resolve(strict=False)),
+                "components/runtime",
+                "components/api",
             ],
         )
         self.assertEqual(stderr.getvalue(), "")
@@ -408,8 +408,8 @@ class CliTests(unittest.TestCase):
         self.assertEqual(
             stdout.getvalue().splitlines(),
             [
-                str((workspace_root / "components/runtime").resolve(strict=False)),
-                str((workspace_root / "components/api").resolve(strict=False)),
+                "components/runtime",
+                "components/api",
             ],
         )
         self.assertEqual(stderr.getvalue(), "")

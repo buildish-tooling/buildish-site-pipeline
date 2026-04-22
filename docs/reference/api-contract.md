@@ -225,15 +225,18 @@ but is not implemented yet; see the
 ## Stable component source-root command
 
 `site-pipeline component-source-roots` is the stable non-mutating command for
-enumerating effective component source directories.
+enumerating effective component source-root locators.
 
 It should:
 
 - resolve component source roots through the same canonical source-root model the
   other stable commands use
-- emit one machine-local absolute path per line on `stdout`
-- include only source roots that currently exist as directories
-- deduplicate repeated effective paths in first-seen order
+- emit one normalized source-root locator per line on `stdout`
+- emit authored catalog paths, and any future relative local overrides, relative
+  to `--workspace-root`
+- emit any future absolute local override as an absolute path
+- avoid filtering on current filesystem existence
+- deduplicate repeated emitted locators in first-seen order
 
 That command is meant for shell-facing local wrappers and container adapters
 that need to mount or otherwise pass through the effective component source

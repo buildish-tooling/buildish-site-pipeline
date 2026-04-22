@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import os
 from pathlib import Path
 
 from apache_buildish_site_pipeline.models.authored.site_catalog import (
@@ -27,13 +28,18 @@ from apache_buildish_site_pipeline.models.authored.site_catalog import (
 
 @dataclass(frozen=True, slots=True)
 class ResolvedSourceBinding:
-    """Absolute and normalized binding for one authored source root."""
+    """Resolved binding for one authored or operator-local source root."""
 
     key: str
     local_dir: Path
     metadata_file: Path | None
     repository: str | None
     default_branch: str | None
+    export_locator: Path | None = None
+
+    def __post_init__(self) -> None:
+        if self.export_locator is None:
+            object.__setattr__(self, "export_locator", self.local_dir)
 
 
 @dataclass(frozen=True, slots=True)
@@ -52,6 +58,11 @@ class ResolvedComponentSourceRoot:
     component_slug: str
     local_dir: Path
     usages: tuple[ResolvedComponentSourceUsage, ...]
+    export_locator: Path | None = None
+
+    def __post_init__(self) -> None:
+        if self.export_locator is None:
+            object.__setattr__(self, "export_locator", self.local_dir)
 
 
 def resolve_repo_path(root: Path, relative_path: str) -> Path:
@@ -76,6 +87,7 @@ def resolve_catalog_source_bindings(
     source_configs = catalog.sources or {}
     resolved_bindings: dict[str, ResolvedSourceBinding] = {}
     for key, source in source_configs.items():
+        export_locator = normalize_workspace_relative_locator(source.local_dir)
         local_dir = resolve_repo_path(normalized_workspace_root, source.local_dir)
         metadata_relpath = source.metadata_file or (
             defaults.metadata_file if defaults is not None else None
@@ -88,6 +100,7 @@ def resolve_catalog_source_bindings(
         resolved_bindings[key] = ResolvedSourceBinding(
             key=key,
             local_dir=local_dir,
+            export_locator=export_locator,
             metadata_file=metadata_path,
             repository=str(source.repository)
             if source.repository is not None
@@ -117,6 +130,7 @@ def resolve_component_content_source_binding(
         )
     if component.local_dir is None:
         return None
+    export_locator = normalize_workspace_relative_locator(component.local_dir)
     local_dir = resolve_repo_path(workspace_root.resolve(strict=False), component.local_dir)
     metadata_path = (
         resolve_repo_path(local_dir, default_metadata_file)
@@ -126,6 +140,7 @@ def resolve_component_content_source_binding(
     return ResolvedSourceBinding(
         key=f"component:{component.slug}",
         local_dir=local_dir,
+        export_locator=export_locator,
         metadata_file=metadata_path,
         repository=None,
         default_branch=None,
@@ -146,7 +161,7 @@ def resolve_component_source_roots(
     )
     resolved_roots: list[ResolvedComponentSourceRoot] = []
     for component in catalog.components:
-        roots_by_local_dir: dict[Path, dict[str, _MutableSourceUsage]] = {}
+        roots_by_locator: dict[tuple[Path, Path], dict[str, _MutableSourceUsage]] = {}
         content_source = resolve_component_content_source_binding(
             component=component,
             source_bindings=source_bindings,
@@ -155,13 +170,13 @@ def resolve_component_source_roots(
         )
         if content_source is not None:
             _register_source_usage(
-                roots_by_local_dir,
+                roots_by_locator,
                 source_binding=content_source,
                 owns_component_content=True,
             )
         for artifact in component.artifacts or ():
             _register_source_usage(
-                roots_by_local_dir,
+                roots_by_locator,
                 source_binding=_lookup_source_binding(
                     source_bindings=source_bindings,
                     source_key=artifact.source,
@@ -174,6 +189,7 @@ def resolve_component_source_roots(
             ResolvedComponentSourceRoot(
                 component_slug=component.slug,
                 local_dir=local_dir,
+                export_locator=export_locator,
                 usages=tuple(
                     ResolvedComponentSourceUsage(
                         source_binding=usage.source_binding,
@@ -183,7 +199,7 @@ def resolve_component_source_roots(
                     for usage in usages_by_key.values()
                 ),
             )
-            for local_dir, usages_by_key in roots_by_local_dir.items()
+            for (local_dir, export_locator), usages_by_key in roots_by_locator.items()
         )
     return tuple(resolved_roots)
 
@@ -216,13 +232,20 @@ def _lookup_source_binding(
 
 
 def _register_source_usage(
-    roots_by_local_dir: dict[Path, dict[str, _MutableSourceUsage]],
+    roots_by_locator: dict[tuple[Path, Path], dict[str, _MutableSourceUsage]],
     *,
     source_binding: ResolvedSourceBinding,
     owns_component_content: bool = False,
     artifact_key: str | None = None,
 ) -> None:
-    usages_by_key = roots_by_local_dir.setdefault(source_binding.local_dir, {})
+    export_locator = (
+        source_binding.export_locator
+        if source_binding.export_locator is not None
+        else source_binding.local_dir
+    )
+    usages_by_key = roots_by_locator.setdefault(
+        (source_binding.local_dir, export_locator), {}
+    )
     usage = usages_by_key.get(source_binding.key)
     if usage is None:
         usage = _MutableSourceUsage(
@@ -234,3 +257,23 @@ def _register_source_usage(
         usage.owns_component_content = True
     if artifact_key is not None and artifact_key not in usage.artifact_keys:
         usage.artifact_keys.append(artifact_key)
+
+
+def normalize_export_locator(raw_path: str) -> Path:
+    """Normalize one shell-facing locator without resolving symlinks."""
+
+    normalized_path = Path(os.path.normpath(raw_path))
+    if normalized_path.is_absolute():
+        return normalized_path
+    if any(part == ".." for part in normalized_path.parts):
+        raise ValueError(f"Path locator {raw_path!r} escapes declared workspace root")
+    return normalized_path
+
+
+def normalize_workspace_relative_locator(raw_path: str) -> Path:
+    """Normalize one workspace-relative locator and reject absolute inputs."""
+
+    normalized_path = normalize_export_locator(raw_path)
+    if normalized_path.is_absolute():
+        raise ValueError(f"Path locator {raw_path!r} must stay relative to the workspace root")
+    return normalized_path

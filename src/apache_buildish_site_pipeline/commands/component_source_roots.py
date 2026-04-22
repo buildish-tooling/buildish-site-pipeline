@@ -30,12 +30,12 @@ from .shared import load_catalog_input
 def run_component_source_roots(
     invocation: ComponentSourceRootsInvocation,
 ) -> tuple[Path, ...]:
-    """Resolve existing component source roots for shell-facing consumers."""
+    """Resolve component source-root locators for shell-facing consumers."""
 
     loaded_catalog = load_catalog_input(
         invocation.layout.workspace_root, invocation.layout.catalog_path
     )
-    return _existing_component_source_root_paths(
+    return _component_source_root_locators(
         resolve_component_source_roots(
             catalog=loaded_catalog.catalog,
             workspace_root=invocation.layout.workspace_root,
@@ -43,15 +43,19 @@ def run_component_source_roots(
     )
 
 
-def _existing_component_source_root_paths(
+def _component_source_root_locators(
     source_roots: tuple[ResolvedComponentSourceRoot, ...],
 ) -> tuple[Path, ...]:
     unique_paths: list[Path] = []
     seen_paths: set[Path] = set()
     for source_root in source_roots:
-        local_dir = source_root.local_dir
-        if local_dir in seen_paths or not local_dir.is_dir():
+        export_locator = (
+            source_root.export_locator
+            if source_root.export_locator is not None
+            else source_root.local_dir
+        )
+        if export_locator in seen_paths:
             continue
-        seen_paths.add(local_dir)
-        unique_paths.append(local_dir)
+        seen_paths.add(export_locator)
+        unique_paths.append(export_locator)
     return tuple(unique_paths)

@@ -25,6 +25,7 @@ from apache_buildish_site_pipeline.models.authored.site_catalog import (
     ComponentCatalogEntry,
 )
 from apache_buildish_site_pipeline.source_roots import (
+    normalize_workspace_relative_locator,
     resolve_catalog_source_bindings,
     resolve_component_content_source_binding,
     resolve_component_source_roots,
@@ -53,6 +54,7 @@ class SourceRootResolutionTests(unittest.TestCase):
 
         binding = bindings["runtime"]
         self.assertEqual(binding.local_dir, workspace_root / "components/runtime")
+        self.assertEqual(binding.export_locator, Path("components/runtime"))
         self.assertEqual(
             binding.metadata_file,
             workspace_root / "components/runtime/site/component.yaml",
@@ -93,9 +95,16 @@ class SourceRootResolutionTests(unittest.TestCase):
             self.fail("expected an implicit component content source binding")
         self.assertEqual(binding.key, "component:spark")
         self.assertEqual(binding.local_dir, workspace_root / "components/runtime")
+        self.assertEqual(binding.export_locator, Path("components/runtime"))
         self.assertEqual(
             binding.metadata_file,
             workspace_root / "components/runtime/site/component.yaml",
+        )
+
+    def test_normalize_workspace_relative_locator_normalizes_syntax(self) -> None:
+        self.assertEqual(
+            normalize_workspace_relative_locator("./components/runtime/"),
+            Path("components/runtime"),
         )
 
     def test_resolve_component_source_roots_merges_content_and_artifact_usage(self) -> None:
@@ -136,6 +145,7 @@ class SourceRootResolutionTests(unittest.TestCase):
         root = roots[0]
         self.assertEqual(root.component_slug, "spark")
         self.assertEqual(root.local_dir.name, "runtime")
+        self.assertEqual(root.export_locator, Path("components/runtime"))
         self.assertEqual(len(root.usages), 1)
         usage = root.usages[0]
         self.assertEqual(usage.source_binding.key, "runtime")
@@ -191,6 +201,10 @@ class SourceRootResolutionTests(unittest.TestCase):
             )
 
         self.assertEqual([root.local_dir.name for root in roots], ["runtime", "api"])
+        self.assertEqual(
+            [root.export_locator for root in roots],
+            [Path("components/runtime"), Path("components/api")],
+        )
         self.assertTrue(roots[0].usages[0].owns_component_content)
         self.assertEqual(roots[0].usages[0].artifact_keys, ("runtime",))
         self.assertFalse(roots[1].usages[0].owns_component_content)

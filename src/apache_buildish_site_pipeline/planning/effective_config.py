@@ -44,6 +44,11 @@ from apache_buildish_site_pipeline.models.validation.urls import (
     extract_hostname_from_url,
 )
 from apache_buildish_site_pipeline.public_paths import join_public_path
+from apache_buildish_site_pipeline.source_roots import (
+    resolve_catalog_source_bindings,
+    resolve_component_content_source_binding,
+    resolve_repo_path as _resolve_repo_path,
+)
 
 from .types import (
     ResolvedArtifactConfig,
@@ -77,10 +82,8 @@ def resolve_site_config(
 
     component_documents = component_documents or {}
     normalized_workspace_root = workspace_root.resolve(strict=False)
-    defaults = catalog.defaults
     site_config = catalog.site
     origin_configs = catalog.origins or {}
-    source_configs = catalog.sources or {}
 
     origins = {
         key: ResolvedOrigin(
@@ -95,28 +98,9 @@ def resolve_site_config(
     # Source bindings are the only place where authored repo-relative paths turn
     # into trusted workspace paths. Keep that normalization centralized here so
     # later phases can treat the resolved model as authoritative.
-    sources = {}
-    for key, source in source_configs.items():
-        local_dir = _resolve_repo_path(normalized_workspace_root, source.local_dir)
-        metadata_relpath = source.metadata_file or (
-            defaults.metadata_file if defaults is not None else None
-        )
-        metadata_path = (
-            _resolve_repo_path(local_dir, metadata_relpath)
-            if metadata_relpath
-            else None
-        )
-        sources[key] = ResolvedSourceBinding(
-            key=key,
-            local_dir=local_dir,
-            metadata_file=metadata_path,
-            repository=str(source.repository)
-            if source.repository is not None
-            else None,
-            default_branch=str(source.default_branch)
-            if source.default_branch is not None
-            else None,
-        )
+    sources = resolve_catalog_source_bindings(
+        catalog=catalog, workspace_root=normalized_workspace_root
+    )
 
     site_pages_root = (
         _resolve_repo_path(normalized_workspace_root, site_config.pages_root)
@@ -283,22 +267,11 @@ def _resolve_component_content_source(
     workspace_root: Path,
     default_metadata_file: str | None,
 ) -> ResolvedSourceBinding | None:
-    if component.content is not None and component.content.source is not None:
-        return sources[component.content.source]
-    if component.local_dir is None:
-        return None
-    local_dir = _resolve_repo_path(workspace_root, component.local_dir)
-    metadata_path = (
-        _resolve_repo_path(local_dir, default_metadata_file)
-        if default_metadata_file
-        else None
-    )
-    return ResolvedSourceBinding(
-        key=f"component:{component.slug}",
-        local_dir=local_dir,
-        metadata_file=metadata_path,
-        repository=None,
-        default_branch=None,
+    return resolve_component_content_source_binding(
+        component=component,
+        source_bindings=sources,
+        workspace_root=workspace_root,
+        default_metadata_file=default_metadata_file,
     )
 
 
@@ -492,13 +465,3 @@ def _join_public_path(base_path: str, segment: str) -> str:
 
 def _join_public_url(base_url: str, path: str) -> str:
     return f"{base_url.rstrip('/')}{path}"
-
-
-def _resolve_repo_path(root: Path, relative_path: str) -> Path:
-    candidate_path = (root / relative_path).resolve(strict=False)
-    normalized_root = root.resolve(strict=False)
-    if not candidate_path.is_relative_to(normalized_root):
-        raise ValueError(
-            f"Resolved path {candidate_path} escapes declared root {normalized_root}"
-        )
-    return candidate_path

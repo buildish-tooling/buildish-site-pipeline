@@ -67,6 +67,21 @@ class SharedWorkspaceLoadingTests(unittest.TestCase):
 
         self.assertIn("multiple default provider snapshot files", str(raised.exception))
 
+    def test_component_metadata_loads_from_resolved_named_source_binding(self) -> None:
+        with _workspace() as workspace_root:
+            _set_default_metadata_file(workspace_root, "site/component.yaml")
+            metadata_path = workspace_root / "components/runtime/site/component.yaml"
+            metadata_path.parent.mkdir(parents=True, exist_ok=True)
+            metadata_path.write_text(
+                "schemaVersion: 1\ncomponent:\n  slug: spark\n",
+                encoding="utf-8",
+            )
+
+            loaded = load_workspace_inputs(workspace_root=workspace_root)
+
+        self.assertIn("spark", loaded.component_documents)
+        self.assertEqual(loaded.component_documents["spark"].component.slug, "spark")
+
     def test_component_metadata_path_must_stay_within_repository_root(self) -> None:
         with _workspace() as workspace_root:
             _set_default_metadata_file(workspace_root, "component.yaml")
@@ -79,7 +94,7 @@ class SharedWorkspaceLoadingTests(unittest.TestCase):
             with self.assertRaises(InvocationError) as raised:
                 load_workspace_inputs(workspace_root=workspace_root)
 
-        self.assertIn("escapes its repository root", str(raised.exception))
+        self.assertIn("escapes declared root", str(raised.exception))
 
     def test_component_metadata_file_requires_supported_document_format(self) -> None:
         with _workspace() as workspace_root:

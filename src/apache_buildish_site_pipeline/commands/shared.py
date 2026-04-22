@@ -31,6 +31,10 @@ from apache_buildish_site_pipeline.models.loading import (
     load_provider_snapshot_document,
     load_site_catalog_document,
 )
+from apache_buildish_site_pipeline.source_roots import (
+    resolve_catalog_source_bindings,
+    resolve_component_content_source_binding,
+)
 
 from ..cli.errors import InvocationError
 
@@ -80,6 +84,8 @@ def load_workspace_inputs(
         )
     except LoadingError as exc:
         raise InvocationError(str(exc)) from exc
+    except ValueError as exc:
+        raise InvocationError(str(exc)) from exc
     return LoadedWorkspaceInputs(
         catalog=catalog,
         provider_snapshot=provider_snapshot,
@@ -123,23 +129,22 @@ def _load_component_documents(
     default_metadata_file = (
         catalog.defaults.metadata_file if catalog.defaults is not None else None
     )
-    sources = catalog.sources or {}
+    source_bindings = resolve_catalog_source_bindings(
+        catalog=catalog, workspace_root=repo_root
+    )
     for component in catalog.components:
-        source_key = component.content.source if component.content is not None else None
-        if source_key is not None:
-            source_binding = sources[source_key]
-            repository_root = (repo_root / source_binding.local_dir).resolve(
-                strict=False
-            )
-            metadata_file = source_binding.metadata_file or default_metadata_file
-        elif component.local_dir is not None:
-            repository_root = (repo_root / component.local_dir).resolve(strict=False)
-            metadata_file = default_metadata_file
-        else:
+        content_source = resolve_component_content_source_binding(
+            component=component,
+            source_bindings=source_bindings,
+            workspace_root=repo_root,
+            default_metadata_file=default_metadata_file,
+        )
+        if content_source is None:
             continue
-        if metadata_file is None:
+        repository_root = content_source.local_dir
+        metadata_path = content_source.metadata_file
+        if metadata_path is None:
             continue
-        metadata_path = (repository_root / metadata_file).resolve(strict=False)
         if not metadata_path.is_relative_to(repository_root):
             raise InvocationError(
                 f"Component metadata path escapes its repository root: {metadata_path}"

@@ -52,6 +52,7 @@ from apache_buildish_site_pipeline.models.provider.provider_snapshot import (
     ProviderAsset,
     ProviderDescriptor,
 )
+from apache_buildish_site_pipeline.source_roots import ResolvedSourceBinding
 
 if TYPE_CHECKING:
     from apache_buildish_site_pipeline.staging.types import EffectiveBuildPlan
@@ -95,17 +96,6 @@ class ResolvedPublicationPolicy:
     canonical_path: str | None
     aliases: tuple[RouteAliasConfig, ...]
     redirects: tuple[RedirectRuleConfig, ...]
-
-
-@dataclass(frozen=True, slots=True)
-class ResolvedSourceBinding:
-    """Absolute and normalized binding for one authored source root."""
-
-    key: str
-    local_dir: Path
-    metadata_file: Path | None
-    repository: str | None
-    default_branch: str | None
 
 
 @dataclass(frozen=True, slots=True)

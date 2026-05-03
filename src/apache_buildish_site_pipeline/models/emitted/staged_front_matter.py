@@ -478,7 +478,7 @@ class PipelineFrontMatterNamespace(SitePipelineBaseModel):
         summary="Reserved front matter namespace containing pipeline-derived component and page metadata.",
     )
     schema_export: ClassVar[SchemaExportSpecification] = SchemaExportSpecification(
-        filename="site-pipeline-front-matter-namespace-v1.schema.json",
+        filename="front-matter-namespace-v1.schema.json",
         title="Site Pipeline Front Matter Namespace v1",
         examples=(
             SchemaExample(

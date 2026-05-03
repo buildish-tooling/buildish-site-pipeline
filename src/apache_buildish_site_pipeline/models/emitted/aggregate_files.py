@@ -60,7 +60,7 @@ class ComponentsDataFileV1(SitePipelineBaseModel):
         file_path="data/components.json",
     )
     schema_export: ClassVar[SchemaExportSpecification] = SchemaExportSpecification(
-        filename="site-pipeline-components-data-v1.schema.json",
+        filename="components-data-v1.schema.json",
         title="Site Pipeline data/components.json v1",
         reference_roots=(ComponentsDataEntry,),
     )
@@ -78,7 +78,7 @@ class ArtifactsDataFileV1(SitePipelineBaseModel):
         file_path="data/artifacts.json",
     )
     schema_export: ClassVar[SchemaExportSpecification] = SchemaExportSpecification(
-        filename="site-pipeline-artifacts-data-v1.schema.json",
+        filename="artifacts-data-v1.schema.json",
         title="Site Pipeline data/artifacts.json v1",
         reference_roots=(ArtifactsDataEntry,),
     )
@@ -96,7 +96,7 @@ class RoutesDataFileV1(SitePipelineBaseModel):
         file_path="data/routes.json",
     )
     schema_export: ClassVar[SchemaExportSpecification] = SchemaExportSpecification(
-        filename="site-pipeline-routes-data-v1.schema.json",
+        filename="routes-data-v1.schema.json",
         title="Site Pipeline data/routes.json v1",
         reference_roots=(RouteAggregateEntry,),
     )
@@ -114,7 +114,7 @@ class RedirectsDataFileV1(SitePipelineBaseModel):
         file_path="data/redirects.json",
     )
     schema_export: ClassVar[SchemaExportSpecification] = SchemaExportSpecification(
-        filename="site-pipeline-redirects-data-v1.schema.json",
+        filename="redirects-data-v1.schema.json",
         title="Site Pipeline data/redirects.json v1",
         reference_roots=(RedirectAggregateEntry,),
     )
@@ -132,7 +132,7 @@ class ProvidersDataFileV1(SitePipelineBaseModel):
         file_path="data/providers.json",
     )
     schema_export: ClassVar[SchemaExportSpecification] = SchemaExportSpecification(
-        filename="site-pipeline-providers-data-v1.schema.json",
+        filename="providers-data-v1.schema.json",
         title="Site Pipeline data/providers.json v1",
         reference_roots=(ProvidersDataEntry,),
     )
@@ -150,7 +150,7 @@ class ReleasesDataFileV1(SitePipelineBaseModel):
         file_path="data/releases.json",
     )
     schema_export: ClassVar[SchemaExportSpecification] = SchemaExportSpecification(
-        filename="site-pipeline-releases-data-v1.schema.json",
+        filename="releases-data-v1.schema.json",
         title="Site Pipeline data/releases.json v1",
         reference_roots=(ReleaseAggregateEntry,),
     )
@@ -168,7 +168,7 @@ class CandidatesDataFileV1(SitePipelineBaseModel):
         file_path="data/candidates.json",
     )
     schema_export: ClassVar[SchemaExportSpecification] = SchemaExportSpecification(
-        filename="site-pipeline-candidates-data-v1.schema.json",
+        filename="candidates-data-v1.schema.json",
         title="Site Pipeline data/candidates.json v1",
         reference_roots=(CandidateAggregateEntry,),
     )
@@ -186,7 +186,7 @@ class RefsDataFileV1(SitePipelineBaseModel):
         file_path="data/refs.json",
     )
     schema_export: ClassVar[SchemaExportSpecification] = SchemaExportSpecification(
-        filename="site-pipeline-refs-data-v1.schema.json",
+        filename="refs-data-v1.schema.json",
         title="Site Pipeline data/refs.json v1",
         reference_roots=(RefAggregateEntry,),
     )
@@ -204,7 +204,7 @@ class TranslationsDataFileV1(SitePipelineBaseModel):
         file_path="data/translations.json",
     )
     schema_export: ClassVar[SchemaExportSpecification] = SchemaExportSpecification(
-        filename="site-pipeline-translations-data-v1.schema.json",
+        filename="translations-data-v1.schema.json",
         title="Site Pipeline data/translations.json v1",
         reference_roots=(TranslationSetAggregateEntry,),
     )
@@ -222,7 +222,7 @@ class CompatibilityDataFileV1(SitePipelineBaseModel):
         file_path="data/compatibility.json",
     )
     schema_export: ClassVar[SchemaExportSpecification] = SchemaExportSpecification(
-        filename="site-pipeline-compatibility-data-v1.schema.json",
+        filename="compatibility-data-v1.schema.json",
         title="Site Pipeline data/compatibility.json v1",
         reference_roots=(CompatibilityAggregateEntry,),
     )
@@ -240,7 +240,7 @@ class MountsDataFileV1(SitePipelineBaseModel):
         file_path="data/mounts.json",
     )
     schema_export: ClassVar[SchemaExportSpecification] = SchemaExportSpecification(
-        filename="site-pipeline-mounts-data-v1.schema.json",
+        filename="mounts-data-v1.schema.json",
         title="Site Pipeline data/mounts.json v1",
         reference_roots=(MountAggregateEntry,),
     )
@@ -258,7 +258,7 @@ class ContentIndexDataFileV1(SitePipelineBaseModel):
         file_path="data/content-index.json",
     )
     schema_export: ClassVar[SchemaExportSpecification] = SchemaExportSpecification(
-        filename="site-pipeline-content-index-data-v1.schema.json",
+        filename="content-index-data-v1.schema.json",
         title="Site Pipeline data/content-index.json v1",
         reference_roots=(ContentIndexEntry,),
     )
@@ -276,7 +276,7 @@ class DiagnosticsDataFileV1(SitePipelineRootModel[list[PipelineDiagnosticEntry]]
         file_path="data/diagnostics.json",
     )
     schema_export: ClassVar[SchemaExportSpecification] = SchemaExportSpecification(
-        filename="site-pipeline-diagnostics-data-v1.schema.json",
+        filename="diagnostics-data-v1.schema.json",
         title="Site Pipeline data/diagnostics.json v1",
         reference_roots=(PipelineDiagnosticEntry,),
     )

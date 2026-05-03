@@ -55,16 +55,16 @@ class SchemaExportTests(unittest.TestCase):
     def test_generated_schema_uses_model_metadata_and_canonical_ids(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             write_schema_files(Path(tempdir))
-            catalog_schema = json.loads((Path(tempdir) / "site-pipeline-catalog-v1.schema.json").read_text(encoding="utf-8"))
-            component_schema = json.loads((Path(tempdir) / "site-pipeline-component-v1.schema.json").read_text(encoding="utf-8"))
-            manifest_schema = json.loads((Path(tempdir) / "site-pipeline-stage-manifest-v1.schema.json").read_text(encoding="utf-8"))
-            components_data_schema = json.loads((Path(tempdir) / "site-pipeline-components-data-v1.schema.json").read_text(encoding="utf-8"))
-            diagnostics_schema = json.loads((Path(tempdir) / "site-pipeline-diagnostics-data-v1.schema.json").read_text(encoding="utf-8"))
+            catalog_schema = json.loads((Path(tempdir) / "catalog-v1.schema.json").read_text(encoding="utf-8"))
+            component_schema = json.loads((Path(tempdir) / "component-v1.schema.json").read_text(encoding="utf-8"))
+            manifest_schema = json.loads((Path(tempdir) / "stage-manifest-v1.schema.json").read_text(encoding="utf-8"))
+            components_data_schema = json.loads((Path(tempdir) / "components-data-v1.schema.json").read_text(encoding="utf-8"))
+            diagnostics_schema = json.loads((Path(tempdir) / "diagnostics-data-v1.schema.json").read_text(encoding="utf-8"))
 
         self.assertEqual(catalog_schema["$schema"], "https://json-schema.org/draft/2020-12/schema")
         self.assertEqual(
             catalog_schema["$id"],
-            "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-catalog-v1.schema.json",
+            "https://buildish.apache.org/components/site-pipeline/schemas/catalog-v1.schema.json",
         )
         self.assertIn("Do not edit by hand", catalog_schema["$comment"])
         self.assertEqual(
@@ -157,11 +157,11 @@ class SchemaExportTests(unittest.TestCase):
                 generated_reference_dir / "pipeline-file-contract-index.md"
             ).read_text(encoding="utf-8")
             self.assertIn(
-                "[`site-pipeline-catalog-v1.schema.json`](/components/site-pipeline/schemas/site-pipeline-catalog-v1.schema.json)",
+                "[`catalog-v1.schema.json`](/components/site-pipeline/schemas/catalog-v1.schema.json)",
                 file_contracts_text,
             )
             self.assertIn(
-                "[`site-pipeline-stage-manifest-v1.schema.json`](/components/site-pipeline/schemas/site-pipeline-stage-manifest-v1.schema.json)",
+                "[`stage-manifest-v1.schema.json`](/components/site-pipeline/schemas/stage-manifest-v1.schema.json)",
                 file_contracts_text,
             )
 
@@ -207,11 +207,11 @@ class SchemaExportTests(unittest.TestCase):
     def test_export_inventory_covers_inputs_and_outputs(self) -> None:
         export_names = {export.filename for export in schema_exports()}
 
-        self.assertIn("site-pipeline-provider-snapshot-v1.schema.json", export_names)
-        self.assertIn("site-pipeline-stage-manifest-v1.schema.json", export_names)
-        self.assertIn("site-pipeline-components-data-v1.schema.json", export_names)
-        self.assertIn("site-pipeline-unit-contributions-v1.schema.json", export_names)
-        self.assertIn("site-pipeline-front-matter-namespace-v1.schema.json", export_names)
+        self.assertIn("provider-snapshot-v1.schema.json", export_names)
+        self.assertIn("stage-manifest-v1.schema.json", export_names)
+        self.assertIn("components-data-v1.schema.json", export_names)
+        self.assertIn("unit-contributions-v1.schema.json", export_names)
+        self.assertIn("front-matter-namespace-v1.schema.json", export_names)
         self.assertGreaterEqual(len(export_names), 20)
 
     def test_checked_in_schema_files_match_generated_output(self) -> None:
@@ -237,8 +237,8 @@ class SchemaExportTests(unittest.TestCase):
         self.assertEqual(
             [export.filename for export in authored_exports],
             [
-                "site-pipeline-catalog-v1.schema.json",
-                "site-pipeline-component-v1.schema.json",
+                "catalog-v1.schema.json",
+                "component-v1.schema.json",
             ],
         )
 

@@ -207,7 +207,7 @@ class ResolvedMaterializationReportV1(SitePipelineBaseModel):
         summary="Planning inventory of required local inputs and their current materialization status.",
     )
     schema_export: ClassVar[SchemaExportSpecification] = SchemaExportSpecification(
-        filename="site-pipeline-materialization-report-v1.schema.json",
+        filename="materialization-report-v1.schema.json",
         title="Site Pipeline Materialization Report v1",
         examples=(
             SchemaExample(
@@ -302,7 +302,7 @@ class CheckReportV1(SitePipelineBaseModel):
         summary="Validation result for one `site-pipeline check` invocation.",
     )
     schema_export: ClassVar[SchemaExportSpecification] = SchemaExportSpecification(
-        filename="site-pipeline-check-report-v1.schema.json",
+        filename="check-report-v1.schema.json",
         title="Site Pipeline Check Report v1",
         examples=(
             SchemaExample(
@@ -384,7 +384,7 @@ class StageRunReportV1(SitePipelineBaseModel):
         summary="Execution result for one `build` run or completed watch cycle.",
     )
     schema_export: ClassVar[SchemaExportSpecification] = SchemaExportSpecification(
-        filename="site-pipeline-stage-run-report-v1.schema.json",
+        filename="stage-run-report-v1.schema.json",
         title="Site Pipeline Stage Run Report v1",
         examples=(
             SchemaExample(
@@ -550,7 +550,7 @@ class StageManifestV1(SitePipelineBaseModel):
         file_path="manifest.json",
     )
     schema_export: ClassVar[SchemaExportSpecification] = SchemaExportSpecification(
-        filename="site-pipeline-stage-manifest-v1.schema.json",
+        filename="stage-manifest-v1.schema.json",
         title="Site Pipeline Stage Manifest v1",
         examples=(
             SchemaExample(

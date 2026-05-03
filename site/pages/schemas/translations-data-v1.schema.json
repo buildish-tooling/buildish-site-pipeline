@@ -128,7 +128,7 @@
       }
     }
   },
-  "$id": "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-translations-data-v1.schema.json",
+  "$id": "https://buildish.apache.org/components/site-pipeline/schemas/translations-data-v1.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "Public staged aggregate file at ``data/translations.json``.",

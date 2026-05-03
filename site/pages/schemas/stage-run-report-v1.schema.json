@@ -193,20 +193,195 @@
         "category": "emitted",
         "ownership": "pipeline-derived"
       }
+    },
+    "RunStatus": {
+      "description": "Overall diagnostic class for a run or cycle.",
+      "enum": [
+        "clean",
+        "warnings",
+        "errors"
+      ],
+      "title": "RunStatus",
+      "type": "string"
+    },
+    "StageCommand": {
+      "description": "Stable stage-producing command modes.",
+      "enum": [
+        "build",
+        "watch"
+      ],
+      "title": "StageCommand",
+      "type": "string"
+    },
+    "StageRunSummary": {
+      "additionalProperties": false,
+      "description": "Outcome counts and usability flags for one stage-producing run or watch cycle.",
+      "properties": {
+        "errorCount": {
+          "description": "Number of error diagnostics emitted during the run.",
+          "minimum": 0,
+          "title": "Errorcount",
+          "type": "integer"
+        },
+        "infoCount": {
+          "description": "Number of informational diagnostics emitted during the run.",
+          "minimum": 0,
+          "title": "Infocount",
+          "type": "integer"
+        },
+        "stageUsable": {
+          "description": "Whether downstream tooling may safely use the stage after this run finished.",
+          "title": "Stageusable",
+          "type": "boolean"
+        },
+        "status": {
+          "$ref": "#/$defs/RunStatus",
+          "description": "Overall diagnostic status for the run after counts were evaluated."
+        },
+        "succeeded": {
+          "description": "Whether the run finished with a usable stage and should be treated as successful.",
+          "title": "Succeeded",
+          "type": "boolean"
+        },
+        "warningCount": {
+          "description": "Number of warning diagnostics emitted during the run.",
+          "minimum": 0,
+          "title": "Warningcount",
+          "type": "integer"
+        },
+        "wroteStage": {
+          "description": "Whether the run actually wrote or refreshed stage output on disk.",
+          "title": "Wrotestage",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "status",
+        "succeeded",
+        "wroteStage",
+        "stageUsable",
+        "errorCount",
+        "warningCount",
+        "infoCount"
+      ],
+      "title": "StageRunSummary",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     }
   },
-  "$id": "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-diagnostics-data-v1.schema.json",
+  "$id": "https://buildish.apache.org/components/site-pipeline/schemas/stage-run-report-v1.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "Public staged diagnostics file at ``data/diagnostics.json``.",
-  "items": {
-    "$ref": "#/$defs/PipelineDiagnosticEntry"
+  "additionalProperties": false,
+  "description": "Machine-readable result of ``build`` or one completed watch cycle.",
+  "examples": [
+    {
+      "command": "build",
+      "diagnostics": [],
+      "generatedAt": "2026-04-06T08:40:00Z",
+      "manifestPath": ".buildish/stage/current/manifest.json",
+      "schemaVersion": 1,
+      "stageRootPath": ".buildish/stage/current",
+      "summary": {
+        "errorCount": 0,
+        "infoCount": 2,
+        "stageUsable": true,
+        "status": "clean",
+        "succeeded": true,
+        "warningCount": 0,
+        "wroteStage": true
+      }
+    }
+  ],
+  "properties": {
+    "command": {
+      "$ref": "#/$defs/StageCommand",
+      "description": "Stage-producing command that produced this report, such as `build` or `watch`."
+    },
+    "cycle": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Completed watch-cycle number for watch reports; omitted for one-shot build reports.",
+      "examples": [
+        3
+      ],
+      "title": "Cycle"
+    },
+    "diagnostics": {
+      "description": "Structured diagnostics emitted during the stage-producing run.",
+      "items": {
+        "$ref": "#/$defs/PipelineDiagnosticEntry"
+      },
+      "title": "Diagnostics",
+      "type": "array"
+    },
+    "generatedAt": {
+      "description": "Timestamp when the stage run report was generated.",
+      "format": "date-time",
+      "title": "Generatedat",
+      "type": "string"
+    },
+    "manifestPath": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Local path to the generated stage manifest when the stage is usable.",
+      "title": "Manifestpath"
+    },
+    "schemaVersion": {
+      "const": 1,
+      "description": "Schema version for the stage run report.",
+      "title": "Schemaversion",
+      "type": "integer"
+    },
+    "stageRootPath": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Local path to the root of the stage tree, if the run produced one.",
+      "title": "Stagerootpath"
+    },
+    "summary": {
+      "$ref": "#/$defs/StageRunSummary",
+      "description": "Outcome summary with success state, stage usability, and diagnostic counts for the run."
+    }
   },
-  "title": "Site Pipeline data/diagnostics.json v1",
-  "type": "array",
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "command",
+    "summary",
+    "diagnostics"
+  ],
+  "title": "Site Pipeline Stage Run Report v1",
+  "type": "object",
   "x-buildish-contract": {
     "category": "emitted",
-    "filePath": "data/diagnostics.json",
     "ownership": "pipeline-derived",
-    "summary": "Structured diagnostics emitted during planning, checking, or staging."
+    "summary": "Execution result for one `build` run or completed watch cycle."
   }
 }

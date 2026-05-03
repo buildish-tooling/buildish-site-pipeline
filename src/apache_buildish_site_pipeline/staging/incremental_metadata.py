@@ -55,7 +55,7 @@ class PersistedUnitContributionsV1(SitePipelineBaseModel):
         file_path="data/_pipeline/unit-contributions.json",
     )
     schema_export: ClassVar[SchemaExportSpecification] = SchemaExportSpecification(
-        filename="site-pipeline-unit-contributions-v1.schema.json",
+        filename="unit-contributions-v1.schema.json",
         title="Site Pipeline data/_pipeline/unit-contributions.json v1",
         examples=(
             SchemaExample(
@@ -106,7 +106,7 @@ class OutputOwnershipMapV1(SitePipelineBaseModel):
         file_path="data/_pipeline/output-ownership.json",
     )
     schema_export: ClassVar[SchemaExportSpecification] = SchemaExportSpecification(
-        filename="site-pipeline-output-ownership-v1.schema.json",
+        filename="output-ownership-v1.schema.json",
         title="Site Pipeline data/_pipeline/output-ownership.json v1",
         examples=(
             SchemaExample(
@@ -149,7 +149,7 @@ class AggregateDependencyMapV1(SitePipelineBaseModel):
         file_path="data/_pipeline/aggregate-dependencies.json",
     )
     schema_export: ClassVar[SchemaExportSpecification] = SchemaExportSpecification(
-        filename="site-pipeline-aggregate-dependencies-v1.schema.json",
+        filename="aggregate-dependencies-v1.schema.json",
         title="Site Pipeline data/_pipeline/aggregate-dependencies.json v1",
         examples=(
             SchemaExample(

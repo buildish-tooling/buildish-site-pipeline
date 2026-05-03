@@ -254,7 +254,7 @@ class ProviderSnapshotDocumentV1(SitePipelineBaseModel):
         file_path="site/provider-snapshot.json",
     )
     schema_export: ClassVar[SchemaExportSpecification] = SchemaExportSpecification(
-        filename="site-pipeline-provider-snapshot-v1.schema.json",
+        filename="provider-snapshot-v1.schema.json",
         title="Site Pipeline Provider Snapshot v1",
         examples=(
             SchemaExample(

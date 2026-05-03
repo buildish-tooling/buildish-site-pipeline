@@ -1,66 +1,6 @@
 {
   "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
   "$defs": {
-    "CheckFailureThreshold": {
-      "description": "Lowest severity that causes ``check`` to fail.",
-      "enum": [
-        "error",
-        "warning"
-      ],
-      "title": "CheckFailureThreshold",
-      "type": "string"
-    },
-    "CheckSummary": {
-      "additionalProperties": false,
-      "description": "Outcome counts and pass/fail decision for one `check` run.",
-      "properties": {
-        "errorCount": {
-          "description": "Number of error diagnostics emitted during the run.",
-          "minimum": 0,
-          "title": "Errorcount",
-          "type": "integer"
-        },
-        "failOnSeverity": {
-          "$ref": "#/$defs/CheckFailureThreshold",
-          "description": "Configured severity threshold that decides whether warnings already fail the run or only errors do."
-        },
-        "infoCount": {
-          "description": "Number of informational diagnostics emitted during the run.",
-          "minimum": 0,
-          "title": "Infocount",
-          "type": "integer"
-        },
-        "passed": {
-          "description": "Whether the check run satisfied the configured failure threshold and should be treated as passing.",
-          "title": "Passed",
-          "type": "boolean"
-        },
-        "status": {
-          "$ref": "#/$defs/RunStatus",
-          "description": "Overall diagnostic status for the run after counts were evaluated."
-        },
-        "warningCount": {
-          "description": "Number of warning diagnostics emitted during the run.",
-          "minimum": 0,
-          "title": "Warningcount",
-          "type": "integer"
-        }
-      },
-      "required": [
-        "status",
-        "passed",
-        "failOnSeverity",
-        "errorCount",
-        "warningCount",
-        "infoCount"
-      ],
-      "title": "CheckSummary",
-      "type": "object",
-      "x-buildish-contract": {
-        "category": "emitted",
-        "ownership": "pipeline-derived"
-      }
-    },
     "DiagnosticSeverity": {
       "description": "Severity level for pipeline diagnostics.",
       "enum": [
@@ -253,90 +193,20 @@
         "category": "emitted",
         "ownership": "pipeline-derived"
       }
-    },
-    "RunStatus": {
-      "description": "Overall diagnostic class for a run or cycle.",
-      "enum": [
-        "clean",
-        "warnings",
-        "errors"
-      ],
-      "title": "RunStatus",
-      "type": "string"
     }
   },
-  "$id": "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-check-report-v1.schema.json",
+  "$id": "https://buildish.apache.org/components/site-pipeline/schemas/diagnostics-data-v1.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "additionalProperties": false,
-  "description": "Machine-readable result of ``site-pipeline check``.",
-  "examples": [
-    {
-      "command": "check",
-      "diagnostics": [
-        {
-          "code": "catalog.redirectReasonMissing",
-          "componentSlug": "spark",
-          "message": "Redirect /spark/docs/current/ has no reader-facing reason.",
-          "severity": "warning",
-          "targetId": "/spark/docs/current/"
-        }
-      ],
-      "generatedAt": "2026-04-06T08:35:00Z",
-      "schemaVersion": 1,
-      "summary": {
-        "errorCount": 0,
-        "failOnSeverity": "error",
-        "infoCount": 0,
-        "passed": true,
-        "status": "warnings",
-        "warningCount": 1
-      }
-    }
-  ],
-  "properties": {
-    "command": {
-      "const": "check",
-      "description": "Command name that produced this report; always `check` for this contract.",
-      "title": "Command",
-      "type": "string"
-    },
-    "diagnostics": {
-      "description": "Structured diagnostics emitted during the check run.",
-      "items": {
-        "$ref": "#/$defs/PipelineDiagnosticEntry"
-      },
-      "title": "Diagnostics",
-      "type": "array"
-    },
-    "generatedAt": {
-      "description": "Timestamp when the check report was generated.",
-      "format": "date-time",
-      "title": "Generatedat",
-      "type": "string"
-    },
-    "schemaVersion": {
-      "const": 1,
-      "description": "Schema version for the check report.",
-      "title": "Schemaversion",
-      "type": "integer"
-    },
-    "summary": {
-      "$ref": "#/$defs/CheckSummary",
-      "description": "Outcome summary with pass/fail state and diagnostic counts for the run."
-    }
+  "description": "Public staged diagnostics file at ``data/diagnostics.json``.",
+  "items": {
+    "$ref": "#/$defs/PipelineDiagnosticEntry"
   },
-  "required": [
-    "schemaVersion",
-    "generatedAt",
-    "command",
-    "summary",
-    "diagnostics"
-  ],
-  "title": "Site Pipeline Check Report v1",
-  "type": "object",
+  "title": "Site Pipeline data/diagnostics.json v1",
+  "type": "array",
   "x-buildish-contract": {
     "category": "emitted",
+    "filePath": "data/diagnostics.json",
     "ownership": "pipeline-derived",
-    "summary": "Validation result for one `site-pipeline check` invocation."
+    "summary": "Structured diagnostics emitted during planning, checking, or staging."
   }
 }

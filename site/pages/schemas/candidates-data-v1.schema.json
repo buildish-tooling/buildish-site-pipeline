@@ -361,7 +361,7 @@
       }
     }
   },
-  "$id": "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-candidates-data-v1.schema.json",
+  "$id": "https://buildish.apache.org/components/site-pipeline/schemas/candidates-data-v1.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "Public staged aggregate file at ``data/candidates.json``.",

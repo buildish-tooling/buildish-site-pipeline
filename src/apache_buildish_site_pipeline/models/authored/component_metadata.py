@@ -120,7 +120,7 @@ class ComponentMetadataDocumentV1(SitePipelineBaseModel):
         ),
     )
     schema_export: ClassVar[SchemaExportSpecification] = SchemaExportSpecification(
-        filename="site-pipeline-component-v1.schema.json",
+        filename="component-v1.schema.json",
         title="Site Pipeline Component Metadata v1",
         examples=(
             SchemaExample(

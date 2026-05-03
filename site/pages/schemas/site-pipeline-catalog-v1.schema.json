@@ -141,7 +141,11 @@
         "versioning"
       ],
       "title": "ArtifactConfig",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
     },
     "ArtifactLifecycleConfig": {
       "additionalProperties": false,
@@ -243,7 +247,11 @@
         }
       },
       "title": "ArtifactLifecycleConfig",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
     },
     "ArtifactVersioningConfig": {
       "additionalProperties": false,
@@ -306,7 +314,11 @@
         "tagPattern"
       ],
       "title": "ArtifactVersioningConfig",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
     },
     "CandidateSelectionMode": {
       "description": "Strategy used to select a candidate version.",
@@ -375,7 +387,11 @@
         "mode"
       ],
       "title": "CandidateSelectionPolicy",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
     },
     "CatalogDefaults": {
       "additionalProperties": false,
@@ -463,7 +479,11 @@
         }
       },
       "title": "CatalogDefaults",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
     },
     "CompatibilityAssertionConfig": {
       "additionalProperties": false,
@@ -551,7 +571,11 @@
         "relation"
       ],
       "title": "CompatibilityAssertionConfig",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
     },
     "ComponentCatalogEntry": {
       "additionalProperties": false,
@@ -719,7 +743,11 @@
         "slug"
       ],
       "title": "ComponentCatalogEntry",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
     },
     "ComponentContentSelection": {
       "additionalProperties": false,
@@ -741,7 +769,11 @@
         }
       },
       "title": "ComponentContentSelection",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
     },
     "ExactReleaseConfig": {
       "additionalProperties": false,
@@ -865,7 +897,11 @@
         "version"
       ],
       "title": "ExactReleaseConfig",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
     },
     "GroupConfig": {
       "additionalProperties": false,
@@ -940,7 +976,11 @@
         }
       },
       "title": "GroupConfig",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
     },
     "IndexBehavior": {
       "description": "Renderer hint for version/ref index visibility.",
@@ -998,7 +1038,11 @@
         "mode"
       ],
       "title": "LineHeadSelectionPolicy",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
     },
     "LinkCheckConfig": {
       "additionalProperties": false,
@@ -1046,7 +1090,11 @@
         }
       },
       "title": "LinkCheckConfig",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
     },
     "LinkCheckMode": {
       "description": "Supported staged public-path resolution strategies for internal page links.",
@@ -1120,7 +1168,11 @@
         }
       },
       "title": "LocalizationConfig",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
     },
     "MountConfig": {
       "additionalProperties": false,
@@ -1225,7 +1277,11 @@
         "trustClass"
       ],
       "title": "MountConfig",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
     },
     "NamedRefConfig": {
       "additionalProperties": false,
@@ -1306,7 +1362,11 @@
         "ref"
       ],
       "title": "NamedRefConfig",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
     },
     "OriginConfig": {
       "additionalProperties": false,
@@ -1353,7 +1413,11 @@
         "baseUrl"
       ],
       "title": "OriginConfig",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
     },
     "PublicationConfig": {
       "additionalProperties": false,
@@ -1508,7 +1572,11 @@
         }
       },
       "title": "PublicationConfig",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
     },
     "PublicationDefaults": {
       "additionalProperties": false,
@@ -1652,7 +1720,11 @@
         }
       },
       "title": "PublicationSelectionPolicy",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
     },
     "PublicationState": {
       "description": "Observed provider-side publication state.",
@@ -1743,7 +1815,11 @@
         "target"
       ],
       "title": "RedirectRuleConfig",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
     },
     "ReleaseLineConfig": {
       "additionalProperties": false,
@@ -1875,7 +1951,11 @@
         "latest"
       ],
       "title": "ReleaseLineConfig",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
     },
     "ReleaseSelectionMode": {
       "description": "Strategy used to select a released version.",
@@ -1941,7 +2021,11 @@
         "mode"
       ],
       "title": "ReleaseSelectionPolicy",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
     },
     "RouteAliasConfig": {
       "additionalProperties": false,
@@ -1995,7 +2079,11 @@
         "path"
       ],
       "title": "RouteAliasConfig",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
     },
     "RouteMode": {
       "description": "Locale routing strategy for a published route set.",
@@ -2056,7 +2144,11 @@
         }
       },
       "title": "SiteContentConfig",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
     },
     "SourceConfig": {
       "additionalProperties": false,
@@ -2115,7 +2207,11 @@
         "localDir"
       ],
       "title": "SourceConfig",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
     },
     "SupportStatusDefinition": {
       "additionalProperties": false,
@@ -2185,7 +2281,11 @@
         "displayName"
       ],
       "title": "SupportStatusDefinition",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "component-owned"
+      }
     },
     "SupportWindow": {
       "additionalProperties": false,
@@ -2297,7 +2397,11 @@
         }
       },
       "title": "SupportWindow",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
     },
     "TopLevelAssetConfig": {
       "additionalProperties": false,
@@ -2397,7 +2501,11 @@
         }
       },
       "title": "ValidationConfig",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
     },
     "WithdrawalBehavior": {
       "description": "Author-directed behavior for a withdrawn release.",

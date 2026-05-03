@@ -55,7 +55,11 @@
         "infoCount"
       ],
       "title": "CheckSummary",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     },
     "DiagnosticSeverity": {
       "description": "Severity level for pipeline diagnostics.",
@@ -168,7 +172,11 @@
         "message"
       ],
       "title": "PipelineDiagnosticEntry",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     },
     "ReducedDiagnosticDetailsSummary": {
       "additionalProperties": false,
@@ -240,7 +248,11 @@
         "limitBytes"
       ],
       "title": "ReducedDiagnosticDetailsSummary",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     },
     "RunStatus": {
       "description": "Overall diagnostic class for a run or cycle.",

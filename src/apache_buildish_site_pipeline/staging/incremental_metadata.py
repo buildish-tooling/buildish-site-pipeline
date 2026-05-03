@@ -22,7 +22,7 @@ from typing import ClassVar, Literal, cast
 
 from pydantic import Field
 
-from ..models.documentation import (
+from ..docs.documentation import (
     ContractDocumentation,
     PipelineDerivedModel as SitePipelineBaseModel,
 )

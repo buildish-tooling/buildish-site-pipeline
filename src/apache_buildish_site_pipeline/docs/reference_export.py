@@ -27,15 +27,15 @@ from typing import TYPE_CHECKING, Any, get_args, get_origin
 import yaml
 
 from apache_buildish_site_pipeline.models.base import SitePipelineBaseModel, to_camel_case
-from apache_buildish_site_pipeline.models.documentation import contract_documentation_for
-from apache_buildish_site_pipeline.models.reference_docs import (
+from apache_buildish_site_pipeline.docs.documentation import contract_documentation_for
+from apache_buildish_site_pipeline.docs.reference_docs import (
     ReferenceDocError,
     TypeReferenceTarget,
     parse_reference_document,
     render_reference_markdown,
     render_reference_schema_text,
 )
-from apache_buildish_site_pipeline.models.reference_docs.registry import (
+from apache_buildish_site_pipeline.docs.reference_docs.registry import (
     MODEL_SECTION_DEFINITIONS,
     SCALAR_REFERENCE_ENTRIES,
     ModelSectionDefinition,
@@ -43,8 +43,8 @@ from apache_buildish_site_pipeline.models.reference_docs.registry import (
 )
 
 if TYPE_CHECKING:
-    from tools.helpers.schema_export import SchemaExport
-    from tools.helpers.schema_export import SchemaExample
+    from apache_buildish_site_pipeline.docs.schema_export import SchemaExport
+    from apache_buildish_site_pipeline.docs.schema_export import SchemaExample
 
 _GENERATED_REFERENCE_COMMENT = (
     "This reference is generated from the Site Pipeline Pydantic models and checked-in reference metadata. "

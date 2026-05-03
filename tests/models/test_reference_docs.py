@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import unittest
 
-from apache_buildish_site_pipeline.models.reference_docs import (
+from apache_buildish_site_pipeline.docs.reference_docs import (
     ExternalLinkTarget,
     ReferenceCodeBlock,
     ReferenceDocError,

@@ -60,7 +60,11 @@
         "url"
       ],
       "title": "TranslationLinkSummary",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     }
   },
   "$id": "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-translations-data-v1.schema.json",
@@ -125,7 +129,11 @@
           "entries"
         ],
         "title": "TranslationSetAggregateEntry",
-        "type": "object"
+        "type": "object",
+        "x-buildish-contract": {
+          "category": "emitted",
+          "ownership": "pipeline-derived"
+        }
       },
       "title": "Items",
       "type": "array"

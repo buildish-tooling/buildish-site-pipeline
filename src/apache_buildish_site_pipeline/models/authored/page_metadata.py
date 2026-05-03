@@ -16,7 +16,7 @@
 
 from __future__ import annotations
 
-from ..documentation import ComponentOwnedAuthoredModel as SitePipelineBaseModel
+from ...docs.documentation import ComponentOwnedAuthoredModel as SitePipelineBaseModel
 from ..scalars import NonEmptyString
 
 

@@ -14,6 +14,7 @@
 
 """Shared base model conventions for external schema types."""
 
+from typing import Any
 from pydantic import BaseModel, ConfigDict
 
 
@@ -33,3 +34,14 @@ class SitePipelineBaseModel(BaseModel):
         populate_by_name=True,
         serialize_by_alias=True,
     )
+
+    @classmethod
+    def model_json_schema(cls, *args: Any, **kwargs: Any) -> dict[str, Any]:
+        """Return the generated JSON Schema with Site Pipeline documentation metadata."""
+
+        schema = super().model_json_schema(*args, **kwargs)
+        from apache_buildish_site_pipeline.docs.documentation import (
+            apply_documentation_to_schema,
+        )
+
+        return apply_documentation_to_schema(cls, schema)

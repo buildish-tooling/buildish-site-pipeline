@@ -14,8 +14,8 @@
 
 """Typed external models for the site pipeline."""
 
-from .documentation import ContractDocumentation, contract_documentation_for
-from .reference_docs import (
+from ..docs.documentation import ContractDocumentation, contract_documentation_for
+from ..docs.reference_docs import (
     ExternalLinkTarget,
     ReferenceDocError,
     ReferenceDocumentation,

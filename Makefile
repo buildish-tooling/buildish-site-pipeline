@@ -62,7 +62,7 @@ release-legal-preliminary-check: ## Verify the checked-in preliminary release-le
 check: lint typecheck test rat release-legal-preliminary-check ## Run lint, type checks, tests, RAT, and checked-in legal-artifact verification.
 
 schemas: ## Regenerate checked-in JSON Schema files and the Markdown model reference.
-	$(UV_RUN) python -m tools.helpers.schema_export --output-dir site/pages/schemas
+	$(UV_RUN) python -m apache_buildish_site_pipeline.docs.schema_export --output-dir site/pages/schemas
 
 publish-snapshot-local: ## Build and publish a local wheel snapshot under dist/snapshots.
 	$(UV_RUN) python -m tools.helpers.snapshot_publish --out-dir $(SNAPSHOT_OUT_DIR)

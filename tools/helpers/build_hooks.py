@@ -50,10 +50,16 @@ _FLATTENED_LICENSE_PATHS = {
     "dist-release-legal/NOTICE": "NOTICE",
 }
 _UNSHIPPED_PACKAGE_FILES = (
-    "reference_export.py",
     "release_legal.py",
-    "schema_export.py",
     "snapshot_publish.py",
+)
+_UNSHIPPED_PACKAGE_PATHS = (
+    "models/documentation.py",
+    "reference_export.py",
+    "schema_export.py",
+)
+_UNSHIPPED_PACKAGE_DIRS = (
+    "models/reference_docs",
 )
 
 
@@ -126,6 +132,14 @@ class FlattenedLicenseFilesBdistWheel(bdist_wheel):
             module_path = package_dir / module_name
             if module_path.exists():
                 module_path.unlink()
+        for relative_path in _UNSHIPPED_PACKAGE_PATHS:
+            package_path = package_dir / relative_path
+            if package_path.exists():
+                package_path.unlink()
+        for relative_dir in _UNSHIPPED_PACKAGE_DIRS:
+            package_path = package_dir / relative_dir
+            if package_path.exists():
+                shutil.rmtree(package_path)
 
     @staticmethod
     def _rewrite_license_file_metadata(

@@ -20,11 +20,11 @@ from typing import ClassVar, Literal, Self
 
 from pydantic import Field, model_validator
 
-from ..documentation import (
+from ...docs.documentation import (
     ConsumerOwnedAuthoredModel as SitePipelineBaseModel,
     ContractDocumentation,
 )
-from ..reference_docs import ReferenceDocumentation, ReferenceMarkdown, ReferenceSection
+from ...docs.reference_docs import ReferenceDocumentation, ReferenceMarkdown, ReferenceSection
 from ..enums import (
     CandidateSelectionMode,
     IndexBehavior,

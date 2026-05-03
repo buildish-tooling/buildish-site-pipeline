@@ -142,7 +142,11 @@
         "url"
       ],
       "title": "ProviderAsset",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "provider",
+        "ownership": "provider-derived"
+      }
     }
   },
   "$id": "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-candidates-data-v1.schema.json",
@@ -358,7 +362,11 @@
           "version"
         ],
         "title": "CandidateAggregateEntry",
-        "type": "object"
+        "type": "object",
+        "x-buildish-contract": {
+          "category": "emitted",
+          "ownership": "pipeline-derived"
+        }
       },
       "title": "Items",
       "type": "array"

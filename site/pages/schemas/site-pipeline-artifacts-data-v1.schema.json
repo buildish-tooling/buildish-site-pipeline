@@ -62,7 +62,11 @@
         "tagPattern"
       ],
       "title": "ArtifactVersioningConfig",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
     },
     "LatestCandidateSummary": {
       "additionalProperties": false,
@@ -135,7 +139,11 @@
         }
       },
       "title": "LatestCandidateSummary",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     },
     "LatestReleaseSummary": {
       "additionalProperties": false,
@@ -212,7 +220,11 @@
         "version"
       ],
       "title": "LatestReleaseSummary",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     },
     "NamedRefConfig": {
       "additionalProperties": false,
@@ -293,7 +305,11 @@
         "ref"
       ],
       "title": "NamedRefConfig",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
     },
     "PublicationState": {
       "description": "Observed provider-side publication state.",
@@ -471,7 +487,11 @@
         "ref"
       ],
       "title": "RefAggregateEntry",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     },
     "ReleaseLineSummary": {
       "additionalProperties": false,
@@ -593,7 +613,11 @@
         "key"
       ],
       "title": "ReleaseLineSummary",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     },
     "SupportStatusDefinition": {
       "additionalProperties": false,
@@ -663,7 +687,11 @@
         "displayName"
       ],
       "title": "SupportStatusDefinition",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "component-owned"
+      }
     },
     "SupportWindow": {
       "additionalProperties": false,
@@ -775,7 +803,11 @@
         }
       },
       "title": "SupportWindow",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
     }
   },
   "$id": "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-artifacts-data-v1.schema.json",
@@ -1004,7 +1036,11 @@
           "key"
         ],
         "title": "ArtifactsDataEntry",
-        "type": "object"
+        "type": "object",
+        "x-buildish-contract": {
+          "category": "emitted",
+          "ownership": "pipeline-derived"
+        }
       },
       "title": "Items",
       "type": "array"

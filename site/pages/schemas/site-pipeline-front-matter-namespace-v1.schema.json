@@ -69,7 +69,11 @@
         "key"
       ],
       "title": "ArtifactFrontMatterSummary",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     },
     "PipelineComponentFrontMatter": {
       "additionalProperties": false,
@@ -144,7 +148,11 @@
         "publication"
       ],
       "title": "PipelineComponentFrontMatter",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     },
     "PipelinePageFrontMatter": {
       "additionalProperties": false,
@@ -384,7 +392,11 @@
         "componentUrl"
       ],
       "title": "PipelinePageFrontMatter",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     },
     "ProviderProvenance": {
       "additionalProperties": false,
@@ -435,7 +447,11 @@
         "key"
       ],
       "title": "ProviderProvenance",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     },
     "PublicationState": {
       "description": "Observed provider-side publication state.",
@@ -530,7 +546,11 @@
         "key"
       ],
       "title": "ReleaseLineContext",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     },
     "ReleaseLineSummary": {
       "additionalProperties": false,
@@ -652,7 +672,11 @@
         "key"
       ],
       "title": "ReleaseLineSummary",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     },
     "ResolvedOrigin": {
       "additionalProperties": false,
@@ -692,7 +716,11 @@
         "hostname"
       ],
       "title": "ResolvedOrigin",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     },
     "ResolvedPathSet": {
       "additionalProperties": false,
@@ -742,7 +770,11 @@
         "assets"
       ],
       "title": "ResolvedPathSet",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     },
     "ResolvedPublication": {
       "additionalProperties": false,
@@ -767,7 +799,11 @@
         "urls"
       ],
       "title": "ResolvedPublication",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     },
     "ResolvedUrlSet": {
       "additionalProperties": false,
@@ -817,7 +853,11 @@
         "assets"
       ],
       "title": "ResolvedUrlSet",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     },
     "SupportWindow": {
       "additionalProperties": false,
@@ -929,7 +969,11 @@
         }
       },
       "title": "SupportWindow",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
     },
     "TranslationLinkSummary": {
       "additionalProperties": false,
@@ -990,7 +1034,11 @@
         "url"
       ],
       "title": "TranslationLinkSummary",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     },
     "VersionContext": {
       "additionalProperties": false,
@@ -1215,7 +1263,11 @@
         "label"
       ],
       "title": "VersionContext",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     }
   },
   "$id": "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-front-matter-namespace-v1.schema.json",

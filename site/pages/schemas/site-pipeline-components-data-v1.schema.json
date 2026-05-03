@@ -69,7 +69,11 @@
         "key"
       ],
       "title": "ArtifactFrontMatterSummary",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     },
     "ReleaseLineSummary": {
       "additionalProperties": false,
@@ -191,7 +195,11 @@
         "key"
       ],
       "title": "ReleaseLineSummary",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     },
     "ResolvedOrigin": {
       "additionalProperties": false,
@@ -231,7 +239,11 @@
         "hostname"
       ],
       "title": "ResolvedOrigin",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     },
     "ResolvedPathSet": {
       "additionalProperties": false,
@@ -281,7 +293,11 @@
         "assets"
       ],
       "title": "ResolvedPathSet",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     },
     "ResolvedPublication": {
       "additionalProperties": false,
@@ -306,7 +322,11 @@
         "urls"
       ],
       "title": "ResolvedPublication",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     },
     "ResolvedUrlSet": {
       "additionalProperties": false,
@@ -356,7 +376,11 @@
         "assets"
       ],
       "title": "ResolvedUrlSet",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     },
     "SupportWindow": {
       "additionalProperties": false,
@@ -468,7 +492,11 @@
         }
       },
       "title": "SupportWindow",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
     }
   },
   "$id": "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-components-data-v1.schema.json",
@@ -613,7 +641,11 @@
           "publication"
         ],
         "title": "ComponentsDataEntry",
-        "type": "object"
+        "type": "object",
+        "x-buildish-contract": {
+          "category": "emitted",
+          "ownership": "pipeline-derived"
+        }
       },
       "title": "Items",
       "type": "array"

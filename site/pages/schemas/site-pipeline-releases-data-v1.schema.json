@@ -142,7 +142,11 @@
         "url"
       ],
       "title": "ProviderAsset",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "provider",
+        "ownership": "provider-derived"
+      }
     },
     "PublicationState": {
       "description": "Observed provider-side publication state.",
@@ -265,7 +269,11 @@
         }
       },
       "title": "SupportWindow",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
     },
     "WithdrawalBehavior": {
       "description": "Author-directed behavior for a withdrawn release.",
@@ -579,7 +587,11 @@
           "version"
         ],
         "title": "ReleaseAggregateEntry",
-        "type": "object"
+        "type": "object",
+        "x-buildish-contract": {
+          "category": "emitted",
+          "ownership": "pipeline-derived"
+        }
       },
       "title": "Items",
       "type": "array"

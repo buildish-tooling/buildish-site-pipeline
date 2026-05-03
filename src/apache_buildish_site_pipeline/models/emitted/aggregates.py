@@ -20,7 +20,7 @@ from typing import Self
 
 from pydantic import Field, model_validator
 
-from ..documentation import PipelineDerivedModel as SitePipelineBaseModel
+from ...docs.documentation import PipelineDerivedModel as SitePipelineBaseModel
 from ..enums import (
     IndexBehavior,
     PublicationState,

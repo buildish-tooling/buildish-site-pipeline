@@ -20,11 +20,11 @@ from typing import ClassVar, Literal
 
 from pydantic import Field
 
-from ..documentation import (
+from ...docs.documentation import (
     ComponentOwnedAuthoredModel as SitePipelineBaseModel,
     ContractDocumentation,
 )
-from ..reference_docs import ReferenceDocumentation, ReferenceMarkdown, ReferenceSection
+from ...docs.reference_docs import ReferenceDocumentation, ReferenceMarkdown, ReferenceSection
 from ..scalars import Identifier, NonEmptyString, RepoRelativePath, Slug, VersionString
 
 

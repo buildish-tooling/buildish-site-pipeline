@@ -22,10 +22,11 @@ maintaining a parallel registry keyed by model class.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import ClassVar, Literal
+import inspect
+from typing import Any, ClassVar, Literal, get_args, get_origin
 
 from apache_buildish_site_pipeline.models.base import SitePipelineBaseModel
-from apache_buildish_site_pipeline.models.reference_docs import ReferenceDocumentation
+from apache_buildish_site_pipeline.docs.reference_docs import ReferenceDocumentation
 
 ContractCategory = Literal["authored", "provider", "emitted"]
 ContractOwnership = Literal[
@@ -106,3 +107,91 @@ def contract_documentation_for(
 
     documentation = getattr(model, "contract_documentation", None)
     return documentation if isinstance(documentation, ContractDocumentation) else None
+
+
+def field_description_for(
+    model: type[SitePipelineBaseModel],
+    field_name: str,
+) -> str | None:
+    """Return the explicit field description for one Site Pipeline model field."""
+
+    field = model.model_fields.get(field_name)
+    if field is None:
+        return None
+    return field.description
+
+
+def apply_documentation_to_schema(
+    model: type[SitePipelineBaseModel],
+    schema: dict[str, Any],
+) -> dict[str, Any]:
+    """Inject Site Pipeline documentation metadata into one generated JSON Schema."""
+
+    _apply_model_documentation(model, schema)
+    definitions = schema.get("$defs")
+    if isinstance(definitions, dict):
+        nested_models = _reachable_models(model)
+        for definition_name, definition_schema in definitions.items():
+            if not isinstance(definition_schema, dict):
+                continue
+            nested_model = nested_models.get(str(definition_name)) or nested_models.get(
+                str(definition_schema.get("title"))
+            )
+            if nested_model is not None:
+                _apply_model_documentation(nested_model, definition_schema)
+    return schema
+
+
+def _apply_model_documentation(
+    model: type[SitePipelineBaseModel],
+    schema: dict[str, Any],
+) -> None:
+    """Inject model and field descriptions for one specific schema node."""
+
+    if not schema.get("description"):
+        docstring = inspect.getdoc(model)
+        if docstring:
+            schema["description"] = docstring
+    documentation = contract_documentation_for(model)
+    if documentation is not None:
+        schema.setdefault("x-buildish-contract", documentation.as_schema_extension())
+    properties = schema.get("properties")
+    if isinstance(properties, dict):
+        for field_name, property_schema in properties.items():
+            if not isinstance(property_schema, dict) or property_schema.get("description"):
+                continue
+            description = field_description_for(model, str(field_name))
+            if description is not None:
+                property_schema["description"] = description
+
+
+def _reachable_models(
+    root_model: type[SitePipelineBaseModel],
+) -> dict[str, type[SitePipelineBaseModel]]:
+    """Return nested Site Pipeline models reachable from one root model graph."""
+
+    discovered: dict[str, type[SitePipelineBaseModel]] = {}
+    visited: set[type[SitePipelineBaseModel]] = set()
+
+    def visit_model(model: type[SitePipelineBaseModel]) -> None:
+        if model in visited:
+            return
+        visited.add(model)
+        discovered.setdefault(model.__name__, model)
+        discovered.setdefault(str(getattr(model, "__name__", "")), model)
+        for field_info in model.model_fields.values():
+            visit_annotation(field_info.annotation)
+
+    def visit_annotation(annotation: Any) -> None:
+        origin = get_origin(annotation)
+        if origin is None:
+            if inspect.isclass(annotation) and issubclass(annotation, SitePipelineBaseModel):
+                visit_model(annotation)
+            return
+        for argument in get_args(annotation):
+            if argument is None or argument is type(None):
+                continue
+            visit_annotation(argument)
+
+    visit_model(root_model)
+    return discovered

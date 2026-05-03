@@ -30,7 +30,11 @@
         "slug"
       ],
       "title": "ComponentIdentity",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "component-owned"
+      }
     },
     "ComponentLifecycleHints": {
       "additionalProperties": false,
@@ -71,7 +75,11 @@
         }
       },
       "title": "ComponentLifecycleHints",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "component-owned"
+      }
     },
     "ContentRoots": {
       "additionalProperties": false,
@@ -121,7 +129,11 @@
         }
       },
       "title": "ContentRoots",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "component-owned"
+      }
     },
     "SupportStatusDefinition": {
       "additionalProperties": false,
@@ -191,7 +203,11 @@
         "displayName"
       ],
       "title": "SupportStatusDefinition",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "component-owned"
+      }
     }
   },
   "$id": "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-component-v1.schema.json",

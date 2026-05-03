@@ -262,7 +262,11 @@
         "redirects"
       ],
       "title": "StageDataFiles",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     },
     "StageRoots": {
       "additionalProperties": false,
@@ -302,7 +306,11 @@
         "data"
       ],
       "title": "StageRoots",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     }
   },
   "$id": "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-stage-manifest-v1.schema.json",

@@ -142,7 +142,11 @@
         "url"
       ],
       "title": "ProviderAsset",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "provider",
+        "ownership": "provider-derived"
+      }
     },
     "ProviderDescriptor": {
       "additionalProperties": false,
@@ -216,7 +220,11 @@
         "fetchedAt"
       ],
       "title": "ProviderDescriptor",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "provider",
+        "ownership": "provider-derived"
+      }
     },
     "ProviderRecord": {
       "additionalProperties": false,
@@ -609,7 +617,11 @@
         "artifactKey"
       ],
       "title": "ProviderRecord",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "provider",
+        "ownership": "provider-derived"
+      }
     },
     "PublicationState": {
       "description": "Observed provider-side publication state.",

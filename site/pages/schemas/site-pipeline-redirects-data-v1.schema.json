@@ -69,7 +69,11 @@
           "status"
         ],
         "title": "RedirectAggregateEntry",
-        "type": "object"
+        "type": "object",
+        "x-buildish-contract": {
+          "category": "emitted",
+          "ownership": "pipeline-derived"
+        }
       },
       "title": "Items",
       "type": "array"

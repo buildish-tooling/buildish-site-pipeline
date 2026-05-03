@@ -28,7 +28,11 @@
         "stageRelativePath"
       ],
       "title": "AggregateDependencyEntryV1",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     }
   },
   "$id": "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-aggregate-dependencies-v1.schema.json",

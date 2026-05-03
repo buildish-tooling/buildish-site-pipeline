@@ -138,7 +138,11 @@
         "message"
       ],
       "title": "PipelineDiagnosticEntry",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     },
     "PlanningTarget": {
       "description": "Planning intent for later staging behavior.",
@@ -219,7 +223,11 @@
         "limitBytes"
       ],
       "title": "ReducedDiagnosticDetailsSummary",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     },
     "ResolvedMaterializationEntry": {
       "additionalProperties": false,
@@ -426,7 +434,11 @@
         "status"
       ],
       "title": "ResolvedMaterializationEntry",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     }
   },
   "$id": "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-materialization-report-v1.schema.json",

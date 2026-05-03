@@ -20,7 +20,7 @@ from typing import ClassVar, Literal, Self
 
 from pydantic import Field, field_validator, model_validator
 
-from ..documentation import (
+from ...docs.documentation import (
     ContractDocumentation,
     PipelineDerivedModel as SitePipelineBaseModel,
 )

@@ -33,7 +33,7 @@ from typing import Any, Literal
 
 from pydantic import Field, TypeAdapter, create_model
 
-from apache_buildish_site_pipeline.models.documentation import ContractDocumentation, contract_documentation_for
+from apache_buildish_site_pipeline.docs.documentation import ContractDocumentation, contract_documentation_for
 from apache_buildish_site_pipeline.models.enums import DocumentFormat
 from apache_buildish_site_pipeline.models.loading import (
     load_component_metadata_document,
@@ -869,14 +869,14 @@ def write_authored_schema_files(output_dir: Path) -> tuple[Path, ...]:
 def write_reference_file(output_path: Path) -> Path:
     """Write the generated Markdown schema reference document."""
 
-    from tools.helpers.reference_export import write_reference_markdown_file
+    from apache_buildish_site_pipeline.docs.reference_export import write_reference_markdown_file
 
     return write_reference_markdown_file(output_path, schema_exports())
 
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="python -m tools.helpers.schema_export"
+        prog="python -m apache_buildish_site_pipeline.docs.schema_export"
     )
     parser.add_argument(
         "--output-dir",

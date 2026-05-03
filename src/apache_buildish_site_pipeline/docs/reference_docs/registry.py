@@ -25,6 +25,7 @@ class ModelSectionDefinition:
 
     title: str
     description: str
+    page_slug: str
     module_prefixes: tuple[str, ...]
 
     def matches(self, module_name: str) -> bool:
@@ -44,31 +45,37 @@ MODEL_SECTION_DEFINITIONS = (
     ModelSectionDefinition(
         title="Authored input types",
         description="Consumer-owned and component-owned authored contract models.",
+        page_slug="pipeline-authored-input-reference",
         module_prefixes=("apache_buildish_site_pipeline.models.authored.",),
     ),
     ModelSectionDefinition(
         title="Provider input types",
         description="Normalized provider snapshot contracts consumed by the pipeline.",
+        page_slug="pipeline-provider-input-reference",
         module_prefixes=("apache_buildish_site_pipeline.models.provider.",),
     ),
     ModelSectionDefinition(
         title="Planning and stage-contract types",
         description="Pipeline-emitted planning, diagnostics, and stage-manifest contracts.",
+        page_slug="pipeline-planning-and-stage-contract-reference",
         module_prefixes=("apache_buildish_site_pipeline.models.emitted.planning_stage_contract",),
     ),
     ModelSectionDefinition(
         title="Staged front matter types",
         description="Front matter and page-level metadata emitted into staged content.",
+        page_slug="pipeline-staged-front-matter-reference",
         module_prefixes=("apache_buildish_site_pipeline.models.emitted.staged_front_matter",),
     ),
     ModelSectionDefinition(
         title="Staged aggregate metadata types",
         description="Public aggregate JSON contracts emitted under `data/`.",
+        page_slug="pipeline-staged-aggregate-metadata-reference",
         module_prefixes=("apache_buildish_site_pipeline.models.emitted.aggregates",),
     ),
     ModelSectionDefinition(
         title="Incremental bookkeeping types",
         description="Pipeline-internal emitted bookkeeping contracts stored under `data/_pipeline/`.",
+        page_slug="pipeline-incremental-bookkeeping-reference",
         module_prefixes=(
             "apache_buildish_site_pipeline.staging.incremental_metadata",
             "apache_buildish_site_pipeline.staging.worker_protocol",

@@ -19,3 +19,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
+
+This section contains generated reference material for the typed Site Pipeline contracts and the
+surrounding normative design notes.
+
+- [Pipeline model schema reference](./pipeline-model-schema-reference/)
+- [File contract index](./pipeline-file-contract-index/)
+- [Shared types reference](./pipeline-shared-types-reference/)
+
+The generated contract reference is intentionally split across multiple pages so the field-level
+schema documentation remains readable.

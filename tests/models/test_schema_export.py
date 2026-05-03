@@ -31,13 +31,26 @@ from apache_buildish_site_pipeline.docs.schema_export import (
     main,
     schema_exports,
     write_authored_schema_files,
-    write_reference_file,
+    write_reference_files,
     write_schema_files,
 )
 
 
 class SchemaExportTests(unittest.TestCase):
     """Verify the checked-in schema export workflow."""
+
+    def _generated_reference_file_names(self) -> tuple[str, ...]:
+        return (
+            "pipeline-model-schema-reference.md",
+            "pipeline-file-contract-index.md",
+            "pipeline-shared-types-reference.md",
+            "pipeline-authored-input-reference.md",
+            "pipeline-provider-input-reference.md",
+            "pipeline-planning-and-stage-contract-reference.md",
+            "pipeline-staged-front-matter-reference.md",
+            "pipeline-staged-aggregate-metadata-reference.md",
+            "pipeline-incremental-bookkeeping-reference.md",
+        )
 
     def test_generated_schema_uses_model_metadata_and_canonical_ids(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
@@ -116,15 +129,19 @@ class SchemaExportTests(unittest.TestCase):
 
     def test_generated_reference_doc_matches_checked_in_output(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
-            generated_reference_path = Path(tempdir) / "pipeline-model-schema-reference.md"
-            write_reference_file(generated_reference_path)
-            checked_in_reference_path = (
-                Path(__file__).resolve().parents[2] / "docs/reference/pipeline-model-schema-reference.md"
-            )
-            generated_reference_text = generated_reference_path.read_text(encoding="utf-8")
+            generated_reference_dir = Path(tempdir)
+            write_reference_files(generated_reference_dir)
+            checked_in_reference_dir = Path(__file__).resolve().parents[2] / "docs/reference"
+            generated_reference_text = (
+                generated_reference_dir / "pipeline-model-schema-reference.md"
+            ).read_text(encoding="utf-8")
 
             self.assertEqual(
-                checked_in_reference_path.read_text(encoding="utf-8"),
+                sorted(self._generated_reference_file_names()),
+                sorted(path.name for path in generated_reference_dir.glob("*.md")),
+            )
+            self.assertEqual(
+                (checked_in_reference_dir / "pipeline-model-schema-reference.md").read_text(encoding="utf-8"),
                 generated_reference_text,
             )
             self.assertIn(
@@ -132,36 +149,56 @@ class SchemaExportTests(unittest.TestCase):
                 generated_reference_text,
             )
             self.assertIn("## How to read this reference", generated_reference_text)
-            self.assertIn("### Authored input contracts", generated_reference_text)
-            self.assertIn("### Pipeline-emitted non-file root contracts", generated_reference_text)
+            self.assertIn("[File contract index](../pipeline-file-contract-index/)", generated_reference_text)
+            self.assertIn("[Authored input types](../pipeline-authored-input-reference/)", generated_reference_text)
+            self.assertNotIn("**UX warning:**", generated_reference_text)
+
+            file_contracts_text = (
+                generated_reference_dir / "pipeline-file-contract-index.md"
+            ).read_text(encoding="utf-8")
             self.assertIn(
                 "[`site-pipeline-catalog-v1.schema.json`](/components/site-pipeline/schemas/site-pipeline-catalog-v1.schema.json)",
-                generated_reference_text,
+                file_contracts_text,
             )
             self.assertIn(
                 "[`site-pipeline-stage-manifest-v1.schema.json`](/components/site-pipeline/schemas/site-pipeline-stage-manifest-v1.schema.json)",
-                generated_reference_text,
+                file_contracts_text,
             )
+
+            authored_text = (
+                generated_reference_dir / "pipeline-authored-input-reference.md"
+            ).read_text(encoding="utf-8")
             self.assertIn(
                 "- [SiteCatalogDocumentV1](#sitecatalogdocumentv1) — Canonical site catalog that lists participating components, shared defaults, source bindings, publication origins, and publication policy for one site.",
-                generated_reference_text,
+                authored_text,
             )
-            self.assertIn("- file contract: (inner type)", generated_reference_text)
-            self.assertNotIn("**UX warning:**", generated_reference_text)
+            self.assertIn("- file contract: (inner type)", authored_text)
             self.assertIn(
-                "| <a id=\"componentcatalogentry-displayname\"></a>`displayName` | [NonEmptyString](#nonemptystring) | no |",
-                generated_reference_text,
+                "| <a id=\"componentcatalogentry-displayname\"></a>`displayName` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | no |",
+                authored_text,
             )
-            self.assertIn("#### Selected field examples", generated_reference_text)
-            self.assertIn("- `developmentRef`: Example: `\"main\"`", generated_reference_text)
+            self.assertIn("#### Selected field examples", authored_text)
+            self.assertIn("- `developmentRef`: Example: `\"main\"`", authored_text)
 
     def test_undocumented_model_sections_emit_explicit_ux_warnings(self) -> None:
         class UndocumentedModel(SitePipelineBaseModel):
             optional_value: str | None = None
 
-        anchors = _build_anchor_index(models=(UndocumentedModel,), enums=(), scalar_entries=())
+        anchors = _build_anchor_index(
+            (),
+            models=(UndocumentedModel,),
+            enums=(),
+            scalar_entries=(),
+        )
 
-        rendered_section = "\n".join(_render_model_section(UndocumentedModel, anchors, ()))
+        rendered_section = "\n".join(
+            _render_model_section(
+                UndocumentedModel,
+                anchors,
+                (),
+                current_page_slug="test-model-page",
+            )
+        )
 
         self.assertIn("**UX warning:** type summary missing; this violates the project's UX requirements.", rendered_section)
         self.assertIn("**UX warning:** field description missing; this violates the project's UX requirements.", rendered_section)
@@ -218,7 +255,7 @@ class SchemaExportTests(unittest.TestCase):
         namespace = parser.parse_args([])
 
         self.assertEqual(namespace.output_dir, "site/pages/schemas")
-        self.assertEqual(namespace.reference_output, "docs/reference/pipeline-model-schema-reference.md")
+        self.assertEqual(namespace.reference_dir, "docs/reference")
 
         with tempfile.TemporaryDirectory() as tempdir:
             stdout = io.StringIO()
@@ -227,20 +264,25 @@ class SchemaExportTests(unittest.TestCase):
                     [
                         "--output-dir",
                         tempdir,
-                        "--reference-output",
-                        str(Path(tempdir) / "pipeline-model-schema-reference.md"),
+                        "--reference-dir",
+                        tempdir,
                     ]
                 )
 
             written_lines = [line for line in stdout.getvalue().splitlines() if line.strip()]
 
         self.assertEqual(exit_code, 0)
-        self.assertEqual(len(written_lines), len(schema_exports()) + 1)
         self.assertEqual(
-            sorted(Path(line).name for line in written_lines[:-1]),
-            sorted(export.filename for export in schema_exports()),
+            len(written_lines),
+            len(schema_exports()) + len(self._generated_reference_file_names()),
         )
-        self.assertTrue(written_lines[-1].endswith("pipeline-model-schema-reference.md"))
+        self.assertEqual(
+            sorted(Path(line).name for line in written_lines),
+            sorted(
+                [export.filename for export in schema_exports()]
+                + list(self._generated_reference_file_names())
+            ),
+        )
 
 
 if __name__ == "__main__":

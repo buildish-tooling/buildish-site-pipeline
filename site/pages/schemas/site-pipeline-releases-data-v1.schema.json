@@ -159,6 +159,306 @@
       "title": "PublicationState",
       "type": "string"
     },
+    "ReleaseAggregateEntry": {
+      "additionalProperties": false,
+      "description": "Entry in ``data/releases.json``.",
+      "properties": {
+        "artifactKey": {
+          "description": "Owning artifact key for the release.",
+          "examples": [
+            "runtime"
+          ],
+          "minLength": 1,
+          "title": "Artifactkey",
+          "type": "string"
+        },
+        "assets": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ProviderAsset"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Downloadable assets attached to the release.",
+          "title": "Assets"
+        },
+        "componentSlug": {
+          "description": "Owning component slug for the release.",
+          "examples": [
+            "spark"
+          ],
+          "minLength": 1,
+          "title": "Componentslug",
+          "type": "string"
+        },
+        "displayVersion": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-readable version label when it should differ from the raw version string.",
+          "title": "Displayversion"
+        },
+        "externalId": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Provider-specific stable identifier for the upstream release record.",
+          "examples": [
+            "github:release:runtime-4.0.0"
+          ],
+          "title": "Externalid"
+        },
+        "externalUrl": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-browsable upstream URL for the release record.",
+          "title": "Externalurl"
+        },
+        "maturity": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Maturity label such as stable, preview, or beta.",
+          "examples": [
+            "stable"
+          ],
+          "title": "Maturity"
+        },
+        "provider": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Provider key for the upstream system that supplied this release record.",
+          "examples": [
+            "github-releases"
+          ],
+          "title": "Provider"
+        },
+        "publicationState": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PublicationState"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Publication-state label for the release, such as published, withdrawn, or tombstoned."
+        },
+        "publishedAt": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Timestamp when the release became publicly available.",
+          "title": "Publishedat"
+        },
+        "redirectTarget": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Replacement route or external URL used when a withdrawn release redirects readers elsewhere.",
+          "examples": [
+            "route:/spark/releases/4.0.1/"
+          ],
+          "title": "Redirecttarget"
+        },
+        "releaseLine": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Release-line key that groups this release with related versions.",
+          "examples": [
+            "4.0"
+          ],
+          "title": "Releaseline"
+        },
+        "releaseLineAncestors": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Ancestor release-line keys ordered from nearest to farthest.",
+          "examples": [
+            [
+              "4.x",
+              "stable"
+            ]
+          ],
+          "title": "Releaselineancestors"
+        },
+        "supportStatus": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Support-status key or label associated with the release.",
+          "examples": [
+            "supported"
+          ],
+          "title": "Supportstatus"
+        },
+        "supportWindow": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SupportWindow"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Lifecycle dates and support notes associated with the release."
+        },
+        "tag": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Exact tag associated with the release, if known.",
+          "examples": [
+            "v4.0.0"
+          ],
+          "title": "Tag"
+        },
+        "urls": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "propertyNames": {
+                "minLength": 1
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Additional named URLs related to the release, such as notes, downloads, or verification material.",
+          "title": "Urls"
+        },
+        "version": {
+          "description": "Exact released version represented by this aggregate entry.",
+          "examples": [
+            "4.0.0"
+          ],
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "withdrawalBehavior": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/WithdrawalBehavior"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Behavior that readers should experience when the release has been withdrawn."
+        }
+      },
+      "required": [
+        "componentSlug",
+        "artifactKey",
+        "version"
+      ],
+      "title": "ReleaseAggregateEntry",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    },
     "SupportWindow": {
       "additionalProperties": false,
       "description": "Lifecycle dates and support notes for one release line or exact release.",
@@ -294,304 +594,7 @@
     "items": {
       "description": "Released-version aggregate entries emitted into `data/releases.json`.",
       "items": {
-        "additionalProperties": false,
-        "description": "Entry in ``data/releases.json``.",
-        "properties": {
-          "artifactKey": {
-            "description": "Owning artifact key for the release.",
-            "examples": [
-              "runtime"
-            ],
-            "minLength": 1,
-            "title": "Artifactkey",
-            "type": "string"
-          },
-          "assets": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/$defs/ProviderAsset"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Downloadable assets attached to the release.",
-            "title": "Assets"
-          },
-          "componentSlug": {
-            "description": "Owning component slug for the release.",
-            "examples": [
-              "spark"
-            ],
-            "minLength": 1,
-            "title": "Componentslug",
-            "type": "string"
-          },
-          "displayVersion": {
-            "anyOf": [
-              {
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Human-readable version label when it should differ from the raw version string.",
-            "title": "Displayversion"
-          },
-          "externalId": {
-            "anyOf": [
-              {
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Provider-specific stable identifier for the upstream release record.",
-            "examples": [
-              "github:release:runtime-4.0.0"
-            ],
-            "title": "Externalid"
-          },
-          "externalUrl": {
-            "anyOf": [
-              {
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Human-browsable upstream URL for the release record.",
-            "title": "Externalurl"
-          },
-          "maturity": {
-            "anyOf": [
-              {
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Maturity label such as stable, preview, or beta.",
-            "examples": [
-              "stable"
-            ],
-            "title": "Maturity"
-          },
-          "provider": {
-            "anyOf": [
-              {
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Provider key for the upstream system that supplied this release record.",
-            "examples": [
-              "github-releases"
-            ],
-            "title": "Provider"
-          },
-          "publicationState": {
-            "anyOf": [
-              {
-                "$ref": "#/$defs/PublicationState"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Publication-state label for the release, such as published, withdrawn, or tombstoned."
-          },
-          "publishedAt": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Timestamp when the release became publicly available.",
-            "title": "Publishedat"
-          },
-          "redirectTarget": {
-            "anyOf": [
-              {
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Replacement route or external URL used when a withdrawn release redirects readers elsewhere.",
-            "examples": [
-              "route:/spark/releases/4.0.1/"
-            ],
-            "title": "Redirecttarget"
-          },
-          "releaseLine": {
-            "anyOf": [
-              {
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Release-line key that groups this release with related versions.",
-            "examples": [
-              "4.0"
-            ],
-            "title": "Releaseline"
-          },
-          "releaseLineAncestors": {
-            "anyOf": [
-              {
-                "items": {
-                  "minLength": 1,
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Ancestor release-line keys ordered from nearest to farthest.",
-            "examples": [
-              [
-                "4.x",
-                "stable"
-              ]
-            ],
-            "title": "Releaselineancestors"
-          },
-          "supportStatus": {
-            "anyOf": [
-              {
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Support-status key or label associated with the release.",
-            "examples": [
-              "supported"
-            ],
-            "title": "Supportstatus"
-          },
-          "supportWindow": {
-            "anyOf": [
-              {
-                "$ref": "#/$defs/SupportWindow"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Lifecycle dates and support notes associated with the release."
-          },
-          "tag": {
-            "anyOf": [
-              {
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Exact tag associated with the release, if known.",
-            "examples": [
-              "v4.0.0"
-            ],
-            "title": "Tag"
-          },
-          "urls": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "minLength": 1,
-                  "type": "string"
-                },
-                "propertyNames": {
-                  "minLength": 1
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Additional named URLs related to the release, such as notes, downloads, or verification material.",
-            "title": "Urls"
-          },
-          "version": {
-            "description": "Exact released version represented by this aggregate entry.",
-            "examples": [
-              "4.0.0"
-            ],
-            "minLength": 1,
-            "title": "Version",
-            "type": "string"
-          },
-          "withdrawalBehavior": {
-            "anyOf": [
-              {
-                "$ref": "#/$defs/WithdrawalBehavior"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Behavior that readers should experience when the release has been withdrawn."
-          }
-        },
-        "required": [
-          "componentSlug",
-          "artifactKey",
-          "version"
-        ],
-        "title": "ReleaseAggregateEntry",
-        "type": "object",
-        "x-buildish-contract": {
-          "category": "emitted",
-          "ownership": "pipeline-derived"
-        }
+        "$ref": "#/$defs/ReleaseAggregateEntry"
       },
       "title": "Items",
       "type": "array"

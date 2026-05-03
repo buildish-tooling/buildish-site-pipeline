@@ -23,8 +23,11 @@ from pydantic import Field
 from ...docs.documentation import (
     ComponentOwnedAuthoredModel as SitePipelineBaseModel,
     ContractDocumentation,
+    SchemaExample,
+    SchemaExportSpecification,
 )
 from ...docs.reference_docs import ReferenceDocumentation, ReferenceMarkdown, ReferenceSection
+from ...docs.schema_examples import component_metadata_example_document
 from ..scalars import Identifier, NonEmptyString, RepoRelativePath, Slug, VersionString
 
 
@@ -113,6 +116,17 @@ class ComponentMetadataDocumentV1(SitePipelineBaseModel):
                         "Use `pagesRoot` for unversioned component pages and `docsRoot` for versioned or development docs content."
                     ),
                 ),
+            ),
+        ),
+    )
+    schema_export: ClassVar[SchemaExportSpecification] = SchemaExportSpecification(
+        filename="site-pipeline-component-v1.schema.json",
+        title="Site Pipeline Component Metadata v1",
+        examples=(
+            SchemaExample(
+                summary="Component metadata with identity, content roots, and lifecycle hints.",
+                value_builder=component_metadata_example_document,
+                render_format="yaml",
             ),
         ),
     )

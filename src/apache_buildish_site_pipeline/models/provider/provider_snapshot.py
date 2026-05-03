@@ -23,7 +23,10 @@ from pydantic import Field, model_validator
 from ...docs.documentation import (
     ContractDocumentation,
     ProviderDerivedModel as SitePipelineBaseModel,
+    SchemaExample,
+    SchemaExportSpecification,
 )
+from ...docs.schema_examples import provider_snapshot_example_document
 from ..enums import PublicationState, RecordKind
 from ..scalars import (
     ArtifactKey,
@@ -249,6 +252,16 @@ class ProviderSnapshotDocumentV1(SitePipelineBaseModel):
         ownership="provider-derived",
         summary="Normalized provider inventory of releases, candidates, refs, and downloadable assets.",
         file_path="site/provider-snapshot.json",
+    )
+    schema_export: ClassVar[SchemaExportSpecification] = SchemaExportSpecification(
+        filename="site-pipeline-provider-snapshot-v1.schema.json",
+        title="Site Pipeline Provider Snapshot v1",
+        examples=(
+            SchemaExample(
+                summary="Provider snapshot with one released record and one downloadable asset.",
+                value_builder=provider_snapshot_example_document,
+            ),
+        ),
     )
 
     schema_version: Literal[1] = Field(

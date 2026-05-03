@@ -1,5 +1,116 @@
 {
   "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
+  "$defs": {
+    "CompatibilityAggregateEntry": {
+      "additionalProperties": false,
+      "description": "Entry in ``data/compatibility.json``.",
+      "properties": {
+        "confidence": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional confidence label that explains how strong the supporting evidence is.",
+          "examples": [
+            "verified"
+          ],
+          "title": "Confidence"
+        },
+        "evidence": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Named evidence pointers or short evidence labels that support the compatibility statement.",
+          "title": "Evidence"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Additional human-readable explanation, caveats, or migration advice for the compatibility statement.",
+          "title": "Notes"
+        },
+        "relation": {
+          "description": "Relationship label that names the compatibility statement.",
+          "examples": [
+            "testedWith"
+          ],
+          "minLength": 1,
+          "title": "Relation",
+          "type": "string"
+        },
+        "scope": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional scope label that narrows the compatibility statement.",
+          "examples": [
+            "kubernetes"
+          ],
+          "title": "Scope"
+        },
+        "subjectId": {
+          "description": "Typed reference or aggregate identifier for the subject of the compatibility statement.",
+          "examples": [
+            "artifact:spark/runtime"
+          ],
+          "minLength": 1,
+          "title": "Subjectid",
+          "type": "string"
+        },
+        "targetId": {
+          "description": "Typed reference or aggregate identifier for the target of the compatibility statement.",
+          "examples": [
+            "artifact:spark/operator"
+          ],
+          "minLength": 1,
+          "title": "Targetid",
+          "type": "string"
+        }
+      },
+      "required": [
+        "subjectId",
+        "targetId",
+        "relation"
+      ],
+      "title": "CompatibilityAggregateEntry",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    }
+  },
   "$id": "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-compatibility-data-v1.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
@@ -8,113 +119,7 @@
     "items": {
       "description": "Compatibility aggregate entries emitted into `data/compatibility.json`.",
       "items": {
-        "additionalProperties": false,
-        "description": "Entry in ``data/compatibility.json``.",
-        "properties": {
-          "confidence": {
-            "anyOf": [
-              {
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Optional confidence label that explains how strong the supporting evidence is.",
-            "examples": [
-              "verified"
-            ],
-            "title": "Confidence"
-          },
-          "evidence": {
-            "anyOf": [
-              {
-                "items": {
-                  "minLength": 1,
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Named evidence pointers or short evidence labels that support the compatibility statement.",
-            "title": "Evidence"
-          },
-          "notes": {
-            "anyOf": [
-              {
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Additional human-readable explanation, caveats, or migration advice for the compatibility statement.",
-            "title": "Notes"
-          },
-          "relation": {
-            "description": "Relationship label that names the compatibility statement.",
-            "examples": [
-              "testedWith"
-            ],
-            "minLength": 1,
-            "title": "Relation",
-            "type": "string"
-          },
-          "scope": {
-            "anyOf": [
-              {
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Optional scope label that narrows the compatibility statement.",
-            "examples": [
-              "kubernetes"
-            ],
-            "title": "Scope"
-          },
-          "subjectId": {
-            "description": "Typed reference or aggregate identifier for the subject of the compatibility statement.",
-            "examples": [
-              "artifact:spark/runtime"
-            ],
-            "minLength": 1,
-            "title": "Subjectid",
-            "type": "string"
-          },
-          "targetId": {
-            "description": "Typed reference or aggregate identifier for the target of the compatibility statement.",
-            "examples": [
-              "artifact:spark/operator"
-            ],
-            "minLength": 1,
-            "title": "Targetid",
-            "type": "string"
-          }
-        },
-        "required": [
-          "subjectId",
-          "targetId",
-          "relation"
-        ],
-        "title": "CompatibilityAggregateEntry",
-        "type": "object",
-        "x-buildish-contract": {
-          "category": "emitted",
-          "ownership": "pipeline-derived"
-        }
+        "$ref": "#/$defs/CompatibilityAggregateEntry"
       },
       "title": "Items",
       "type": "array"

@@ -65,6 +65,67 @@
         "category": "emitted",
         "ownership": "pipeline-derived"
       }
+    },
+    "TranslationSetAggregateEntry": {
+      "additionalProperties": false,
+      "description": "Entry in ``data/translations.json``.",
+      "properties": {
+        "artifactKey": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Owning artifact key when the translation set belongs to a specific artifact.",
+          "examples": [
+            "runtime"
+          ],
+          "title": "Artifactkey"
+        },
+        "componentSlug": {
+          "description": "Owning component slug for the translation set.",
+          "examples": [
+            "spark"
+          ],
+          "minLength": 1,
+          "title": "Componentslug",
+          "type": "string"
+        },
+        "entries": {
+          "description": "Translated sibling pages that belong to the same translation set.",
+          "items": {
+            "$ref": "#/$defs/TranslationLinkSummary"
+          },
+          "minItems": 1,
+          "title": "Entries",
+          "type": "array"
+        },
+        "translationKey": {
+          "description": "Shared key that ties all translated sibling pages in this set together.",
+          "examples": [
+            "spark-overview"
+          ],
+          "minLength": 1,
+          "title": "Translationkey",
+          "type": "string"
+        }
+      },
+      "required": [
+        "translationKey",
+        "componentSlug",
+        "entries"
+      ],
+      "title": "TranslationSetAggregateEntry",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     }
   },
   "$id": "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-translations-data-v1.schema.json",
@@ -75,65 +136,7 @@
     "items": {
       "description": "Translation-set aggregate entries emitted into `data/translations.json`.",
       "items": {
-        "additionalProperties": false,
-        "description": "Entry in ``data/translations.json``.",
-        "properties": {
-          "artifactKey": {
-            "anyOf": [
-              {
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Owning artifact key when the translation set belongs to a specific artifact.",
-            "examples": [
-              "runtime"
-            ],
-            "title": "Artifactkey"
-          },
-          "componentSlug": {
-            "description": "Owning component slug for the translation set.",
-            "examples": [
-              "spark"
-            ],
-            "minLength": 1,
-            "title": "Componentslug",
-            "type": "string"
-          },
-          "entries": {
-            "description": "Translated sibling pages that belong to the same translation set.",
-            "items": {
-              "$ref": "#/$defs/TranslationLinkSummary"
-            },
-            "minItems": 1,
-            "title": "Entries",
-            "type": "array"
-          },
-          "translationKey": {
-            "description": "Shared key that ties all translated sibling pages in this set together.",
-            "examples": [
-              "spark-overview"
-            ],
-            "minLength": 1,
-            "title": "Translationkey",
-            "type": "string"
-          }
-        },
-        "required": [
-          "translationKey",
-          "componentSlug",
-          "entries"
-        ],
-        "title": "TranslationSetAggregateEntry",
-        "type": "object",
-        "x-buildish-contract": {
-          "category": "emitted",
-          "ownership": "pipeline-derived"
-        }
+        "$ref": "#/$defs/TranslationSetAggregateEntry"
       },
       "title": "Items",
       "type": "array"

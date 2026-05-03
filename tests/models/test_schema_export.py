@@ -236,7 +236,10 @@ class SchemaExportTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 0)
         self.assertEqual(len(written_lines), len(schema_exports()) + 1)
-        self.assertTrue(written_lines[0].endswith("site-pipeline-catalog-v1.schema.json"))
+        self.assertEqual(
+            sorted(Path(line).name for line in written_lines[:-1]),
+            sorted(export.filename for export in schema_exports()),
+        )
         self.assertTrue(written_lines[-1].endswith("pipeline-model-schema-reference.md"))
 
 

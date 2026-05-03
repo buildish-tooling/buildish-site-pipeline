@@ -23,7 +23,10 @@ from pydantic import Field, model_validator
 from ...docs.documentation import (
     ContractDocumentation,
     PipelineDerivedModel as SitePipelineBaseModel,
+    SchemaExample,
+    SchemaExportSpecification,
 )
+from ...docs.schema_examples import front_matter_namespace_example_document
 from ..enums import PublicationState, RecordKind
 from ..scalars import (
     ArtifactKey,
@@ -473,6 +476,17 @@ class PipelineFrontMatterNamespace(SitePipelineBaseModel):
         category="emitted",
         ownership="pipeline-derived",
         summary="Reserved front matter namespace containing pipeline-derived component and page metadata.",
+    )
+    schema_export: ClassVar[SchemaExportSpecification] = SchemaExportSpecification(
+        filename="site-pipeline-front-matter-namespace-v1.schema.json",
+        title="Site Pipeline Front Matter Namespace v1",
+        examples=(
+            SchemaExample(
+                summary="Injected front matter for a component page and a released version.",
+                value_builder=front_matter_namespace_example_document,
+                render_format="yaml",
+            ),
+        ),
     )
 
     component: PipelineComponentFrontMatter | None = Field(

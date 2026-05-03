@@ -75,6 +75,147 @@
         "ownership": "pipeline-derived"
       }
     },
+    "ComponentsDataEntry": {
+      "additionalProperties": false,
+      "description": "Entry in ``data/components.json``.",
+      "properties": {
+        "artifacts": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ArtifactFrontMatterSummary"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Compact artifact summaries used by component listings and page chrome.",
+          "title": "Artifacts"
+        },
+        "displayName": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-readable component name shown in navigation, listings, and generated metadata.",
+          "examples": [
+            "Apache Spark"
+          ],
+          "title": "Displayname"
+        },
+        "group": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional group key copied from the authored catalog to support grouped rendering or filtering.",
+          "examples": [
+            "data-platform"
+          ],
+          "title": "Group"
+        },
+        "latestStable": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Most recent stable version recommended for the component as a whole when one shared release line is enough.",
+          "examples": [
+            "4.0.1"
+          ],
+          "title": "Lateststable"
+        },
+        "originKey": {
+          "description": "Origin key selected for this component's primary published route set.",
+          "examples": [
+            "archive"
+          ],
+          "minLength": 1,
+          "title": "Originkey",
+          "type": "string"
+        },
+        "providerKeys": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Provider keys that contributed version metadata for this component's artifacts.",
+          "examples": [
+            [
+              "github-releases"
+            ]
+          ],
+          "title": "Providerkeys"
+        },
+        "publication": {
+          "$ref": "#/$defs/ResolvedPublication",
+          "description": "Resolved publication roots and URLs for the component."
+        },
+        "slug": {
+          "description": "Stable component slug used by routes, aggregates, and typed references.",
+          "examples": [
+            "spark"
+          ],
+          "minLength": 1,
+          "title": "Slug",
+          "type": "string"
+        },
+        "weight": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional ordering hint copied from the authored catalog for consumer-rendered component lists.",
+          "title": "Weight"
+        }
+      },
+      "required": [
+        "slug",
+        "originKey",
+        "publication"
+      ],
+      "title": "ComponentsDataEntry",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    },
     "ReleaseLineSummary": {
       "additionalProperties": false,
       "description": "Small release-line summary embedded into page or component front matter.",
@@ -507,145 +648,7 @@
     "items": {
       "description": "Component aggregate entries emitted into `data/components.json`.",
       "items": {
-        "additionalProperties": false,
-        "description": "Entry in ``data/components.json``.",
-        "properties": {
-          "artifacts": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/$defs/ArtifactFrontMatterSummary"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Compact artifact summaries used by component listings and page chrome.",
-            "title": "Artifacts"
-          },
-          "displayName": {
-            "anyOf": [
-              {
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Human-readable component name shown in navigation, listings, and generated metadata.",
-            "examples": [
-              "Apache Spark"
-            ],
-            "title": "Displayname"
-          },
-          "group": {
-            "anyOf": [
-              {
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Optional group key copied from the authored catalog to support grouped rendering or filtering.",
-            "examples": [
-              "data-platform"
-            ],
-            "title": "Group"
-          },
-          "latestStable": {
-            "anyOf": [
-              {
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Most recent stable version recommended for the component as a whole when one shared release line is enough.",
-            "examples": [
-              "4.0.1"
-            ],
-            "title": "Lateststable"
-          },
-          "originKey": {
-            "description": "Origin key selected for this component's primary published route set.",
-            "examples": [
-              "archive"
-            ],
-            "minLength": 1,
-            "title": "Originkey",
-            "type": "string"
-          },
-          "providerKeys": {
-            "anyOf": [
-              {
-                "items": {
-                  "minLength": 1,
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Provider keys that contributed version metadata for this component's artifacts.",
-            "examples": [
-              [
-                "github-releases"
-              ]
-            ],
-            "title": "Providerkeys"
-          },
-          "publication": {
-            "$ref": "#/$defs/ResolvedPublication",
-            "description": "Resolved publication roots and URLs for the component."
-          },
-          "slug": {
-            "description": "Stable component slug used by routes, aggregates, and typed references.",
-            "examples": [
-              "spark"
-            ],
-            "minLength": 1,
-            "title": "Slug",
-            "type": "string"
-          },
-          "weight": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Optional ordering hint copied from the authored catalog for consumer-rendered component lists.",
-            "title": "Weight"
-          }
-        },
-        "required": [
-          "slug",
-          "originKey",
-          "publication"
-        ],
-        "title": "ComponentsDataEntry",
-        "type": "object",
-        "x-buildish-contract": {
-          "category": "emitted",
-          "ownership": "pipeline-derived"
-        }
+        "$ref": "#/$defs/ComponentsDataEntry"
       },
       "title": "Items",
       "type": "array"

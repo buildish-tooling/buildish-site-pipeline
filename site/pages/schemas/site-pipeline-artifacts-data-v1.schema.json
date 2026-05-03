@@ -68,6 +68,231 @@
         "ownership": "consumer-owned"
       }
     },
+    "ArtifactsDataEntry": {
+      "additionalProperties": false,
+      "description": "Entry in ``data/artifacts.json``.",
+      "properties": {
+        "componentSlug": {
+          "description": "Owning component slug for the artifact.",
+          "examples": [
+            "spark"
+          ],
+          "minLength": 1,
+          "title": "Componentslug",
+          "type": "string"
+        },
+        "displayName": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-readable artifact label shown in navigation and metadata.",
+          "examples": [
+            "Runtime"
+          ],
+          "title": "Displayname"
+        },
+        "docsRoot": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Repository-relative docs root for the artifact when it differs from the component default.",
+          "examples": [
+            "docs/runtime"
+          ],
+          "title": "Docsroot"
+        },
+        "key": {
+          "description": "Stable artifact key used by routes, aggregates, and typed references.",
+          "examples": [
+            "runtime"
+          ],
+          "minLength": 1,
+          "title": "Key",
+          "type": "string"
+        },
+        "latestCandidate": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LatestCandidateSummary"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Compact summary of the latest known release candidate for the artifact."
+        },
+        "latestRelease": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LatestReleaseSummary"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Compact summary of the latest known release for the artifact."
+        },
+        "latestStable": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Most recent stable version recommended for readers.",
+          "examples": [
+            "4.0.1"
+          ],
+          "title": "Lateststable"
+        },
+        "namedRefs": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/RefAggregateEntry"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Published development, line-head, or named-ref contexts associated with the artifact.",
+          "title": "Namedrefs"
+        },
+        "providerKeys": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Provider keys that contributed version metadata for this artifact.",
+          "examples": [
+            [
+              "github-releases"
+            ]
+          ],
+          "title": "Providerkeys"
+        },
+        "releaseLines": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ReleaseLineSummary"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Release-line summaries associated with the artifact.",
+          "title": "Releaselines"
+        },
+        "sourceKey": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Named source binding that owns the artifact's docs and assets.",
+          "examples": [
+            "apache-spark"
+          ],
+          "title": "Sourcekey"
+        },
+        "supportPolicyUrl": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Canonical URL for the support policy document associated with this artifact.",
+          "title": "Supportpolicyurl"
+        },
+        "supportStatusVocabulary": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "$ref": "#/$defs/SupportStatusDefinition"
+              },
+              "propertyNames": {
+                "minLength": 1
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Reusable support-status definitions that release lines and releases for this artifact can refer to by key.",
+          "title": "Supportstatusvocabulary"
+        },
+        "versioning": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArtifactVersioningConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Version-discovery rules that explain how development refs, tags, and named refs are derived for the artifact."
+        }
+      },
+      "required": [
+        "componentSlug",
+        "key"
+      ],
+      "title": "ArtifactsDataEntry",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    },
     "LatestCandidateSummary": {
       "additionalProperties": false,
       "description": "Compact latest-candidate summary embedded in artifact aggregates.",
@@ -818,229 +1043,7 @@
     "items": {
       "description": "Artifact aggregate entries emitted into `data/artifacts.json`.",
       "items": {
-        "additionalProperties": false,
-        "description": "Entry in ``data/artifacts.json``.",
-        "properties": {
-          "componentSlug": {
-            "description": "Owning component slug for the artifact.",
-            "examples": [
-              "spark"
-            ],
-            "minLength": 1,
-            "title": "Componentslug",
-            "type": "string"
-          },
-          "displayName": {
-            "anyOf": [
-              {
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Human-readable artifact label shown in navigation and metadata.",
-            "examples": [
-              "Runtime"
-            ],
-            "title": "Displayname"
-          },
-          "docsRoot": {
-            "anyOf": [
-              {
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Repository-relative docs root for the artifact when it differs from the component default.",
-            "examples": [
-              "docs/runtime"
-            ],
-            "title": "Docsroot"
-          },
-          "key": {
-            "description": "Stable artifact key used by routes, aggregates, and typed references.",
-            "examples": [
-              "runtime"
-            ],
-            "minLength": 1,
-            "title": "Key",
-            "type": "string"
-          },
-          "latestCandidate": {
-            "anyOf": [
-              {
-                "$ref": "#/$defs/LatestCandidateSummary"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Compact summary of the latest known release candidate for the artifact."
-          },
-          "latestRelease": {
-            "anyOf": [
-              {
-                "$ref": "#/$defs/LatestReleaseSummary"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Compact summary of the latest known release for the artifact."
-          },
-          "latestStable": {
-            "anyOf": [
-              {
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Most recent stable version recommended for readers.",
-            "examples": [
-              "4.0.1"
-            ],
-            "title": "Lateststable"
-          },
-          "namedRefs": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/$defs/RefAggregateEntry"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Published development, line-head, or named-ref contexts associated with the artifact.",
-            "title": "Namedrefs"
-          },
-          "providerKeys": {
-            "anyOf": [
-              {
-                "items": {
-                  "minLength": 1,
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Provider keys that contributed version metadata for this artifact.",
-            "examples": [
-              [
-                "github-releases"
-              ]
-            ],
-            "title": "Providerkeys"
-          },
-          "releaseLines": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/$defs/ReleaseLineSummary"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Release-line summaries associated with the artifact.",
-            "title": "Releaselines"
-          },
-          "sourceKey": {
-            "anyOf": [
-              {
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Named source binding that owns the artifact's docs and assets.",
-            "examples": [
-              "apache-spark"
-            ],
-            "title": "Sourcekey"
-          },
-          "supportPolicyUrl": {
-            "anyOf": [
-              {
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Canonical URL for the support policy document associated with this artifact.",
-            "title": "Supportpolicyurl"
-          },
-          "supportStatusVocabulary": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "$ref": "#/$defs/SupportStatusDefinition"
-                },
-                "propertyNames": {
-                  "minLength": 1
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Reusable support-status definitions that release lines and releases for this artifact can refer to by key.",
-            "title": "Supportstatusvocabulary"
-          },
-          "versioning": {
-            "anyOf": [
-              {
-                "$ref": "#/$defs/ArtifactVersioningConfig"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Version-discovery rules that explain how development refs, tags, and named refs are derived for the artifact."
-          }
-        },
-        "required": [
-          "componentSlug",
-          "key"
-        ],
-        "title": "ArtifactsDataEntry",
-        "type": "object",
-        "x-buildish-contract": {
-          "category": "emitted",
-          "ownership": "pipeline-derived"
-        }
+        "$ref": "#/$defs/ArtifactsDataEntry"
       },
       "title": "Items",
       "type": "array"

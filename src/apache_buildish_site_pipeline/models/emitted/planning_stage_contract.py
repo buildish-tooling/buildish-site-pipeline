@@ -23,6 +23,14 @@ from pydantic import Field, field_validator, model_validator
 from ...docs.documentation import (
     ContractDocumentation,
     PipelineDerivedModel as SitePipelineBaseModel,
+    SchemaExample,
+    SchemaExportSpecification,
+)
+from ...docs.schema_examples import (
+    check_report_example_document,
+    materialization_report_example_document,
+    stage_manifest_example_document,
+    stage_run_report_example_document,
 )
 from ..enums import (
     CheckFailureThreshold,
@@ -198,6 +206,16 @@ class ResolvedMaterializationReportV1(SitePipelineBaseModel):
         ownership="pipeline-derived",
         summary="Planning inventory of required local inputs and their current materialization status.",
     )
+    schema_export: ClassVar[SchemaExportSpecification] = SchemaExportSpecification(
+        filename="site-pipeline-materialization-report-v1.schema.json",
+        title="Site Pipeline Materialization Report v1",
+        examples=(
+            SchemaExample(
+                summary="Planning report with one required release checkout.",
+                value_builder=materialization_report_example_document,
+            ),
+        ),
+    )
 
     schema_version: Literal[1] = Field(
         description="Schema version for the materialization planning report."
@@ -283,6 +301,16 @@ class CheckReportV1(SitePipelineBaseModel):
         ownership="pipeline-derived",
         summary="Validation result for one `site-pipeline check` invocation.",
     )
+    schema_export: ClassVar[SchemaExportSpecification] = SchemaExportSpecification(
+        filename="site-pipeline-check-report-v1.schema.json",
+        title="Site Pipeline Check Report v1",
+        examples=(
+            SchemaExample(
+                summary="Validation report with one warning that does not fail the run.",
+                value_builder=check_report_example_document,
+            ),
+        ),
+    )
 
     schema_version: Literal[1] = Field(description="Schema version for the check report.")
     generated_at: TimestampString = Field(
@@ -354,6 +382,16 @@ class StageRunReportV1(SitePipelineBaseModel):
         category="emitted",
         ownership="pipeline-derived",
         summary="Execution result for one `build` run or completed watch cycle.",
+    )
+    schema_export: ClassVar[SchemaExportSpecification] = SchemaExportSpecification(
+        filename="site-pipeline-stage-run-report-v1.schema.json",
+        title="Site Pipeline Stage Run Report v1",
+        examples=(
+            SchemaExample(
+                summary="Successful build report with a usable stage manifest.",
+                value_builder=stage_run_report_example_document,
+            ),
+        ),
     )
 
     schema_version: Literal[1] = Field(description="Schema version for the stage run report.")
@@ -510,6 +548,16 @@ class StageManifestV1(SitePipelineBaseModel):
         ownership="pipeline-derived",
         summary="Entry point for a stage tree, including roots, formats, and aggregate file locations.",
         file_path="manifest.json",
+    )
+    schema_export: ClassVar[SchemaExportSpecification] = SchemaExportSpecification(
+        filename="site-pipeline-stage-manifest-v1.schema.json",
+        title="Site Pipeline Stage Manifest v1",
+        examples=(
+            SchemaExample(
+                summary="Stage manifest that points at content, static, and aggregate roots.",
+                value_builder=stage_manifest_example_document,
+            ),
+        ),
     )
 
     schema_version: Literal[1] = Field(description="Schema version for the stage manifest.")

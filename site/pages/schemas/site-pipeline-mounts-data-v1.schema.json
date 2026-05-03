@@ -11,6 +11,118 @@
       "title": "IndexBehavior",
       "type": "string"
     },
+    "MountAggregateEntry": {
+      "additionalProperties": false,
+      "description": "Entry in ``data/mounts.json``.",
+      "properties": {
+        "indexBehavior": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/IndexBehavior"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "How the mounted subtree should participate in generated indexes or listings."
+        },
+        "kind": {
+          "description": "Short mount kind label that tells consumers what sort of subtree this is.",
+          "examples": [
+            "generatedApi"
+          ],
+          "minLength": 1,
+          "title": "Kind",
+          "type": "string"
+        },
+        "metadata": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Small JSON-like extension object for extra mount metadata consumed by downstream tooling.",
+          "title": "Metadata"
+        },
+        "mountId": {
+          "description": "Stable aggregate identifier for the mount entry.",
+          "examples": [
+            "spark-runtime-generated-api"
+          ],
+          "minLength": 1,
+          "title": "Mountid",
+          "type": "string"
+        },
+        "ownerId": {
+          "description": "Aggregate identifier for the component or artifact that owns the mount.",
+          "examples": [
+            "artifact:spark/runtime"
+          ],
+          "minLength": 1,
+          "title": "Ownerid",
+          "type": "string"
+        },
+        "publicPath": {
+          "description": "Public path where the mounted subtree is published.",
+          "examples": [
+            "/spark/api/"
+          ],
+          "minLength": 1,
+          "title": "Publicpath",
+          "type": "string"
+        },
+        "sourceRef": {
+          "description": "Typed source reference for the generated or imported subtree being mounted.",
+          "examples": [
+            "generated/api"
+          ],
+          "minLength": 1,
+          "title": "Sourceref",
+          "type": "string"
+        },
+        "trustClass": {
+          "$ref": "#/$defs/TrustClass",
+          "description": "Trust level assigned to the mounted content."
+        },
+        "versionContext": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional version-context label that scopes the mount to one publication context.",
+          "examples": [
+            "release"
+          ],
+          "title": "Versioncontext"
+        }
+      },
+      "required": [
+        "mountId",
+        "ownerId",
+        "kind",
+        "trustClass",
+        "publicPath",
+        "sourceRef"
+      ],
+      "title": "MountAggregateEntry",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    },
     "TrustClass": {
       "description": "Trust posture of a mounted content subtree.",
       "enum": [
@@ -29,116 +141,7 @@
     "items": {
       "description": "Mount aggregate entries emitted into `data/mounts.json`.",
       "items": {
-        "additionalProperties": false,
-        "description": "Entry in ``data/mounts.json``.",
-        "properties": {
-          "indexBehavior": {
-            "anyOf": [
-              {
-                "$ref": "#/$defs/IndexBehavior"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "How the mounted subtree should participate in generated indexes or listings."
-          },
-          "kind": {
-            "description": "Short mount kind label that tells consumers what sort of subtree this is.",
-            "examples": [
-              "generatedApi"
-            ],
-            "minLength": 1,
-            "title": "Kind",
-            "type": "string"
-          },
-          "metadata": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Small JSON-like extension object for extra mount metadata consumed by downstream tooling.",
-            "title": "Metadata"
-          },
-          "mountId": {
-            "description": "Stable aggregate identifier for the mount entry.",
-            "examples": [
-              "spark-runtime-generated-api"
-            ],
-            "minLength": 1,
-            "title": "Mountid",
-            "type": "string"
-          },
-          "ownerId": {
-            "description": "Aggregate identifier for the component or artifact that owns the mount.",
-            "examples": [
-              "artifact:spark/runtime"
-            ],
-            "minLength": 1,
-            "title": "Ownerid",
-            "type": "string"
-          },
-          "publicPath": {
-            "description": "Public path where the mounted subtree is published.",
-            "examples": [
-              "/spark/api/"
-            ],
-            "minLength": 1,
-            "title": "Publicpath",
-            "type": "string"
-          },
-          "sourceRef": {
-            "description": "Typed source reference for the generated or imported subtree being mounted.",
-            "examples": [
-              "generated/api"
-            ],
-            "minLength": 1,
-            "title": "Sourceref",
-            "type": "string"
-          },
-          "trustClass": {
-            "$ref": "#/$defs/TrustClass",
-            "description": "Trust level assigned to the mounted content."
-          },
-          "versionContext": {
-            "anyOf": [
-              {
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Optional version-context label that scopes the mount to one publication context.",
-            "examples": [
-              "release"
-            ],
-            "title": "Versioncontext"
-          }
-        },
-        "required": [
-          "mountId",
-          "ownerId",
-          "kind",
-          "trustClass",
-          "publicPath",
-          "sourceRef"
-        ],
-        "title": "MountAggregateEntry",
-        "type": "object",
-        "x-buildish-contract": {
-          "category": "emitted",
-          "ownership": "pipeline-derived"
-        }
+        "$ref": "#/$defs/MountAggregateEntry"
       },
       "title": "Items",
       "type": "array"

@@ -1,5 +1,79 @@
 {
   "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
+  "$defs": {
+    "ProvidersDataEntry": {
+      "additionalProperties": false,
+      "description": "Entry in ``data/providers.json``.",
+      "properties": {
+        "baseUrl": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Base URL of the provider service when records can link back to a human-browsable upstream origin.",
+          "title": "Baseurl"
+        },
+        "displayName": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-readable provider label shown in generated metadata or diagnostics.",
+          "examples": [
+            "GitHub Releases"
+          ],
+          "title": "Displayname"
+        },
+        "fetchedAt": {
+          "description": "Timestamp when this provider descriptor was fetched or refreshed.",
+          "format": "date-time",
+          "title": "Fetchedat",
+          "type": "string"
+        },
+        "key": {
+          "description": "Stable provider identifier used by aggregate entries that originate from this provider.",
+          "examples": [
+            "github-releases"
+          ],
+          "minLength": 1,
+          "title": "Key",
+          "type": "string"
+        },
+        "type": {
+          "description": "Provider implementation type, such as `github` or another fetcher backend label.",
+          "examples": [
+            "github"
+          ],
+          "minLength": 1,
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "type",
+        "fetchedAt"
+      ],
+      "title": "ProvidersDataEntry",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    }
+  },
   "$id": "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-providers-data-v1.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
@@ -8,76 +82,7 @@
     "items": {
       "description": "Provider summary entries emitted into `data/providers.json`.",
       "items": {
-        "additionalProperties": false,
-        "description": "Entry in ``data/providers.json``.",
-        "properties": {
-          "baseUrl": {
-            "anyOf": [
-              {
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Base URL of the provider service when records can link back to a human-browsable upstream origin.",
-            "title": "Baseurl"
-          },
-          "displayName": {
-            "anyOf": [
-              {
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Human-readable provider label shown in generated metadata or diagnostics.",
-            "examples": [
-              "GitHub Releases"
-            ],
-            "title": "Displayname"
-          },
-          "fetchedAt": {
-            "description": "Timestamp when this provider descriptor was fetched or refreshed.",
-            "format": "date-time",
-            "title": "Fetchedat",
-            "type": "string"
-          },
-          "key": {
-            "description": "Stable provider identifier used by aggregate entries that originate from this provider.",
-            "examples": [
-              "github-releases"
-            ],
-            "minLength": 1,
-            "title": "Key",
-            "type": "string"
-          },
-          "type": {
-            "description": "Provider implementation type, such as `github` or another fetcher backend label.",
-            "examples": [
-              "github"
-            ],
-            "minLength": 1,
-            "title": "Type",
-            "type": "string"
-          }
-        },
-        "required": [
-          "key",
-          "type",
-          "fetchedAt"
-        ],
-        "title": "ProvidersDataEntry",
-        "type": "object",
-        "x-buildish-contract": {
-          "category": "emitted",
-          "ownership": "pipeline-derived"
-        }
+        "$ref": "#/$defs/ProvidersDataEntry"
       },
       "title": "Items",
       "type": "array"

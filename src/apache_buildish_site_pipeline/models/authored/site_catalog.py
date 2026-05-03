@@ -23,8 +23,11 @@ from pydantic import Field, model_validator
 from ...docs.documentation import (
     ConsumerOwnedAuthoredModel as SitePipelineBaseModel,
     ContractDocumentation,
+    SchemaExample,
+    SchemaExportSpecification,
 )
 from ...docs.reference_docs import ReferenceDocumentation, ReferenceMarkdown, ReferenceSection
+from ...docs.schema_examples import catalog_example_document
 from ..enums import (
     CandidateSelectionMode,
     IndexBehavior,
@@ -1064,6 +1067,17 @@ class SiteCatalogDocumentV1(SitePipelineBaseModel):
                         "Defaults flow from `defaults` to `groups` to individual component entries. See [component entries](type:SiteCatalogDocumentV1#components)."
                     ),
                 ),
+            ),
+        ),
+    )
+    schema_export: ClassVar[SchemaExportSpecification] = SchemaExportSpecification(
+        filename="site-pipeline-catalog-v1.schema.json",
+        title="Site Pipeline Catalog v1",
+        examples=(
+            SchemaExample(
+                summary="Catalog with a single component, a single artifact, and release selection policy.",
+                value_builder=catalog_example_document,
+                render_format="yaml",
             ),
         ),
     )

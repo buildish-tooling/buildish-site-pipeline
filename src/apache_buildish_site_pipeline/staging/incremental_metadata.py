@@ -25,6 +25,13 @@ from pydantic import Field
 from ..docs.documentation import (
     ContractDocumentation,
     PipelineDerivedModel as SitePipelineBaseModel,
+    SchemaExample,
+    SchemaExportSpecification,
+)
+from ..docs.schema_examples import (
+    aggregate_dependencies_example_document,
+    output_ownership_example_document,
+    unit_contributions_example_document,
 )
 from ..models.emitted.planning_stage_contract import (
     StageDataFiles,
@@ -46,6 +53,16 @@ class PersistedUnitContributionsV1(SitePipelineBaseModel):
         ownership="pipeline-derived",
         summary="Per-unit page contribution manifests retained in the visible stage.",
         file_path="data/_pipeline/unit-contributions.json",
+    )
+    schema_export: ClassVar[SchemaExportSpecification] = SchemaExportSpecification(
+        filename="site-pipeline-unit-contributions-v1.schema.json",
+        title="Site Pipeline data/_pipeline/unit-contributions.json v1",
+        examples=(
+            SchemaExample(
+                summary="Retained per-unit contribution map with one staged page.",
+                value_builder=unit_contributions_example_document,
+            ),
+        ),
     )
 
     schema_version: Literal[1] = Field(
@@ -88,6 +105,16 @@ class OutputOwnershipMapV1(SitePipelineBaseModel):
         summary="Ownership map for staged files and directories retained across rebuilds.",
         file_path="data/_pipeline/output-ownership.json",
     )
+    schema_export: ClassVar[SchemaExportSpecification] = SchemaExportSpecification(
+        filename="site-pipeline-output-ownership-v1.schema.json",
+        title="Site Pipeline data/_pipeline/output-ownership.json v1",
+        examples=(
+            SchemaExample(
+                summary="Ownership claims for one unit directory and one coordinator aggregate file.",
+                value_builder=output_ownership_example_document,
+            ),
+        ),
+    )
 
     schema_version: Literal[1] = Field(
         default=1,
@@ -120,6 +147,16 @@ class AggregateDependencyMapV1(SitePipelineBaseModel):
         ownership="pipeline-derived",
         summary="Coordinator aggregate files and the units that can invalidate them.",
         file_path="data/_pipeline/aggregate-dependencies.json",
+    )
+    schema_export: ClassVar[SchemaExportSpecification] = SchemaExportSpecification(
+        filename="site-pipeline-aggregate-dependencies-v1.schema.json",
+        title="Site Pipeline data/_pipeline/aggregate-dependencies.json v1",
+        examples=(
+            SchemaExample(
+                summary="Aggregate dependency map that marks which units can invalidate one shared file.",
+                value_builder=aggregate_dependencies_example_document,
+            ),
+        ),
     )
 
     schema_version: Literal[1] = Field(

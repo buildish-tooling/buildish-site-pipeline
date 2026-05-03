@@ -1,6 +1,218 @@
 {
   "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
   "$defs": {
+    "CandidateAggregateEntry": {
+      "additionalProperties": false,
+      "description": "Entry in ``data/candidates.json``.",
+      "properties": {
+        "artifactKey": {
+          "description": "Owning artifact key for the candidate.",
+          "examples": [
+            "runtime"
+          ],
+          "minLength": 1,
+          "title": "Artifactkey",
+          "type": "string"
+        },
+        "assets": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ProviderAsset"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Downloadable assets attached to the candidate.",
+          "title": "Assets"
+        },
+        "candidateSequence": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Numeric ordering hint for the candidate, usually the `rc` sequence number.",
+          "examples": [
+            1
+          ],
+          "title": "Candidatesequence"
+        },
+        "componentSlug": {
+          "description": "Owning component slug for the candidate.",
+          "examples": [
+            "spark"
+          ],
+          "minLength": 1,
+          "title": "Componentslug",
+          "type": "string"
+        },
+        "createdAt": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Timestamp when the candidate record was first created.",
+          "title": "Createdat"
+        },
+        "displayVersion": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-readable candidate label when it should differ from the raw version string.",
+          "title": "Displayversion"
+        },
+        "externalId": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Provider-specific stable identifier for the upstream candidate record.",
+          "title": "Externalid"
+        },
+        "externalUrl": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-browsable upstream URL for the candidate record.",
+          "title": "Externalurl"
+        },
+        "maturity": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Maturity label associated with the candidate.",
+          "examples": [
+            "preview"
+          ],
+          "title": "Maturity"
+        },
+        "provider": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Provider key for the upstream system that supplied this candidate record.",
+          "title": "Provider"
+        },
+        "publishedAt": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Timestamp when the candidate became publicly visible.",
+          "title": "Publishedat"
+        },
+        "releaseLine": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Release-line key that the candidate belongs to, if known.",
+          "examples": [
+            "4.1"
+          ],
+          "title": "Releaseline"
+        },
+        "version": {
+          "description": "Candidate version string represented by this aggregate entry.",
+          "examples": [
+            "4.1.0-rc1"
+          ],
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "voteStatus": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Vote-status label for the candidate, if known.",
+          "examples": [
+            "passed"
+          ],
+          "title": "Votestatus"
+        }
+      },
+      "required": [
+        "componentSlug",
+        "artifactKey",
+        "version"
+      ],
+      "title": "CandidateAggregateEntry",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    },
     "ProviderAsset": {
       "additionalProperties": false,
       "description": "Downloadable asset attached to one provider release or candidate record.",
@@ -157,216 +369,7 @@
     "items": {
       "description": "Candidate-version aggregate entries emitted into `data/candidates.json`.",
       "items": {
-        "additionalProperties": false,
-        "description": "Entry in ``data/candidates.json``.",
-        "properties": {
-          "artifactKey": {
-            "description": "Owning artifact key for the candidate.",
-            "examples": [
-              "runtime"
-            ],
-            "minLength": 1,
-            "title": "Artifactkey",
-            "type": "string"
-          },
-          "assets": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/$defs/ProviderAsset"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Downloadable assets attached to the candidate.",
-            "title": "Assets"
-          },
-          "candidateSequence": {
-            "anyOf": [
-              {
-                "minimum": 1,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Numeric ordering hint for the candidate, usually the `rc` sequence number.",
-            "examples": [
-              1
-            ],
-            "title": "Candidatesequence"
-          },
-          "componentSlug": {
-            "description": "Owning component slug for the candidate.",
-            "examples": [
-              "spark"
-            ],
-            "minLength": 1,
-            "title": "Componentslug",
-            "type": "string"
-          },
-          "createdAt": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Timestamp when the candidate record was first created.",
-            "title": "Createdat"
-          },
-          "displayVersion": {
-            "anyOf": [
-              {
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Human-readable candidate label when it should differ from the raw version string.",
-            "title": "Displayversion"
-          },
-          "externalId": {
-            "anyOf": [
-              {
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Provider-specific stable identifier for the upstream candidate record.",
-            "title": "Externalid"
-          },
-          "externalUrl": {
-            "anyOf": [
-              {
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Human-browsable upstream URL for the candidate record.",
-            "title": "Externalurl"
-          },
-          "maturity": {
-            "anyOf": [
-              {
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Maturity label associated with the candidate.",
-            "examples": [
-              "preview"
-            ],
-            "title": "Maturity"
-          },
-          "provider": {
-            "anyOf": [
-              {
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Provider key for the upstream system that supplied this candidate record.",
-            "title": "Provider"
-          },
-          "publishedAt": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Timestamp when the candidate became publicly visible.",
-            "title": "Publishedat"
-          },
-          "releaseLine": {
-            "anyOf": [
-              {
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Release-line key that the candidate belongs to, if known.",
-            "examples": [
-              "4.1"
-            ],
-            "title": "Releaseline"
-          },
-          "version": {
-            "description": "Candidate version string represented by this aggregate entry.",
-            "examples": [
-              "4.1.0-rc1"
-            ],
-            "minLength": 1,
-            "title": "Version",
-            "type": "string"
-          },
-          "voteStatus": {
-            "anyOf": [
-              {
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Vote-status label for the candidate, if known.",
-            "examples": [
-              "passed"
-            ],
-            "title": "Votestatus"
-          }
-        },
-        "required": [
-          "componentSlug",
-          "artifactKey",
-          "version"
-        ],
-        "title": "CandidateAggregateEntry",
-        "type": "object",
-        "x-buildish-contract": {
-          "category": "emitted",
-          "ownership": "pipeline-derived"
-        }
+        "$ref": "#/$defs/CandidateAggregateEntry"
       },
       "title": "Items",
       "type": "array"

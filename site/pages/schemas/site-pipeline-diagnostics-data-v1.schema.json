@@ -112,7 +112,11 @@
         "message"
       ],
       "title": "PipelineDiagnosticEntry",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     },
     "ReducedDiagnosticDetailsSummary": {
       "additionalProperties": false,
@@ -184,7 +188,11 @@
         "limitBytes"
       ],
       "title": "ReducedDiagnosticDetailsSummary",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
     }
   },
   "$id": "https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-diagnostics-data-v1.schema.json",

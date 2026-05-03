@@ -1640,7 +1640,11 @@
         }
       },
       "title": "PublicationDefaults",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
     },
     "PublicationSelectionPolicy": {
       "additionalProperties": false,
@@ -2472,7 +2476,11 @@
         "source"
       ],
       "title": "TopLevelAssetConfig",
-      "type": "object"
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
     },
     "TrustClass": {
       "description": "Trust posture of a mounted content subtree.",

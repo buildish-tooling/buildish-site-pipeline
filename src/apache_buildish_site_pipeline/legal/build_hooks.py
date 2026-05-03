@@ -32,10 +32,9 @@ For this project we want a narrower result:
 
 The customization here deliberately stays small. Instead of reimplementing the
 entire wheel build, we hook into ``bdist_wheel.egg2dist()``, let setuptools
-copy the declared license files normally, prune repo-only helper modules that
-must never ship in the wheel, then flatten the two curated paths and rewrite
-the wheel ``METADATA`` ``License-File`` fields to match the final archive
-layout.
+copy the declared license files normally, then flatten the two curated paths
+and rewrite the wheel ``METADATA`` ``License-File`` fields to match the final
+archive layout.
 """
 
 from __future__ import annotations
@@ -43,27 +42,23 @@ from __future__ import annotations
 from pathlib import Path
 import shutil
 
-from setuptools.command.bdist_wheel import bdist_wheel
+try:
+    from setuptools.command.bdist_wheel import bdist_wheel as _bdist_wheel
+except ModuleNotFoundError:
+    class _bdist_wheel:  # type: ignore[no-redef]
+        """Import-time fallback when setuptools is unavailable."""
+
+        def __init__(self, *args: object, **kwargs: object) -> None:
+            raise ModuleNotFoundError(
+                "setuptools is required to build wheels with "
+                "FlattenedLicenseFilesBdistWheel"
+            )
 
 _FLATTENED_LICENSE_PATHS = {
     "dist-release-legal/LICENSE": "LICENSE",
     "dist-release-legal/NOTICE": "NOTICE",
 }
-_UNSHIPPED_PACKAGE_FILES = (
-    "release_legal.py",
-    "snapshot_publish.py",
-)
-_UNSHIPPED_PACKAGE_PATHS = (
-    "models/documentation.py",
-    "reference_export.py",
-    "schema_export.py",
-)
-_UNSHIPPED_PACKAGE_DIRS = (
-    "models/reference_docs",
-)
-
-
-class FlattenedLicenseFilesBdistWheel(bdist_wheel):
+class FlattenedLicenseFilesBdistWheel(_bdist_wheel):
     """Flatten selected wheel license files after setuptools copies them.
 
     ``project.license-files`` remains the source of truth for what gets bundled.
@@ -88,7 +83,6 @@ class FlattenedLicenseFilesBdistWheel(bdist_wheel):
     def _flatten_dist_info_license_files(self, distinfo_dir: Path) -> None:
         """Move selected license files to ``licenses/`` root and fix metadata."""
 
-        self._remove_repo_only_wheel_modules(distinfo_dir.parent)
         licenses_dir = distinfo_dir / "licenses"
         moved_paths: dict[str, str] = {}
 
@@ -113,33 +107,6 @@ class FlattenedLicenseFilesBdistWheel(bdist_wheel):
                 metadata_path=distinfo_dir / "METADATA",
                 moved_paths=moved_paths,
             )
-
-    @staticmethod
-    def _remove_repo_only_wheel_modules(wheel_root: Path) -> None:
-        """Delete repo-maintenance helpers from the wheel staging tree.
-
-        ``setuptools`` reuses the local ``build/`` directory between invocations.
-        When Python files move out of ``src/apache_buildish_site_pipeline/``,
-        stale copies can remain under ``build/lib/apache_buildish_site_pipeline``
-        and would otherwise be picked up by a later wheel build. Removing the
-        known repo-only helpers here keeps the wheel contents aligned with the
-        current source layout without requiring callers to manually clean
-        ``build/`` first.
-        """
-
-        package_dir = wheel_root / "apache_buildish_site_pipeline"
-        for module_name in _UNSHIPPED_PACKAGE_FILES:
-            module_path = package_dir / module_name
-            if module_path.exists():
-                module_path.unlink()
-        for relative_path in _UNSHIPPED_PACKAGE_PATHS:
-            package_path = package_dir / relative_path
-            if package_path.exists():
-                package_path.unlink()
-        for relative_dir in _UNSHIPPED_PACKAGE_DIRS:
-            package_path = package_dir / relative_dir
-            if package_path.exists():
-                shutil.rmtree(package_path)
 
     @staticmethod
     def _rewrite_license_file_metadata(

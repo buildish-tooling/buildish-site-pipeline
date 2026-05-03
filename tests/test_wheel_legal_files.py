@@ -48,12 +48,6 @@ class WheelLegalFilesTests(unittest.TestCase):
                 metadata_path = (
                     "apache_buildish_site_pipeline-0.1.0.dist-info/METADATA"
                 )
-                repo_only_tool_modules = {
-                    "apache_buildish_site_pipeline/reference_export.py",
-                    "apache_buildish_site_pipeline/release_legal.py",
-                    "apache_buildish_site_pipeline/schema_export.py",
-                    "apache_buildish_site_pipeline/snapshot_publish.py",
-                }
                 metadata_text = wheel_zip.read(metadata_path).decode("utf-8")
                 self.assertNotIn("LICENSE", names)
                 self.assertNotIn("NOTICE", names)
@@ -78,8 +72,6 @@ class WheelLegalFilesTests(unittest.TestCase):
                     "apache_buildish_site_pipeline-0.1.0.dist-info/licenses/dist-release-legal/NOTICE",
                     names,
                 )
-                for repo_only_tool_module in repo_only_tool_modules:
-                    self.assertNotIn(repo_only_tool_module, names)
                 for relative_source_path, source_path in expected_paths.items():
                     wheel_path = (
                         "apache_buildish_site_pipeline-0.1.0.dist-info/licenses/"

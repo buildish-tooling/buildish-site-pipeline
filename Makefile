@@ -51,7 +51,7 @@ rat: ## Run Apache RAT license checks.
 release-legal-preliminary-check: ## Verify the checked-in preliminary release-legal artifacts are up to date.
 	@tmp_dir="$$(mktemp -d)"; \
 	trap 'rm -rf "$$tmp_dir"' EXIT; \
-	$(UV_RUN) python3 -m tools.helpers.release_legal --output-dir "$$tmp_dir/tracked" --details-output-dir "$$tmp_dir/details" >/dev/null; \
+	$(UV_RUN) python3 -m apache_buildish_site_pipeline.legal.release_legal --output-dir "$$tmp_dir/tracked" --details-output-dir "$$tmp_dir/details" >/dev/null; \
 	if [ ! -d "$(RELEASE_LEGAL_OUT_DIR)" ]; then \
 		echo "Missing checked-in preliminary release-legal artifacts under $(RELEASE_LEGAL_OUT_DIR)." >&2; \
 		echo "Run 'make release-legal-preliminary' and commit the results." >&2; \
@@ -68,7 +68,7 @@ publish-snapshot-local: ## Build and publish a local wheel snapshot under dist/s
 	$(UV_RUN) python -m tools.helpers.snapshot_publish --out-dir $(SNAPSHOT_OUT_DIR)
 
 release-legal-preliminary: ## Generate preliminary binary/container legal drafts from the runtime dependency set.
-	$(UV_RUN) python3 -m tools.helpers.release_legal --output-dir $(RELEASE_LEGAL_OUT_DIR) --details-output-dir $(RELEASE_LEGAL_DETAILS_OUT_DIR)
+	$(UV_RUN) python3 -m apache_buildish_site_pipeline.legal.release_legal --output-dir $(RELEASE_LEGAL_OUT_DIR) --details-output-dir $(RELEASE_LEGAL_DETAILS_OUT_DIR)
 
 container-image: ## Build the generic Site Pipeline container image locally.
 	tools/site-pipeline-image/build-image.sh --image $(CONTAINER_IMAGE) --platforms $(CONTAINER_IMAGE_PLATFORMS)

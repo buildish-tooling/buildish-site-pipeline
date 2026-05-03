@@ -53,7 +53,7 @@ where = ["src"]
 include = ["apache_buildish_site_pipeline*"]
 
 [tool.setuptools.cmdclass]
-bdist_wheel = "tools.helpers.build_hooks.FlattenedLicenseFilesBdistWheel"
+bdist_wheel = "apache_buildish_site_pipeline.legal.build_hooks.FlattenedLicenseFilesBdistWheel"
 
 [dependency-groups]
 dev = [

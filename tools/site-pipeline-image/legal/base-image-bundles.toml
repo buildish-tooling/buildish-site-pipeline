@@ -14,7 +14,7 @@
 # limitations under the License.
 
 [[bundles]]
-image-ref = "docker.io/library/python:3.13-bookworm@sha256:345d669f21b1ab934cb67f2015a713ec041bb2ebb8e3f069484839361f64cc53"
+image-ref = "docker.io/library/python:3.13-bookworm@sha256:645626b340bf70c06f185ea425c8bba35c0491ef79df42168cd4dfedc58a6365"
 name = "python"
 version = "3.13-bookworm"
 output-key = "python-3.13-bookworm"

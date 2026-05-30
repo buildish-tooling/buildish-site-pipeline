@@ -82,7 +82,8 @@ jobs:
   container-image:
     name: Site Pipeline image
     needs: changes
-    if: github.event_name == 'pull_request' && needs.changes.outputs.container_image == 'true'
+    # Run for all pull-requests and for push+workflow-dispatch for non-apache repos
+    if: needs.changes.outputs.container_image == 'true' && (github.event_name == 'pull_request' || (github.repository_owner != 'apache' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')))
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -179,7 +180,8 @@ jobs:
   container-publish:
     name: Site Pipeline image publish
     needs: changes
-    if: github.repository_owner == 'apache' && needs.changes.outputs.container_image == 'true' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    # Run for push+workflow-dispatch for apache repos
+    if: needs.changes.outputs.container_image == 'true' && github.repository_owner == 'apache' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
       contents: read

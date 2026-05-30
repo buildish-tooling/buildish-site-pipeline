@@ -249,7 +249,7 @@ def stage_authored_page(
         )
     derived_metadata = _derive_page_metadata(source_path=source_path, content=post.content)
     destination_path.parent.mkdir(parents=True, exist_ok=True)
-    rendered_post = frontmatter.Post(post.content, **stored_metadata)
+    rendered_post = _frontmatter_post_with_metadata(post.content, stored_metadata)
     write_utf8_text_file(destination_path, frontmatter.dumps(rendered_post))
     return StagedAuthoredPage(
         authored_metadata=authored_metadata,
@@ -274,7 +274,8 @@ def finalize_staged_page(
         page=page,
     ).model_dump(mode="json", by_alias=True, exclude_none=True)
     write_utf8_text_file(
-        staged_page_path, frontmatter.dumps(frontmatter.Post(post.content, **metadata))
+        staged_page_path,
+        frontmatter.dumps(_frontmatter_post_with_metadata(post.content, metadata)),
     )
 
 
@@ -647,6 +648,14 @@ def _load_authored_post(
         raise StageIntegrityError(
             f"Authored page front matter in {source_path} must not define the reserved 'pipeline' namespace",
         )
+    return post
+
+
+def _frontmatter_post_with_metadata(
+    content: str, metadata: Mapping[str, object]
+) -> frontmatter.Post:
+    post = frontmatter.Post(content)
+    post.metadata.update(metadata)
     return post
 
 

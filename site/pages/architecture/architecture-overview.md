@@ -195,22 +195,22 @@ The pipeline should produce:
 
 After this overview, the most useful next docs are usually:
 
-- [api contract](/components/site-pipeline/development/reference/api-contract/) for the stable invocation and output
+- [api contract](../../development/reference/api-contract/) for the stable invocation and output
   boundaries
-- [staged output contract](/components/site-pipeline/development/reference/staged-output-contract/) for the staged-tree
+- [staged output contract](../../development/reference/staged-output-contract/) for the staged-tree
   layout and manifest contract
 - [source-resolution-and-materialization.md](../source-resolution-and-materialization/)
   for version selection and local materialization strategy
-- [validation and check](/components/site-pipeline/development/reference/validation-and-check/) for validation semantics,
+- [validation and check](../../development/reference/validation-and-check/) for validation semantics,
   diagnostics, and `site-pipeline check`
 - [build-architecture.md](../build-architecture/) for build/watch execution shape
-- [security and trust model](/components/site-pipeline/development/reference/security-and-trust-model/) for trust,
+- [security and trust model](../../development/reference/security-and-trust-model/) for trust,
   validation, and content-safety boundaries
-- [flexible component publication](/components/site-pipeline/development/reference/flexible-component-publication/) for the
+- [flexible component publication](../../development/reference/flexible-component-publication/) for the
   main publication and lifecycle model
-- [pipeline model schema reference](/components/site-pipeline/development/reference/pipeline-model-schema-reference/) for
+- [pipeline model schema reference](../../development/reference/pipeline-model-schema-reference/) for
   the typed field-level reference
-- [provider snapshot schema](/components/site-pipeline/development/reference/provider-snapshot-schema/) for optional
+- [provider snapshot schema](../../development/reference/provider-snapshot-schema/) for optional
   provider input shape
-- [provider to staged metadata mapping](/components/site-pipeline/development/reference/provider-to-staged-metadata-mapping/)
+- [provider to staged metadata mapping](../../development/reference/provider-to-staged-metadata-mapping/)
   for how provider data enriches staged outputs

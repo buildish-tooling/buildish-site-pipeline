@@ -62,7 +62,7 @@ The consumer repository keeps ownership of the rendered site experience:
 - [Concepts](concepts/) for the mental model and staged-output boundary
 - [How-to](how-to/) for task-oriented procedures
 - [Architecture](architecture/) for deeper system shape and rationale
-- [Reference](/components/site-pipeline/development/reference/) for stable contracts, schemas, and trust rules
+- [Reference](development/reference/) for stable contracts, schemas, and trust rules
 - [Maintenance](maintenance/) for maintainer-facing implementation guidance
 
 ## Source layout in this repository

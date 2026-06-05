@@ -191,7 +191,7 @@ or very large redirect inventories.
 
 ## Deeper reference trail
 
-- [flexible component publication](/components/site-pipeline/development/reference/flexible-component-publication/)
-- [provider snapshot schema](/components/site-pipeline/development/reference/provider-snapshot-schema/)
-- [provider to staged metadata mapping](/components/site-pipeline/development/reference/provider-to-staged-metadata-mapping/)
-- [security and trust model](/components/site-pipeline/development/reference/security-and-trust-model/)
+- [flexible component publication](../../development/reference/flexible-component-publication/)
+- [provider snapshot schema](../../development/reference/provider-snapshot-schema/)
+- [provider to staged metadata mapping](../../development/reference/provider-to-staged-metadata-mapping/)
+- [security and trust model](../../development/reference/security-and-trust-model/)

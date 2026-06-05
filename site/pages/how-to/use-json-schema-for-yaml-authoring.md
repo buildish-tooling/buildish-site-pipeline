@@ -77,9 +77,9 @@ The published schema URLs are also useful outside the editor:
 
 Examples:
 
-- [`manifest.json`](/components/site-pipeline/schemas/site-pipeline-stage-manifest-v1.schema.json)
-- [`data/components.json`](/components/site-pipeline/schemas/site-pipeline-components-data-v1.schema.json)
-- [`data/routes.json`](/components/site-pipeline/schemas/site-pipeline-routes-data-v1.schema.json)
+- [`manifest.json`](../../schemas/site-pipeline-stage-manifest-v1.schema.json)
+- [`data/components.json`](../../schemas/site-pipeline-components-data-v1.schema.json)
+- [`data/routes.json`](../../schemas/site-pipeline-routes-data-v1.schema.json)
 
 Links to all JSON schema files can be found in the [schema reference](../../development/reference/pipeline-model-schema-reference/).
 
@@ -101,5 +101,5 @@ treat the configuration as valid.
 ## Read this next
 
 - [create a tiny site](../create-a-tiny-site/)
-- [pipeline model schema reference](/components/site-pipeline/development/reference/pipeline-model-schema-reference/)
-- [provider snapshot schema](/components/site-pipeline/development/reference/provider-snapshot-schema/)
+- [pipeline model schema reference](../../development/reference/pipeline-model-schema-reference/)
+- [provider snapshot schema](../../development/reference/provider-snapshot-schema/)

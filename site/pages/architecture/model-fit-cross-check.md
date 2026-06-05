@@ -21,9 +21,9 @@ limitations under the License.
 -->
 
 The goal is not to propose migrations. The goal is to test whether the model
-described in [flexible component publication](/components/site-pipeline/development/reference/flexible-component-publication/),
-[provider snapshot schema](/components/site-pipeline/development/reference/provider-snapshot-schema/), and
-[pipeline model schema reference](/components/site-pipeline/development/reference/pipeline-model-schema-reference/) can, in
+described in [flexible component publication](../../development/reference/flexible-component-publication/),
+[provider snapshot schema](../../development/reference/provider-snapshot-schema/), and
+[pipeline model schema reference](../../development/reference/pipeline-model-schema-reference/) can, in
 theory, represent those sites without forcing projects to change their current
 permalinks.
 

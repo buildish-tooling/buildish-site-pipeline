@@ -203,5 +203,5 @@ The user-facing site is in good shape when a new reader can:
 - [../architecture/architecture-overview.md](../../architecture/architecture-overview/)
   for the current architectural explanation that the user-facing site should
   gradually expose more accessibly
-- [api contract](/components/site-pipeline/development/reference/api-contract/) for the stable
+- [api contract](../../development/reference/api-contract/) for the stable
   command and output boundary that user-facing pages should point toward

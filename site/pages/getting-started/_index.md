@@ -70,6 +70,6 @@ that audience.
   thread used across the docs
 - [../how-to/](../how-to/) for task-oriented guides
 - [../architecture/](../architecture/) for system shape, rationale, and examples
-- [reference](/components/site-pipeline/development/reference/) for contracts, schemas, and trust-model details
+- [reference](../development/reference/) for contracts, schemas, and trust-model details
 - [../architecture/model-fit-cross-check.md](../architecture/model-fit-cross-check/) for the
   rationale behind the size bands

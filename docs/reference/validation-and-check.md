@@ -1,6 +1,6 @@
 ---
 title: "Validation and `site-pipeline check`"
-description: "For maintainer-facing notes about shared evaluation ownership, stage-gating, and the lower execution path reused by `check`, `build`, and `watch`, see [code maintenance](/maintenance/code-maintenance/)."
+description: "For maintainer-facing notes about shared evaluation ownership, stage-gating, and the lower execution path reused by `check`, `build`, and `watch`, see [code maintenance](../../../maintenance/code-maintenance/)."
 weight: 17
 ---
 
@@ -210,9 +210,9 @@ boundary between validation, materialization, and staging.
 ## Read next
 
 - [api-contract.md](../api-contract/) for the stable CLI boundary
-- [source resolution and materialization](/architecture/source-resolution-and-materialization/)
+- [source resolution and materialization](../../../architecture/source-resolution-and-materialization/)
    for planning and local-input readiness
-- [code maintenance](/maintenance/code-maintenance/) for maintainer-facing planning,
+- [code maintenance](../../../maintenance/code-maintenance/) for maintainer-facing planning,
    evaluation, staging, and watch guardrails
 - [flexible-component-publication.md](../flexible-component-publication/) for the
    validation rules `check` should enforce

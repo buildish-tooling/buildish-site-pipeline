@@ -53,6 +53,6 @@ reference pass through the contracts and security model.
 ## Deeper reference trail
 
 - [../architecture/architecture-overview.md](../../architecture/architecture-overview/)
-- [staged output contract](/components/site-pipeline/development/reference/staged-output-contract/)
-- [security and trust model](/components/site-pipeline/development/reference/security-and-trust-model/)
-- [pipeline model schema reference](/components/site-pipeline/development/reference/pipeline-model-schema-reference/)
+- [staged output contract](../../development/reference/staged-output-contract/)
+- [security and trust model](../../development/reference/security-and-trust-model/)
+- [pipeline model schema reference](../../development/reference/pipeline-model-schema-reference/)

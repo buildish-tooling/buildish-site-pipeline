@@ -22,7 +22,7 @@ limitations under the License.
 
 - [code-maintenance.md](code-maintenance/) records durable implementation
   boundaries and refactoring guardrails
-- [maintenance backlog](/components/site-pipeline/development/maintenance/todos/) records intentionally deferred
+- [maintenance backlog](../development/maintenance/todos/) records intentionally deferred
   maintenance follow-ups that
   should stay visible during nearby implementation work
 - [user-facing-docs-strategy.md](user-facing-docs-strategy/) defines the

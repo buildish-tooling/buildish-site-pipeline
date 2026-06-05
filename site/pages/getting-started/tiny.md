@@ -108,7 +108,7 @@ site/.stage/
 2. [../concepts/staged-output-and-consumers.md](../../concepts/staged-output-and-consumers/)
 3. [../how-to/create-a-tiny-site.md](../../how-to/create-a-tiny-site/)
 4. [../how-to/inspect-staged-output-and-routes.md](../../how-to/inspect-staged-output-and-routes/)
-5. [staged output contract](/components/site-pipeline/development/reference/staged-output-contract/)
+5. [staged output contract](../../development/reference/staged-output-contract/)
 
 ## Ignore for now
 
@@ -128,5 +128,5 @@ redirects, or one mounted imported/generated docs subtree.
 
 ## Deeper reference trail
 
-- [flexible component publication](/components/site-pipeline/development/reference/flexible-component-publication/)
-- [pipeline model schema reference](/components/site-pipeline/development/reference/pipeline-model-schema-reference/)
+- [flexible component publication](../../development/reference/flexible-component-publication/)
+- [pipeline model schema reference](../../development/reference/pipeline-model-schema-reference/)

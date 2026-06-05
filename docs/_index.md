@@ -22,17 +22,17 @@ limitations under the License.
 
 Use the top-level component pages for onboarding and narrative guidance:
 
-- [Getting started](/getting-started/) for first setup and size-band guidance
-- [Concepts](/concepts/) for the mental model and staged-output boundary
-- [How-to](/how-to/) for task-oriented procedures
-- [Architecture](/architecture/) for deeper system shape and rationale
-- [Maintenance](/maintenance/) for maintainer-facing guidance
+- [Getting started](../getting-started/) for first setup and size-band guidance
+- [Concepts](../concepts/) for the mental model and staged-output boundary
+- [How-to](../how-to/) for task-oriented procedures
+- [Architecture](../architecture/) for deeper system shape and rationale
+- [Maintenance](../maintenance/) for maintainer-facing guidance
 
 ## What stays in `docs/`
 
 - stable reference and schema material under [reference](reference/)
 - future versioned or release-tied docs for this component
-- deferred maintenance backlog items under [maintenance backlog](/components/site-pipeline/development/maintenance/todos/)
+- deferred maintenance backlog items under [maintenance backlog](maintenance/todos/)
 
 ## Read next
 

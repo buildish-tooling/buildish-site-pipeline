@@ -26,7 +26,11 @@ renderer.
 It gives a consumer site one place to aggregate cross-repository content without
 pulling renderer logic, branding, or publishing policy into every component.
 
-{{< buildish-component-link kind="docs" label="Read docs" appearance="primary" >}}
+{{< buildish-button appearance="primary" >}}
+[Get started](getting-started/)
+{{< /buildish-button >}}
+
+{{< buildish-component-link kind="development" label="Read docs" appearance="primary" >}}
 
 {{< buildish-component-link kind="source" label="Browse source" appearance="outline-secondary" >}}
 

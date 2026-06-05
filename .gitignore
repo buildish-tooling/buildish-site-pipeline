@@ -24,6 +24,3 @@ __pycache__/
 .ruff_cache/
 
 site/components.local.yaml
-
-# for local dev only
-workspace-links/

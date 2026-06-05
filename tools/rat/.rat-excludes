@@ -28,8 +28,5 @@ dist-release-legal/**
 **/*.egg-info/**
 tests/fixtures/second-consumer-workspace/worktrees/rocket-cache-alt/site/assets/logos/mark.txt
 
-# Local dev symlinks to sibling repos
-workspace-links/**
-
 # Vendored third-party legal texts copied verbatim for release-legal generation.
 tools/site-pipeline-image/legal/base-images/**

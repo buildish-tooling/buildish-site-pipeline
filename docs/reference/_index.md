@@ -26,6 +26,7 @@ surrounding normative design notes.
 - [Pipeline model schema reference](./pipeline-model-schema-reference/)
 - [File contract index](./pipeline-file-contract-index/)
 - [Shared types reference](./pipeline-shared-types-reference/)
+- [Threat model](./threat-model/)
 
 The generated contract reference is intentionally split across multiple pages so the field-level
 schema documentation remains readable.

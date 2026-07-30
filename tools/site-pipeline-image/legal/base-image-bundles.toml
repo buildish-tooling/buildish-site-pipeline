@@ -14,7 +14,7 @@
 # limitations under the License.
 
 [[bundles]]
-image-ref = "docker.io/library/python:3.13-bookworm@sha256:645626b340bf70c06f185ea425c8bba35c0491ef79df42168cd4dfedc58a6365"
+image-ref = "docker.io/library/python:3.13-bookworm@sha256:353cf2106d143e1d28f5d7c10c5f5c0387085bba22ef0f7f7e52c2c330fb1779"
 name = "python"
 version = "3.13-bookworm"
 output-key = "python-3.13-bookworm"
@@ -24,11 +24,11 @@ license-files = ["tools/site-pipeline-image/legal/base-images/python-3.13-bookwo
 notice-files = []
 
 [[bundles]]
-image-ref = "ghcr.io/astral-sh/uv:0.9.7@sha256:ba4857bf2a068e9bc0e64eed8563b065908a4cd6bfb66b531a9c424c8e25e142"
+image-ref = "ghcr.io/astral-sh/uv:0.12.0@sha256:606e70c71c852d03f611b1e56a195d08648507018a7057fab82c4974c4eae105"
 name = "uv"
-version = "0.9.7"
-output-key = "uv-0.9.7"
+version = "0.12.0"
+output-key = "uv-0.12.0"
 home-page = "https://docs.astral.sh/uv/"
 license-expression = "Apache-2.0 OR MIT"
-license-files = ["LICENSE", "tools/site-pipeline-image/legal/base-images/uv-0.9.7/LICENSE-MIT"]
+license-files = ["LICENSE", "tools/site-pipeline-image/legal/base-images/uv-0.12.0/LICENSE-MIT"]
 notice-files = []

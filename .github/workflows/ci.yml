@@ -179,7 +179,9 @@ jobs:
 
   container-publish:
     name: Site Pipeline image publish
-    needs: changes
+    needs:
+      - changes
+      - check
     # Run for push+workflow-dispatch for apache repos
     if: needs.changes.outputs.container_image == 'true' && github.repository_owner == 'buildish-tooling' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest

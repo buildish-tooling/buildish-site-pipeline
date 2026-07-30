@@ -15,7 +15,7 @@
 
 FROM ghcr.io/astral-sh/uv:0.12.0@sha256:606e70c71c852d03f611b1e56a195d08648507018a7057fab82c4974c4eae105 AS uvbin
 
-FROM docker.io/library/python:3.13-bookworm@sha256:353cf2106d143e1d28f5d7c10c5f5c0387085bba22ef0f7f7e52c2c330fb1779
+FROM docker.io/library/python:3.14-bookworm@sha256:5dcba30b5f8fbd97e2f35dd1b140b3c94db70bd01b39ed88365732f8db8f68b5
 
 COPY --from=uvbin /uv /uvx /usr/local/bin/
 

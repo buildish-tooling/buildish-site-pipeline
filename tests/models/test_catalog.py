@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ from copy import deepcopy
 
 from pydantic import ValidationError
 
-from apache_buildish_site_pipeline.models.authored.site_catalog import (
+from buildish_site_pipeline.models.authored.site_catalog import (
     ArtifactConfig,
     ArtifactLifecycleConfig,
     ArtifactVersioningConfig,
@@ -38,7 +38,7 @@ from apache_buildish_site_pipeline.models.authored.site_catalog import (
     SiteCatalogDocumentV1,
     SourceConfig,
 )
-from apache_buildish_site_pipeline.models.enums import (
+from buildish_site_pipeline.models.enums import (
     CandidateSelectionMode,
     DocumentFormat,
     IndexBehavior,
@@ -50,7 +50,7 @@ from apache_buildish_site_pipeline.models.enums import (
     TrustClass,
     WithdrawalBehavior,
 )
-from apache_buildish_site_pipeline.models.loading import (
+from buildish_site_pipeline.models.loading import (
     DocumentValidationFailure,
     load_site_catalog_document,
 )

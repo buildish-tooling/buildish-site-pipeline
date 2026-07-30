@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,9 +26,9 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from apache_buildish_site_pipeline.cli import _run
-from apache_buildish_site_pipeline.cli import main as cli_main, parse_invocation
-from apache_buildish_site_pipeline.cli.contract import (
+from buildish_site_pipeline.cli import _run
+from buildish_site_pipeline.cli import main as cli_main, parse_invocation
+from buildish_site_pipeline.cli.contract import (
     ReportFormat,
     ReportRequest,
     RepositoryLayout,
@@ -39,13 +39,13 @@ from apache_buildish_site_pipeline.cli.contract import (
     WatchInvocation,
     WatchReadyEvent,
 )
-from apache_buildish_site_pipeline.cli.dispatch import dispatch_command as _dispatch_command
-from apache_buildish_site_pipeline.cli.errors import CommandExecutionError, InvocationError, SitePipelineCliError
-from apache_buildish_site_pipeline.models.enums import CheckFailureThreshold, RunStatus
+from buildish_site_pipeline.cli.dispatch import dispatch_command as _dispatch_command
+from buildish_site_pipeline.cli.errors import CommandExecutionError, InvocationError, SitePipelineCliError
+from buildish_site_pipeline.models.enums import CheckFailureThreshold, RunStatus
 from tests.support.workspace import _cwd, _fake_watch_event_stream_factory, _workspace
 
 
-cli_main_module = importlib.import_module("apache_buildish_site_pipeline.cli.main")
+cli_main_module = importlib.import_module("buildish_site_pipeline.cli.main")
 
 
 class CliTests(unittest.TestCase):
@@ -454,7 +454,7 @@ class CliTests(unittest.TestCase):
                 reports_dir.symlink_to(real_reports_dir, target_is_directory=True)
                 return result
 
-            with mock.patch("apache_buildish_site_pipeline.cli.main.dispatch_command", side_effect=_dispatch_and_mutate):
+            with mock.patch("buildish_site_pipeline.cli.main.dispatch_command", side_effect=_dispatch_and_mutate):
                 with _cwd(workspace_root):
                     exit_code = _run(
                         argv=[
@@ -495,7 +495,7 @@ class CliTests(unittest.TestCase):
             stdout = io.StringIO()
             stderr = io.StringIO()
             with mock.patch(
-                "apache_buildish_site_pipeline.commands.watch._open_watch_event_stream",
+                "buildish_site_pipeline.commands.watch._open_watch_event_stream",
                 new=_fake_watch_event_stream_factory(responses=[(True, None)]),
             ):
                 with _cwd(workspace_root):
@@ -528,7 +528,7 @@ class CliTests(unittest.TestCase):
             stdout = io.StringIO()
             stderr = io.StringIO()
             with mock.patch(
-                "apache_buildish_site_pipeline.commands.watch._open_watch_event_stream",
+                "buildish_site_pipeline.commands.watch._open_watch_event_stream",
                 new=_fake_watch_event_stream_factory(responses=[(True, None)]),
             ):
                 with _cwd(workspace_root):
@@ -549,7 +549,7 @@ class CliTests(unittest.TestCase):
             stdout = io.StringIO()
             stderr = io.StringIO()
             with mock.patch(
-                "apache_buildish_site_pipeline.commands.watch._open_watch_event_stream",
+                "buildish_site_pipeline.commands.watch._open_watch_event_stream",
                 new=_fake_watch_event_stream_factory(responses=[(True, None)]),
             ):
                 with _cwd(workspace_root):
@@ -621,7 +621,7 @@ class CliTests(unittest.TestCase):
                 return (watched_file,)
 
             with mock.patch(
-                "apache_buildish_site_pipeline.commands.watch._open_watch_event_stream",
+                "buildish_site_pipeline.commands.watch._open_watch_event_stream",
                 new=_fake_watch_event_stream_factory(
                     responses=[
                         (True, _break_catalog_then_trigger_cycle),
@@ -659,7 +659,7 @@ class CliTests(unittest.TestCase):
             stdout = io.StringIO()
             stderr = io.StringIO()
             with mock.patch(
-                "apache_buildish_site_pipeline.commands.watch._open_watch_event_stream",
+                "buildish_site_pipeline.commands.watch._open_watch_event_stream",
                 new=_fake_watch_event_stream_factory(responses=[(True, None)]),
             ):
                 with _cwd(workspace_root):
@@ -687,7 +687,7 @@ class CliTests(unittest.TestCase):
             stdout = io.StringIO()
             stderr = io.StringIO()
             with mock.patch(
-                "apache_buildish_site_pipeline.commands.watch._open_watch_event_stream",
+                "buildish_site_pipeline.commands.watch._open_watch_event_stream",
                 new=_fake_watch_event_stream_factory(responses=[(True, None)]),
             ):
                 with _cwd(workspace_root):
@@ -716,7 +716,7 @@ class CliTests(unittest.TestCase):
             stdout = io.StringIO()
             stderr = io.StringIO()
             with mock.patch(
-                "apache_buildish_site_pipeline.commands.watch._open_watch_event_stream",
+                "buildish_site_pipeline.commands.watch._open_watch_event_stream",
                 new=_fake_watch_event_stream_factory(responses=[(True, None)]),
             ):
                 with _cwd(workspace_root):
@@ -747,10 +747,10 @@ class CliTests(unittest.TestCase):
             stdout = io.StringIO()
             stderr = io.StringIO()
             with mock.patch(
-                "apache_buildish_site_pipeline.commands.watch._open_watch_event_stream",
+                "buildish_site_pipeline.commands.watch._open_watch_event_stream",
                 new=_fake_watch_event_stream_factory(responses=[(True, None)]),
             ):
-                import apache_buildish_site_pipeline.commands.watch as watch_command
+                import buildish_site_pipeline.commands.watch as watch_command
 
                 original_cycle = watch_command._run_watch_cycle  # noqa: SLF001
 
@@ -789,7 +789,7 @@ class CliTests(unittest.TestCase):
             stdout = io.StringIO()
             stderr = io.StringIO()
             with mock.patch(
-                "apache_buildish_site_pipeline.commands.watch._open_watch_event_stream",
+                "buildish_site_pipeline.commands.watch._open_watch_event_stream",
                 new=_fake_watch_event_stream_factory(
                     responses=[
                         (True, (watched_file,)),
@@ -865,7 +865,7 @@ class CliTests(unittest.TestCase):
             stdout = io.StringIO()
             stderr = io.StringIO()
             with mock.patch(
-                "apache_buildish_site_pipeline.commands.watch.evaluate_planning",
+                "buildish_site_pipeline.commands.watch.evaluate_planning",
                 side_effect=CommandExecutionError("Planning derived more than the 32 watch-root ceiling"),
             ):
                 with _cwd(workspace_root):
@@ -899,7 +899,7 @@ class CliTests(unittest.TestCase):
             stdout = io.StringIO()
             stderr = io.StringIO()
             with mock.patch(
-                "apache_buildish_site_pipeline.commands.watch._open_watch_event_stream",
+                "buildish_site_pipeline.commands.watch._open_watch_event_stream",
                 new=_fake_watch_event_stream_factory(responses=[(True, None)]),
             ):
                 with _cwd(workspace_root):
@@ -959,7 +959,7 @@ class CliTests(unittest.TestCase):
                 return (watched_file,)
 
             with mock.patch(
-                "apache_buildish_site_pipeline.commands.watch._open_watch_event_stream",
+                "buildish_site_pipeline.commands.watch._open_watch_event_stream",
                 new=_fake_watch_event_stream_factory(
                     responses=[
                         (True, _break_catalog_then_trigger_cycle),
@@ -1011,7 +1011,7 @@ class CliTests(unittest.TestCase):
                 return (catalog_path,)
 
             with mock.patch(
-                "apache_buildish_site_pipeline.commands.watch._open_watch_event_stream",
+                "buildish_site_pipeline.commands.watch._open_watch_event_stream",
                 new=_fake_watch_event_stream_factory(
                     responses=[
                         (True, _break_catalog_then_trigger_catalog_cycle),
@@ -1063,7 +1063,7 @@ class CliTests(unittest.TestCase):
                 return (watched_file,)
 
             with mock.patch(
-                "apache_buildish_site_pipeline.commands.watch._open_watch_event_stream",
+                "buildish_site_pipeline.commands.watch._open_watch_event_stream",
                 new=_fake_watch_event_stream_factory(
                     responses=[
                         (True, _inject_unknown_stage_path_then_trigger_cycle),
@@ -1109,7 +1109,7 @@ class CliTests(unittest.TestCase):
             stderr = io.StringIO()
 
             with mock.patch(
-                "apache_buildish_site_pipeline.commands.watch._open_watch_event_stream",
+                "buildish_site_pipeline.commands.watch._open_watch_event_stream",
                 new=_fake_watch_event_stream_factory(
                     responses=[(True, None)],
                     captured_watch_roots=captured_watch_roots,
@@ -1155,7 +1155,7 @@ class CliTests(unittest.TestCase):
             stderr = io.StringIO()
 
             with mock.patch(
-                "apache_buildish_site_pipeline.commands.watch._open_watch_event_stream",
+                "buildish_site_pipeline.commands.watch._open_watch_event_stream",
                 new=_fake_watch_event_stream_factory(
                     responses=[
                         (True, (watched_file,)),
@@ -1188,9 +1188,9 @@ class CliTests(unittest.TestCase):
         self.assertEqual(stderr.getvalue(), "")
 
     def test_check_build_and_watch_reuse_shared_planning_layers(self) -> None:
-        import apache_buildish_site_pipeline.commands.build as build_command
-        import apache_buildish_site_pipeline.commands.check as check_command
-        import apache_buildish_site_pipeline.commands.watch as watch_command
+        import buildish_site_pipeline.commands.build as build_command
+        import buildish_site_pipeline.commands.check as check_command
+        import buildish_site_pipeline.commands.watch as watch_command
 
         with _workspace(with_content_file=True) as workspace_root:
             observed_calls: list[tuple[str, str, str]] = []
@@ -1254,7 +1254,7 @@ class CliTests(unittest.TestCase):
                     mock.patch.object(check_command, "run_evaluation", new=_record_evaluation("check", check_command.run_evaluation)),
                     mock.patch.object(watch_command, "run_evaluation", new=_record_evaluation("watch", watch_command.run_evaluation)),
                     mock.patch(
-                        "apache_buildish_site_pipeline.commands.watch._open_watch_event_stream",
+                        "buildish_site_pipeline.commands.watch._open_watch_event_stream",
                         new=_fake_watch_event_stream_factory(responses=[(True, None)]),
                     ),
                 ):
@@ -1293,7 +1293,7 @@ class CliInternalTests(unittest.TestCase):
 
         with (
             mock.patch.object(cli_main_module, "sys", mock.Mock(stdout=stdout, stderr=stderr)),
-            mock.patch("apache_buildish_site_pipeline.cli.main._run", return_value=7) as run_mock,
+            mock.patch("buildish_site_pipeline.cli.main._run", return_value=7) as run_mock,
         ):
             self.assertEqual(cli_main(["plan"]), 7)
 
@@ -1328,9 +1328,9 @@ class CliInternalTests(unittest.TestCase):
             stderr = io.StringIO()
 
             with (
-                mock.patch("apache_buildish_site_pipeline.cli.main.parse_invocation", return_value=invocation),
+                mock.patch("buildish_site_pipeline.cli.main.parse_invocation", return_value=invocation),
                 mock.patch(
-                    "apache_buildish_site_pipeline.cli.main.revalidate_report_request",
+                    "buildish_site_pipeline.cli.main.revalidate_report_request",
                     return_value=ReportRequest(
                         report_format=ReportFormat.TEXT,
                         schema_version=None,
@@ -1338,7 +1338,7 @@ class CliInternalTests(unittest.TestCase):
                     ),
                 ),
                 mock.patch(
-                    "apache_buildish_site_pipeline.cli.main.revalidate_watch_event_request",
+                    "buildish_site_pipeline.cli.main.revalidate_watch_event_request",
                     return_value=WatchEventRequest(
                         event_format=WatchEventFormat.JSONL,
                         output_path=shared_output,
@@ -1355,9 +1355,9 @@ class CliInternalTests(unittest.TestCase):
         stderr = io.StringIO()
 
         with (
-            mock.patch("apache_buildish_site_pipeline.cli.main.parse_invocation", return_value=object()),
+            mock.patch("buildish_site_pipeline.cli.main.parse_invocation", return_value=object()),
             mock.patch(
-                "apache_buildish_site_pipeline.cli.main.dispatch_command",
+                "buildish_site_pipeline.cli.main.dispatch_command",
                 side_effect=SitePipelineCliError("generic cli failure"),
             ),
         ):

@@ -5,7 +5,7 @@ weight: 38
 ---
 
 <!--
-Copyright 2026 The Apache Software Foundation
+Copyright 2026 The Buildish Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -185,7 +185,7 @@ Two details matter in practice:
   preview server exits
 
 `wait-for-watch-ready` is only a placeholder command name in this sketch. In the
-Buildish site the consumer repo [owns that helper](https://buildish.apache.org/apache/buildish/tree/main/site/scripts/wait_for_watch_ready.py)
+Buildish site the consumer repo [owns that helper](https://github.com/buildish-tooling/buildish/tree/main/site/scripts/wait_for_watch_ready.py)
 as `site/scripts/wait_for_watch_ready.py`, and the helper waits for the first
 usable `ready` event in the JSONL stream written by `--unstable-events-output`.
 If you do not already have such a helper, add a small wrapper that blocks until

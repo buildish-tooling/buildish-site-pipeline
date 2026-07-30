@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,17 +22,17 @@ import unittest
 from pathlib import Path
 from typing import cast
 
-from apache_buildish_site_pipeline.cli.errors import CommandExecutionError
-from apache_buildish_site_pipeline.models import (
+from buildish_site_pipeline.cli.errors import CommandExecutionError
+from buildish_site_pipeline.models import (
     PlanningTarget,
     ProviderSnapshotDocumentV1,
     SiteCatalogDocumentV1,
 )
-from apache_buildish_site_pipeline.models.enums import MaterializationInputKind, MaterializationStatus
-from apache_buildish_site_pipeline.planning import build_resolved_materialization_report, evaluate_planning
-from apache_buildish_site_pipeline.planning.types import EffectiveBuildPlanResult, InputReadiness, LocalInputIdentity, MaterializationStatusReason, PlanToBuildBridge, ResolvedLocalInput
-from apache_buildish_site_pipeline.staging.types import EffectiveBuildPlan
-from apache_buildish_site_pipeline.planning.watch_roots import derive_watch_plan
+from buildish_site_pipeline.models.enums import MaterializationInputKind, MaterializationStatus
+from buildish_site_pipeline.planning import build_resolved_materialization_report, evaluate_planning
+from buildish_site_pipeline.planning.types import EffectiveBuildPlanResult, InputReadiness, LocalInputIdentity, MaterializationStatusReason, PlanToBuildBridge, ResolvedLocalInput
+from buildish_site_pipeline.staging.types import EffectiveBuildPlan
+from buildish_site_pipeline.planning.watch_roots import derive_watch_plan
 
 
 class PlanningEvaluationTests(unittest.TestCase):

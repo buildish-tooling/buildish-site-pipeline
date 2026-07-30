@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,12 +20,12 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-from apache_buildish_site_pipeline.evaluation.collector import DiagnosticCollector
-from apache_buildish_site_pipeline.evaluation.link_references import extract_link_references
-from apache_buildish_site_pipeline.evaluation.staged_links import validate_staged_links
-from apache_buildish_site_pipeline.evaluation.types import InventoryPage, PageInventory
-from apache_buildish_site_pipeline.models.enums import LinkCheckMode
-from apache_buildish_site_pipeline.planning.types import ResolvedLinkCheckPolicy
+from buildish_site_pipeline.evaluation.collector import DiagnosticCollector
+from buildish_site_pipeline.evaluation.link_references import extract_link_references
+from buildish_site_pipeline.evaluation.staged_links import validate_staged_links
+from buildish_site_pipeline.evaluation.types import InventoryPage, PageInventory
+from buildish_site_pipeline.models.enums import LinkCheckMode
+from buildish_site_pipeline.planning.types import ResolvedLinkCheckPolicy
 
 
 class StagedLinksTests(unittest.TestCase):

@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ from datetime import UTC, datetime
 
 from pydantic import ValidationError
 
-from apache_buildish_site_pipeline.models.enums import (
+from buildish_site_pipeline.models.enums import (
     CheckFailureThreshold,
     DiagnosticSeverity,
     DocumentFormat,
@@ -32,13 +32,13 @@ from apache_buildish_site_pipeline.models.enums import (
     RunStatus,
     StageCommand,
 )
-from apache_buildish_site_pipeline.models.loading import (
+from buildish_site_pipeline.models.loading import (
     load_check_report,
     load_resolved_materialization_report,
     load_stage_manifest,
     load_stage_run_report,
 )
-from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
+from buildish_site_pipeline.models.emitted.planning_stage_contract import (
     CheckReportV1,
     CheckSummary,
     PipelineDiagnosticEntry,

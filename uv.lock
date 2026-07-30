@@ -28,7 +28,7 @@ wheels = [
 ]
 
 [[package]]
-name = "apache-buildish-site-pipeline"
+name = "buildish-site-pipeline"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [

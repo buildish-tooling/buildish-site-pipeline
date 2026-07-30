@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,15 +19,15 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
-from apache_buildish_site_pipeline.cli.contract import (
+from buildish_site_pipeline.cli.contract import (
     ComponentSourceRootsInvocation,
     RepositoryLayout,
 )
-from apache_buildish_site_pipeline.commands.component_source_roots import (
+from buildish_site_pipeline.commands.component_source_roots import (
     _component_source_root_locators,
     run_component_source_roots,
 )
-from apache_buildish_site_pipeline.source_roots import (
+from buildish_site_pipeline.source_roots import (
     ResolvedComponentSourceRoot,
     ResolvedComponentSourceUsage,
     ResolvedSourceBinding,

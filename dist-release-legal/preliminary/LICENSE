@@ -202,7 +202,7 @@
 
 -------------------------------------------------------------------------------
 The sections below describe bundled third-party Python runtime dependencies selected from uv.lock and inspected from the current installed environment.
-This file is PRELIMINARY and generated from dependency metadata plus bundled legal files. Human review is required before using it in any Apache release artifact.
+This file is PRELIMINARY and generated from dependency metadata plus bundled legal files. Human review is required before using it in any published release artifact.
 Selection command: uv export --format pylock.toml --no-dev --frozen
 
 -------------------------------------------------------------------------------

@@ -5,7 +5,7 @@ weight: 25
 ---
 
 <!--
-Copyright 2026 The Apache Software Foundation
+Copyright 2026 The Buildish Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -213,7 +213,7 @@ That means inputs such as:
 
 - `[component list](type:SiteCatalogDocumentV1#components)` for an internal
   symbolic target
-- `[project site](https://buildish.apache.org/)` for an external URL
+- `[project site](https://buildish.org/)` for an external URL
 
 should both be valid in the authored metadata.
 
@@ -266,7 +266,7 @@ In particular, link metadata should render differently per output target:
 
 In practice, that means schema descriptions should prefer readable prose such as
 `See SiteCatalogDocumentV1.components.` or `External reference:
-https://buildish.apache.org/.` rather than depending on schema viewers to render
+https://buildish.org/.` rather than depending on schema viewers to render
 Markdown link syntax.
 
 If richer machine-readable link output is needed in the schema documents later,

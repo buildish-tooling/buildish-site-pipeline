@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ from __future__ import annotations
 import unittest
 from unittest import mock
 
-from apache_buildish_site_pipeline.evaluation.collector import DiagnosticCollector
-from apache_buildish_site_pipeline.evaluation.reference_index import KnownRoute, build_reference_index
-from apache_buildish_site_pipeline.evaluation import routes as route_evaluation
+from buildish_site_pipeline.evaluation.collector import DiagnosticCollector
+from buildish_site_pipeline.evaluation.reference_index import KnownRoute, build_reference_index
+from buildish_site_pipeline.evaluation import routes as route_evaluation
 
 
 class RouteValidationTests(unittest.TestCase):
@@ -69,7 +69,7 @@ class RouteValidationTests(unittest.TestCase):
         }
 
         with mock.patch(
-            "apache_buildish_site_pipeline.evaluation.routes._find_cycle",
+            "buildish_site_pipeline.evaluation.routes._find_cycle",
             side_effect=[cycle, tuple(reversed(cycle))],
         ):
             route_evaluation._validate_redirect_loops(  # noqa: SLF001

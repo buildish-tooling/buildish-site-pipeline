@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from apache_buildish_site_pipeline.models import ProviderSnapshotDocumentV1
-from apache_buildish_site_pipeline.planning.provider_index import build_provider_snapshot_index
+from buildish_site_pipeline.models import ProviderSnapshotDocumentV1
+from buildish_site_pipeline.planning.provider_index import build_provider_snapshot_index
 
 
 class ProviderIndexTests(unittest.TestCase):
@@ -43,7 +43,7 @@ class ProviderIndexTests(unittest.TestCase):
             )
 
     def test_rejects_provider_snapshot_when_record_ceiling_is_exceeded(self) -> None:
-        with patch("apache_buildish_site_pipeline.planning.provider_index._MAX_PROVIDER_RECORDS", 1):
+        with patch("buildish_site_pipeline.planning.provider_index._MAX_PROVIDER_RECORDS", 1):
             with self.assertRaisesRegex(ValueError, "50,000 record planning ceiling"):
                 build_provider_snapshot_index(
                     provider_snapshot=_provider_snapshot(
@@ -69,7 +69,7 @@ class ProviderIndexTests(unittest.TestCase):
                 )
 
     def test_rejects_provider_snapshot_when_byte_ceiling_is_exceeded(self) -> None:
-        with patch("apache_buildish_site_pipeline.planning.provider_index._MAX_PROVIDER_SNAPSHOT_BYTES", 1):
+        with patch("buildish_site_pipeline.planning.provider_index._MAX_PROVIDER_SNAPSHOT_BYTES", 1):
             with self.assertRaisesRegex(ValueError, "16 MiB planning ceiling"):
                 build_provider_snapshot_index(
                     provider_snapshot=_provider_snapshot(

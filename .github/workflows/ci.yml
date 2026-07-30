@@ -1,5 +1,5 @@
 ##
-## Copyright 2026 The Apache Software Foundation
+## Copyright 2026 The Buildish Authors
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -83,7 +83,7 @@ jobs:
     name: Site Pipeline image
     needs: changes
     # Run for all pull-requests and for push+workflow-dispatch for non-apache repos
-    if: needs.changes.outputs.container_image == 'true' && (github.event_name == 'pull_request' || (github.repository_owner != 'apache' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')))
+    if: needs.changes.outputs.container_image == 'true' && (github.event_name == 'pull_request' || (github.repository_owner != 'buildish-tooling' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')))
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -181,7 +181,7 @@ jobs:
     name: Site Pipeline image publish
     needs: changes
     # Run for push+workflow-dispatch for apache repos
-    if: needs.changes.outputs.container_image == 'true' && github.repository_owner == 'apache' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    if: needs.changes.outputs.container_image == 'true' && github.repository_owner == 'buildish-tooling' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -212,7 +212,9 @@ jobs:
 
   codeql:
     name: CodeQL
-    if: github.repository_owner == 'apache'
+    ## Temporarily disabled because GitHub Advanced Security is unavailable.
+    if: false
+    #if: github.repository_owner == 'buildish-tooling'
     runs-on: ubuntu-latest
     permissions:
       actions: read

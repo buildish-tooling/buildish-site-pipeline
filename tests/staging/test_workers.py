@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,14 +26,14 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
 
-from apache_buildish_site_pipeline.cli.errors import RetainedStageError, StageIntegrityError
-from apache_buildish_site_pipeline.commands.stage_report import build_stage_run_report
-from apache_buildish_site_pipeline.models.enums import DiagnosticSeverity, RecordKind, StageCommand
-from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
+from buildish_site_pipeline.cli.errors import RetainedStageError, StageIntegrityError
+from buildish_site_pipeline.commands.stage_report import build_stage_run_report
+from buildish_site_pipeline.models.enums import DiagnosticSeverity, RecordKind, StageCommand
+from buildish_site_pipeline.models.emitted.planning_stage_contract import (
     PipelineDiagnosticEntry,
 )
-from apache_buildish_site_pipeline.staging.aggregates import _build_content_index_entries, _write_aggregate_files
-from apache_buildish_site_pipeline.staging.coordinator import (
+from buildish_site_pipeline.staging.aggregates import _build_content_index_entries, _write_aggregate_files
+from buildish_site_pipeline.staging.coordinator import (
     _run_worker_subprocess,
     _seed_next_stage_root,
     cleanup_after_publication,
@@ -41,13 +41,13 @@ from apache_buildish_site_pipeline.staging.coordinator import (
     publish_stage,
     run_build,
 )
-from apache_buildish_site_pipeline.staging.ownership import OwnedUnit, OwnedUnitKind, build_owned_units
-from apache_buildish_site_pipeline.staging.public_safety import REDACTED_LOCAL_PATH, sanitize_public_diagnostics
-from apache_buildish_site_pipeline.staging.spec_builder import build_context_wire, build_worker_spec_for_unit
-from apache_buildish_site_pipeline.staging import worker_entrypoint
-from apache_buildish_site_pipeline.staging.worker_entrypoint import execute_worker_spec
-from apache_buildish_site_pipeline.staging.worker_protocol import StagedPageContributionWire, WorkerResultWire, WorkerSpecWire
-from apache_buildish_site_pipeline.staging.workdirs import RunWorkspace
+from buildish_site_pipeline.staging.ownership import OwnedUnit, OwnedUnitKind, build_owned_units
+from buildish_site_pipeline.staging.public_safety import REDACTED_LOCAL_PATH, sanitize_public_diagnostics
+from buildish_site_pipeline.staging.spec_builder import build_context_wire, build_worker_spec_for_unit
+from buildish_site_pipeline.staging import worker_entrypoint
+from buildish_site_pipeline.staging.worker_entrypoint import execute_worker_spec
+from buildish_site_pipeline.staging.worker_protocol import StagedPageContributionWire, WorkerResultWire, WorkerSpecWire
+from buildish_site_pipeline.staging.workdirs import RunWorkspace
 from tests.support.staging import _build_request, _expand_workspace_for_multiple_owned_units, _stage_snapshot, _work_layout
 from tests.support.workspace import _workspace
 
@@ -318,10 +318,10 @@ class StagingWorkerTests(unittest.TestCase):
             request = _build_request(workspace_root, pool_size=1)
 
             with mock.patch(
-                "apache_buildish_site_pipeline.staging.coordinator._run_owned_units",
+                "buildish_site_pipeline.staging.coordinator._run_owned_units",
                 side_effect=RuntimeError("boom"),
             ), mock.patch(
-                "apache_buildish_site_pipeline.staging.coordinator.remove_work_root",
+                "buildish_site_pipeline.staging.coordinator.remove_work_root",
             ) as remove_work_root:
                 with self.assertRaisesRegex(RuntimeError, "boom"):
                     run_build(request)
@@ -334,10 +334,10 @@ class StagingWorkerTests(unittest.TestCase):
             outcome = SimpleNamespace(manifest=SimpleNamespace(schema_version=1))
 
             with mock.patch(
-                "apache_buildish_site_pipeline.staging.coordinator.run_build",
+                "buildish_site_pipeline.staging.coordinator.run_build",
                 return_value=outcome,
             ) as run_build_mock, mock.patch(
-                "apache_buildish_site_pipeline.staging.coordinator.cleanup_after_publication",
+                "buildish_site_pipeline.staging.coordinator.cleanup_after_publication",
             ) as cleanup:
                 manifest = materialize_stage_tree(
                     build_plan=request.build_plan,
@@ -357,7 +357,7 @@ class StagingWorkerTests(unittest.TestCase):
             assembly_root.mkdir(parents=True, exist_ok=True)
 
             with mock.patch(
-                "apache_buildish_site_pipeline.staging.coordinator.run_build",
+                "buildish_site_pipeline.staging.coordinator.run_build",
                 side_effect=RuntimeError("boom"),
             ):
                 with self.assertRaises(RetainedStageError) as failure:
@@ -380,10 +380,10 @@ class StagingWorkerTests(unittest.TestCase):
             temp_root.mkdir(parents=True, exist_ok=True)
 
             with mock.patch(
-                "apache_buildish_site_pipeline.staging.coordinator.tempfile.mkdtemp",
+                "buildish_site_pipeline.staging.coordinator.tempfile.mkdtemp",
                 return_value=str(temp_root),
             ), mock.patch(
-                "apache_buildish_site_pipeline.staging.coordinator.run_build",
+                "buildish_site_pipeline.staging.coordinator.run_build",
                 side_effect=RuntimeError("boom"),
             ):
                 with self.assertRaisesRegex(RuntimeError, "boom"):
@@ -403,13 +403,13 @@ class StagingWorkerTests(unittest.TestCase):
             publication = SimpleNamespace(stage_root=workspace_root / "visible-stage")
 
             with mock.patch(
-                "apache_buildish_site_pipeline.staging.coordinator.run_build",
+                "buildish_site_pipeline.staging.coordinator.run_build",
                 return_value=outcome,
             ), mock.patch(
-                "apache_buildish_site_pipeline.staging.coordinator.finalize_stage_publication",
+                "buildish_site_pipeline.staging.coordinator.finalize_stage_publication",
                 return_value=publication,
             ) as finalize_stage_publication, mock.patch(
-                "apache_buildish_site_pipeline.staging.coordinator.cleanup_after_publication",
+                "buildish_site_pipeline.staging.coordinator.cleanup_after_publication",
             ) as cleanup:
                 result = publish_stage(
                     build_plan=request.build_plan,
@@ -464,14 +464,14 @@ class StagingWorkerTests(unittest.TestCase):
         )
 
         with mock.patch(
-            "apache_buildish_site_pipeline.staging.coordinator.subprocess.run",
+            "buildish_site_pipeline.staging.coordinator.subprocess.run",
             return_value=SimpleNamespace(returncode=7, stderr="boom", stdout=""),
         ):
             with self.assertRaisesRegex(StageIntegrityError, "exited with status 7: boom"):
                 _run_worker_subprocess(spec)
 
         with mock.patch(
-            "apache_buildish_site_pipeline.staging.coordinator.subprocess.run",
+            "buildish_site_pipeline.staging.coordinator.subprocess.run",
             return_value=SimpleNamespace(returncode=0, stderr="", stdout="{not-json"),
         ):
             with self.assertRaisesRegex(StageIntegrityError, "returned malformed JSON"):

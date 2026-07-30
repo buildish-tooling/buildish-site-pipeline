@@ -1,5 +1,5 @@
 <!--
- Copyright 2026 The Apache Software Foundation
+ Copyright 2026 The Buildish Authors
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -60,8 +60,6 @@ Today that payload is maintained manually and includes:
 - `dist-release-legal/LICENSE`
 - `dist-release-legal/NOTICE`
 
-The image build also copies the repository-root `DISCLAIMER` file.
-
 ## What the generator actually inspects
 
 The generator derives the runtime dependency set from `uv.lock` via
@@ -120,7 +118,6 @@ preliminary review directory.
 
 The current image includes:
 
-- `DISCLAIMER`
 - `dist-release-legal/LICENSE`
 - `dist-release-legal/NOTICE`
 

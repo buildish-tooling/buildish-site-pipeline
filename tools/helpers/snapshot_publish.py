@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -104,12 +104,12 @@ def publish_snapshot(*, out_dir: Path, project_dir: Path) -> tuple[Path, Path]:
     )
     manifest_path = resolved_out_dir / "latest.json"
     manifest = {
-        "name": "apache-buildish-site-pipeline",
+        "name": "buildish-site-pipeline",
         "version": snapshot_version,
         "wheel": wheel_path.name,
         "wheelPath": wheel_path.as_posix(),
         "dependencySpec": (
-            f"apache-buildish-site-pipeline @ {wheel_path.resolve().as_uri()}"
+            f"buildish-site-pipeline @ {wheel_path.resolve().as_uri()}"
         ),
     }
     manifest_path.write_text(

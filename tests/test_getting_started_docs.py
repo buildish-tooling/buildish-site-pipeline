@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import json
 import unittest
 from pathlib import Path
 
-from apache_buildish_site_pipeline.cli import _run
+from buildish_site_pipeline.cli import _run
 from tests.support.workspace import _cwd, _workspace
 
 

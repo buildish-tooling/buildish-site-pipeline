@@ -1,5 +1,5 @@
 <!--
-  Copyright 2026 The Apache Software Foundation
+  Copyright 2026 The Buildish Authors
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 # Site Pipeline
 
-Apache Buildish Site Pipeline packages a reusable staging pipeline for
+Buildish Site Pipeline packages a reusable staging pipeline for
 multi-repository documentation sites. It discovers component checkouts from a
 consumer-owned catalog, validates the content contract, stages normalized site
 inputs, and emits metadata that a downstream renderer can consume. The CLI also
@@ -25,7 +25,7 @@ effective component source-root locators.
 
 ## What it includes
 
-- the `apache_buildish_site_pipeline` Python package,
+- the `buildish_site_pipeline` Python package,
 - the `site-pipeline` CLI entrypoint,
 - an optional multi-platform container image that runs `site-pipeline`,
 - reader and maintainer pages under `site/pages/`,
@@ -107,7 +107,7 @@ The helper derives the runtime package set from `uv.lock` via
 `uv export --no-dev --frozen`, then inspects the installed Python distributions
 available to the current interpreter.
 
-The output is intentionally **preliminary**. It is meant to speed up ASF
+The output is intentionally **preliminary**. It is meant to speed up
 release-legal review, not to replace human review of license compatibility,
 bundled notices, or final `LICENSE` / `NOTICE` wording.
 

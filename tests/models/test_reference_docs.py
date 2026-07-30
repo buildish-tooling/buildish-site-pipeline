@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import unittest
 
-from apache_buildish_site_pipeline.docs.reference_docs import (
+from buildish_site_pipeline.docs.reference_docs import (
     ExternalLinkTarget,
     ReferenceCodeBlock,
     ReferenceDocError,
@@ -40,7 +40,7 @@ class ReferenceDocsTests(unittest.TestCase):
 
     def test_parse_and_render_supported_subset(self) -> None:
         document = parse_reference_document(
-            "See [components](type:SiteCatalogDocumentV1#components) and [site](https://buildish.apache.org/).\n\n"
+            "See [components](type:SiteCatalogDocumentV1#components) and [site](https://buildish.org/).\n\n"
             "- one\n- two\n\n"
             "```yaml\ncomponents: []\n```"
         )
@@ -53,13 +53,13 @@ class ReferenceDocsTests(unittest.TestCase):
                 document,
                 resolve_type_target=lambda target: f"#{target.type_name.lower()}-{target.field_name}",
             ),
-            "See [components](#sitecatalogdocumentv1-components) and [site](https://buildish.apache.org/).\n\n"
+            "See [components](#sitecatalogdocumentv1-components) and [site](https://buildish.org/).\n\n"
             "- one\n- two\n\n"
             "```yaml\ncomponents: []\n```",
         )
         self.assertEqual(
             render_reference_schema_text(document),
-            "See components (SiteCatalogDocumentV1.components) and site (https://buildish.apache.org/).\n\n"
+            "See components (SiteCatalogDocumentV1.components) and site (https://buildish.org/).\n\n"
             "- one\n- two\n\n"
             "[yaml code]\ncomponents: []",
         )
@@ -70,8 +70,8 @@ class ReferenceDocsTests(unittest.TestCase):
             TypeReferenceTarget(type_name="SiteCatalogDocumentV1", field_name="components"),
         )
         self.assertEqual(
-            parse_reference_link_target("https://buildish.apache.org/"),
-            ExternalLinkTarget(url="https://buildish.apache.org/"),
+            parse_reference_link_target("https://buildish.org/"),
+            ExternalLinkTarget(url="https://buildish.org/"),
         )
 
     def test_rejects_unsafe_or_unsupported_links(self) -> None:
@@ -82,7 +82,7 @@ class ReferenceDocsTests(unittest.TestCase):
         with self.assertRaisesRegex(ReferenceDocError, "Unsupported block token"):
             parse_reference_document("# heading")
         with self.assertRaisesRegex(ReferenceDocError, "Unsupported inline token"):
-            parse_reference_document("![alt](https://buildish.apache.org/logo.png)")
+            parse_reference_document("![alt](https://buildish.org/logo.png)")
         with self.assertRaisesRegex(ReferenceDocError, "must declare a language tag"):
             parse_reference_document("```\nplain\n```")
 

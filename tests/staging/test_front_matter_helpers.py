@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,18 +22,18 @@ import tempfile
 from types import SimpleNamespace
 import unittest
 
-from apache_buildish_site_pipeline.cli.errors import StageIntegrityError
-from apache_buildish_site_pipeline.models.authored.site_catalog import (
+from buildish_site_pipeline.cli.errors import StageIntegrityError
+from buildish_site_pipeline.models.authored.site_catalog import (
     ArtifactLifecycleConfig,
     ExactReleaseConfig,
     ReleaseLineConfig,
 )
-from apache_buildish_site_pipeline.models.enums import RecordKind, RouteMode
-from apache_buildish_site_pipeline.models.emitted.staged_front_matter import (
+from buildish_site_pipeline.models.enums import RecordKind, RouteMode
+from buildish_site_pipeline.models.emitted.staged_front_matter import (
     TranslationLinkSummary,
 )
-from apache_buildish_site_pipeline.planning.types import ResolvedLocalizationPolicy
-from apache_buildish_site_pipeline.staging.front_matter import (
+from buildish_site_pipeline.planning.types import ResolvedLocalizationPolicy
+from buildish_site_pipeline.staging.front_matter import (
     _artifact_lifecycle,
     _exact_release_config,
     _join_public_path,
@@ -52,7 +52,7 @@ from apache_buildish_site_pipeline.staging.front_matter import (
     public_page_url,
     stage_authored_page,
 )
-from apache_buildish_site_pipeline.staging.worker_protocol import StagedPageContributionWire
+from buildish_site_pipeline.staging.worker_protocol import StagedPageContributionWire
 
 
 class FrontMatterHelpersTests(unittest.TestCase):

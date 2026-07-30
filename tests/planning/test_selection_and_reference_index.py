@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,9 +21,9 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
 
-import apache_buildish_site_pipeline.planning.selection as selection_module
-from apache_buildish_site_pipeline.evaluation.collector import DiagnosticCollector
-from apache_buildish_site_pipeline.evaluation.reference_index import (
+import buildish_site_pipeline.planning.selection as selection_module
+from buildish_site_pipeline.evaluation.collector import DiagnosticCollector
+from buildish_site_pipeline.evaluation.reference_index import (
     ArtifactIdentity,
     KnownRoute,
     _build_context_reference_index,
@@ -37,8 +37,8 @@ from apache_buildish_site_pipeline.evaluation.reference_index import (
     resolve_internal_reference,
     validate_references,
 )
-from apache_buildish_site_pipeline.evaluation.types import PublishedTarget
-from apache_buildish_site_pipeline.models.authored.site_catalog import (
+from buildish_site_pipeline.evaluation.types import PublishedTarget
+from buildish_site_pipeline.models.authored.site_catalog import (
     ArtifactLifecycleConfig,
     ArtifactVersioningConfig,
     CandidateSelectionPolicy,
@@ -50,14 +50,14 @@ from apache_buildish_site_pipeline.models.authored.site_catalog import (
     ReleaseLineConfig,
     ReleaseSelectionPolicy,
 )
-from apache_buildish_site_pipeline.models.enums import (
+from buildish_site_pipeline.models.enums import (
     CandidateSelectionMode,
     LineHeadSelectionMode,
     PublicationState,
     RecordKind,
     ReleaseSelectionMode,
 )
-from apache_buildish_site_pipeline.planning.selection import (
+from buildish_site_pipeline.planning.selection import (
     _select_development_context,
     _select_candidate_contexts,
     _select_component_development_context,
@@ -67,7 +67,7 @@ from apache_buildish_site_pipeline.planning.selection import (
     _version_sort_key,
     select_version_contexts,
 )
-from apache_buildish_site_pipeline.planning.types import (
+from buildish_site_pipeline.planning.types import (
     IndexedProviderRecord,
     ProviderContextIndex,
     ProviderSnapshotIndex,
@@ -675,16 +675,16 @@ class SelectionAndReferenceIndexTests(unittest.TestCase):
         reference_index = build_reference_index(routes_by_lookup_key={}, targets_by_reference={})
 
         with mock.patch(
-            "apache_buildish_site_pipeline.evaluation.reference_index._build_context_reference_index",
+            "buildish_site_pipeline.evaluation.reference_index._build_context_reference_index",
             return_value=reference_index,
         ) as build_index, mock.patch(
-            "apache_buildish_site_pipeline.evaluation.reference_index._validate_component_artifacts"
+            "buildish_site_pipeline.evaluation.reference_index._validate_component_artifacts"
         ) as validate_component_artifacts, mock.patch(
-            "apache_buildish_site_pipeline.evaluation.reference_index._validate_compatibility_references"
+            "buildish_site_pipeline.evaluation.reference_index._validate_compatibility_references"
         ) as validate_compatibility_references, mock.patch(
-            "apache_buildish_site_pipeline.evaluation.reference_index._validate_release_lines"
+            "buildish_site_pipeline.evaluation.reference_index._validate_release_lines"
         ) as validate_release_lines, mock.patch(
-            "apache_buildish_site_pipeline.evaluation.reference_index._validate_selection_references"
+            "buildish_site_pipeline.evaluation.reference_index._validate_selection_references"
         ) as validate_selection_references:
             validate_references(
                 planning=planning,

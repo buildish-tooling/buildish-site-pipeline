@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,11 +20,11 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from apache_buildish_site_pipeline.models import SiteCatalogDocumentV1
-from apache_buildish_site_pipeline.models.authored.site_catalog import (
+from buildish_site_pipeline.models import SiteCatalogDocumentV1
+from buildish_site_pipeline.models.authored.site_catalog import (
     ComponentCatalogEntry,
 )
-from apache_buildish_site_pipeline.source_roots import (
+from buildish_site_pipeline.source_roots import (
     normalize_workspace_relative_locator,
     resolve_catalog_source_bindings,
     resolve_component_content_source_binding,

@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,14 +22,14 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from apache_buildish_site_pipeline.evaluation import EvaluationMode, EvaluationRequest, build_check_report, run_evaluation
-from apache_buildish_site_pipeline.models import (
+from buildish_site_pipeline.evaluation import EvaluationMode, EvaluationRequest, build_check_report, run_evaluation
+from buildish_site_pipeline.models import (
     PlanningTarget,
     ProviderSnapshotDocumentV1,
     SiteCatalogDocumentV1,
 )
-from apache_buildish_site_pipeline.models.enums import RunStatus
-from apache_buildish_site_pipeline.planning import evaluate_planning
+from buildish_site_pipeline.models.enums import RunStatus
+from buildish_site_pipeline.planning import evaluate_planning
 
 
 class EvaluationExecutionTests(unittest.TestCase):
@@ -690,7 +690,7 @@ class EvaluationExecutionTests(unittest.TestCase):
         self.assertTrue(any(diagnostic.code == "provider-context-ambiguous" for diagnostic in result.diagnostics))
 
     def test_route_inventory_limit_blocks_stage(self) -> None:
-        with tempfile.TemporaryDirectory() as tempdir, patch("apache_buildish_site_pipeline.evaluation.limits._ROUTE_INVENTORY_LIMIT", 1):
+        with tempfile.TemporaryDirectory() as tempdir, patch("buildish_site_pipeline.evaluation.limits._ROUTE_INVENTORY_LIMIT", 1):
             planning = _planning_eval(Path(tempdir))
             result = run_evaluation(
                 request=EvaluationRequest(mode=EvaluationMode.BUILD),
@@ -702,7 +702,7 @@ class EvaluationExecutionTests(unittest.TestCase):
         self.assertEqual(limit_diagnostic.details["metric"], "routeInventoryCount")
 
     def test_selected_version_context_limit_blocks_stage(self) -> None:
-        with tempfile.TemporaryDirectory() as tempdir, patch("apache_buildish_site_pipeline.evaluation.limits._SELECTED_VERSION_CONTEXT_LIMIT", 1):
+        with tempfile.TemporaryDirectory() as tempdir, patch("buildish_site_pipeline.evaluation.limits._SELECTED_VERSION_CONTEXT_LIMIT", 1):
             planning = _planning_eval(Path(tempdir))
             result = run_evaluation(
                 request=EvaluationRequest(mode=EvaluationMode.BUILD),
@@ -714,7 +714,7 @@ class EvaluationExecutionTests(unittest.TestCase):
         self.assertEqual(limit_diagnostic.details["metric"], "selectedVersionContextCount")
 
     def test_provider_snapshot_size_limit_blocks_stage(self) -> None:
-        with tempfile.TemporaryDirectory() as tempdir, patch("apache_buildish_site_pipeline.evaluation.limits._PROVIDER_SNAPSHOT_BYTES_LIMIT", 1):
+        with tempfile.TemporaryDirectory() as tempdir, patch("buildish_site_pipeline.evaluation.limits._PROVIDER_SNAPSHOT_BYTES_LIMIT", 1):
             planning = _planning_eval(Path(tempdir))
             result = run_evaluation(
                 request=EvaluationRequest(mode=EvaluationMode.BUILD),
@@ -731,7 +731,7 @@ class EvaluationExecutionTests(unittest.TestCase):
             _prepare_workspace(workspace_root)
             (workspace_root / "components/runtime/docs/releases/4.0.0/one.md").write_text("body\n", encoding="utf-8")
             (workspace_root / "components/runtime/docs/releases/4.0.0/two.md").write_text("body\n", encoding="utf-8")
-            with patch("apache_buildish_site_pipeline.evaluation.limits._WATCH_FILESYSTEM_ENTRY_LIMIT", 1):
+            with patch("buildish_site_pipeline.evaluation.limits._WATCH_FILESYSTEM_ENTRY_LIMIT", 1):
                 planning = evaluate_planning(
                     target=PlanningTarget.WATCH,
                     catalog=_catalog(shared_mount_path=False),

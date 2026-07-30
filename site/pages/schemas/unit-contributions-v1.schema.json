@@ -341,7 +341,7 @@
       "type": "object"
     }
   },
-  "$id": "https://buildish.apache.org/components/site-pipeline/schemas/unit-contributions-v1.schema.json",
+  "$id": "https://buildish.org/components/site-pipeline/schemas/unit-contributions-v1.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "Stable per-unit page contribution manifests retained in the visible stage.",

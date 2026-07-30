@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,10 +24,10 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from apache_buildish_site_pipeline.cli.errors import StageIntegrityError
-from apache_buildish_site_pipeline.cli.errors import RetainedStageError
-from apache_buildish_site_pipeline.cli import _run
-from apache_buildish_site_pipeline.staging.publication import (
+from buildish_site_pipeline.cli.errors import StageIntegrityError
+from buildish_site_pipeline.cli.errors import RetainedStageError
+from buildish_site_pipeline.cli import _run
+from buildish_site_pipeline.staging.publication import (
     _collect_stage_tree_entries,
     _fsync_directory,
     _fsync_file,
@@ -75,7 +75,7 @@ class PublicationHelperTests(unittest.TestCase):
                 validate_visible_stage_target_path(stage_root)
 
     def test_validate_materialized_stage_tree_wraps_os_errors(self) -> None:
-        with patch("apache_buildish_site_pipeline.staging.publication.os.walk") as walk:
+        with patch("buildish_site_pipeline.staging.publication.os.walk") as walk:
             walk.side_effect = OSError("boom")
 
             with self.assertRaises(StageIntegrityError) as raised:
@@ -208,7 +208,7 @@ class PublicationHelperTests(unittest.TestCase):
                 _validate_candidate_stage_root(candidate_root)
 
     def test_collect_stage_tree_entries_wraps_os_errors(self) -> None:
-        with patch("apache_buildish_site_pipeline.staging.publication.os.walk") as walk:
+        with patch("buildish_site_pipeline.staging.publication.os.walk") as walk:
             walk.side_effect = OSError("boom")
 
             with self.assertRaises(StageIntegrityError) as raised:
@@ -235,7 +235,7 @@ class PublicationHelperTests(unittest.TestCase):
             stage_parent = stage_root.parent
 
             with patch(
-                "apache_buildish_site_pipeline.staging.publication._stat_device_id",
+                "buildish_site_pipeline.staging.publication._stat_device_id",
                 side_effect=lambda path: {
                     stage_parent: 1,
                     candidate_root: 1,
@@ -316,7 +316,7 @@ class PublicationHelperTests(unittest.TestCase):
             self.assertIn("Could not finalize stage publication", str(raised.exception))
 
     def test_fsync_helpers_wrap_os_errors(self) -> None:
-        with patch("apache_buildish_site_pipeline.staging.publication.os.open") as open_:
+        with patch("buildish_site_pipeline.staging.publication.os.open") as open_:
             open_.side_effect = OSError("boom")
             with self.assertRaises(StageIntegrityError):
                 _fsync_file(Path("/stage/manifest.json"))

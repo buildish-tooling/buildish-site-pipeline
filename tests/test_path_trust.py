@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from apache_buildish_site_pipeline.path_trust import path_resolves_through_symlink
+from buildish_site_pipeline.path_trust import path_resolves_through_symlink
 
 
 class PathTrustTests(unittest.TestCase):

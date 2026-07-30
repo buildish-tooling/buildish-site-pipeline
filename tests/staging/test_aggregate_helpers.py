@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import tempfile
 from types import SimpleNamespace
 import unittest
 
-from apache_buildish_site_pipeline.cli.errors import StageIntegrityError
-from apache_buildish_site_pipeline.models.authored.site_catalog import (
+from buildish_site_pipeline.cli.errors import StageIntegrityError
+from buildish_site_pipeline.models.authored.site_catalog import (
     ArtifactLifecycleConfig,
     CompatibilityAssertionConfig,
     ExactReleaseConfig,
@@ -31,21 +31,21 @@ from apache_buildish_site_pipeline.models.authored.site_catalog import (
     ReleaseLineConfig,
     SupportWindow,
 )
-from apache_buildish_site_pipeline.models.authored.component_metadata import (
+from buildish_site_pipeline.models.authored.component_metadata import (
     SupportStatusDefinition,
 )
-from apache_buildish_site_pipeline.models.enums import (
+from buildish_site_pipeline.models.enums import (
     IndexBehavior,
     PublicationState,
     RecordKind,
     TrustClass,
 )
-from apache_buildish_site_pipeline.planning.types import (
+from buildish_site_pipeline.planning.types import (
     IndexedProviderRecord,
     ResolvedOrigin,
     ResolvedPublicationPolicy,
 )
-from apache_buildish_site_pipeline.staging.aggregates import (
+from buildish_site_pipeline.staging.aggregates import (
     _artifact_docs_root,
     _artifact_for_context,
     _build_candidate_entries,
@@ -75,7 +75,7 @@ from apache_buildish_site_pipeline.staging.aggregates import (
     _translations_by_page,
     _validated_unit_manifest_path,
 )
-from apache_buildish_site_pipeline.staging.worker_protocol import (
+from buildish_site_pipeline.staging.worker_protocol import (
     ContributionFileRefs,
     StagedPageContributionWire,
     UnitContributionManifestWire,

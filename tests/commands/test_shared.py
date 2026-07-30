@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ from __future__ import annotations
 
 import unittest
 
-from apache_buildish_site_pipeline.cli.errors import InvocationError
-from apache_buildish_site_pipeline.commands.shared import load_workspace_inputs
+from buildish_site_pipeline.cli.errors import InvocationError
+from buildish_site_pipeline.commands.shared import load_workspace_inputs
 
 from tests.support.workspace import _workspace
 

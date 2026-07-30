@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,14 +24,14 @@ from unittest import mock
 
 import frontmatter
 
-from apache_buildish_site_pipeline.cli.errors import StageIntegrityError
-from apache_buildish_site_pipeline.cli import _run
-from apache_buildish_site_pipeline.commands.shared import load_workspace_inputs
-from apache_buildish_site_pipeline.models.enums import PlanningTarget
-from apache_buildish_site_pipeline.planning import evaluate_planning
-from apache_buildish_site_pipeline.staging.aggregates import _build_redirect_entries
-from apache_buildish_site_pipeline.staging.file_writes import write_utf8_text_file
-from apache_buildish_site_pipeline.staging.ownership import OwnedUnit, OwnedUnitKind, _validate_output_ownership, build_owned_units
+from buildish_site_pipeline.cli.errors import StageIntegrityError
+from buildish_site_pipeline.cli import _run
+from buildish_site_pipeline.commands.shared import load_workspace_inputs
+from buildish_site_pipeline.models.enums import PlanningTarget
+from buildish_site_pipeline.planning import evaluate_planning
+from buildish_site_pipeline.staging.aggregates import _build_redirect_entries
+from buildish_site_pipeline.staging.file_writes import write_utf8_text_file
+from buildish_site_pipeline.staging.ownership import OwnedUnit, OwnedUnitKind, _validate_output_ownership, build_owned_units
 from tests.support.staging import _expand_workspace_for_multiple_owned_units
 from tests.support.workspace import _cwd, _workspace
 

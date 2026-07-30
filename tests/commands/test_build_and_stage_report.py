@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,17 +22,17 @@ from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 from unittest import mock
 
-import apache_buildish_site_pipeline.commands.build as build_command
-from apache_buildish_site_pipeline.cli.contract import (
+import buildish_site_pipeline.commands.build as build_command
+from buildish_site_pipeline.cli.contract import (
     ApplicationExitCode,
     BuildInvocation,
     ReportFormat,
     ReportRequest,
     RepositoryLayout,
 )
-from apache_buildish_site_pipeline.commands.stage_report import _report_workspace_root
-from apache_buildish_site_pipeline.models.enums import DiagnosticSeverity, StageCommand
-from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
+from buildish_site_pipeline.commands.stage_report import _report_workspace_root
+from buildish_site_pipeline.models.enums import DiagnosticSeverity, StageCommand
+from buildish_site_pipeline.models.emitted.planning_stage_contract import (
     PipelineDiagnosticEntry,
 )
 

@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,11 +19,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from apache_buildish_site_pipeline.commands.shared import load_workspace_inputs
-from apache_buildish_site_pipeline.evaluation import EvaluationMode, EvaluationRequest, run_evaluation
-from apache_buildish_site_pipeline.models.enums import PlanningTarget, StageCommand
-from apache_buildish_site_pipeline.planning import evaluate_planning
-from apache_buildish_site_pipeline.staging.types import (
+from buildish_site_pipeline.commands.shared import load_workspace_inputs
+from buildish_site_pipeline.evaluation import EvaluationMode, EvaluationRequest, run_evaluation
+from buildish_site_pipeline.models.enums import PlanningTarget, StageCommand
+from buildish_site_pipeline.planning import evaluate_planning
+from buildish_site_pipeline.staging.types import (
     BuildRequest,
     OperatorPolicy,
     StageDestination,

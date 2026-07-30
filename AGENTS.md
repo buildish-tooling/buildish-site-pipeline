@@ -1,5 +1,5 @@
 <!--
-Copyright 2026 The Apache Software Foundation
+Copyright 2026 The Buildish Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -81,10 +81,10 @@ Static pages in `site/pages/` publish at the component mount path:
   identifies the target as unreleased development documentation.
 - Do not label `development/` links as `latest`, `current`, `stable`, `release
   docs`, or generic `docs`.
-- Public/static pages may link to `development/` before the first ASF release
-  only when no released docs target exists.
-- After the first ASF release, public/static pages must link to released docs
-  or release-derived aliases instead of `development/`.
+- Public/static pages may link to `development/` only when no released docs
+  target exists for that component.
+- When a released docs target exists, public/static pages must link to released
+  docs or release-derived aliases instead of `development/`.
 
 Docs in `docs/` publish under the moving development route and may later be
 copied under a release-version route:
@@ -100,3 +100,22 @@ copied under a release-version route:
 
 Links to another component may use that component's public catalog mount path,
 for example `/components/site-pipeline/`.
+
+## Security issues
+
+Before reporting or fixing security issues, read
+[`docs/reference/threat-model.md`](docs/reference/threat-model.md) to determine
+whether a finding is a Buildish vulnerability, a deployment responsibility,
+a dependency issue, or a false positive. Use [`SECURITY.md`](SECURITY.md)
+reporting process and disclosure handling.
+
+Assessments of severity, advisory status, and CVE candidacy are non-authoritative
+triage estimates. Do not infer them from `docs/reference/threat-model.md` alone.
+
+Do not treat a test as proof of a vulnerability unless it demonstrates that the
+stated actor can cross a real trust boundary without already-authorized access,
+privileged fixtures, mocked trust decisions, or protected information.
+
+Do not include private vulnerability details, exploit payloads, reporter names,
+private mailing-list content, secrets, or non-public infrastructure details in
+code, comments, tests, documentation, commit messages, or PR descriptions.

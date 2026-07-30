@@ -1,5 +1,5 @@
 #
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ FROM docker.io/library/python:3.13-bookworm@sha256:353cf2106d143e1d28f5d7c10c5f5
 COPY --from=uvbin /uv /uvx /usr/local/bin/
 
 WORKDIR /opt/site-pipeline
-COPY README.md pyproject.toml uv.lock main.py DISCLAIMER dist-release-legal/LICENSE dist-release-legal/NOTICE ./
+COPY README.md pyproject.toml uv.lock main.py dist-release-legal/LICENSE dist-release-legal/NOTICE ./
 COPY src ./src
 COPY tools/helpers ./tools/helpers
 RUN set -eux; \

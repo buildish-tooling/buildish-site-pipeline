@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,17 +23,17 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from apache_buildish_site_pipeline.cli.errors import StageIntegrityError
-from apache_buildish_site_pipeline.commands.shared import load_workspace_inputs
-from apache_buildish_site_pipeline.evaluation import EvaluationMode, EvaluationRequest, run_evaluation
-from apache_buildish_site_pipeline.models.enums import PlanningTarget, StageCommand
-from apache_buildish_site_pipeline.planning import evaluate_planning
-from apache_buildish_site_pipeline.staging.aggregates import _load_unit_contribution_manifests, _write_json_file
-from apache_buildish_site_pipeline.staging.coordinator import publish_stage
-from apache_buildish_site_pipeline.staging.publication import finalize_stage_publication
-from apache_buildish_site_pipeline.staging.types import WorkRootLayout
-from apache_buildish_site_pipeline.staging.worker_protocol import ContributionFileRefs, UnitContributionManifestWire, WorkerResultWire, write_unit_manifest
-from apache_buildish_site_pipeline.staging.workdirs import prepare_next_stage_root
+from buildish_site_pipeline.cli.errors import StageIntegrityError
+from buildish_site_pipeline.commands.shared import load_workspace_inputs
+from buildish_site_pipeline.evaluation import EvaluationMode, EvaluationRequest, run_evaluation
+from buildish_site_pipeline.models.enums import PlanningTarget, StageCommand
+from buildish_site_pipeline.planning import evaluate_planning
+from buildish_site_pipeline.staging.aggregates import _load_unit_contribution_manifests, _write_json_file
+from buildish_site_pipeline.staging.coordinator import publish_stage
+from buildish_site_pipeline.staging.publication import finalize_stage_publication
+from buildish_site_pipeline.staging.types import WorkRootLayout
+from buildish_site_pipeline.staging.worker_protocol import ContributionFileRefs, UnitContributionManifestWire, WorkerResultWire, write_unit_manifest
+from buildish_site_pipeline.staging.workdirs import prepare_next_stage_root
 from tests.support.workspace import _workspace
 
 
@@ -61,7 +61,7 @@ class StagingExecutionTests(unittest.TestCase):
                 del src, dst
                 raise OSError("replace blocked")
 
-            with mock.patch("apache_buildish_site_pipeline.staging.file_writes.os.replace", side_effect=_fail_replace), self.assertRaises(StageIntegrityError) as raised:
+            with mock.patch("buildish_site_pipeline.staging.file_writes.os.replace", side_effect=_fail_replace), self.assertRaises(StageIntegrityError) as raised:
                     _write_json_file(json_path, [_JsonStub('{"componentId":"runtime"}')])
 
             self.assertIn("Could not write stage text file", str(raised.exception))
@@ -92,7 +92,7 @@ class StagingExecutionTests(unittest.TestCase):
                 raise OSError("replace blocked")
 
             with mock.patch(
-                "apache_buildish_site_pipeline.staging.worker_protocol.Path.replace",
+                "buildish_site_pipeline.staging.worker_protocol.Path.replace",
                 new=_fail_replace,
             ), self.assertRaises(StageIntegrityError) as raised:
                 write_unit_manifest(
@@ -288,7 +288,7 @@ class StagingExecutionTests(unittest.TestCase):
             stage_root.parent.mkdir(parents=True, exist_ok=True)
 
             with mock.patch(
-                "apache_buildish_site_pipeline.staging.publication._fsync_published_stage",
+                "buildish_site_pipeline.staging.publication._fsync_published_stage",
             ) as fsync_published_stage:
                 publication = finalize_stage_publication(candidate_stage_root=candidate_stage_root, stage_root=stage_root)
 
@@ -332,7 +332,7 @@ class StagingExecutionTests(unittest.TestCase):
             stage_root = _create_candidate_stage(workspace_root / "site/.stage")
 
             with mock.patch(
-                "apache_buildish_site_pipeline.staging.publication._fsync_published_stage",
+                "buildish_site_pipeline.staging.publication._fsync_published_stage",
             ) as fsync_published_stage:
                 publication = finalize_stage_publication(
                     candidate_stage_root=candidate_stage_root,
@@ -351,7 +351,7 @@ class StagingExecutionTests(unittest.TestCase):
             stage_root.parent.mkdir(parents=True, exist_ok=True)
 
             with mock.patch(
-                "apache_buildish_site_pipeline.staging.publication._stat_device_id",
+                "buildish_site_pipeline.staging.publication._stat_device_id",
                 side_effect=_device_id_map(
                     {
                         candidate_stage_root.resolve(strict=False): 101,
@@ -375,7 +375,7 @@ class StagingExecutionTests(unittest.TestCase):
             keep_path.write_text("trusted\n", encoding="utf-8")
 
             with mock.patch(
-                "apache_buildish_site_pipeline.staging.publication._stat_device_id",
+                "buildish_site_pipeline.staging.publication._stat_device_id",
                 side_effect=_device_id_map(
                     {
                         candidate_stage_root.resolve(strict=False): 101,

@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,13 +24,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 from unittest import mock
 
-from apache_buildish_site_pipeline.cli.contract import ReportFormat
-from apache_buildish_site_pipeline.cli.errors import (
+from buildish_site_pipeline.cli.contract import ReportFormat
+from buildish_site_pipeline.cli.errors import (
     InvocationError,
     ReportWriteError,
     UnsupportedReportSchemaVersionError,
 )
-from apache_buildish_site_pipeline.cli.reporting import (
+from buildish_site_pipeline.cli.reporting import (
     _write_report_file,
     build_report_request,
     build_watch_event_request,
@@ -40,14 +40,14 @@ from apache_buildish_site_pipeline.cli.reporting import (
     revalidate_report_request,
     revalidate_watch_event_request,
 )
-from apache_buildish_site_pipeline.models.enums import (
+from buildish_site_pipeline.models.enums import (
     CheckFailureThreshold,
     DiagnosticSeverity,
     PlanningTarget,
     RunStatus,
     StageCommand,
 )
-from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
+from buildish_site_pipeline.models.emitted.planning_stage_contract import (
     CheckReportV1,
     CheckSummary,
     PipelineDiagnosticEntry,
@@ -316,7 +316,7 @@ class CliReportingTests(unittest.TestCase):
             report_path = root / "report.txt"
 
             with mock.patch(
-                "apache_buildish_site_pipeline.cli.reporting.Path.replace",
+                "buildish_site_pipeline.cli.reporting.Path.replace",
                 side_effect=OSError("boom"),
             ):
                 with self.assertRaises(ReportWriteError):

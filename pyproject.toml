@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 [project]
-name = "apache-buildish-site-pipeline"
+name = "buildish-site-pipeline"
 version = "0.1.0"
 description = "Reusable multi-repository site staging pipeline"
+authors = [{ name = "Buildish", email = "dev@buildish.org" }]
 requires-python = ">=3.13"
 classifiers = [
     "Programming Language :: Python :: 3 :: Only",
@@ -30,11 +31,10 @@ dependencies = [
 license-files = [
     "dist-release-legal/LICENSE",
     "dist-release-legal/NOTICE",
-    "DISCLAIMER",
 ]
 
 [project.scripts]
-site-pipeline = "apache_buildish_site_pipeline.cli:main"
+site-pipeline = "buildish_site_pipeline.cli:main"
 
 [build-system]
 requires = [
@@ -50,10 +50,10 @@ tools = "tools"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["apache_buildish_site_pipeline*"]
+include = ["buildish_site_pipeline*"]
 
 [tool.setuptools.cmdclass]
-bdist_wheel = "apache_buildish_site_pipeline.legal.build_hooks.FlattenedLicenseFilesBdistWheel"
+bdist_wheel = "buildish_site_pipeline.legal.build_hooks.FlattenedLicenseFilesBdistWheel"
 
 [dependency-groups]
 dev = [
@@ -111,11 +111,11 @@ select = [
 "sys.stderr".msg = "Use the CLI logging/reporting helpers instead."
 
 [tool.ruff.lint.per-file-ignores]
-"src/apache_buildish_site_pipeline/models/__init__.py" = ["F401"]
+"src/buildish_site_pipeline/models/__init__.py" = ["F401"]
 
 [tool.mypy]
 python_version = "3.13"
-files = ["main.py", "src/apache_buildish_site_pipeline"]
+files = ["main.py", "src/buildish_site_pipeline"]
 mypy_path = ["src"]
 explicit_package_bases = true
 disable_error_code = ["import-untyped"]

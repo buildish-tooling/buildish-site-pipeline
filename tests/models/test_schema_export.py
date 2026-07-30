@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,9 +23,9 @@ import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
 
-from apache_buildish_site_pipeline.models.base import SitePipelineBaseModel
-from apache_buildish_site_pipeline.docs.reference_export import _build_anchor_index, _render_model_section
-from apache_buildish_site_pipeline.docs.schema_export import (
+from buildish_site_pipeline.models.base import SitePipelineBaseModel
+from buildish_site_pipeline.docs.reference_export import _build_anchor_index, _render_model_section
+from buildish_site_pipeline.docs.schema_export import (
     _build_parser,
     authored_schema_exports,
     main,
@@ -64,7 +64,7 @@ class SchemaExportTests(unittest.TestCase):
         self.assertEqual(catalog_schema["$schema"], "https://json-schema.org/draft/2020-12/schema")
         self.assertEqual(
             catalog_schema["$id"],
-            "https://buildish.apache.org/components/site-pipeline/schemas/catalog-v1.schema.json",
+            "https://buildish.org/components/site-pipeline/schemas/catalog-v1.schema.json",
         )
         self.assertIn("Do not edit by hand", catalog_schema["$comment"])
         self.assertEqual(

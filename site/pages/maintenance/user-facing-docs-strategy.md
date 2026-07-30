@@ -1,11 +1,11 @@
 ---
 title: User-facing documentation strategy
-description: "This document describes the target shape of the public documentation site for Apache Buildish Site Pipeline."
+description: "This document describes the target shape of the public documentation site for Buildish Site Pipeline."
 weight: 20
 ---
 
 <!--
-Copyright 2026 The Apache Software Foundation
+Copyright 2026 The Buildish Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ next.
 
 ## Buildish context
 
-Site Pipeline will become a component within the broader Apache Buildish project.
+Site Pipeline will become a component within the broader Buildish project.
 That means the docs must work at two levels:
 
 - as a standalone documentation site for readers evaluating or adopting Site
@@ -44,7 +44,7 @@ for future Buildish-level overview, workflow, and integration pages.
 
 A reader landing on the docs should be able to answer quickly:
 
-1. What is Apache Buildish Site Pipeline?
+1. What is Buildish Site Pipeline?
 2. What does it own?
 3. What does it explicitly not own?
 4. Is it a fit for my site?

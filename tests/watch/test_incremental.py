@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,13 +22,13 @@ import threading
 import unittest
 import unittest.mock
 
-from apache_buildish_site_pipeline.cli import _run
-from apache_buildish_site_pipeline.commands.shared import load_workspace_inputs
-from apache_buildish_site_pipeline.evaluation import EvaluationMode, EvaluationRequest, run_evaluation
-from apache_buildish_site_pipeline.models.enums import RecordKind
-from apache_buildish_site_pipeline.models.enums import PlanningTarget
-from apache_buildish_site_pipeline.planning import evaluate_planning
-from apache_buildish_site_pipeline.staging.coordinator import materialize_stage_tree
+from buildish_site_pipeline.cli import _run
+from buildish_site_pipeline.commands.shared import load_workspace_inputs
+from buildish_site_pipeline.evaluation import EvaluationMode, EvaluationRequest, run_evaluation
+from buildish_site_pipeline.models.enums import RecordKind
+from buildish_site_pipeline.models.enums import PlanningTarget
+from buildish_site_pipeline.planning import evaluate_planning
+from buildish_site_pipeline.staging.coordinator import materialize_stage_tree
 from tests.support.staging import _expand_workspace_for_multiple_owned_units, _stage_snapshot
 from tests.support.workspace import _cwd, _fake_watch_event_stream_factory, _workspace
 
@@ -436,7 +436,7 @@ class WatchIncrementalTests(unittest.TestCase):
             probe_thread.start()
             try:
                 with _cwd(workspace_root), unittest.mock.patch(
-                    "apache_buildish_site_pipeline.commands.watch.watch",
+                    "buildish_site_pipeline.commands.watch.watch",
                     return_value=_MutatingRawEventBatches(),
                 ):
                     exit_code = _run(argv=["watch"], stdout=io.StringIO(), stderr=io.StringIO())
@@ -452,7 +452,7 @@ def _run_watch_then_snapshot(*, workspace_root, responses: list[tuple[bool, obje
     stdout = io.StringIO()
     stderr = io.StringIO()
     with _cwd(workspace_root), unittest.mock.patch(
-        "apache_buildish_site_pipeline.commands.watch._open_watch_event_stream",
+        "buildish_site_pipeline.commands.watch._open_watch_event_stream",
         new=_fake_watch_event_stream_factory(responses=responses),
     ):
         exit_code = _run(argv=["watch"], stdout=stdout, stderr=stderr)
@@ -488,7 +488,7 @@ def _run_watch_then_snapshot_from_raw_batches(
             return batch
 
     with _cwd(workspace_root), unittest.mock.patch(
-        "apache_buildish_site_pipeline.commands.watch.watch",
+        "buildish_site_pipeline.commands.watch.watch",
         return_value=_MutatingRawEventBatches(),
     ):
         exit_code = _run(argv=["watch"], stdout=stdout, stderr=stderr)

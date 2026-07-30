@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,18 +22,18 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 
-from apache_buildish_site_pipeline.models.enums import (
+from buildish_site_pipeline.models.enums import (
     DiagnosticSeverity,
     MaterializationInputKind,
     MaterializationStatus,
     PlanningTarget,
 )
-from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
+from buildish_site_pipeline.models.emitted.planning_stage_contract import (
     PipelineDiagnosticEntry,
 )
-from apache_buildish_site_pipeline.planning.readiness import classify_input_readiness
-from apache_buildish_site_pipeline.planning.report_builder import build_resolved_materialization_report
-from apache_buildish_site_pipeline.planning.types import (
+from buildish_site_pipeline.planning.readiness import classify_input_readiness
+from buildish_site_pipeline.planning.report_builder import build_resolved_materialization_report
+from buildish_site_pipeline.planning.types import (
     InputReadiness,
     LocalInputIdentity,
     MaterializationStatusReason,

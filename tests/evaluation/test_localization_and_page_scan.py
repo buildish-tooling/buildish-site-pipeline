@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,20 +22,20 @@ from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 from unittest import mock
 
-from apache_buildish_site_pipeline.evaluation.collector import DiagnosticCollector
-from apache_buildish_site_pipeline.evaluation.localization import validate_localization
-from apache_buildish_site_pipeline.evaluation.page_scan import validate_page_scan
-from apache_buildish_site_pipeline.evaluation.types import (
+from buildish_site_pipeline.evaluation.collector import DiagnosticCollector
+from buildish_site_pipeline.evaluation.localization import validate_localization
+from buildish_site_pipeline.evaluation.page_scan import validate_page_scan
+from buildish_site_pipeline.evaluation.types import (
     ExtractedLinkReference,
     PageScanResult,
     ScannedPage,
 )
-from apache_buildish_site_pipeline.models.enums import (
+from buildish_site_pipeline.models.enums import (
     MaterializationInputKind,
     MaterializationStatus,
     RouteMode,
 )
-from apache_buildish_site_pipeline.planning.types import (
+from buildish_site_pipeline.planning.types import (
     InputReadiness,
     LocalInputIdentity,
     MaterializationStatusReason,

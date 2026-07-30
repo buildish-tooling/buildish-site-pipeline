@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,21 +20,21 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-from apache_buildish_site_pipeline.evaluation.collector import DiagnosticCollector
-from apache_buildish_site_pipeline.evaluation.inputs import validate_inputs
-from apache_buildish_site_pipeline.evaluation.providers import _matching_records, validate_providers
-from apache_buildish_site_pipeline.evaluation.publication import (
+from buildish_site_pipeline.evaluation.collector import DiagnosticCollector
+from buildish_site_pipeline.evaluation.inputs import validate_inputs
+from buildish_site_pipeline.evaluation.providers import _matching_records, validate_providers
+from buildish_site_pipeline.evaluation.publication import (
     build_publication_index,
     validate_publication,
 )
-from apache_buildish_site_pipeline.models.enums import (
+from buildish_site_pipeline.models.enums import (
     MaterializationInputKind,
     MaterializationStatus,
     PublicationState,
     RecordKind,
     WithdrawalBehavior,
 )
-from apache_buildish_site_pipeline.planning.types import (
+from buildish_site_pipeline.planning.types import (
     InputReadiness,
     IndexedProviderRecord,
     LocalInputIdentity,

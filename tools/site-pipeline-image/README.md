@@ -1,5 +1,5 @@
 <!--
-Copyright 2026 The Apache Software Foundation
+Copyright 2026 The Buildish Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-# Apache Buildish Site Pipeline container image
+# Buildish Site Pipeline container image
 
 This directory contains the reusable container image definition for the generic `site-pipeline` CLI runtime.
 
@@ -88,11 +88,13 @@ The pinned local registry image reference is sourced from `tools/site-pipeline-i
 
 ## GitHub Actions
 
-`.github/workflows/ci.yml` runs `make check`, builds the multi-platform image for `linux/amd64` and `linux/arm64`, and publishes it to GHCR on trusted Apache-owned pushes.
+`.github/workflows/ci.yml` runs `make check`, builds the multi-platform image for
+`linux/amd64` and `linux/arm64`, and publishes it to GHCR on trusted pushes to
+the canonical repository.
 
 ## Preliminary image legal review helper
 
-For ASF release preparation, the repository also provides a preliminary legal
+For release preparation, the repository also provides a preliminary legal
 review helper via:
 
 - `make release-legal-preliminary`
@@ -108,7 +110,7 @@ The generated files are deliberately review-oriented and must be checked by a
 human before they are used in any published container image or other binary
 distribution.
 
-The final image build copies `dist-release-legal/LICENSE`,
-`dist-release-legal/NOTICE`, and the repository-root `DISCLAIMER` into the
-container image. See `docs/maintenance/release-legal.md` for the maintainer
-workflow that connects the preliminary generator output with those final files.
+The final image build copies `dist-release-legal/LICENSE` and
+`dist-release-legal/NOTICE` into the container image. See
+`docs/maintenance/release-legal.md` for the maintainer workflow that connects
+the preliminary generator output with those final files.

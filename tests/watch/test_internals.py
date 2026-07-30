@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,9 +28,9 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
 
-import apache_buildish_site_pipeline.commands.watch as watch_command
-from apache_buildish_site_pipeline.cli import _run
-from apache_buildish_site_pipeline.cli.contract import (
+import buildish_site_pipeline.commands.watch as watch_command
+from buildish_site_pipeline.cli import _run
+from buildish_site_pipeline.cli.contract import (
     ReportFormat,
     ReportRequest,
     RepositoryLayout,
@@ -38,8 +38,8 @@ from apache_buildish_site_pipeline.cli.contract import (
     WatchEventRequest,
     WatchInvocation,
 )
-from apache_buildish_site_pipeline.cli.errors import InvocationError, StageIntegrityError
-from apache_buildish_site_pipeline.commands.watch import (
+from buildish_site_pipeline.cli.errors import InvocationError, StageIntegrityError
+from buildish_site_pipeline.commands.watch import (
     TrustedStageState,
     _WatchIo,
     _WatchEventStream,
@@ -60,8 +60,8 @@ from apache_buildish_site_pipeline.commands.watch import (
     _stage_path_is_claimed,
     run_watch,
 )
-from apache_buildish_site_pipeline.commands.shared import load_workspace_inputs
-from apache_buildish_site_pipeline.models.enums import (
+from buildish_site_pipeline.commands.shared import load_workspace_inputs
+from buildish_site_pipeline.models.enums import (
     CheckFailureThreshold,
     DiagnosticSeverity,
     DocumentFormat,
@@ -69,14 +69,14 @@ from apache_buildish_site_pipeline.models.enums import (
     RunStatus,
     StageCommand,
 )
-from apache_buildish_site_pipeline.models.loading import load_stage_manifest
-from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
+from buildish_site_pipeline.models.loading import load_stage_manifest
+from buildish_site_pipeline.models.emitted.planning_stage_contract import (
     PipelineDiagnosticEntry,
     StageRunReportV1,
     StageRunSummary,
 )
-from apache_buildish_site_pipeline.planning import evaluate_planning
-from apache_buildish_site_pipeline.staging.ownership import build_owned_units
+from buildish_site_pipeline.planning import evaluate_planning
+from buildish_site_pipeline.staging.ownership import build_owned_units
 from tests.support.staging import _expand_workspace_for_multiple_owned_units
 from tests.support.workspace import _cwd, _workspace
 
@@ -446,7 +446,7 @@ class WatchInternalTests(unittest.TestCase):
             workspace_root = Path(tempdir)
             changed_file = workspace_root / "components/runtime/docs/index.md"
             fake_events = iter(({(None, str(changed_file))}, set()))
-            with mock.patch("apache_buildish_site_pipeline.commands.watch.watch", return_value=fake_events):
+            with mock.patch("buildish_site_pipeline.commands.watch.watch", return_value=fake_events):
                 stream = _WatchEventStream(
                     watch_roots=(workspace_root,),
                     stage_root=workspace_root / "site/.stage",
@@ -477,7 +477,7 @@ class WatchInternalTests(unittest.TestCase):
                     set(),
                 ),
             )
-            with mock.patch("apache_buildish_site_pipeline.commands.watch.watch", return_value=fake_events):
+            with mock.patch("buildish_site_pipeline.commands.watch.watch", return_value=fake_events):
                 stream = _WatchEventStream(
                     watch_roots=(workspace_root,),
                     stage_root=workspace_root / "site/.stage",
@@ -498,7 +498,7 @@ class WatchInternalTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tempdir:
             workspace_root = Path(tempdir)
             fake_events = iter((set(),))
-            with mock.patch("apache_buildish_site_pipeline.commands.watch.watch", return_value=fake_events):
+            with mock.patch("buildish_site_pipeline.commands.watch.watch", return_value=fake_events):
                 stream = _WatchEventStream(
                     watch_roots=(workspace_root,),
                     stage_root=workspace_root / "site/.stage",
@@ -520,7 +520,7 @@ class WatchInternalTests(unittest.TestCase):
             workspace_root = Path(tempdir)
             stop_event = threading.Event()
             stop_event.set()
-            with mock.patch("apache_buildish_site_pipeline.commands.watch.watch", return_value=iter(())):
+            with mock.patch("buildish_site_pipeline.commands.watch.watch", return_value=iter(())):
                 stream = _WatchEventStream(
                     watch_roots=(workspace_root,),
                     stage_root=workspace_root / "site/.stage",
@@ -541,7 +541,7 @@ class WatchInternalTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tempdir:
             workspace_root = Path(tempdir)
             raw_events = mock.Mock()
-            with mock.patch("apache_buildish_site_pipeline.commands.watch.watch", return_value=raw_events):
+            with mock.patch("buildish_site_pipeline.commands.watch.watch", return_value=raw_events):
                 stream = _WatchEventStream(
                     watch_roots=(workspace_root,),
                     stage_root=workspace_root / "site/.stage",

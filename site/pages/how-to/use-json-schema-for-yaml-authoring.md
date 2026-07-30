@@ -5,7 +5,7 @@ weight: 23
 ---
 
 <!--
-Copyright 2026 The Apache Software Foundation
+Copyright 2026 The Buildish Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -32,14 +32,14 @@ Site Pipeline inputs. A good editor can use them for:
 
 Most users only need the schemas for the authored input files:
 
-- `site/catalog.yaml`: `https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-catalog-v1.schema.json`
-- `site/component.yaml`: `https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-component-v1.schema.json`
-- optional `site/provider-snapshot.json`: `https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-provider-snapshot-v1.schema.json`
+- `site/catalog.yaml`: `https://buildish.org/components/site-pipeline/schemas/site-pipeline-catalog-v1.schema.json`
+- `site/component.yaml`: `https://buildish.org/components/site-pipeline/schemas/site-pipeline-component-v1.schema.json`
+- optional `site/provider-snapshot.json`: `https://buildish.org/components/site-pipeline/schemas/site-pipeline-provider-snapshot-v1.schema.json`
 
 If you also validate generated JSON in automation, matching schemas are
 published for stage outputs and CLI reports under:
 
-- `https://buildish.apache.org/components/site-pipeline/schemas/`
+- `https://buildish.org/components/site-pipeline/schemas/`
 
 ## Add schema hints to authored YAML
 
@@ -49,7 +49,7 @@ the top of each authored YAML file.
 For `site/catalog.yaml`:
 
 ```yaml
-# yaml-language-server: $schema=https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-catalog-v1.schema.json
+# yaml-language-server: $schema=https://buildish.org/components/site-pipeline/schemas/site-pipeline-catalog-v1.schema.json
 schemaVersion: 1
 site: {}
 ```
@@ -57,7 +57,7 @@ site: {}
 For `site/component.yaml`:
 
 ```yaml
-# yaml-language-server: $schema=https://buildish.apache.org/components/site-pipeline/schemas/site-pipeline-component-v1.schema.json
+# yaml-language-server: $schema=https://buildish.org/components/site-pipeline/schemas/site-pipeline-component-v1.schema.json
 schemaVersion: 1
 component:
   slug: spark

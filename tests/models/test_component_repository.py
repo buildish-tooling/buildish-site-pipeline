@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,11 +18,11 @@ from __future__ import annotations
 
 import unittest
 
-from apache_buildish_site_pipeline.models.authored.component_metadata import (
+from buildish_site_pipeline.models.authored.component_metadata import (
     ComponentMetadataDocumentV1,
 )
-from apache_buildish_site_pipeline.models.enums import DocumentFormat
-from apache_buildish_site_pipeline.models.loading import (
+from buildish_site_pipeline.models.enums import DocumentFormat
+from buildish_site_pipeline.models.loading import (
     DocumentValidationFailure,
     MissingSchemaVersionError,
     load_component_metadata_document,

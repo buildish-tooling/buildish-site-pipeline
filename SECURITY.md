@@ -1,5 +1,5 @@
 <!--
-Copyright 2026 The Apache Software Foundation
+Copyright 2026 The Buildish Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,9 +16,16 @@ limitations under the License.
 
 # Security Policy
 
-Apache Buildish follows the Apache Software Foundation security process.
+## Supported Versions
 
-Please report suspected security issues to [security@apache.org](mailto:security@apache.org).
+Buildish has not published a release yet. Security reports affecting the current
+development branches are welcome.
+
+## Reporting a Vulnerability
+
+Do not open a public issue for a suspected vulnerability. Report it privately to
+[security@buildish.org](mailto:security@buildish.org), including the affected
+component, impact, and reproduction details where possible.
 
 ## Threat Model
 
@@ -37,7 +44,7 @@ whether a finding is a Buildish vulnerability, a deployment responsibility,
 a dependency issue, or a false positive. Use [`SECURITY.md`](SECURITY.md)
 reporting process and disclosure handling.
 
-ASF severity, advisory status, and CVE candidacy are non-authoritative triage
+Assessments of severity, advisory status, and CVE candidacy are non-authoritative triage
 estimates. Do not infer them from `docs/reference/threat-model.md` alone.
 
 Do not treat a test as proof of a vulnerability unless it demonstrates that the

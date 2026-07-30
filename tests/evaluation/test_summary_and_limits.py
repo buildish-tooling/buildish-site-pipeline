@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,10 +23,10 @@ from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import patch
 
-from apache_buildish_site_pipeline.evaluation.collector import DiagnosticCollector
-from apache_buildish_site_pipeline.evaluation.limits import _count_watch_entries, validate_limits
-from apache_buildish_site_pipeline.evaluation.summary import build_check_summary, build_run_status
-from apache_buildish_site_pipeline.evaluation.types import (
+from buildish_site_pipeline.evaluation.collector import DiagnosticCollector
+from buildish_site_pipeline.evaluation.limits import _count_watch_entries, validate_limits
+from buildish_site_pipeline.evaluation.summary import build_check_summary, build_run_status
+from buildish_site_pipeline.evaluation.types import (
     BlockingCondition,
     DiagnosticCounts,
     PageInventory,
@@ -34,10 +34,10 @@ from apache_buildish_site_pipeline.evaluation.types import (
     StageGateDecision,
     StageReadinessResult,
 )
-from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
+from buildish_site_pipeline.models.emitted.planning_stage_contract import (
     PipelineDiagnosticEntry,
 )
-from apache_buildish_site_pipeline.models.enums import (
+from buildish_site_pipeline.models.enums import (
     CheckFailureThreshold,
     DiagnosticSeverity,
     RunStatus,
@@ -131,11 +131,11 @@ class SummaryAndLimitsTests(unittest.TestCase):
         )
 
         with (
-            patch("apache_buildish_site_pipeline.evaluation.limits._ROUTE_INVENTORY_LIMIT", 0),
-            patch("apache_buildish_site_pipeline.evaluation.limits._REDIRECT_INVENTORY_LIMIT", 0),
-            patch("apache_buildish_site_pipeline.evaluation.limits._CONTENT_INDEX_LIMIT", 0),
-            patch("apache_buildish_site_pipeline.evaluation.limits._SELECTED_VERSION_CONTEXT_LIMIT", 0),
-            patch("apache_buildish_site_pipeline.evaluation.limits._PROVIDER_SNAPSHOT_BYTES_LIMIT", 0),
+            patch("buildish_site_pipeline.evaluation.limits._ROUTE_INVENTORY_LIMIT", 0),
+            patch("buildish_site_pipeline.evaluation.limits._REDIRECT_INVENTORY_LIMIT", 0),
+            patch("buildish_site_pipeline.evaluation.limits._CONTENT_INDEX_LIMIT", 0),
+            patch("buildish_site_pipeline.evaluation.limits._SELECTED_VERSION_CONTEXT_LIMIT", 0),
+            patch("buildish_site_pipeline.evaluation.limits._PROVIDER_SNAPSHOT_BYTES_LIMIT", 0),
         ):
             validate_limits(
                 planning=planning,

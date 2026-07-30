@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,15 +19,15 @@ from __future__ import annotations
 from pathlib import Path
 import unittest
 
-from apache_buildish_site_pipeline.models.enums import RecordKind
-from apache_buildish_site_pipeline.planning.types import (
+from buildish_site_pipeline.models.enums import RecordKind
+from buildish_site_pipeline.planning.types import (
     IndexedProviderRecord,
     ResolvedOrigin,
     ResolvedPublicationPolicy,
     ResolvedSourceBinding,
     SelectedVersionContext,
 )
-from apache_buildish_site_pipeline.staging.publication_paths import (
+from buildish_site_pipeline.staging.publication_paths import (
     public_path_for_context,
     stage_root_for_public_path,
     target_id_for_context,

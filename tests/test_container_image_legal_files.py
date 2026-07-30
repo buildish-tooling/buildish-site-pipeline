@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ class ContainerImageLegalFilesTests(unittest.TestCase):
         )
 
         copy_root_inputs = containerfile_text.index(
-            "COPY README.md pyproject.toml uv.lock main.py DISCLAIMER dist-release-legal/LICENSE dist-release-legal/NOTICE ./"
+            "COPY README.md pyproject.toml uv.lock main.py dist-release-legal/LICENSE dist-release-legal/NOTICE ./"
         )
         copy_src = containerfile_text.index("COPY src ./src")
         copy_tools = containerfile_text.index("COPY tools/helpers ./tools/helpers")
@@ -51,13 +51,13 @@ class ContainerImageLegalFilesTests(unittest.TestCase):
         self.assertIn("rm -rf tools dist-release-legal pyproject.toml uv.lock", containerfile_text)
         self.assertNotIn("rm -f /usr/local/bin/uv /usr/local/bin/uvx", containerfile_text)
 
-    def test_containerfile_copies_final_release_legal_files_and_disclaimer(self) -> None:
+    def test_containerfile_copies_final_release_legal_files(self) -> None:
         containerfile_text = Path("tools/site-pipeline-image/Containerfile").read_text(
             encoding="utf-8"
         )
 
         self.assertIn(
-            "COPY README.md pyproject.toml uv.lock main.py DISCLAIMER dist-release-legal/LICENSE dist-release-legal/NOTICE ./",
+            "COPY README.md pyproject.toml uv.lock main.py dist-release-legal/LICENSE dist-release-legal/NOTICE ./",
             containerfile_text,
         )
         self.assertIn("COPY --from=uvbin /uv /uvx /usr/local/bin/", containerfile_text)
@@ -82,7 +82,6 @@ class ContainerImageLegalFilesTests(unittest.TestCase):
         self.assertIn("USER site-pipeline", containerfile_text)
 
     def test_final_release_legal_files_exist(self) -> None:
-        self.assertTrue(Path("DISCLAIMER").is_file())
         self.assertTrue(Path("dist-release-legal/LICENSE").is_file())
         self.assertTrue(Path("dist-release-legal/NOTICE").is_file())
 

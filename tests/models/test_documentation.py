@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,15 +19,15 @@ from __future__ import annotations
 import unittest
 from typing import cast
 
-from apache_buildish_site_pipeline.models import ContractDocumentation, contract_documentation_for
-from apache_buildish_site_pipeline.models.authored.component_metadata import ComponentIdentity
-from apache_buildish_site_pipeline.models.authored.page_metadata import PageTranslationMetadata
-from apache_buildish_site_pipeline.models.authored.site_catalog import ComponentCatalogEntry, SiteCatalogDocumentV1
-from apache_buildish_site_pipeline.models.emitted.aggregates import RouteAggregateEntry
-from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import StageManifestV1
-from apache_buildish_site_pipeline.models.emitted.staged_front_matter import PipelineFrontMatterNamespace
-from apache_buildish_site_pipeline.models.provider.provider_snapshot import ProviderRecord
-from apache_buildish_site_pipeline.staging.incremental_metadata import PersistedUnitContributionsV1
+from buildish_site_pipeline.models import ContractDocumentation, contract_documentation_for
+from buildish_site_pipeline.models.authored.component_metadata import ComponentIdentity
+from buildish_site_pipeline.models.authored.page_metadata import PageTranslationMetadata
+from buildish_site_pipeline.models.authored.site_catalog import ComponentCatalogEntry, SiteCatalogDocumentV1
+from buildish_site_pipeline.models.emitted.aggregates import RouteAggregateEntry
+from buildish_site_pipeline.models.emitted.planning_stage_contract import StageManifestV1
+from buildish_site_pipeline.models.emitted.staged_front_matter import PipelineFrontMatterNamespace
+from buildish_site_pipeline.models.provider.provider_snapshot import ProviderRecord
+from buildish_site_pipeline.staging.incremental_metadata import PersistedUnitContributionsV1
 
 
 class ContractDocumentationTests(unittest.TestCase):

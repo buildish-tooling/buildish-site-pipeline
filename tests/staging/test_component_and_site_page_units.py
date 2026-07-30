@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,10 +21,10 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from apache_buildish_site_pipeline.models.enums import RouteMode
-from apache_buildish_site_pipeline.staging.units.component import _copy_tree
-from apache_buildish_site_pipeline.staging.worker_entrypoint import execute_worker_spec
-from apache_buildish_site_pipeline.staging.worker_protocol import (
+from buildish_site_pipeline.models.enums import RouteMode
+from buildish_site_pipeline.staging.units.component import _copy_tree
+from buildish_site_pipeline.staging.worker_entrypoint import execute_worker_spec
+from buildish_site_pipeline.staging.worker_protocol import (
     WorkerSpecWire,
     WorkerResultWire,
     read_unit_manifest,

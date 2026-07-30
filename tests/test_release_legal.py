@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from apache_buildish_site_pipeline.legal.release_legal import (
+from buildish_site_pipeline.legal.release_legal import (
     LockedPackage,
     build_release_legal_report,
     generate_release_legal_artifacts,
@@ -44,7 +44,7 @@ version = "2.3.4"
 index = "https://pypi.org/simple"
 
 [[packages]]
-name = "apache-buildish-site-pipeline"
+name = "buildish-site-pipeline"
 directory = { path = ".", editable = true }
 """
         )
@@ -59,7 +59,7 @@ directory = { path = ".", editable = true }
                     source_reference="https://pypi.org/simple",
                 ),
                 LockedPackage(
-                    name="apache-buildish-site-pipeline",
+                    name="buildish-site-pipeline",
                     version=None,
                     source_kind="directory",
                     source_reference=".",
@@ -161,27 +161,27 @@ directory = { path = ".", editable = true }
             details_output_dir = root / "dist" / "release-legal-preliminary"
             self._write_distribution(
                 root=root,
-                name="apache-buildish-site-pipeline",
+                name="buildish-site-pipeline",
                 version="0.1.0",
                 metadata_lines=(
                     "Metadata-Version: 2.4",
-                    "Name: apache-buildish-site-pipeline",
+                    "Name: buildish-site-pipeline",
                     "Version: 0.1.0",
                     "Requires-Dist: demo-runtime>=2",
                     "License-File: LICENSE",
                     "License-File: NOTICE",
                 ),
                 record_entries=(
-                    "apache_buildish_site_pipeline/__init__.py,,",
-                    "apache_buildish_site_pipeline-0.1.0.dist-info/METADATA,,",
-                    "apache_buildish_site_pipeline-0.1.0.dist-info/RECORD,,",
-                    "apache_buildish_site_pipeline-0.1.0.dist-info/licenses/LICENSE,,",
-                    "apache_buildish_site_pipeline-0.1.0.dist-info/licenses/NOTICE,,",
+                    "buildish_site_pipeline/__init__.py,,",
+                    "buildish_site_pipeline-0.1.0.dist-info/METADATA,,",
+                    "buildish_site_pipeline-0.1.0.dist-info/RECORD,,",
+                    "buildish_site_pipeline-0.1.0.dist-info/licenses/LICENSE,,",
+                    "buildish_site_pipeline-0.1.0.dist-info/licenses/NOTICE,,",
                 ),
                 file_contents={
-                    "apache_buildish_site_pipeline/__init__.py": "",
-                    "apache_buildish_site_pipeline-0.1.0.dist-info/licenses/LICENSE": "Project bundled license\n",
-                    "apache_buildish_site_pipeline-0.1.0.dist-info/licenses/NOTICE": "Project bundled notice\n",
+                    "buildish_site_pipeline/__init__.py": "",
+                    "buildish_site_pipeline-0.1.0.dist-info/licenses/LICENSE": "Project bundled license\n",
+                    "buildish_site_pipeline-0.1.0.dist-info/licenses/NOTICE": "Project bundled notice\n",
                 },
             )
             self._write_distribution(
@@ -214,7 +214,7 @@ directory = { path = ".", editable = true }
                 distribution_search_paths=(root,),
                 locked_packages=(
                     LockedPackage(
-                        name="apache-buildish-site-pipeline",
+                        name="buildish-site-pipeline",
                         version=None,
                         source_kind="directory",
                         source_reference=".",
@@ -281,11 +281,11 @@ directory = { path = ".", editable = true }
         self.assertNotIn("SPDX license expression:", license_text)
         self.assertNotIn("Copied license files:", license_text)
         self.assertNotIn("Source: index", license_text)
-        self.assertNotIn("This product bundles apache-buildish-site-pipeline.", license_text)
+        self.assertNotIn("This product bundles buildish-site-pipeline.", license_text)
         self.assertIn("Apache project notice", notice_text)
         self.assertNotIn("Generated at:", notice_text)
         self.assertNotIn(
-            "This product bundles apache-buildish-site-pipeline with the following in its NOTICE file:",
+            "This product bundles buildish-site-pipeline with the following in its NOTICE file:",
             notice_text,
         )
         self.assertIn("| `demo-runtime` | `index` |", inventory_markdown)

@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,19 +21,19 @@ from datetime import UTC, datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from apache_buildish_site_pipeline.models.enums import StageCommand
-from apache_buildish_site_pipeline.models.emitted.planning_stage_contract import (
+from buildish_site_pipeline.models.enums import StageCommand
+from buildish_site_pipeline.models.emitted.planning_stage_contract import (
     StageDataFiles,
     StageManifestV1,
     StageRoots,
 )
-from apache_buildish_site_pipeline.staging.incremental_metadata import (
+from buildish_site_pipeline.staging.incremental_metadata import (
     PersistedUnitContributionsV1,
     build_aggregate_dependency_map,
     build_output_ownership_map,
     load_retained_stage_incremental_state,
 )
-from apache_buildish_site_pipeline.staging.ownership import OwnedUnit, OwnedUnitKind
+from buildish_site_pipeline.staging.ownership import OwnedUnit, OwnedUnitKind
 
 
 class IncrementalMetadataTests(unittest.TestCase):

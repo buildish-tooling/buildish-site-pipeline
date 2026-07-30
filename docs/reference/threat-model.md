@@ -5,7 +5,7 @@ weight: 17
 ---
 
 <!--
-Copyright 2026 The Apache Software Foundation
+Copyright 2026 The Buildish Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,18 +22,18 @@ limitations under the License.
 
 ## §1 Header
 
-Project: Apache Buildish Site Pipeline.
+Project: Buildish Site Pipeline.
 
 Version binding: this threat model is versioned alongside the project. A report
 against project version N is triaged against the threat model shipped with
 version N, not against the model at a later development commit. *(documented)*
 
-Version and commit: draft for `apache-buildish-site-pipeline` `0.1.0` at commit
+Version and commit: draft for `buildish-site-pipeline` `0.1.0` at commit
 `467558fffb31`. *(documented)*
 
 Date: 2026-06-05. *(documented)*
 
-Authors: Apache Buildish maintainers; initial structured draft prepared by
+Authors: Buildish maintainers; initial structured draft prepared by
 Codex from repository documentation and source review. *(inferred)*
 
 Reporting cross-reference: findings that fall under §8 should be reported per
@@ -50,7 +50,7 @@ Draft confidence: approximately 48 documented / 0 maintainer / 29 inferred
 claims. Counts are intentionally rough and should be updated when maintainers
 ratify or correct the open questions in §14.
 
-Apache Buildish Site Pipeline is a Python CLI and package for staging
+Buildish Site Pipeline is a Python CLI and package for staging
 multi-repository documentation-site inputs into a normalized tree and metadata
 set for downstream renderers. It reads a consumer-owned catalog, optional
 provider snapshots, component metadata, site pages, docs, and static assets;
@@ -109,7 +109,7 @@ Component-family table:
 | Watch mode | `site-pipeline watch` | Filesystem watcher, stdout/stderr/events, signals | Yes | Local development and wrapper integration surface. *(documented)* |
 | Staged output contracts | `site/.stage/`, `manifest.json`, `data/*.json`, staged pages/assets | Filesystem output consumed by renderers | Yes | Stable output API. *(documented)* |
 | Optional container image | `tools/site-pipeline-image/*`, published image entrypoint | Container build/runtime environment | Partly | In scope for packaging expectations; base-image and registry security are out of scope. *(inferred)* |
-| Release-legal helpers | `make release-legal-preliminary`, `apache_buildish_site_pipeline.legal.release_legal` | Local Python environment, package metadata, subprocess execution | Partly | In scope for repository maintenance safety; not part of normal site staging threat boundary. *(inferred)* |
+| Release-legal helpers | `make release-legal-preliminary`, `buildish_site_pipeline.legal.release_legal` | Local Python environment, package metadata, subprocess execution | Partly | In scope for repository maintenance safety; not part of normal site staging threat boundary. *(inferred)* |
 | Tests, docs, generated schemas | `tests/`, `docs/`, `site/pages/schemas/` | Repository files | No for runtime guarantees | Useful evidence, but not runtime security boundary. *(inferred)* |
 
 ## §3 Out of scope
@@ -131,12 +131,12 @@ Explicit non-goals:
 - Fetching, authenticating, or verifying source repositories, SCM state, or
   provider APIs. The pipeline consumes local inputs and provider snapshots.
   *(documented)*
-- Guaranteeing that generated preliminary release-legal drafts replace human ASF
+- Guaranteeing that generated preliminary release-legal drafts replace human
   release review. *(documented)*
 - Treating test fixtures, generated outputs, `dist/`, `.venv/`, caches, and
   local build artifacts as covered runtime components. *(inferred)*
 - Security of third-party dependencies beyond normal dependency-management and
-  ASF release processes. *(inferred)*
+  release processes. *(inferred)*
 - Security of non-default or locally modified builds that bypass validation,
   monkeypatch internals, or call private Python functions directly. *(inferred)*
 
@@ -390,7 +390,7 @@ Well-known attack classes left to callers or downstream layers:
 
 Operators and integrators must:
 
-- Report suspected §8 violations through the ASF security channel in
+- Report suspected §8 violations through the private security channel in
   `SECURITY.md`. *(documented)*
 - Run the CLI only on workspaces and component repositories they intend to trust
   for local file reads and browser-facing content publication. *(inferred)*

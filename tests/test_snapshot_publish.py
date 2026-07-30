@@ -1,4 +1,4 @@
-# Copyright 2026 The Apache Software Foundation
+# Copyright 2026 The Buildish Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ class SnapshotPublishTests(unittest.TestCase):
             self.assertIn("+snapshot.", manifest["version"])
             self.assertEqual(
                 manifest["dependencySpec"],
-                f"apache-buildish-site-pipeline @ {wheel_path.resolve().as_uri()}",
+                f"buildish-site-pipeline @ {wheel_path.resolve().as_uri()}",
             )
 
 

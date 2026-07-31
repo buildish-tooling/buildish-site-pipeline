@@ -436,7 +436,7 @@ class WatchIncrementalTests(unittest.TestCase):
             probe_thread.start()
             try:
                 with _cwd(workspace_root), unittest.mock.patch(
-                    "buildish_site_pipeline.commands.watch.watch",
+                    "buildish_site_pipeline.commands.watch_events.watch",
                     return_value=_MutatingRawEventBatches(),
                 ):
                     exit_code = _run(argv=["watch"], stdout=io.StringIO(), stderr=io.StringIO())
@@ -488,7 +488,7 @@ def _run_watch_then_snapshot_from_raw_batches(
             return batch
 
     with _cwd(workspace_root), unittest.mock.patch(
-        "buildish_site_pipeline.commands.watch.watch",
+        "buildish_site_pipeline.commands.watch_events.watch",
         return_value=_MutatingRawEventBatches(),
     ):
         exit_code = _run(argv=["watch"], stdout=stdout, stderr=stderr)

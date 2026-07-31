@@ -42,16 +42,11 @@ from buildish_site_pipeline.cli.errors import InvocationError, StageIntegrityErr
 from buildish_site_pipeline.commands.watch import (
     TrustedStageState,
     _WatchIo,
-    _WatchEventStream,
-    _build_plan_watch_roots,
-    _coalesce_dirty_paths,
-    _derive_watch_roots,
     _dirty_component_unit_id,
     _dirty_unit_ids_for_paths,
     _emit_cycle_report,
     _failed_cycle_outcome,
     _graceful_watch_shutdown,
-    _is_pipeline_owned_path,
     _load_trusted_stage,
     _open_watch_event_output,
     _run_follow_up_cycle,
@@ -59,6 +54,13 @@ from buildish_site_pipeline.commands.watch import (
     _select_incremental_build,
     _stage_path_is_claimed,
     run_watch,
+)
+from buildish_site_pipeline.commands.watch_events import (
+    _WatchEventStream,
+    _build_plan_watch_roots,
+    _coalesce_dirty_paths,
+    _derive_watch_roots,
+    _is_pipeline_owned_path,
 )
 from buildish_site_pipeline.commands.shared import load_workspace_inputs
 from buildish_site_pipeline.models.enums import (
@@ -446,7 +448,10 @@ class WatchInternalTests(unittest.TestCase):
             workspace_root = Path(tempdir)
             changed_file = workspace_root / "components/runtime/docs/index.md"
             fake_events = iter(({(None, str(changed_file))}, set()))
-            with mock.patch("buildish_site_pipeline.commands.watch.watch", return_value=fake_events):
+            with mock.patch(
+                "buildish_site_pipeline.commands.watch_events.watch",
+                return_value=fake_events,
+            ):
                 stream = _WatchEventStream(
                     watch_roots=(workspace_root,),
                     stage_root=workspace_root / "site/.stage",
@@ -477,7 +482,10 @@ class WatchInternalTests(unittest.TestCase):
                     set(),
                 ),
             )
-            with mock.patch("buildish_site_pipeline.commands.watch.watch", return_value=fake_events):
+            with mock.patch(
+                "buildish_site_pipeline.commands.watch_events.watch",
+                return_value=fake_events,
+            ):
                 stream = _WatchEventStream(
                     watch_roots=(workspace_root,),
                     stage_root=workspace_root / "site/.stage",
@@ -498,7 +506,10 @@ class WatchInternalTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tempdir:
             workspace_root = Path(tempdir)
             fake_events = iter((set(),))
-            with mock.patch("buildish_site_pipeline.commands.watch.watch", return_value=fake_events):
+            with mock.patch(
+                "buildish_site_pipeline.commands.watch_events.watch",
+                return_value=fake_events,
+            ):
                 stream = _WatchEventStream(
                     watch_roots=(workspace_root,),
                     stage_root=workspace_root / "site/.stage",
@@ -521,7 +532,7 @@ class WatchInternalTests(unittest.TestCase):
             raw_events = mock.MagicMock()
             raw_events.__next__.return_value = set()
             with mock.patch(
-                "buildish_site_pipeline.commands.watch.watch",
+                "buildish_site_pipeline.commands.watch_events.watch",
                 return_value=raw_events,
             ):
                 stream = _WatchEventStream(
@@ -550,7 +561,7 @@ class WatchInternalTests(unittest.TestCase):
             second_events = mock.MagicMock()
             second_events.__next__.return_value = set()
             with mock.patch(
-                "buildish_site_pipeline.commands.watch.watch",
+                "buildish_site_pipeline.commands.watch_events.watch",
                 side_effect=(first_events, second_events),
             ) as open_watch:
                 stream = _WatchEventStream(
@@ -627,7 +638,10 @@ class WatchInternalTests(unittest.TestCase):
             workspace_root = Path(tempdir)
             stop_event = threading.Event()
             stop_event.set()
-            with mock.patch("buildish_site_pipeline.commands.watch.watch", return_value=iter(())):
+            with mock.patch(
+                "buildish_site_pipeline.commands.watch_events.watch",
+                return_value=iter(()),
+            ):
                 stream = _WatchEventStream(
                     watch_roots=(workspace_root,),
                     stage_root=workspace_root / "site/.stage",
@@ -648,7 +662,10 @@ class WatchInternalTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tempdir:
             workspace_root = Path(tempdir)
             raw_events = mock.Mock()
-            with mock.patch("buildish_site_pipeline.commands.watch.watch", return_value=raw_events):
+            with mock.patch(
+                "buildish_site_pipeline.commands.watch_events.watch",
+                return_value=raw_events,
+            ):
                 stream = _WatchEventStream(
                     watch_roots=(workspace_root,),
                     stage_root=workspace_root / "site/.stage",

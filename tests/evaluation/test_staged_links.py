@@ -336,15 +336,45 @@ Inline example: `<a href="missing/">Missing</a>`
             ),
         )
 
+    def test_simple_titled_reference_definitions_avoid_the_general_parser(self) -> None:
+        cases = {
+            "double-quoted title": '[target]: guide/ "Title"\n',
+            "single-quoted title": "[target]: guide/ 'Title'\n",
+            "parenthesized title": "[target]: guide/ (Title)\n",
+            "empty title": '[target]: guide/ ""\n',
+        }
+
+        for name, definition in cases.items():
+            text = f"[First][target]\n\n{definition}"
+            with self.subTest(name=name), patch(
+                "buildish_site_pipeline.evaluation.link_references.Document",
+                side_effect=AssertionError(
+                    "simple titled references should use the fast path"
+                ),
+            ):
+                references = extract_link_references(
+                    source_path=Path("index.md"),
+                    text=text,
+                )
+
+            self.assertEqual(
+                [reference.href for reference in references],
+                ["guide/"],
+            )
+
     def test_complex_reference_syntax_keeps_the_general_markdown_parser(self) -> None:
         cases = {
             "multiple references on one line": (
                 "[First][target] [Second][target]\n\n[target]: guide/\n",
                 ["guide/", "guide/"],
             ),
-            "definition title": (
-                '[First][target]\n\n[target]: guide/ "Title"\n',
+            "escaped definition title": (
+                '[First][target]\n\n[target]: guide/ "Escaped \\" title"\n',
                 ["guide/"],
+            ),
+            "trailing content after definition title": (
+                '[First][target]\n\n[target]: guide/ "Title" trailing\n',
+                [],
             ),
             "collapsed reference": (
                 "[First][]\n\n[First]: guide/\n",

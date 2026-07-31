@@ -41,7 +41,13 @@ _HTML_HREF_PATTERN = re.compile(
 )
 _ASCIIDOC_LINK_PATTERN = re.compile(r"(?:^|[^A-Za-z0-9_])link:(?P<href>[^\[]+)\[[^\]]*\]")
 _SIMPLE_REFERENCE_DEFINITION_PATTERN = re.compile(
-    r"^ {0,3}\[(?P<label>[^\[\]\r\n]+)\]:[ \t]*(?P<href>[^ \t\r\n]+)[ \t]*$"
+    r"""
+    ^[ ]{0,3}\[(?P<label>[^\[\]\r\n]+)\]:
+    [ \t]*(?P<href>[^ \t\r\n]+)
+    (?:[ \t]+(?:"[^"\r\n]*"|'[^'\r\n]*'|\([^)\r\n]*\)))?
+    [ \t]*$
+    """,
+    re.VERBOSE,
 )
 _REFERENCE_DEFINITION_PREFIX_PATTERN = re.compile(
     r"^ {0,3}\[[^\[\]\r\n]+\]:"
@@ -186,9 +192,10 @@ def _fast_full_reference_markdown_candidates(
     """Return plain full-reference links without invoking Mistletoe.
 
     This intentionally narrow path accepts one ``[text][label]`` occurrence per
-    source line and simple single-line ``[label]: target`` definitions. More
-    expressive reference syntax remains with Mistletoe so this optimization
-    does not become a second general-purpose Markdown parser.
+    source line and simple single-line ``[label]: target`` definitions, with
+    or without a quoted or parenthesized title. More expressive reference
+    syntax remains with Mistletoe so this optimization does not become a
+    second general-purpose Markdown parser.
     """
 
     if any(marker in text for marker in ("`", "<", "\\", "&")):

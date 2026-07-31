@@ -45,12 +45,12 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--workload",
-        choices=("inline", "reference", "complex-reference"),
+        choices=("inline", "reference", "titled-reference", "complex-reference"),
         default="inline",
         help=(
-            "Use plain inline links, optimized plain full-reference links, or "
-            "reference definitions with titles that retain the full Markdown "
-            "parser fallback (default: %(default)s)."
+            "Use plain inline links, plain or titled full-reference links, or "
+            "multiple references per line that retain the full Markdown parser "
+            "fallback (default: %(default)s)."
         ),
     )
     return parser
@@ -61,10 +61,19 @@ def _workload(*, link_count: int, workload: str) -> str:
         return "".join(
             f"[link {index}](target-{index % 8}/)\n" for index in range(link_count)
         )
-    references = "".join(
-        f"[link {index}][target-{index % 8}]\n" for index in range(link_count)
-    )
-    definition_title = ' "Target title"' if workload == "complex-reference" else ""
+    if workload == "complex-reference":
+        references = "".join(
+            f"[link {index}][target-{index % 8}] "
+            f"[second {index}][target-{index % 8}]\n"
+            for index in range(link_count // 2)
+        )
+        if link_count % 2:
+            references += f"[link {link_count - 1}][target-0]\n"
+    else:
+        references = "".join(
+            f"[link {index}][target-{index % 8}]\n" for index in range(link_count)
+        )
+    definition_title = ' "Target title"' if workload == "titled-reference" else ""
     definitions = "\n".join(
         f"[target-{index}]: target-{index}/{definition_title}" for index in range(8)
     )

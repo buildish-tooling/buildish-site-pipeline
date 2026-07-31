@@ -2,12 +2,6 @@
 title: Site Pipeline
 layout: smoke
 link: /components/site-pipeline/
-pipeline:
-  component:
-    slug: site-pipeline
-  page:
-    kind: component-page
-    path: /components/site-pipeline/
 ---
 
 <!--

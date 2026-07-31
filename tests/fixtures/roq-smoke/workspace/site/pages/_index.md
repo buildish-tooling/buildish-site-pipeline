@@ -1,13 +1,7 @@
 ---
-title: Site Pipeline
+title: Roq smoke fixture
 layout: smoke
-link: /components/site-pipeline/
-pipeline:
-  component:
-    slug: site-pipeline
-  page:
-    kind: component-page
-    path: /components/site-pipeline/
+link: /
 ---
 
 <!--
@@ -26,10 +20,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-# Site Pipeline
+# Roq smoke fixture
 
-Front matter: <span id="pipeline-component">{=page.data.pipeline.component.slug}</span>
-
-Aggregate data: <span id="aggregate-component">{=cdi:components.items.asJsonObjects.first.slug}</span>
-
-[Exact-name asset](/site/assets/site-pipeline-smoke.txt)
+[Nested pipeline page](components/site-pipeline/)

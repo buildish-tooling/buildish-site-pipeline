@@ -24,6 +24,7 @@ import unittest
 from pathlib import Path
 
 from buildish_site_pipeline.cli import _run
+from examples.roq.sync_stage import AdapterError, synchronize_stage
 from tests.support.workspace import _cwd
 
 
@@ -56,8 +57,11 @@ class RoqIntegrationDocsTests(unittest.TestCase):
         self.assertIn("content/site/", guide_text)
         self.assertIn("`_index.<extension>` page to `index.<extension>`", guide_text)
         self.assertIn("site.slugify-files=false", guide_text)
+        self.assertIn("python3 site/roq/sync_stage.py site/.stage site/roq", guide_text)
+        self.assertIn("examples/roq/sync_stage.py", guide_text)
         self.assertIn("Do not synchronize `manifest.json` into `data/`", guide_text)
         self.assertNotIn("site/.stage/static/ site/roq/static/", guide_text)
+        self.assertNotIn("`sync-stage` is a placeholder", guide_text)
 
     def test_guide_uses_current_roq_and_watch_commands(self) -> None:
         guide_text = Path("site/pages/how-to/integrate-with-roq.md").read_text(
@@ -82,6 +86,7 @@ class RoqIntegrationDocsTests(unittest.TestCase):
         self.assertIn("<maven.compiler.release>21</maven.compiler.release>", pom_text)
         self.assertIn("<quarkus.version>3.35.1</quarkus.version>", pom_text)
         self.assertIn("<roq.version>2.1.6</roq.version>", pom_text)
+        self.assertTrue(Path("examples/roq/sync_stage.py").is_file())
         for relative_path in (
             "content/index.md",
             "content/components/site-pipeline/index.md",
@@ -127,7 +132,7 @@ class RoqIntegrationDocsTests(unittest.TestCase):
                 stale_path.parent.mkdir(parents=True, exist_ok=True)
                 stale_path.write_text("stale\n", encoding="utf-8")
 
-            _synchronize_stage_to_roq(stage_root=stage_root, roq_root=roq_root)
+            synchronize_stage(stage_root=stage_root, roq_root=roq_root)
 
             for source_name, destination_name in _ROQ_STAGE_MAPPINGS:
                 self.assertEqual(
@@ -185,12 +190,13 @@ class RoqIntegrationDocsTests(unittest.TestCase):
             )
             for source_name, _ in _ROQ_STAGE_MAPPINGS:
                 (stage_root / source_name).mkdir()
-            (stage_root / "manifest.json").write_text("{}\n", encoding="utf-8")
+            _write_stage_manifest(stage_root)
+            roq_root.mkdir()
 
-            with self.assertRaisesRegex(AssertionError, "content collision"):
-                _synchronize_stage_to_roq(stage_root=stage_root, roq_root=roq_root)
+            with self.assertRaisesRegex(AdapterError, "content collision"):
+                synchronize_stage(stage_root=stage_root, roq_root=roq_root)
 
-            self.assertFalse(roq_root.exists())
+            self.assertEqual([], list(roq_root.iterdir()))
 
     def test_roq_synchronization_requires_a_completed_plain_stage(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
@@ -198,98 +204,42 @@ class RoqIntegrationDocsTests(unittest.TestCase):
             roq_root = Path(tempdir) / "roq"
             stage_root.mkdir()
 
-            with self.assertRaisesRegex(AssertionError, "completed stage"):
-                _synchronize_stage_to_roq(stage_root=stage_root, roq_root=roq_root)
+            roq_root.mkdir()
+            with self.assertRaisesRegex(AdapterError, "completed stage manifest"):
+                synchronize_stage(stage_root=stage_root, roq_root=roq_root)
 
-            (stage_root / "manifest.json").write_text("{}\n", encoding="utf-8")
+            _write_stage_manifest(stage_root)
             for source_name in ("content", "data", "static"):
                 (stage_root / source_name).mkdir()
             (stage_root / "content/index.md").symlink_to(stage_root / "manifest.json")
 
-            with self.assertRaisesRegex(AssertionError, "must not contain symlinks"):
-                _synchronize_stage_to_roq(stage_root=stage_root, roq_root=roq_root)
+            with self.assertRaisesRegex(AdapterError, "must not contain symlinks"):
+                synchronize_stage(stage_root=stage_root, roq_root=roq_root)
 
             (stage_root / "content/index.md").unlink()
-            roq_root.mkdir()
             (roq_root / "content").symlink_to(
                 stage_root / "content", target_is_directory=True
             )
 
-            with self.assertRaisesRegex(AssertionError, "generated root"):
-                _synchronize_stage_to_roq(stage_root=stage_root, roq_root=roq_root)
+            with self.assertRaisesRegex(AdapterError, "generated root"):
+                synchronize_stage(stage_root=stage_root, roq_root=roq_root)
 
 
-def _synchronize_stage_to_roq(*, stage_root: Path, roq_root: Path) -> None:
-    """Replace and adapt the fixture's renderer inputs from one completed stage."""
-
-    manifest_path = stage_root / "manifest.json"
-    if (
-        stage_root.is_symlink()
-        or manifest_path.is_symlink()
-        or not manifest_path.is_file()
-    ):
-        raise AssertionError("Roq synchronization requires a completed stage")
-    for source_name in ("content", "data", "static"):
-        _assert_plain_tree(stage_root / source_name)
-
-    content_plan = _plan_roq_content(stage_root / "content")
-    if roq_root.is_symlink():
-        raise AssertionError(f"Roq project root must not be a symlink: {roq_root}")
-    for destination_name in ("content", "data", "public"):
-        destination_root = roq_root / destination_name
-        if destination_root.is_symlink():
-            raise AssertionError(
-                f"Roq generated root must not be a symlink: {destination_root}"
-            )
-        if destination_root.exists() and not destination_root.is_dir():
-            raise AssertionError(
-                f"Roq generated root must be a directory: {destination_root}"
-            )
-
-    content_root = roq_root / "content"
-    if content_root.exists():
-        shutil.rmtree(content_root)
-    content_root.mkdir(parents=True)
-    for relative_path, source_path in content_plan.items():
-        destination_path = content_root / relative_path
-        destination_path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source_path, destination_path)
-
-    for source_name, destination_name in _ROQ_STAGE_MAPPINGS:
-        source_root = stage_root / source_name
-        destination_root = roq_root / destination_name
-        if destination_root.exists():
-            shutil.rmtree(destination_root)
-        shutil.copytree(source_root, destination_root)
-
-
-def _assert_plain_tree(root: Path) -> None:
-    if root.is_symlink() or not root.is_dir():
-        raise AssertionError(f"Roq synchronization source is not a directory: {root}")
-    if any(path.is_symlink() for path in root.rglob("*")):
-        raise AssertionError(
-            f"Roq synchronization source must not contain symlinks: {root}"
+def _write_stage_manifest(stage_root: Path) -> None:
+    (stage_root / "manifest.json").write_text(
+        json.dumps(
+            {
+                "stageLayoutVersion": 1,
+                "roots": {
+                    "content": "content",
+                    "data": "data",
+                    "static": "static",
+                },
+            }
         )
-
-
-def _plan_roq_content(content_root: Path) -> dict[Path, Path]:
-    plan: dict[Path, Path] = {}
-    for source_path in sorted(
-        path for path in content_root.rglob("*") if path.is_file()
-    ):
-        relative_path = source_path.relative_to(content_root)
-        if relative_path.parts[0] == "site":
-            relative_path = Path(*relative_path.parts[1:])
-        if relative_path.stem == "_index":
-            relative_path = relative_path.with_name(f"index{relative_path.suffix}")
-        prior_source = plan.get(relative_path)
-        if prior_source is not None:
-            raise AssertionError(
-                "Roq content collision after adapting staged paths: "
-                f"{prior_source} and {source_path} -> {relative_path}"
-            )
-        plan[relative_path] = source_path
-    return plan
+        + "\n",
+        encoding="utf-8",
+    )
 
 
 def _tree_contents(root: Path) -> dict[str, bytes]:

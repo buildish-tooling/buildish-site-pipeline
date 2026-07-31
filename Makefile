@@ -36,8 +36,8 @@ help: ## Show the curated Make targets for the site-pipeline repository.
 	print_section "Release helpers:" $(HELP_PUBLIC_RELEASE_TARGETS); \
 	print_section "Container image workflows:" $(HELP_PUBLIC_CONTAINER_TARGETS)
 
-lint: ## Run Ruff checks for the Python sources and tests.
-	$(UV_RUN) ruff check main.py src/buildish_site_pipeline tests
+lint: ## Run Ruff checks for the Python sources, examples, and tests.
+	$(UV_RUN) ruff check main.py src/buildish_site_pipeline examples tests
 
 typecheck: ## Run Mypy across the repository.
 	$(UV_RUN) mypy

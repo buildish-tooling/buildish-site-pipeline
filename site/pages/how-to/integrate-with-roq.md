@@ -133,6 +133,19 @@ another staged page, stop with an error instead of overwriting either input.
 Also reject symlinks in the stage or generated roots; the adapter is copying a
 completed, ordinary file tree, not following paths outside that tree.
 
+This repository includes a
+[copyable Python reference adapter](https://github.com/buildish-tooling/buildish-site-pipeline/blob/main/examples/roq/sync_stage.py)
+that implements those rules using only the Python standard library. It reads
+the generated-root names from `manifest.json`, prepares the new roots before
+changing the Roq project, and rolls back roots already replaced if publication
+fails partway through. It supports stage layout version 1 and fails closed on
+other versions. Copy it into the consumer-owned part of the Roq project and
+review it like any other build script:
+
+```bash
+cp examples/roq/sync_stage.py site/roq/sync_stage.py
+```
+
 ## Preserve staged asset names
 
 Roq slugifies public file names by default. Site Pipeline has already resolved
@@ -181,13 +194,13 @@ that applies the content rules above and replaces all three generated roots:
 ```bash
 site-pipeline check --workspace-root . --catalog site/catalog.yaml
 site-pipeline build --workspace-root . --catalog site/catalog.yaml
-site/roq/sync-stage site/.stage site/roq
+python3 site/roq/sync_stage.py site/.stage site/roq
 ```
 
-`sync-stage` is a placeholder name for that consumer-owned script or build-tool
-task; Site Pipeline does not install it. A Gradle, Maven, Python, Java, or shell
-adapter can implement the contract. Its data and static steps may use `rsync`
-on systems where it is available:
+The reference file is an example rather than an installed Site Pipeline
+command. A Gradle, Maven, Java, or shell adapter can implement the same
+contract. Its data and static steps may use `rsync` on systems where it is
+available:
 
 ```bash
 rsync -a --delete site/.stage/data/ site/roq/data/
@@ -249,7 +262,7 @@ Use the same hand-off in CI:
 
 ```bash
 site-pipeline build --workspace-root . --catalog site/catalog.yaml
-site/roq/sync-stage site/.stage site/roq
+python3 site/roq/sync_stage.py site/.stage site/roq
 
 cd site/roq
 roq generate

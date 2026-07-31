@@ -45,11 +45,17 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--workload",
-        choices=("inline", "reference", "titled-reference", "complex-reference"),
+        choices=(
+            "inline",
+            "reference",
+            "titled-reference",
+            "multi-reference",
+            "complex-reference",
+        ),
         default="inline",
         help=(
-            "Use plain inline links, plain or titled full-reference links, or "
-            "multiple references per line that retain the full Markdown parser "
+            "Use plain inline links, plain, titled, or multiple full-reference "
+            "links, or collapsed references that retain the full Markdown parser "
             "fallback (default: %(default)s)."
         ),
     )
@@ -61,7 +67,7 @@ def _workload(*, link_count: int, workload: str) -> str:
         return "".join(
             f"[link {index}](target-{index % 8}/)\n" for index in range(link_count)
         )
-    if workload == "complex-reference":
+    if workload == "multi-reference":
         references = "".join(
             f"[link {index}][target-{index % 8}] "
             f"[second {index}][target-{index % 8}]\n"
@@ -69,6 +75,10 @@ def _workload(*, link_count: int, workload: str) -> str:
         )
         if link_count % 2:
             references += f"[link {link_count - 1}][target-0]\n"
+    elif workload == "complex-reference":
+        references = "".join(
+            f"[target-{index % 8}][]\n" for index in range(link_count)
+        )
     else:
         references = "".join(
             f"[link {index}][target-{index % 8}]\n" for index in range(link_count)

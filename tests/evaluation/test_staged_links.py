@@ -362,12 +362,70 @@ Inline example: `<a href="missing/">Missing</a>`
                 ["guide/"],
             )
 
-    def test_complex_reference_syntax_keeps_the_general_markdown_parser(self) -> None:
+    def test_multiple_plain_full_references_match_general_parser_order(self) -> None:
+        text = (
+            "[Zed][z] [Alpha][a]\n"
+            "[Beta][b] [ordinary brackets]\n\n"
+            "[z]: z/\n"
+            "[a]: a/\n"
+            "[b]: b/\n"
+        )
+
+        with patch(
+            "buildish_site_pipeline.evaluation.link_references.Document",
+            side_effect=AssertionError(
+                "multiple plain full references should use the fast path"
+            ),
+        ):
+            references = extract_link_references(
+                source_path=Path("index.md"),
+                text=text,
+            )
+
+        self.assertEqual(
+            [reference.href for reference in references],
+            ["a/", "b/", "z/"],
+        )
+
+    def test_resolved_shortcut_references_keep_the_general_parser(self) -> None:
         cases = {
-            "multiple references on one line": (
-                "[First][target] [Second][target]\n\n[target]: guide/\n",
+            "same line": (
+                "[Full][target] [target]\n",
                 ["guide/", "guide/"],
             ),
+            "following line": (
+                "[Full][target]\n[target]\n",
+                ["guide/", "guide/"],
+            ),
+            "different target": (
+                "[Full][target]\n[other]\n",
+                ["guide/", "other/"],
+            ),
+        }
+
+        for name, (authored_links, expected_hrefs) in cases.items():
+            text = (
+                f"{authored_links}\n"
+                "[target]: guide/\n"
+                "[other]: other/\n"
+            )
+            with self.subTest(name=name), patch(
+                "buildish_site_pipeline.evaluation.link_references.Document",
+                wraps=MistletoeDocument,
+            ) as document:
+                references = extract_link_references(
+                    source_path=Path("index.md"),
+                    text=text,
+                )
+
+            document.assert_called_once_with(text)
+            self.assertEqual(
+                [reference.href for reference in references],
+                expected_hrefs,
+            )
+
+    def test_complex_reference_syntax_keeps_the_general_markdown_parser(self) -> None:
+        cases = {
             "escaped definition title": (
                 '[First][target]\n\n[target]: guide/ "Escaped \\" title"\n',
                 ["guide/"],

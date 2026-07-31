@@ -55,6 +55,9 @@ _REFERENCE_DEFINITION_PREFIX_PATTERN = re.compile(
 _FULL_REFERENCE_LINK_PATTERN = re.compile(
     r"(?<!!)\[(?P<text>[^\[\]\r\n]+)\]\[(?P<label>[^\[\]\r\n]+)\]"
 )
+_SHORTCUT_REFERENCE_LINK_PATTERN = re.compile(
+    r"(?<!!)\[(?P<label>[^\[\]\r\n]+)\]"
+)
 _MARKDOWN_BLOCK_PREFIX_PATTERN = re.compile(
     r"^ {0,3}(?:#{1,6}(?:[ \t]|$)|>|(?:[-+*]|\d{1,9}[.)])[ \t]+)"
 )
@@ -191,11 +194,12 @@ def _fast_full_reference_markdown_candidates(
 ) -> tuple[_LocatedHrefCandidate, ...] | None:
     """Return plain full-reference links without invoking Mistletoe.
 
-    This intentionally narrow path accepts one ``[text][label]`` occurrence per
-    source line and simple single-line ``[label]: target`` definitions, with
-    or without a quoted or parenthesized title. More expressive reference
-    syntax remains with Mistletoe so this optimization does not become a
-    second general-purpose Markdown parser.
+    This intentionally narrow path accepts one or more ``[text][label]``
+    occurrences per source line and simple single-line ``[label]: target``
+    definitions, with or without a quoted or parenthesized title. Resolved
+    shortcut references and more expressive reference syntax remain with
+    Mistletoe so this optimization does not become a second general-purpose
+    Markdown parser.
     """
 
     if any(marker in text for marker in ("`", "<", "\\", "&")):
@@ -260,26 +264,59 @@ def _fast_full_reference_markdown_candidates(
             return None
         if paragraph_offset is None:
             paragraph_offset = line_offset
-        marker_count = line.count("][")
-        if marker_count == 0:
+        matches = tuple(_FULL_REFERENCE_LINK_PATTERN.finditer(line))
+        if line.count("][") != len(matches) or _has_resolved_shortcut_reference(
+            line=line,
+            full_reference_matches=matches,
+            definitions=definitions,
+        ):
+            return None
+        if not matches:
             line_offset += len(line)
             continue
-        matches = tuple(_FULL_REFERENCE_LINK_PATTERN.finditer(line))
-        if marker_count != 1 or len(matches) != 1:
-            return None
         saw_full_reference = True
-        match = matches[0]
-        href = definitions.get(_normalize_reference_label(match.group("label")))
-        if href is not None:
-            candidates.append(
-                _LocatedHrefCandidate(
-                    href=href,
-                    offset=paragraph_offset,
-                    approximate_line_column=True,
+        for match in matches:
+            href = definitions.get(_normalize_reference_label(match.group("label")))
+            if href is not None:
+                candidates.append(
+                    _LocatedHrefCandidate(
+                        href=href,
+                        offset=paragraph_offset,
+                        approximate_line_column=True,
+                    )
                 )
-            )
         line_offset += len(line)
+    candidates.sort(key=lambda candidate: (candidate.offset, candidate.href))
     return tuple(candidates) if saw_full_reference else None
+
+
+def _has_resolved_shortcut_reference(
+    *,
+    line: str,
+    full_reference_matches: tuple[re.Match[str], ...],
+    definitions: dict[str, str],
+) -> bool:
+    """Detect shortcut links outside already-recognized full references."""
+
+    full_reference_index = 0
+    for shortcut_match in _SHORTCUT_REFERENCE_LINK_PATTERN.finditer(line):
+        while (
+            full_reference_index < len(full_reference_matches)
+            and full_reference_matches[full_reference_index].end()
+            <= shortcut_match.start()
+        ):
+            full_reference_index += 1
+        if full_reference_index < len(full_reference_matches):
+            full_reference_match = full_reference_matches[full_reference_index]
+            if (
+                full_reference_match.start() <= shortcut_match.start()
+                and shortcut_match.end() <= full_reference_match.end()
+            ):
+                continue
+        normalized_label = _normalize_reference_label(shortcut_match.group("label"))
+        if normalized_label in definitions:
+            return True
+    return False
 
 
 def _normalize_reference_label(label: str) -> str:

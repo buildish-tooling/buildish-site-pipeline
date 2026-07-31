@@ -80,7 +80,7 @@ def sanitize_public_diagnostics(
 def public_source_path(
     *, source_path: str | None, workspace_root: Path
 ) -> str | None:
-    """Return a repo-relative public source path or ``None`` for non-workspace sources."""
+    """Return a workspace-relative internal source path, or ``None`` if unsafe."""
 
     if source_path is None:
         return None

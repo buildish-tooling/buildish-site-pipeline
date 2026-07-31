@@ -718,7 +718,7 @@ Named repository or checkout binding reused by components and artifacts.
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
 | <a id="sourceconfig-localdir"></a>`localDir` | [RepoRelativePath](../pipeline-shared-types-reference/#reporelativepath) | yes | Workspace-relative checkout or source directory. |
-| <a id="sourceconfig-repository"></a>`repository` | [UrlString](../pipeline-shared-types-reference/#urlstring) | no | Optional remote repository URL associated with this source. |
+| <a id="sourceconfig-repository"></a>`repository` | [UrlString](../pipeline-shared-types-reference/#urlstring) | no | Optional remote repository URL whose repository root corresponds to this source root. |
 | <a id="sourceconfig-defaultbranch"></a>`defaultBranch` | [RefString](../pipeline-shared-types-reference/#refstring) | no | Optional default branch or ref for this source. |
 | <a id="sourceconfig-metadatafile"></a>`metadataFile` | [RepoRelativePath](../pipeline-shared-types-reference/#reporelativepath) | no | Optional override for the component metadata file inside this source tree. |
 

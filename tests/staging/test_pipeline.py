@@ -252,10 +252,20 @@ class StagingPipelineTests(unittest.TestCase):
         self.assertEqual(release_page.metadata["pipeline"]["page"]["kind"], "release-page")
         self.assertEqual(release_page.metadata["pipeline"]["page"]["provider"]["key"], "github")
         self.assertEqual(release_page.metadata["pipeline"]["page"]["version"]["kind"], "released")
+        self.assertEqual(
+            release_page.metadata["pipeline"]["page"]["source"],
+            {
+                "key": "runtime",
+                "path": "docs/releases/4.0.0/index.md",
+                "repository": "https://github.com/example/runtime",
+                "viewRef": "main",
+                "editRef": "main",
+            },
+        )
         self.assertEqual(release_entry["path"], "/spark/releases/4.0.0")
         self.assertEqual(
-            release_entry["sourcePath"],
-            "components/runtime/docs/releases/4.0.0/index.md",
+            release_entry["source"]["path"],
+            "docs/releases/4.0.0/index.md",
         )
         self.assertEqual(release_entry["provider"], "github")
         self.assertEqual(release_entry["versionKind"], "released")
@@ -299,7 +309,7 @@ class StagingPipelineTests(unittest.TestCase):
         self.assertEqual(development_route["path"], "/components/site-pipeline/development/")
         self.assertEqual(development_route["section"], "development")
         self.assertTrue(staged_development_exists)
-        self.assertEqual(development_entry["sourcePath"], "components/site-pipeline/docs/index.md")
+        self.assertEqual(development_entry["source"]["path"], "docs/index.md")
         self.assertEqual(development_entry["pageKind"], "development-page")
 
     def test_build_stages_component_owned_pages_and_assets_under_publication_paths(self) -> None:
@@ -335,7 +345,9 @@ class StagingPipelineTests(unittest.TestCase):
             component_route = next(
                 entry for entry in routes if entry["targetId"] == "component:spark"
             )
-            staged_component_page_exists = (stage_root / "content/products/spark/index.md").is_file()
+            staged_component_page_path = stage_root / "content/products/spark/index.md"
+            staged_component_page_exists = staged_component_page_path.is_file()
+            staged_component_page = frontmatter.load(staged_component_page_path)
             staged_component_asset_exists = (
                 stage_root / "static/products/spark/assets/logo.svg"
             ).is_file()
@@ -348,6 +360,16 @@ class StagingPipelineTests(unittest.TestCase):
         self.assertEqual(stderr.getvalue(), "")
         self.assertEqual(component_route["path"], "/products/spark/")
         self.assertTrue(staged_component_page_exists)
+        self.assertEqual(
+            staged_component_page.metadata["pipeline"]["page"]["source"],
+            {
+                "key": "runtime",
+                "path": "pages/index.md",
+                "repository": "https://github.com/example/runtime",
+                "viewRef": "main",
+                "editRef": "main",
+            },
+        )
         self.assertTrue(staged_component_asset_exists)
         self.assertFalse(legacy_component_page_exists)
         self.assertFalse(legacy_component_asset_exists)
@@ -361,7 +383,7 @@ class StagingPipelineTests(unittest.TestCase):
             stage_root = workspace_root / "site/.stage"
             routes = json.loads((stage_root / "data/routes.json").read_text(encoding="utf-8"))["items"]
             content_paths = {
-                entry["path"]: entry["sourcePath"]
+                entry["path"]: entry["source"]["path"]
                 for entry in json.loads(
                     (stage_root / "data/content-index.json").read_text(encoding="utf-8")
                 )["items"]
@@ -401,19 +423,19 @@ class StagingPipelineTests(unittest.TestCase):
         )
         self.assertEqual(
             content_paths["/spark/development/guide"],
-            "components/runtime/docs/runtime/guide/index.md",
+            "docs/runtime/guide/index.md",
         )
         self.assertEqual(
             content_paths["/spark/development/reference"],
-            "components/api/docs/reference/index.md",
+            "docs/reference/index.md",
         )
         self.assertEqual(
             content_paths["/spark/releases/4.0.0/guide"],
-            "components/runtime/docs/runtime/releases/4.0.0/guide/index.md",
+            "docs/runtime/releases/4.0.0/guide/index.md",
         )
         self.assertEqual(
             content_paths["/spark/releases/4.0.0/reference"],
-            "components/api/docs/releases/4.0.0/reference/index.md",
+            "docs/releases/4.0.0/reference/index.md",
         )
         self.assertTrue(staged_development_guide_exists)
         self.assertTrue(staged_development_reference_exists)

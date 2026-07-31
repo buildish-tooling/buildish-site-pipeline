@@ -20,16 +20,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-The current documentation set already has stronger structure than before, but it
-is still weighted toward implementation, architecture, and contract readers.
-This strategy defines how to turn that base into a user-facing site that quickly
-explains what the pipeline is, what it is not, and where each reader should go
-next.
+The documentation set now has distinct landing, getting-started, concepts,
+how-to, architecture, reference, and maintenance paths. This strategy records
+the durable reader journeys and content standards that should keep those paths
+coherent as the implementation grows.
 
 ## Buildish context
 
-Site Pipeline will become a component within the broader Buildish project.
-That means the docs must work at two levels:
+Site Pipeline is a component within the broader Buildish project. Its docs must
+work at two levels:
 
 - as a standalone documentation site for readers evaluating or adopting Site
   Pipeline directly
@@ -91,9 +90,9 @@ The documentation set should use these top-level reader-facing sections:
 - `architecture/` for deeper design and system-shape explanation
 - `maintenance/` for maintainer-only implementation guidance
 
-The missing layer today is `concepts/`. Without it, readers have to jump from
-brief onboarding pages into either how-to tasks or deep architecture/reference
-material too early.
+The `concepts/` layer now provides the bridge between onboarding and deeper
+architecture/reference material. New conceptual explanations should extend that
+layer instead of turning task guides into mixed tutorials and reference pages.
 
 ## Docs root requirements
 
@@ -114,8 +113,8 @@ architecture prose buried deeper in the site.
 
 ## Getting-started requirements
 
-The current size-band pages are a useful index, but they are still too abstract.
-Each getting-started guide should eventually include:
+The size-band pages route readers through progressively richer versions of the
+same publication model. Each getting-started guide should include:
 
 - what this size band looks like in practice
 - a small repo or content-layout example
@@ -173,19 +172,26 @@ Each richer example should extend the previous one instead of replacing it, so a
 reader can recognize the same component, mount paths, and stage outputs across
 multiple sections.
 
-## Rollout plan
+## Current structure and remaining work
 
-Deliver the user-facing site in phases:
+The current structure follows these rules:
 
-1. keep `site/pages/_index.md` focused on product definition and reader routing
-2. keep `site/pages/concepts/` as the plain-language mental-model layer
-3. expand the getting-started guides with real-looking examples and expected
-   outputs
-4. align how-to pages with the new concept pages and canonical examples
-5. review reference pages for better entry links and reader context
+1. `site/pages/_index.md` defines the product and routes reader intent.
+2. `getting-started/` introduces the workflow, first success, and adoption
+   paths.
+3. `concepts/` owns plain-language mental models and contract boundaries.
+4. `how-to/` indexes concrete tasks and labels unverified renderer integrations
+   as status pages.
+5. `architecture/` owns rationale, execution shape, and model-fit analysis.
+6. `docs/reference/` remains generated or hand-authored unreleased development
+   contract documentation until release publication exists.
 
-The current rollout should use the same `spark` tiny-site example across the
-landing page, concept pages, tiny guide, and staged-output inspection guide.
+Ongoing work should focus on tested examples, source provenance for useful
+view/edit links, platform-specific deployment adapter examples, and replacing
+renderer status pages only when checked-in integration fixtures exist.
+
+Keep the same `spark` example thread across the landing page, concept pages,
+getting-started guides, and staged-output inspection guide.
 
 ## Definition of success
 
@@ -199,9 +205,10 @@ The user-facing site is in good shape when a new reader can:
 
 ## Read next
 
-- [code-maintenance.md](../code-maintenance/) for durable maintainer guidance
-- [../architecture/architecture-overview.md](../../architecture/architecture-overview/)
-  for the current architectural explanation that the user-facing site should
-  gradually expose more accessibly
-- [api contract](../../development/reference/api-contract/) for the stable
-  command and output boundary that user-facing pages should point toward
+- [Code maintenance](../code-maintenance/) for durable maintainer guidance
+- [Architecture overview](../../architecture/architecture-overview/) for the
+  deeper system explanation behind the user-facing flow
+
+For the unreleased development command and output boundary:
+
+- [API contract](../../development/reference/api-contract/)

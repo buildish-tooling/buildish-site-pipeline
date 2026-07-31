@@ -53,6 +53,7 @@ from ..authored.site_catalog import ArtifactVersioningConfig, SupportWindow
 from ..provider.provider_snapshot import ProviderAsset
 from .staged_front_matter import (
     ArtifactFrontMatterSummary,
+    PageSourceProvenance,
     ReleaseLineSummary,
     ResolvedPublication,
     TranslationLinkSummary,
@@ -567,7 +568,10 @@ class ContentIndexEntry(SitePipelineBaseModel):
     weight: int | None = Field(default=None, strict=True, description="Optional ordering hint used by renderers for listings or navigation.", examples=[100])
     parent_id: NonEmptyString | None = Field(default=None, description="Identifier of the parent indexed page when the page belongs to a hierarchy.", examples=["spark-runtime-4.0.0-docs-root"])
     ancestor_ids: list[NonEmptyString] | None = Field(default=None, description="Ancestor page identifiers ordered from nearest to farthest.", examples=[["spark-runtime-4.0.0-docs-root", "spark-runtime-root"]])
-    source_path: RepoRelativePath | None = Field(default=None, description="Repository-relative source file path for the page when it is known.", examples=["docs/runtime/getting-started.md"])
+    source: PageSourceProvenance | None = Field(
+        default=None,
+        description="Repository-neutral provenance for the authored source file that produced this indexed page.",
+    )
     version_kind: RecordKind | None = Field(default=None, description="Version-context kind attached when the page belongs to a versioned route set.")
     version_label: NonEmptyString | None = Field(default=None, description="Human-readable version label attached to the page, if present.", examples=["4.0.0"])
     release_line: NonEmptyString | None = Field(default=None, description="Release-line key attached to the page, if present.", examples=["4.0"])

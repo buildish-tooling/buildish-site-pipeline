@@ -36,7 +36,9 @@ from ..scalars import (
     ProviderKey,
     PublicPath,
     RefString,
+    RepoRelativePath,
     Slug,
+    SourceKey,
     UrlString,
     VersionString,
 )
@@ -355,6 +357,34 @@ class ProviderProvenance(SitePipelineBaseModel):
     )
 
 
+class PageSourceProvenance(SitePipelineBaseModel):
+    """Repository-neutral pointer to the authored source file for one staged page."""
+
+    key: SourceKey = Field(
+        description="Resolved source-binding key that owns the authored page.",
+        examples=["runtime"],
+    )
+    path: RepoRelativePath = Field(
+        description="Source file path relative to the resolved source binding root.",
+        examples=["docs/getting-started.md"],
+    )
+    repository: UrlString | None = Field(
+        default=None,
+        description="Remote repository URL whose repository root corresponds to the resolved source binding root, when declared.",
+        examples=["https://github.com/buildish-tooling/buildish-site-pipeline"],
+    )
+    view_ref: RefString | None = Field(
+        default=None,
+        description="Source-control ref that renderers may use for a view-source link.",
+        examples=["main"],
+    )
+    edit_ref: RefString | None = Field(
+        default=None,
+        description="Source-control ref that renderers may use for an edit-source link.",
+        examples=["main"],
+    )
+
+
 class PipelinePageFrontMatter(SitePipelineBaseModel):
     """Page-local pipeline metadata injected into staged page front matter."""
 
@@ -429,6 +459,10 @@ class PipelinePageFrontMatter(SitePipelineBaseModel):
     provider: ProviderProvenance | None = Field(
         default=None,
         description="Pointer back to the upstream provider record that informed the page's version metadata."
+    )
+    source: PageSourceProvenance | None = Field(
+        default=None,
+        description="Repository-neutral provenance for the authored source file that produced this staged page.",
     )
 
     @model_validator(mode="after")

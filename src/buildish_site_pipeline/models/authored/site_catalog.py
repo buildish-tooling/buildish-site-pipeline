@@ -275,7 +275,7 @@ class SourceConfig(SitePipelineBaseModel):
     )
     repository: UrlString | None = Field(
         default=None,
-        description="Optional remote repository URL associated with this source.",
+        description="Optional remote repository URL whose repository root corresponds to this source root.",
     )
     default_branch: RefString | None = Field(
         default=None, description="Optional default branch or ref for this source."

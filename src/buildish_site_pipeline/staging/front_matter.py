@@ -591,6 +591,7 @@ def build_page_front_matter(
         if normalized_version_context is not None
         else None,
         provider=_provider_provenance(contribution),
+        source=contribution.source,
     )
 
 

@@ -104,6 +104,33 @@ class AggregateHelperTests(unittest.TestCase):
         payload.update(overrides)
         return StagedPageContributionWire(**payload)
 
+    @staticmethod
+    def _source_build_plan(workspace_root: Path) -> SimpleNamespace:
+        source_binding = SimpleNamespace(
+            key="runtime",
+            local_dir=workspace_root / "components/runtime",
+            repository="https://github.com/example/runtime",
+            default_branch="main",
+        )
+        return SimpleNamespace(
+            workspace_root=workspace_root,
+            site=SimpleNamespace(
+                sources={"runtime": source_binding},
+                components=(
+                    SimpleNamespace(
+                        slug="spark",
+                        content_source=source_binding,
+                        artifacts=(
+                            SimpleNamespace(
+                                key="runtime",
+                                source_binding=source_binding,
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        )
+
     def _provider_record(self, kind: RecordKind, **overrides) -> IndexedProviderRecord:
         payload = {
             "provider": "github",
@@ -430,7 +457,7 @@ class AggregateHelperTests(unittest.TestCase):
             source_path = workspace_root / "components/runtime/docs/guide.md"
             source_path.parent.mkdir(parents=True, exist_ok=True)
             source_path.write_text("guide\n", encoding="utf-8")
-            build_plan = SimpleNamespace(workspace_root=workspace_root)
+            build_plan = self._source_build_plan(workspace_root)
 
             entries = _build_content_index_entries(
                 build_plan=build_plan,
@@ -438,6 +465,13 @@ class AggregateHelperTests(unittest.TestCase):
                     self._contribution(
                         description="Install the runtime guide.",
                         source_path=str(source_path),
+                        source={
+                            "key": "runtime",
+                            "path": "docs/guide.md",
+                            "repository": "https://github.com/example/runtime",
+                            "viewRef": "main",
+                            "editRef": "main",
+                        },
                         version_context={
                             "provider": {
                                 "key": "github",
@@ -451,7 +485,8 @@ class AggregateHelperTests(unittest.TestCase):
                 ),
             )
 
-        self.assertEqual(entries[0].source_path, "components/runtime/docs/guide.md")
+        self.assertEqual(entries[0].source.path, "docs/guide.md")
+        self.assertEqual(entries[0].source.repository, "https://github.com/example/runtime")
         self.assertEqual(entries[0].description, "Install the runtime guide.")
         self.assertEqual((entries[0].provider, entries[0].external_id), ("github", "123"))
         self.assertEqual(entries[0].version_kind, RecordKind.RELEASED)
@@ -552,6 +587,7 @@ class AggregateHelperTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tempdir:
             workspace_root = Path(tempdir)
             layout = _work_layout(workspace_root)
+            build_plan = self._source_build_plan(workspace_root)
             absolute_stage_path = layout.next_stage_root / "content/spark/guide.md"
             absolute_stage_path.parent.mkdir(parents=True, exist_ok=True)
             manifest_path = layout.fragments_root / "component_spark.json"
@@ -572,7 +608,7 @@ class AggregateHelperTests(unittest.TestCase):
 
             manifests = _load_unit_contribution_manifests(
                 layout=layout,
-                workspace_root=workspace_root,
+                build_plan=build_plan,
                 worker_results=(
                     WorkerResultWire(
                         unit_id="component:spark",
@@ -586,6 +622,11 @@ class AggregateHelperTests(unittest.TestCase):
                         pages=(
                             self._contribution(
                                 source_path="/outside/generated/guide.md",
+                                source={
+                                    "key": "untrusted",
+                                    "path": "private.md",
+                                    "repository": "https://example.invalid/untrusted",
+                                },
                             ),
                         ),
                     ),
@@ -594,6 +635,7 @@ class AggregateHelperTests(unittest.TestCase):
 
             self.assertEqual(manifests[0].unit_id, "retained")
             self.assertIsNone(manifests[0].pages[0].source_path)
+            self.assertIsNone(manifests[0].pages[0].source)
             self.assertEqual(
                 manifests[1].pages[0].stage_relative_path,
                 "content/spark/guide.md",
@@ -602,13 +644,16 @@ class AggregateHelperTests(unittest.TestCase):
                 manifests[1].pages[0].source_path,
                 "components/runtime/docs/guide.md",
             )
+            self.assertEqual(manifests[1].pages[0].source.path, "docs/guide.md")
+            self.assertEqual(manifests[1].pages[0].source.view_ref, "main")
             relative = self._contribution(stage_relative_path="content/spark/guide.md")
             normalized = _normalize_page_contribution(
                 layout=layout,
-                workspace_root=workspace_root,
+                build_plan=build_plan,
                 contribution=relative,
             )
-            self.assertEqual(normalized, relative)
+            self.assertEqual(normalized.source_path, relative.source_path)
+            self.assertEqual(normalized.source.path, "docs/guide.md")
 
             manifest_path.unlink()
             manifest_path.mkdir()
@@ -620,6 +665,70 @@ class AggregateHelperTests(unittest.TestCase):
                         contribution_files=ContributionFileRefs(unit_manifest=str(manifest_path)),
                     ),
                 )
+
+    def test_source_provenance_overwrites_untrusted_retained_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            build_plan = self._source_build_plan(workspace_root)
+            normalized = _normalize_page_contribution(
+                layout=_work_layout(workspace_root),
+                build_plan=build_plan,
+                contribution=self._contribution(
+                    source={
+                        "key": "stale",
+                        "path": "old/guide.md",
+                        "repository": "https://example.invalid/stale",
+                        "viewRef": "old",
+                        "editRef": "old",
+                    },
+                ),
+            )
+
+            self.assertEqual(
+                normalized.source.model_dump(by_alias=True, exclude_none=True),
+                {
+                    "key": "runtime",
+                    "path": "docs/guide.md",
+                    "repository": "https://github.com/example/runtime",
+                    "viewRef": "main",
+                    "editRef": "main",
+                },
+            )
+
+    def test_source_provenance_handles_local_only_and_shorthand_bindings(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            build_plan = self._source_build_plan(workspace_root)
+            source_binding = build_plan.site.sources["runtime"]
+            source_binding.repository = None
+            source_binding.default_branch = None
+            normalized = _normalize_page_contribution(
+                layout=_work_layout(workspace_root),
+                build_plan=build_plan,
+                contribution=self._contribution(),
+            )
+
+            self.assertEqual(normalized.source.key, "runtime")
+            self.assertEqual(normalized.source.path, "docs/guide.md")
+            self.assertIsNone(normalized.source.repository)
+            self.assertIsNone(normalized.source.view_ref)
+            self.assertIsNone(normalized.source.edit_ref)
+
+            shorthand_binding = SimpleNamespace(
+                key="component:spark",
+                local_dir=workspace_root / "components/runtime",
+                repository=None,
+                default_branch=None,
+            )
+            build_plan.site.sources = {}
+            build_plan.site.components[0].content_source = shorthand_binding
+            normalized_shorthand = _normalize_page_contribution(
+                layout=_work_layout(workspace_root),
+                build_plan=build_plan,
+                contribution=self._contribution(artifact_key=None),
+            )
+
+            self.assertIsNone(normalized_shorthand.source)
 
 
 class _ModelDumpOnly:

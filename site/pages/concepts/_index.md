@@ -26,16 +26,18 @@ adapters can consume safely.
 
 ## Start here
 
-- [tiny-site-shape.md](tiny-site-shape/) for the first concrete repository and
+- [Tiny site shape](tiny-site-shape/) for the first concrete repository and
   catalog shape
-- [staged-output-and-consumers.md](staged-output-and-consumers/) for the
+- [Pipeline-enhanced front matter](pipeline-enhanced-front-matter/) for the
+  boundary between authored metadata and pipeline-owned publication context
+- [Staged output and consumers](staged-output-and-consumers/) for the
   manifest, staged front matter, and aggregate-data boundary
 
 ## Read next
 
-- [../getting-started/tiny.md](../getting-started/tiny/) for the smallest
+- [Tiny getting started](../getting-started/tiny/) for the smallest
   supported onboarding path
-- [../how-to/create-a-tiny-site.md](../how-to/create-a-tiny-site/) for the
+- [Create a tiny site](../how-to/create-a-tiny-site/) for the
   first copy-pasteable setup
-- [staged output contract](../development/reference/staged-output-contract/)
-  for the durable downstream contract
+- [Unreleased development staged-output contract](../development/reference/staged-output-contract/)
+  for the detailed downstream contract

@@ -1,6 +1,91 @@
 {
   "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
   "$defs": {
+    "PageSourceProvenance": {
+      "additionalProperties": false,
+      "description": "Repository-neutral pointer to the authored source file for one staged page.",
+      "properties": {
+        "editRef": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Source-control ref that renderers may use for an edit-source link.",
+          "examples": [
+            "main"
+          ],
+          "title": "Editref"
+        },
+        "key": {
+          "description": "Resolved source-binding key that owns the authored page.",
+          "examples": [
+            "runtime"
+          ],
+          "minLength": 1,
+          "title": "Key",
+          "type": "string"
+        },
+        "path": {
+          "description": "Source file path relative to the resolved source binding root.",
+          "examples": [
+            "docs/getting-started.md"
+          ],
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "repository": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Remote repository URL whose repository root corresponds to the resolved source binding root, when declared.",
+          "examples": [
+            "https://github.com/buildish-tooling/buildish-site-pipeline"
+          ],
+          "title": "Repository"
+        },
+        "viewRef": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Source-control ref that renderers may use for a view-source link.",
+          "examples": [
+            "main"
+          ],
+          "title": "Viewref"
+        }
+      },
+      "required": [
+        "key",
+        "path"
+      ],
+      "title": "PageSourceProvenance",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    },
     "StagedPageContributionWire": {
       "additionalProperties": false,
       "description": "Metadata emitted by one page-staging worker for later aggregation.",
@@ -188,6 +273,18 @@
           "title": "Section",
           "type": "string"
         },
+        "source": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PageSourceProvenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Coordinator-derived repository provenance for the authored source file. Worker-supplied and retained values are overwritten during normalization."
+        },
         "sourcePath": {
           "anyOf": [
             {
@@ -198,9 +295,9 @@
             }
           ],
           "default": null,
-          "description": "Source file path that produced the staged page. Private worker fragments may use an absolute path; the coordinator rewrites workspace sources to repository-relative form and omits other sources before retaining this metadata in the stage.",
+          "description": "Source file path that produced the staged page. Private worker fragments may use an absolute path; the coordinator rewrites workspace sources to workspace-relative form and omits other sources before retaining this internal metadata in the stage.",
           "examples": [
-            "docs/runtime/getting-started.md"
+            "components/runtime/docs/getting-started.md"
           ],
           "title": "Sourcepath"
         },
@@ -367,7 +464,14 @@
               "pageKind": "docsPage",
               "publicPath": "/spark/4.0.0/docs/getting-started/",
               "section": "documentation",
-              "sourcePath": "docs/runtime/getting-started.md",
+              "source": {
+                "editRef": "main",
+                "key": "runtime",
+                "path": "docs/getting-started.md",
+                "repository": "https://github.com/apache/spark",
+                "viewRef": "main"
+              },
+              "sourcePath": "components/runtime/docs/getting-started.md",
               "stageRelativePath": "content/spark/4.0.0/docs/getting-started/index.md",
               "title": "Getting Started",
               "version": "4.0.0",

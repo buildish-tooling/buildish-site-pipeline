@@ -75,6 +75,91 @@
         "ownership": "pipeline-derived"
       }
     },
+    "PageSourceProvenance": {
+      "additionalProperties": false,
+      "description": "Repository-neutral pointer to the authored source file for one staged page.",
+      "properties": {
+        "editRef": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Source-control ref that renderers may use for an edit-source link.",
+          "examples": [
+            "main"
+          ],
+          "title": "Editref"
+        },
+        "key": {
+          "description": "Resolved source-binding key that owns the authored page.",
+          "examples": [
+            "runtime"
+          ],
+          "minLength": 1,
+          "title": "Key",
+          "type": "string"
+        },
+        "path": {
+          "description": "Source file path relative to the resolved source binding root.",
+          "examples": [
+            "docs/getting-started.md"
+          ],
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "repository": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Remote repository URL whose repository root corresponds to the resolved source binding root, when declared.",
+          "examples": [
+            "https://github.com/buildish-tooling/buildish-site-pipeline"
+          ],
+          "title": "Repository"
+        },
+        "viewRef": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Source-control ref that renderers may use for a view-source link.",
+          "examples": [
+            "main"
+          ],
+          "title": "Viewref"
+        }
+      },
+      "required": [
+        "key",
+        "path"
+      ],
+      "title": "PageSourceProvenance",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    },
     "PipelineComponentFrontMatter": {
       "additionalProperties": false,
       "description": "Component-level pipeline metadata injected into staged page front matter.",
@@ -331,6 +416,18 @@
             "documentation"
           ],
           "title": "Section"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PageSourceProvenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Repository-neutral provenance for the authored source file that produced this staged page."
         },
         "translationKey": {
           "anyOf": [
@@ -1307,6 +1404,13 @@
         "kind": "docsPage",
         "path": "/spark/4.0.0/docs/getting-started/",
         "section": "documentation",
+        "source": {
+          "editRef": "main",
+          "key": "runtime",
+          "path": "docs/getting-started.md",
+          "repository": "https://github.com/apache/spark",
+          "viewRef": "main"
+        },
         "url": "https://archive.apache.org/dist/spark/4.0.0/docs/getting-started/",
         "version": {
           "kind": "released",

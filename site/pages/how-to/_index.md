@@ -20,18 +20,31 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-Start with [../getting-started/](../getting-started/) if you first need help
-deciding which publication shape best matches your site.
+Start with [Getting Started](../getting-started/) if you first need the core
+workflow or help choosing a publication shape.
 
 If you need the mental model and concrete example shapes before following a
-procedure, read [../concepts/](../concepts/) first.
+procedure, read [Concepts](../concepts/) first.
 
-## Authoring and editor guides
+## Build and inspect a first site
 
-Use these guides when you want faster feedback while editing catalogs and
-component metadata or when you need the generated file-contract schemas:
+- [Create a tiny site](create-a-tiny-site/) from one catalog and one authored
+  page.
+- [Inspect staged output and routes](inspect-staged-output-and-routes/) after a
+  successful build.
 
-- [use JSON Schema for Site Pipeline file contracts](use-json-schema-for-yaml-authoring/)
+## Model publication and growth
+
+- [Model versioning and redirects](model-versioning-and-redirects/) when public
+  routes must remain stable across releases.
+- [Plan publication and materialization](plan-publication-and-materialization/)
+  when staging depends on selected versions or imported inputs.
+- [Organize grouped components and publication policy](organize-grouped-components-and-publication-policy/)
+  when several components share public policy.
+- [Integrate provider, compatibility, and translation data](integrate-provider-compatibility-and-translation-data/)
+  for larger publication ecosystems.
+- [Scale Site Pipeline operations](scale-site-pipeline-operations/) when source,
+  route, or deployment inventories need explicit operational boundaries.
 
 ## Renderer integration guides
 
@@ -44,3 +57,15 @@ wire it into a concrete renderer workflow:
   a turnkey recipe
 - [MkDocs integration](integrate-with-mkdocs/) — planned-guide status page, not
   a turnkey recipe
+
+## Deployment adapter guides
+
+- [Create HTTP server configuration from staged metadata](http-server-config-how-to/)
+  while keeping target-specific syntax downstream of the pipeline contract.
+
+## Authoring and editor guides
+
+Use these guides when you want faster feedback while editing catalogs and
+component metadata or when you need the generated file-contract schemas:
+
+- [Use JSON Schema for Site Pipeline file contracts](use-json-schema-for-yaml-authoring/)

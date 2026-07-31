@@ -16,20 +16,50 @@
 
 from __future__ import annotations
 
+import json
 import re
 import shlex
 import unittest
 from pathlib import Path
 
+import yaml
+
 from buildish_site_pipeline.cli import parse_invocation
 from buildish_site_pipeline.cli.contract import WatchEventFormat, WatchInvocation
 from buildish_site_pipeline.docs.schema_export import schema_exports
+from buildish_site_pipeline.models import (
+    ContentIndexEntry,
+    PipelineFrontMatterNamespace,
+)
 
 
 _SCHEMA_GUIDE = Path("site/pages/how-to/use-json-schema-for-yaml-authoring.md")
 _HUGO_GUIDE = Path("site/pages/how-to/integrate-with-hugo.md")
+_ENHANCED_FRONT_MATTER_CONCEPT = Path(
+    "site/pages/concepts/pipeline-enhanced-front-matter.md"
+)
+_STAGED_OUTPUT_CONCEPT = Path("site/pages/concepts/staged-output-and-consumers.md")
+_STATIC_PROVENANCE_DOCS = (
+    Path("site/pages/concepts/_index.md"),
+    _ENHANCED_FRONT_MATTER_CONCEPT,
+    _STAGED_OUTPUT_CONCEPT,
+    Path("site/pages/how-to/inspect-staged-output-and-routes.md"),
+    _SCHEMA_GUIDE,
+)
 _SCHEMA_BASE_URL = "https://buildish.org/components/site-pipeline/schemas/"
 _SCHEMA_FILENAME_PATTERN = re.compile(r"([a-z0-9-]+-v[0-9]+\.schema\.json)")
+
+
+def _marked_code_block(path: Path, marker: str, language: str) -> str:
+    text = path.read_text(encoding="utf-8")
+    match = re.search(
+        rf"<!-- test:{re.escape(marker)} -->\s*```{language}\n(.*?)\n```",
+        text,
+        flags=re.DOTALL,
+    )
+    if match is None:
+        raise AssertionError(f"Missing {marker!r} {language} example in {path}")
+    return match.group(1)
 
 
 class DocumentationContractTests(unittest.TestCase):
@@ -73,6 +103,81 @@ class DocumentationContractTests(unittest.TestCase):
         self.assertNotIn("://", hint)
         self.assertEqual(resolved_hint.name, component_export.filename)
         self.assertTrue(resolved_hint.is_file())
+
+    def test_documented_yaml_modelines_are_comments_relative_to_authored_files(self) -> None:
+        examples = {
+            "schema-catalog": (
+                Path("/workspace/buildish-site/site/catalog.yaml"),
+                Path("/workspace/buildish-site/site/schemas/catalog-v1.schema.json"),
+            ),
+            "schema-component": (
+                Path("/workspace/components/runtime/site/component.yaml"),
+                Path(
+                    "/workspace/components/runtime/site/schemas/"
+                    "component-v1.schema.json"
+                ),
+            ),
+        }
+
+        for marker, (authored_file, expected_schema) in examples.items():
+            with self.subTest(marker=marker):
+                example = _marked_code_block(_SCHEMA_GUIDE, marker, "yaml")
+                first_line = example.splitlines()[0]
+                hint = first_line.removeprefix(
+                    "# yaml-language-server: $schema="
+                )
+                parsed_document = yaml.safe_load(example)
+
+                self.assertNotEqual(hint, first_line)
+                self.assertNotIn("$schema", parsed_document)
+                self.assertEqual(authored_file.parent / hint, expected_schema)
+
+    def test_enhanced_front_matter_example_matches_emitted_contract(self) -> None:
+        example = yaml.safe_load(
+            _marked_code_block(
+                _ENHANCED_FRONT_MATTER_CONCEPT,
+                "enhanced-front-matter",
+                "yaml",
+            )
+        )
+        namespace = PipelineFrontMatterNamespace.model_validate(
+            example["pipeline"],
+            by_alias=True,
+            by_name=False,
+        )
+
+        self.assertEqual(example["title"], "Install the runtime")
+        self.assertEqual(namespace.page.source.key, "runtime")
+        self.assertEqual(
+            namespace.page.source.path,
+            "docs/releases/4.0.0/getting-started.md",
+        )
+
+    def test_content_index_example_matches_emitted_contract(self) -> None:
+        example = json.loads(
+            _marked_code_block(
+                _STAGED_OUTPUT_CONCEPT,
+                "content-index-entry",
+                "json",
+            )
+        )
+        entry = ContentIndexEntry.model_validate(
+            example,
+            by_alias=True,
+            by_name=False,
+        )
+
+        self.assertEqual(entry.source.key, "runtime")
+        self.assertEqual(entry.source.path, "docs/releases/4.0.0/index.md")
+
+    def test_provenance_docs_use_current_shape_and_label_development_links(self) -> None:
+        for path in _STATIC_PROVENANCE_DOCS:
+            with self.subTest(path=path):
+                text = path.read_text(encoding="utf-8")
+                self.assertNotIn('"sourcePath"', text)
+                for label, target in re.findall(r"\[([^]]+)]\(([^)]+)\)", text):
+                    if "/development/" in target:
+                        self.assertIn("unreleased development", label.lower())
 
     def test_documented_hugo_watch_command_is_a_valid_cli_invocation(self) -> None:
         guide_text = _HUGO_GUIDE.read_text(encoding="utf-8")

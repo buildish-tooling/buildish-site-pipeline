@@ -91,6 +91,37 @@ namespace. In practice that means:
 
 Collisions with the reserved namespace are validation errors.
 
+The staged document therefore has two owners. Fields outside `pipeline`, such
+as `title`, `description`, or renderer-specific navigation settings, remain the
+author's data. The coordinator derives `pipeline` fields for each stage and
+overwrites coordinator-owned values when retained incremental metadata is
+normalized. Consumers may rely on the typed staged values; authors must not
+copy them into source pages.
+
+`pipeline.component` provides component-wide identity, resolved publication
+roots, and compact artifact or release summaries. `pipeline.page` provides the
+current page's normalized route and kind, optional localization and translation
+links, version and provider context, and optional source provenance. This lets
+renderers build navigation, version selectors, canonical links, localization
+controls, status badges, and source links without reconstructing the build
+plan.
+
+When `pipeline.page.source` is present:
+
+- `key` identifies the resolved named source binding
+- `path` is relative to that binding's root, not to the workspace or stage root
+- `repository` is the optional remote repository declared by the binding
+- `viewRef` and `editRef` are optional refs derived from the binding's declared
+  default branch
+
+Local-only named sources may provide only `key` and `path`. Pages from synthetic
+component shorthand or sources outside the resolved binding omit public source
+provenance. Consumers construct provider-specific view/edit URLs from the
+structured fields and must not infer a GitHub URL shape for every repository.
+When `repository` is configured, the source binding root must correspond to the
+repository root; the contract does not carry a separate path prefix for a
+binding rooted inside a larger repository.
+
 ## `manifest.json`
 
 `manifest.json` is the authoritative entry point for the staged output contract.
@@ -137,10 +168,35 @@ The broader aggregate set may also include:
 
 The manifest records which of those files are present for a given stage root.
 
-When `data/content-index.json` includes `sourcePath`, that path must be a
-repo-relative authored source path. Generated or imported staged content that has
-no workspace-authored source file should omit `sourcePath` instead of exposing a
+When a `data/content-index.json` entry includes `source`, it uses the same
+structured source-provenance object as `pipeline.page.source`. Its `path` is
+relative to the named source binding, and repository/ref fields are optional.
+Generated, imported, shorthand-local, or out-of-binding staged content that has
+no safe public provenance omits `source` instead of exposing a workspace or
 machine-local path.
+
+For example:
+
+```json
+{
+  "id": "spark-runtime-4.0.0-index",
+  "componentSlug": "spark",
+  "artifactKey": "runtime",
+  "pageKind": "release-page",
+  "originKey": "docs",
+  "path": "/spark/releases/4.0.0",
+  "url": "https://docs.example.org/spark/releases/4.0.0/",
+  "source": {
+    "key": "runtime",
+    "path": "docs/releases/4.0.0/index.md",
+    "repository": "https://github.com/example/runtime",
+    "viewRef": "main",
+    "editRef": "main"
+  },
+  "versionKind": "released",
+  "versionLabel": "4.0.0"
+}
+```
 
 For route and redirect consumers, the key distinction is:
 
@@ -234,6 +290,9 @@ The typed definitions for this contract live in:
    - `StageRoots`
    - `StageDataFiles`
    - `PipelineDiagnosticEntry`
+- [pipeline-staged-front-matter-reference.md](../pipeline-staged-front-matter-reference/)
+  for the complete `pipeline.component`, `pipeline.page`, and source-provenance
+  field contracts
 
 ## Read next
 

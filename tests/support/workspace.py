@@ -76,6 +76,8 @@ origins:
 sources:
   runtime:
     localDir: components/runtime
+    repository: https://github.com/example/runtime
+    defaultBranch: main
 components:
   - slug: spark
     weight: 100

@@ -304,6 +304,13 @@ def front_matter_namespace_example_document() -> object:
                 "componentPath": "/spark/",
                 "componentUrl": "https://archive.apache.org/dist/spark/",
                 "version": {"kind": "released", "label": "4.0.0", "tag": "v4.0.0"},
+                "source": {
+                    "key": "runtime",
+                    "path": "docs/getting-started.md",
+                    "repository": "https://github.com/apache/spark",
+                    "viewRef": "main",
+                    "editRef": "main",
+                },
             },
         }
     )
@@ -335,7 +342,14 @@ def unit_contributions_example_document() -> object:
                             "versionKind": "released",
                             "version": "4.0.0",
                             "title": "Getting Started",
-                            "sourcePath": "docs/runtime/getting-started.md",
+                            "sourcePath": "components/runtime/docs/getting-started.md",
+                            "source": {
+                                "key": "runtime",
+                                "path": "docs/getting-started.md",
+                                "repository": "https://github.com/apache/spark",
+                                "viewRef": "main",
+                                "editRef": "main",
+                            },
                         }
                     ],
                 }

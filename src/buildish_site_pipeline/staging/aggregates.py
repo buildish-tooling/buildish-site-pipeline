@@ -74,6 +74,7 @@ from buildish_site_pipeline.models.provider.provider_snapshot import (
     ProviderSnapshotDocumentV1,
 )
 from buildish_site_pipeline.models.emitted.staged_front_matter import (
+    PageSourceProvenance,
     PipelineComponentFrontMatter,
     TranslationLinkSummary,
 )
@@ -85,6 +86,7 @@ from buildish_site_pipeline.planning.types import (
     ResolvedPublicationPolicy,
     SelectedVersionContext,
 )
+from buildish_site_pipeline.source_roots import ResolvedSourceBinding
 
 from .file_writes import write_utf8_text_file
 from .front_matter import (
@@ -125,7 +127,7 @@ def finalize_pages_and_write_aggregates(
 
     unit_contribution_manifests = _load_unit_contribution_manifests(
         layout=layout,
-        workspace_root=build_plan.workspace_root,
+        build_plan=build_plan,
         worker_results=worker_results,
         retained_unit_manifests=retained_unit_manifests,
     )
@@ -467,7 +469,8 @@ def _build_artifacts_entries(
                         _ref_entry(component, context) for context in named_refs
                     ]
                     or None,
-                    support_status_vocabulary=artifact.support_status_vocabulary or None,
+                    support_status_vocabulary=artifact.support_status_vocabulary
+                    or None,
                     support_policy_url=artifact.lifecycle.support_policy_url
                     if artifact.lifecycle is not None
                     else None,
@@ -745,7 +748,9 @@ def _required_origin(
     try:
         return origins_by_key[origin_key]
     except KeyError as exc:
-        raise StageIntegrityError(f"Unknown publication origin referenced by redirect: {origin_key}") from exc
+        raise StageIntegrityError(
+            f"Unknown publication origin referenced by redirect: {origin_key}"
+        ) from exc
 
 
 def _build_provider_entries(
@@ -943,7 +948,6 @@ def _build_content_index_entries(
     build_plan: EffectiveBuildPlan,
     page_contributions: tuple[StagedPageContributionWire, ...],
 ) -> list[ContentIndexEntry]:
-    workspace_root = build_plan.workspace_root.resolve(strict=False)
     entries = []
     for contribution in page_contributions:
         page_url = contribution.public_url or contribution.canonical_url
@@ -967,9 +971,7 @@ def _build_content_index_entries(
                 path=contribution.public_path,
                 url=page_url,
                 canonical_url=contribution.canonical_url,
-                source_path=public_source_path(
-                    source_path=contribution.source_path, workspace_root=workspace_root
-                ),
+                source=contribution.source,
                 origin_key=contribution.origin_key,
                 provider=(
                     provider_context.get("key")
@@ -1223,16 +1225,18 @@ def _parse_timestamp(value: datetime | str | None) -> datetime | None:
 def _load_unit_contribution_manifests(
     *,
     layout: WorkRootLayout,
-    workspace_root: Path,
+    build_plan: EffectiveBuildPlan,
     worker_results: tuple[WorkerResultWire, ...],
     retained_unit_manifests: tuple[UnitContributionManifestWire, ...],
 ) -> tuple[UnitContributionManifestWire, ...]:
     manifests: list[UnitContributionManifestWire] = []
     seen_unit_ids: set[str] = set()
+    source_bindings = _page_source_binding_index(build_plan)
     for manifest in retained_unit_manifests:
         normalized_manifest = _normalize_unit_manifest(
             layout=layout,
-            workspace_root=workspace_root,
+            build_plan=build_plan,
+            source_bindings=source_bindings,
             manifest=manifest,
         )
         _register_loaded_unit_manifest(
@@ -1248,7 +1252,8 @@ def _load_unit_contribution_manifests(
         _validate_manifest_matches_worker_result(result=result, manifest=manifest)
         normalized_manifest = _normalize_unit_manifest(
             layout=layout,
-            workspace_root=workspace_root,
+            build_plan=build_plan,
+            source_bindings=source_bindings,
             manifest=manifest,
         )
         _register_loaded_unit_manifest(
@@ -1262,7 +1267,8 @@ def _load_unit_contribution_manifests(
 def _normalize_unit_manifest(
     *,
     layout: WorkRootLayout,
-    workspace_root: Path,
+    build_plan: EffectiveBuildPlan,
+    source_bindings: Mapping[tuple[str, str | None], ResolvedSourceBinding],
     manifest: UnitContributionManifestWire,
 ) -> UnitContributionManifestWire:
     """Normalize private worker paths before retaining metadata in the stage."""
@@ -1272,7 +1278,8 @@ def _normalize_unit_manifest(
             "pages": tuple(
                 _normalize_page_contribution(
                     layout=layout,
-                    workspace_root=workspace_root,
+                    build_plan=build_plan,
+                    source_bindings=source_bindings,
                     contribution=contribution,
                 )
                 for contribution in manifest.pages
@@ -1304,7 +1311,9 @@ def _register_loaded_unit_manifest(
 def _normalize_page_contribution(
     *,
     layout: WorkRootLayout,
-    workspace_root: Path,
+    build_plan: EffectiveBuildPlan,
+    source_bindings: Mapping[tuple[str, str | None], ResolvedSourceBinding]
+    | None = None,
     contribution: StagedPageContributionWire,
 ) -> StagedPageContributionWire:
     stage_relative_path = contribution.stage_relative_path
@@ -1312,15 +1321,134 @@ def _normalize_page_contribution(
         stage_relative_path = str(
             Path(stage_relative_path).relative_to(layout.next_stage_root)
         )
+    normalized_source_path = public_source_path(
+        source_path=contribution.source_path,
+        workspace_root=build_plan.workspace_root,
+    )
     return contribution.model_copy(
         update={
             "stage_relative_path": stage_relative_path,
-            "source_path": public_source_path(
-                source_path=contribution.source_path,
-                workspace_root=workspace_root,
+            "source_path": normalized_source_path,
+            "source": _page_source_provenance(
+                build_plan=build_plan,
+                source_bindings=(
+                    source_bindings
+                    if source_bindings is not None
+                    else _page_source_binding_index(build_plan)
+                ),
+                contribution=contribution,
             ),
         },
     )
+
+
+def _page_source_provenance(
+    *,
+    build_plan: EffectiveBuildPlan,
+    source_bindings: Mapping[tuple[str, str | None], ResolvedSourceBinding],
+    contribution: StagedPageContributionWire,
+) -> PageSourceProvenance | None:
+    """Derive public page provenance from the trusted build plan and worker path."""
+
+    source_path = contribution.source_path
+    if source_path is None:
+        return None
+    source_binding = _source_binding_for_page(
+        build_plan=build_plan,
+        source_bindings=source_bindings,
+        contribution=contribution,
+    )
+    if source_binding.key not in build_plan.site.sources:
+        return None
+    raw_source_path = Path(source_path)
+    candidate_path = (
+        raw_source_path
+        if raw_source_path.is_absolute()
+        else build_plan.workspace_root / raw_source_path
+    )
+    normalized_binding_root = source_binding.local_dir.resolve(strict=False)
+    normalized_source_path = candidate_path.resolve(strict=False)
+    if not normalized_source_path.is_relative_to(normalized_binding_root):
+        return None
+
+    try:
+        binding_relative_path = candidate_path.relative_to(
+            normalized_binding_root
+        ).as_posix()
+    except ValueError:
+        return None
+    if binding_relative_path in {"", "."} or ".." in Path(binding_relative_path).parts:
+        return None
+
+    return PageSourceProvenance(
+        key=source_binding.key,
+        path=binding_relative_path,
+        repository=source_binding.repository,
+        view_ref=source_binding.default_branch,
+        edit_ref=source_binding.default_branch,
+    )
+
+
+def _source_binding_for_page(
+    *,
+    build_plan: EffectiveBuildPlan,
+    source_bindings: Mapping[tuple[str, str | None], ResolvedSourceBinding],
+    contribution: StagedPageContributionWire,
+) -> ResolvedSourceBinding:
+    source_binding = source_bindings.get(
+        (contribution.component_slug, contribution.artifact_key)
+    )
+    if source_binding is not None:
+        return source_binding
+
+    component = next(
+        (
+            candidate
+            for candidate in build_plan.site.components
+            if candidate.slug == contribution.component_slug
+        ),
+        None,
+    )
+    if component is None:
+        raise StageIntegrityError(
+            "Staged page contribution references an unknown component: "
+            f"{contribution.component_slug}"
+        )
+    if contribution.artifact_key is None:
+        if component.content_source is None:
+            raise StageIntegrityError(
+                "Staged page contribution has no resolved component source binding: "
+                f"{contribution.component_slug}"
+            )
+        return component.content_source
+    artifact = next(
+        (
+            candidate
+            for candidate in component.artifacts
+            if candidate.key == contribution.artifact_key
+        ),
+        None,
+    )
+    if artifact is None:
+        raise StageIntegrityError(
+            "Staged page contribution references an unknown artifact: "
+            f"{contribution.component_slug}/{contribution.artifact_key}"
+        )
+    return artifact.source_binding
+
+
+def _page_source_binding_index(
+    build_plan: EffectiveBuildPlan,
+) -> dict[tuple[str, str | None], ResolvedSourceBinding]:
+    """Index page-owning bindings once for constant-time contribution lookup."""
+
+    source_bindings: dict[tuple[str, str | None], ResolvedSourceBinding] = {}
+    for component in build_plan.site.components:
+        if component.content_source is not None:
+            source_bindings[(component.slug, None)] = component.content_source
+        for artifact in component.artifacts:
+            source_bindings[(component.slug, artifact.key)] = artifact.source_binding
+    return source_bindings
 
 
 def _validated_unit_manifest_path(

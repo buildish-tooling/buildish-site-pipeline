@@ -1,6 +1,6 @@
 ---
 title: "How to create HTTP server config from staged metadata"
-description: "This document explains how a deployment adapter can turn the pipeline's staged route and redirect metadata into concrete HTTP server, CDN, or edge-routing configuration."
+description: "Generate exact Apache httpd redirects from staged metadata, or choose an explicit fallback for static-only hosts such as GitHub Pages."
 weight: 37
 ---
 
@@ -20,138 +20,235 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-The pipeline intentionally emits server-neutral metadata. It does not emit a
-stable Apache `httpd`, Nginx, CDN, or platform-specific config format.
+Site Pipeline resolves redirects, but deliberately stops before choosing a web
+server, CDN, or edge-platform syntax. A deployment adapter reads the completed
+stage and turns its server-neutral redirect inventory into configuration for
+one deployment target.
 
-## What this is for
+This guide gives you a tested Apache httpd adapter and explains what changes
+when the deployment target is GitHub Pages.
 
-Use this guide when you want to build consumer-owned deployment config such as:
+## Before you start
 
-- redirect rules
-- per-origin host or vhost routing
-- path-ownership inventories for a published docs site
+You need:
 
-## What this is not
+- a successful `site-pipeline build` and its completed stage directory;
+- Python 3.13 or newer to run the copyable reference adapter; and
+- for the Apache path, control of an Apache httpd 2.4 server or virtual-host
+  configuration with `mod_rewrite` enabled.
 
-This guide does not define:
+The example emits a config fragment. Your deployment still owns where that
+fragment is installed, how `httpd` configuration is tested, and when the server
+is reloaded.
 
-- a stable server-specific output format from the pipeline
-- a renderer dev-server workflow
-- a replacement for the renderer or site-publication layer
+## Understand the adapter boundary
 
-The pipeline owns staged content and deployment-neutral metadata. The deployment
-adapter owns target-specific config generation.
+The adapter starts at `manifest.json`. It follows
+`manifest.dataFiles.redirects` instead of assuming that the aggregate always
+lives at `data/redirects.json`.
 
-## Inputs to read
+For example, the manifest may contain:
 
-Read these files in this order:
+```json
+{
+  "schemaVersion": 1,
+  "stageLayoutVersion": 1,
+  "aggregateFormat": "json",
+  "dataFiles": {
+    "redirects": "data/redirects.json"
+  }
+}
+```
 
-1. `manifest.json`
-2. the path referenced by `manifest.dataFiles.routes`
-3. the path referenced by `manifest.dataFiles.redirects`
+The referenced aggregate contains already-resolved absolute URLs:
 
-`manifest.json` is authoritative. Do not assume `data/routes.json` or
-`data/redirects.json` exist at hard-coded paths without checking the manifest.
+```json
+{
+  "items": [
+    {
+      "fromUrl": "https://docs.example.org/spark/development/docs/",
+      "toUrl": "https://docs.example.org/spark/releases/4.0.0/",
+      "status": 308,
+      "reason": "The released documentation has a stable URL.",
+      "sourceKind": "catalog"
+    }
+  ]
+}
+```
 
-The manifest stores stage-relative contract paths such as `data/routes.json`.
-Those contract paths are POSIX strings. After resolving them against the local
-stage root, normal host-native filesystem access rules apply.
+`routes.json` remains useful for route ownership, origin grouping, and
+canonical-route inspection. Concrete redirect behavior comes from
+`redirects.json`; the adapter does not infer redirects from aliases in the route
+inventory.
 
-## What the two aggregates mean
+## Generate an Apache httpd fragment
 
-`routes.json` gives the resolved public route inventory. It tells you:
+The repository contains a
+[copyable standard-library adapter](https://github.com/buildish-tooling/buildish-site-pipeline/blob/main/examples/apache_httpd/generate_redirects.py).
+From a Site Pipeline source checkout, run it once per deployed source origin.
+The origin includes the scheme and optional non-default port, so HTTP and HTTPS
+redirect inventories cannot be collapsed accidentally:
 
-- which origin a route belongs to
-- the resolved public `path`
-- the fully qualified `url`
-- whether a route is one of the published, context, or alias route classes
-- which published route is canonical via the separate `canonical` flag
+```bash
+uv run --frozen python examples/apache_httpd/generate_redirects.py \
+  /workspace/site/.stage \
+  https://docs.example.org \
+  /workspace/build/httpd/docs-example-redirects.conf
+```
 
-`redirects.json` gives the resolved redirect inventory. It is the main input for
-emitting concrete redirect rules because each entry already contains:
+The output for the aggregate above is:
 
-- `fromUrl`
-- `toUrl`
-- `status`
-- optional `reason`
+```apache
+# Generated from Site Pipeline staged redirect metadata.
+# Target source origin: https://docs.example.org
+# Include in server or VirtualHost context; do not use in .htaccess.
+RewriteEngine On
 
-Use `routes.json` to understand route ownership and origin grouping. Use
-`redirects.json` to generate redirect behavior.
+RewriteCond "%{HTTPS}" "^on$" [NC]
+RewriteCond "%{HTTP_HOST}" "^docs\.example\.org(?::443)?$" [NC]
+RewriteRule "^/spark/development/docs/$" "https://docs.example.org/spark/releases/4.0.0/" [R=308,L,NE,QSD]
+```
 
-## Recommended adapter algorithm
+Include the generated file from server or `VirtualHost` context, for example:
 
-1. Read `manifest.json` and resolve the declared aggregate paths under the stage
-   root.
-2. Load `routes.json` and `redirects.json` as JSON.
-3. Group route entries by `originKey`, `baseUrl`, hostname, or another
-   deployment unit that matches your hosting platform.
-4. Use `routes.json` to determine which public paths belong to each published
-   origin and which paths are canonical versus aliases. Do not expect concrete
-   redirect rules to appear there.
-5. Use `redirects.json` to emit concrete redirect rules for the matching host or
-   origin.
-6. Preserve the resolved redirect `status` exactly. Do not silently rewrite a
-   `302` into a `301`, or a `307` into a `302`.
-7. Emit target-specific syntax only at the final adapter step.
+```apache
+<VirtualHost *:443>
+    ServerName docs.example.org
+    Include /workspace/build/httpd/docs-example-redirects.conf
 
-## Practical mapping guidance
+    # TLS and document-root configuration stay consumer-owned.
+</VirtualHost>
+```
 
-For a server or CDN adapter, the usual split is:
+Then use your installation's configuration test before deployment, commonly:
 
-- canonical and alias routes from `routes.json` describe the published route
-  surface that the site owns
-- redirect entries from `redirects.json` describe request paths that should
-  return a redirect response instead of site content
+```bash
+apachectl configtest
+```
 
-If your platform needs path-only rules instead of absolute URLs, derive those
-path rules from the fully qualified URLs only after grouping by the host or
-origin that the adapter owns.
+The generated rules are deliberately exact:
 
-For example:
+- scheme, hostname, effective port, and source path are all preserved;
+- the `%{HTTPS}` guard separates HTTP from HTTPS, while the `HTTP_HOST` guard
+  accepts either an omitted default port or that origin's exact default port;
+- a non-default source port is matched exactly;
+- each staged `301`, `302`, `307`, or `308` status is retained;
+- `QSD` prevents an incoming query string from being appended when the staged
+  destination has no query; and
+- `NE` keeps an already-resolved destination URL from being escaped again.
 
-- if `fromUrl` is `https://docs.example.org/spark/development/`
-- and the adapter is generating config for `docs.example.org`
-- then the emitted rule source path can safely be `/spark/development/`
+Apache documents that a `RewriteRule` in server or `VirtualHost` context sees
+the URL path with its leading slash. That differs from per-directory and
+`.htaccess` matching, which is why the generated fragment must not be moved to
+`.htaccess`. See the
+[Apache `RewriteRule` matching documentation](https://httpd.apache.org/docs/current/mod/mod_rewrite.html#rewriterule)
+and the [`mod_rewrite` flag reference](https://httpd.apache.org/docs/current/rewrite/flags.html).
 
-Do not strip hosts from redirect URLs before you know that the redirect belongs
-to the current deployment target.
+The HTTPS guard describes the connection Apache sees. If TLS terminates at a
+proxy and Apache receives plain HTTP, this reference fragment intentionally
+does not guess from forwarded headers. Adapt the scheme condition to your
+trusted proxy setup and test it end to end before deployment.
 
-## Safety rules
+The simpler Apache [`Redirect`
+directive](https://httpd.apache.org/docs/current/mod/mod_alias.html#redirect)
+uses path-prefix mapping in its common form. Emitting that form for a staged
+exact path could redirect additional requests, so the reference adapter uses
+anchored rewrite rules instead.
 
-Adapters should fail closed when staged metadata is malformed or does not match
-the deployment target they are generating config for.
+## Know what the reference adapter rejects
 
-In particular:
+The adapter validates the entire redirect aggregate before it writes output. It
+fails without replacing an existing output file when it encounters:
 
-- trust `manifest.json` for file presence and layout
-- treat `PublicPath` values as URL paths, not local filesystem paths
-- preserve redirect destinations exactly as resolved by the pipeline
-- do not invent wildcard rewrites unless you can prove they preserve the staged
-  semantics exactly
-- reject or isolate entries whose host does not belong to the deployment target
-- do not interpolate request-derived values into redirect targets
+- a missing, malformed, symlinked, or escaping manifest/aggregate path;
+- an unsupported manifest schema, stage layout, or aggregate format;
+- a redirect status other than `301`, `302`, `307`, or `308`;
+- duplicate source paths for the same scheme, hostname, and effective port;
+- a source URL with a query, fragment, non-normalized path, non-ASCII path, or
+  percent-encoded path;
+- a malformed requested source origin or one with no redirects; or
+- URL text that could be interpreted as Apache configuration, a rewrite
+  backreference, or a rewrite-map/server-variable expansion.
 
-That last rule matters for security. The staged metadata already gives you a
-fully resolved destination URL. Rebuilding it from request variables can create
-open-redirect or host-header problems that the pipeline contract is trying to
-avoid.
+The ASCII and percent-encoding restrictions are conservative. Apache matches a
+decoded URL path in server context; guessing how an encoded source path should
+map could broaden or break a rule. If a real deployment needs such paths,
+extend the adapter together with target-server integration tests.
 
-## What stays adapter-specific
+Destinations may point to a different host. They remain fixed absolute URLs
+from staged metadata; the adapter never reconstructs them from request headers
+or request variables.
 
-The adapter still owns several decisions:
+## Use the same contract with another server or CDN
 
-- Apache `httpd` versus Nginx versus CDN rule syntax
-- whether one config file covers one host, one origin, or many origins
-- how exact-match versus prefix-match rules are represented on the target
-- how the generated config is packaged, deployed, and reloaded
+Keep the discovery and validation steps the same:
 
-Those details should stay outside the pipeline contract so the staged metadata
-remains portable across hosting targets.
+1. Read `manifest.json`.
+2. Resolve `manifest.dataFiles.redirects` beneath the stage root.
+3. Validate the redirect aggregate.
+4. Select entries for one deployment source origin, including scheme and port.
+5. Preserve each source path, destination URL, and status.
+6. Render only syntax whose exact-match behavior is understood and tested for
+   the target.
+
+Do not discard schemes or ports before selecting the deployment target,
+silently rewrite status codes, invent wildcard rules, or rebuild destinations
+from `Host` or other request-derived values.
+
+## Deploying on GitHub Pages
+
+GitHub Pages deploys a static site artifact. A custom Actions workflow can run a
+renderer or adapter while building that artifact, but it does not add an Apache
+configuration layer to the Pages service. GitHub documents the artifact-based
+custom workflow in [Using custom workflows with GitHub
+Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
+
+Choose between two materially different outcomes:
+
+### Generate static fallback pages
+
+A build adapter can create an HTML file at every staged source path. The file
+can contain a canonical link, a visible destination link, and optional browser
+navigation through a refresh element or script.
+
+This is a fallback page, not an HTTP redirect. The initial response is a normal
+static-page response, so it cannot preserve the staged `301`, `302`, `307`, or
+`308` status or their method-handling semantics. Browsers, crawlers, caches, and
+API clients may therefore behave differently. A Pages adapter should report
+that loss explicitly, and a deployment that requires status fidelity should
+reject this mode.
+
+### Put redirect rules at an external edge
+
+If the status codes are part of the publication contract, place a CDN, reverse
+proxy, or other programmable edge in front of the static site. That adapter can
+consume the same `redirects.json`, return the declared status, and send all
+non-redirect requests to Pages.
+
+GitHub Pages' automatic custom-domain redirects cover paired domain forms such
+as an apex domain and its `www` variant. They are not a replacement for the
+per-path redirect inventory described here. See [Managing a custom domain for
+your GitHub Pages
+site](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/managing-a-custom-domain-for-your-github-pages-site#configuring-an-apex-domain-and-the-www-subdomain-variant).
+
+## Check the result
+
+For an Apache deployment, verify at least:
+
+- `apachectl configtest` succeeds;
+- every generated rule appears under the intended source origin;
+- a representative redirect returns its staged status and exact `Location`;
+- a longer path sharing the same prefix does not redirect; and
+- an unrelated scheme, hostname, or port does not receive the rule.
+
+For GitHub Pages, document whether the deployment chose degraded static
+fallback pages or an external status-preserving edge. Do not describe the first
+option as equivalent to the second.
 
 ## Read this next
 
-For the underlying contract details, see:
-
-- [staged output contract](../../development/reference/staged-output-contract/)
-- [pipeline model schema reference](../../development/reference/pipeline-model-schema-reference/)
-- [security and trust model](../../development/reference/security-and-trust-model/)
+- [Inspect staged output and routes](../inspect-staged-output-and-routes/)
+- [Unreleased development staged-output
+  contract](../../development/reference/staged-output-contract/)
+- [Unreleased development security and trust
+  model](../../development/reference/security-and-trust-model/)

@@ -21,6 +21,7 @@ import tempfile
 import threading
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
 from buildish_site_pipeline.cli.errors import StageIntegrityError
@@ -114,7 +115,7 @@ class StagingExecutionTests(unittest.TestCase):
             with self.assertRaises(StageIntegrityError) as raised:
                 _load_unit_contribution_manifests(
                     layout=layout,
-                    workspace_root=workspace_root,
+                    build_plan=_empty_build_plan(workspace_root),
                     worker_results=(
                         WorkerResultWire(
                             unit_id="component:spark",
@@ -139,7 +140,7 @@ class StagingExecutionTests(unittest.TestCase):
             with self.assertRaises(StageIntegrityError) as raised:
                 _load_unit_contribution_manifests(
                     layout=layout,
-                    workspace_root=workspace_root,
+                    build_plan=_empty_build_plan(workspace_root),
                     worker_results=(
                         WorkerResultWire(
                             unit_id="component:spark",
@@ -164,7 +165,7 @@ class StagingExecutionTests(unittest.TestCase):
             with self.assertRaises(StageIntegrityError) as raised:
                 _load_unit_contribution_manifests(
                     layout=layout,
-                    workspace_root=workspace_root,
+                    build_plan=_empty_build_plan(workspace_root),
                     worker_results=(
                         WorkerResultWire(
                             unit_id="component:spark",
@@ -191,7 +192,7 @@ class StagingExecutionTests(unittest.TestCase):
             with self.assertRaises(StageIntegrityError) as raised:
                 _load_unit_contribution_manifests(
                     layout=layout,
-                    workspace_root=workspace_root,
+                    build_plan=_empty_build_plan(workspace_root),
                     worker_results=(
                         WorkerResultWire(
                             unit_id="component:spark",
@@ -493,6 +494,13 @@ def _publish_workspace_stage(workspace_root: Path):
         stage_root=workspace_root / "site/.stage",
         allow_replace_existing=(workspace_root / "site/.stage").exists(),
         command=StageCommand.BUILD,
+    )
+
+
+def _empty_build_plan(workspace_root: Path) -> SimpleNamespace:
+    return SimpleNamespace(
+        workspace_root=workspace_root,
+        site=SimpleNamespace(components=()),
     )
 
 

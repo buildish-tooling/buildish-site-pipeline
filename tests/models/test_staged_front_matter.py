@@ -79,6 +79,13 @@ class StagedFrontMatterTests(unittest.TestCase):
                     ],
                     "componentPath": "/spark/",
                     "componentUrl": "https://docs.example.org/spark/",
+                    "source": {
+                        "key": "runtime",
+                        "path": "docs/sql/index.md",
+                        "repository": "https://github.com/example/runtime",
+                        "viewRef": "main",
+                        "editRef": "main",
+                    },
                     "version": {
                         "kind": "released",
                         "label": "4.0.0",
@@ -99,6 +106,8 @@ class StagedFrontMatterTests(unittest.TestCase):
         self.assertIn("canonicalUrl", payload["page"])
         self.assertIn("componentUrl", payload["page"])
         self.assertEqual(payload["page"]["derivedTitle"], "SQL Guide")
+        self.assertEqual(payload["page"]["source"]["path"], "docs/sql/index.md")
+        self.assertEqual(payload["page"]["source"]["editRef"], "main")
         self.assertEqual(
             payload["page"]["derivedDescription"],
             "Install the package and run the quickstart.",
@@ -156,3 +165,21 @@ class StagedFrontMatterTests(unittest.TestCase):
         )
 
         self.assertEqual(metadata.translation_key, "runtime-sql-overview")
+
+    def test_rejects_unsafe_page_source_path(self) -> None:
+        with self.assertRaises(ValidationError):
+            PipelinePageFrontMatter.model_validate(
+                {
+                    "kind": "docsPage",
+                    "path": "/spark/docs/",
+                    "url": "https://docs.example.org/spark/docs/",
+                    "componentPath": "/spark/",
+                    "componentUrl": "https://docs.example.org/spark/",
+                    "source": {
+                        "key": "runtime",
+                        "path": "../private.md",
+                    },
+                },
+                by_alias=True,
+                by_name=False,
+            )

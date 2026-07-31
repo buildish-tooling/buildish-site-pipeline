@@ -115,7 +115,12 @@ select = [
 
 [tool.mypy]
 python_version = "3.13"
-files = ["main.py", "src/buildish_site_pipeline", "examples/roq/sync_stage.py"]
+files = [
+    "main.py",
+    "src/buildish_site_pipeline",
+    "examples/apache_httpd/generate_redirects.py",
+    "examples/roq/sync_stage.py",
+]
 mypy_path = ["src"]
 explicit_package_bases = true
 disable_error_code = ["import-untyped"]

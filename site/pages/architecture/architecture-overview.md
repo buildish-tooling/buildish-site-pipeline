@@ -20,34 +20,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-The core idea is simple: the pipeline gathers authored content and metadata,
-optionally enriches that with release-provider data, resolves publication and
-lifecycle relationships, and emits a staged tree plus machine-readable metadata
-that other tools can consume.
+The [Getting Started overview](../../getting-started/) introduces the
+reader-facing flow from authored sources to staged output. This page explains
+the deeper system boundaries and model relationships behind that flow.
 
 ## What problem this architecture solves
 
-The Site Pipeline is meant to support sites that range from very small docs trees
-to large multi-artifact, multi-version, multi-locale ecosystems.
+Site Pipeline supports sites that range from one small documentation tree to
+multi-artifact, multi-version, and multi-locale ecosystems.
 
-The design goal is not to make every site adopt every capability. The design goal
-is to keep one mental model that scales up only when needed.
-
-## High-level flow
-
-```mermaid
-flowchart LR
-    A[authored content and catalog] --> C[site pipeline]
-    B[optional provider snapshots] --> C
-    C --> D[staged content tree]
-    C --> E[aggregate metadata files]
-    D --> F[renderer]
-    E --> F
-    E --> G[deployment adapters]
-```
-
-The important contract is the staged output, not any particular implementation
-behind it.
+The design keeps one mental model and adds publication dimensions only when a
+site needs them. The important integration contract is the staged output, not a
+particular renderer, deployment target, or internal implementation.
 
 ## Core architectural layers
 
@@ -128,48 +112,14 @@ flowchart TD
 
 This is intentionally one model, not a collection of unrelated subsystems.
 
-## Progressive complexity by site weight
+## How the model scales
 
-The model should scale by adding dimensions only when a site needs them.
-
-### Small sites
-
-Usually need only:
-
-- one component
-- one origin
-- a simple docs tree
-- development plus released docs
-
-### Medium sites
-
-Often add:
-
-- multiple artifacts
-- release lines
-- support status and support windows
-- provider-derived release metadata
-
-### Large sites
-
-Often add:
-
-- grouped components or product families
-- generated/imported reference mounts
-- richer route policy such as aliases and redirects
-- compatibility relationships across artifacts or products
-
-### Ecosystem-scale sites
-
-May also add:
-
-- locale and translation relationships
-- multiple publication origins
-- large redirect inventories for preserved permalinks
-- deployment adapters for multiple hosting targets
-
-The cross-check in [model-fit-cross-check.md](../model-fit-cross-check/) is the
-best place to see how those pressures show up in real projects.
+The model adds artifacts, release lines, provider enrichment, grouped
+components, compatibility, localization, and multiple origins only when the
+publication shape needs them. Use the
+[Getting Started adoption paths](../../getting-started/) to select a practical
+entry point. The [model-fit cross-check](../model-fit-cross-check/) explains the
+evidence and rationale behind those size bands.
 
 ## Why redirect and deployment metadata are separate from content
 
@@ -179,7 +129,8 @@ metadata. They are poor places to express deployment policy.
 That is why the pipeline should emit server-neutral route and redirect metadata,
 while deployment adapters remain responsible for concrete outputs such as Apache
 `httpd`, Nginx, CDN, or static-host configuration. For the practical adapter
-workflow, see [../how-to/http-server-config-how-to.md](../../how-to/http-server-config-how-to/).
+workflow, see
+[HTTP server configuration from staged metadata](../../how-to/http-server-config-how-to/).
 
 ## Main staged outputs
 
@@ -193,24 +144,29 @@ The pipeline should produce:
 
 ## Reading guide
 
-After this overview, the most useful next docs are usually:
+For unreleased development contract details, continue with:
 
-- [api contract](../../development/reference/api-contract/) for the stable invocation and output
-  boundaries
-- [staged output contract](../../development/reference/staged-output-contract/) for the staged-tree
-  layout and manifest contract
-- [source-resolution-and-materialization.md](../source-resolution-and-materialization/)
-  for version selection and local materialization strategy
-- [validation and check](../../development/reference/validation-and-check/) for validation semantics,
-  diagnostics, and `site-pipeline check`
-- [build-architecture.md](../build-architecture/) for build/watch execution shape
-- [security and trust model](../../development/reference/security-and-trust-model/) for trust,
-  validation, and content-safety boundaries
-- [flexible component publication](../../development/reference/flexible-component-publication/) for the
-  main publication and lifecycle model
-- [pipeline model schema reference](../../development/reference/pipeline-model-schema-reference/) for
-  the typed field-level reference
+- [API contract](../../development/reference/api-contract/) for the stable
+  invocation and output boundaries
+- [staged output contract](../../development/reference/staged-output-contract/)
+  for the staged-tree layout and manifest contract
+- [validation and check](../../development/reference/validation-and-check/) for
+  validation semantics, diagnostics, and `site-pipeline check`
+- [security and trust model](../../development/reference/security-and-trust-model/)
+  for trust, validation, and content-safety boundaries
+- [flexible component publication](../../development/reference/flexible-component-publication/)
+  for the main publication and lifecycle model
+- [pipeline model schema reference](../../development/reference/pipeline-model-schema-reference/)
+  for the typed field-level reference
 - [provider snapshot schema](../../development/reference/provider-snapshot-schema/) for optional
   provider input shape
 - [provider to staged metadata mapping](../../development/reference/provider-to-staged-metadata-mapping/)
   for how provider data enriches staged outputs
+
+For deeper architecture topics, continue with:
+
+- [source resolution and materialization](../source-resolution-and-materialization/)
+  for version selection and local materialization strategy
+- [build architecture](../build-architecture/) for build/watch execution shape
+- [provider end-to-end example](../provider-e2e-example/) for a concrete flow
+  across the authored, provider, and emitted boundaries

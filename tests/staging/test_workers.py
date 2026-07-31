@@ -674,7 +674,7 @@ class StagingWorkerTests(unittest.TestCase):
         self.assertEqual(report.diagnostics[0].details["expectedLocalPath"], "components/runtime/docs")
         self.assertEqual(report.diagnostics[0].details["fragmentPath"], REDACTED_LOCAL_PATH)
 
-    def test_content_index_omits_outside_workspace_source_paths(self) -> None:
+    def test_content_index_does_not_publish_internal_source_path_without_provenance(self) -> None:
         with _workspace(with_content_file=True) as workspace_root:
             request = _build_request(workspace_root, pool_size=1)
             entries = _build_content_index_entries(
@@ -699,4 +699,4 @@ class StagingWorkerTests(unittest.TestCase):
                 ),
             )
 
-        self.assertIsNone(entries[0].source_path)
+        self.assertIsNone(entries[0].source)

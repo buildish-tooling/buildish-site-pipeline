@@ -26,6 +26,7 @@ Back to the [reference overview](../pipeline-model-schema-reference/).
 ## Type index
 
 - [ArtifactFrontMatterSummary](#artifactfrontmattersummary) — Small artifact summary embedded in component front matter.
+- [PageSourceProvenance](#pagesourceprovenance) — Repository-neutral pointer to the authored source file for one staged page.
 - [PipelineComponentFrontMatter](#pipelinecomponentfrontmatter) — Component-level pipeline metadata injected into staged page front matter.
 - [PipelineFrontMatterNamespace](#pipelinefrontmatternamespace) — Reserved top-level front matter namespace that the pipeline injects into staged pages.
 - [PipelinePageFrontMatter](#pipelinepagefrontmatter) — Page-local pipeline metadata injected into staged page front matter.
@@ -60,6 +61,31 @@ Small artifact summary embedded in component front matter.
 - `key`: Example: `"runtime"`
 - `displayName`: Example: `"Runtime"`
 - `latestStable`: Example: `"4.0.1"`
+
+<a id="pagesourceprovenance"></a>
+### PageSourceProvenance
+
+Repository-neutral pointer to the authored source file for one staged page.
+
+- category: `emitted`
+- ownership: `pipeline-derived`
+- file contract: (inner type)
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| <a id="pagesourceprovenance-key"></a>`key` | [SourceKey](../pipeline-shared-types-reference/#sourcekey) | yes | Resolved source-binding key that owns the authored page. |
+| <a id="pagesourceprovenance-path"></a>`path` | [RepoRelativePath](../pipeline-shared-types-reference/#reporelativepath) | yes | Source file path relative to the resolved source binding root. |
+| <a id="pagesourceprovenance-repository"></a>`repository` | [UrlString](../pipeline-shared-types-reference/#urlstring) | no | Remote repository URL whose repository root corresponds to the resolved source binding root, when declared. |
+| <a id="pagesourceprovenance-viewref"></a>`viewRef` | [RefString](../pipeline-shared-types-reference/#refstring) | no | Source-control ref that renderers may use for a view-source link. |
+| <a id="pagesourceprovenance-editref"></a>`editRef` | [RefString](../pipeline-shared-types-reference/#refstring) | no | Source-control ref that renderers may use for an edit-source link. |
+
+#### Selected field examples
+
+- `key`: Example: `"runtime"`
+- `path`: Example: `"docs/getting-started.md"`
+- `repository`: Example: `"https://github.com/buildish-tooling/buildish-site-pipeline"`
+- `viewRef`: Example: `"main"`
+- `editRef`: Example: `"main"`
 
 <a id="pipelinecomponentfrontmatter"></a>
 ### PipelineComponentFrontMatter
@@ -132,6 +158,12 @@ page:
     kind: released
     label: 4.0.0
     tag: v4.0.0
+  source:
+    key: runtime
+    path: docs/getting-started.md
+    repository: https://github.com/apache/spark
+    viewRef: main
+    editRef: main
 ```
 
 <a id="pipelinepagefrontmatter"></a>
@@ -162,6 +194,7 @@ Page-local pipeline metadata injected into staged page front matter.
 | <a id="pipelinepagefrontmatter-componenturl"></a>`componentUrl` | [UrlString](../pipeline-shared-types-reference/#urlstring) | yes | Absolute URL for the owning component root. |
 | <a id="pipelinepagefrontmatter-version"></a>`version` | [VersionContext](#versioncontext) | no | Version or ref context attached when this page belongs to a versioned route set. |
 | <a id="pipelinepagefrontmatter-provider"></a>`provider` | [ProviderProvenance](#providerprovenance) | no | Pointer back to the upstream provider record that informed the page's version metadata. |
+| <a id="pipelinepagefrontmatter-source"></a>`source` | [PageSourceProvenance](#pagesourceprovenance) | no | Repository-neutral provenance for the authored source file that produced this staged page. |
 
 #### Selected field examples
 

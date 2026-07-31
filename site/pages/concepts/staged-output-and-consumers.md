@@ -53,8 +53,11 @@ renderer-facing inputs stay the same.
 
 ## Staged pages carry pipeline front matter
 
-Site Pipeline keeps authored content readable but adds normalized `pipeline`
-metadata that downstream tooling can trust:
+Site Pipeline preserves authored fields such as `title`, `description`, and
+`weight`, then adds normalized `pipeline` metadata that downstream tooling can
+trust. Authors must not define the reserved `pipeline` namespace themselves;
+the build derives it from the effective catalog, provider data, and page
+context:
 
 ```yaml
 pipeline:
@@ -69,10 +72,20 @@ pipeline:
       kind: released
       label: 4.0.0
       tag: v4.0.0
+    source:
+      key: runtime
+      path: docs/releases/4.0.0/index.md
+      repository: https://github.com/example/runtime
+      viewRef: main
+      editRef: main
 ```
 
 That means a renderer can read one staged page and still know which component,
-publication surface, provider, and version context it belongs to.
+publication surface, provider, version context, and authored source it belongs
+to. The structured `source` object gives a repository-aware consumer the data
+needed to construct view or edit links without pointing users at `.stage`.
+See [pipeline-enhanced front matter](../pipeline-enhanced-front-matter/) for the
+ownership boundary and common renderer use cases.
 
 ## Aggregate files answer cross-page questions
 
@@ -85,14 +98,24 @@ Use aggregate files when you need answers that span more than one page:
 
 For example, one `content-index.json` item looks like this:
 
+<!-- test:content-index-entry -->
 ```json
 {
+  "id": "spark-runtime-4.0.0-index",
   "componentSlug": "spark",
   "artifactKey": "runtime",
   "pageKind": "release-page",
+  "originKey": "docs",
   "path": "/spark/releases/4.0.0",
+  "url": "https://docs.example.org/spark/releases/4.0.0/",
   "canonicalUrl": "https://docs.example.org/spark/releases/4.0.0/",
-  "sourcePath": "components/runtime/docs/releases/4.0.0/index.md",
+  "source": {
+    "key": "runtime",
+    "path": "docs/releases/4.0.0/index.md",
+    "repository": "https://github.com/example/runtime",
+    "viewRef": "main",
+    "editRef": "main"
+  },
   "versionKind": "released",
   "versionLabel": "4.0.0",
   "provider": "github"
@@ -113,6 +136,6 @@ They should use the staged output instead.
 
 ## Read next
 
-- [../how-to/inspect-staged-output-and-routes.md](../../how-to/inspect-staged-output-and-routes/)
-- [staged output contract](../../development/reference/staged-output-contract/)
-- [api contract](../../development/reference/api-contract/)
+- [Inspect staged output and routes](../../how-to/inspect-staged-output-and-routes/)
+- [Unreleased development staged-output contract](../../development/reference/staged-output-contract/)
+- [Unreleased development API contract](../../development/reference/api-contract/)

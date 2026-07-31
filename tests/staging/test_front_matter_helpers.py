@@ -69,6 +69,13 @@ class FrontMatterHelpersTests(unittest.TestCase):
             "component_url": "https://docs.example.org/spark/",
             "origin_key": "docs",
             "source_path": "components/runtime/docs/guide.md",
+            "source": {
+                "key": "runtime",
+                "path": "docs/guide.md",
+                "repository": "https://github.com/example/runtime",
+                "viewRef": "main",
+                "editRef": "main",
+            },
             "canonical_url": "https://docs.example.org/spark/guide",
         }
         payload.update(overrides)
@@ -387,6 +394,8 @@ class FrontMatterHelpersTests(unittest.TestCase):
         self.assertEqual(page.provider.external_id, "123")
         self.assertEqual(page.derived_title, "Guide")
         self.assertEqual(page.derived_description, "Install the guide.")
+        self.assertEqual(page.source.path, "docs/guide.md")
+        self.assertEqual(page.source.edit_ref, "main")
 
     def test_build_page_front_matter_requires_public_url(self) -> None:
         with self.assertRaisesRegex(StageIntegrityError, "missing a public URL"):

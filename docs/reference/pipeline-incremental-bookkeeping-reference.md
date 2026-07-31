@@ -175,7 +175,14 @@ Stable per-unit page contribution manifests retained in the visible stage.
           "version": "4.0.0",
           "defaultLocale": false,
           "title": "Getting Started",
-          "sourcePath": "docs/runtime/getting-started.md"
+          "sourcePath": "components/runtime/docs/getting-started.md",
+          "source": {
+            "key": "runtime",
+            "path": "docs/getting-started.md",
+            "repository": "https://github.com/apache/spark",
+            "viewRef": "main",
+            "editRef": "main"
+          }
         }
       ]
     }
@@ -212,7 +219,8 @@ Metadata emitted by one page-staging worker for later aggregation.
 | <a id="stagedpagecontributionwire-description"></a>`description` | str | no | Primary page description extracted or derived during staging, if present. |
 | <a id="stagedpagecontributionwire-derivedtitle"></a>`derivedTitle` | str | no | Body-derived page title inferred from authored content during staging, if present. |
 | <a id="stagedpagecontributionwire-deriveddescription"></a>`derivedDescription` | str | no | Body-derived page description inferred from authored content during staging, if present. |
-| <a id="stagedpagecontributionwire-sourcepath"></a>`sourcePath` | str | no | Source file path that produced the staged page. Private worker fragments may use an absolute path; the coordinator rewrites workspace sources to repository-relative form and omits other sources before retaining this metadata in the stage. |
+| <a id="stagedpagecontributionwire-sourcepath"></a>`sourcePath` | str | no | Source file path that produced the staged page. Private worker fragments may use an absolute path; the coordinator rewrites workspace sources to workspace-relative form and omits other sources before retaining this internal metadata in the stage. |
+| <a id="stagedpagecontributionwire-source"></a>`source` | [PageSourceProvenance](../pipeline-staged-front-matter-reference/#pagesourceprovenance) | no | Coordinator-derived repository provenance for the authored source file. Worker-supplied and retained values are overwritten during normalization. |
 | <a id="stagedpagecontributionwire-canonicalurl"></a>`canonicalUrl` | str | no | Explicit canonical URL for the page when it should differ from `publicUrl`. |
 
 #### Selected field examples
@@ -233,7 +241,7 @@ Metadata emitted by one page-staging worker for later aggregation.
 - `title`: Example: `"Getting Started"`
 - `linkTitle`: Example: `"Start"`
 - `derivedTitle`: Example: `"Getting Started"`
-- `sourcePath`: Example: `"docs/runtime/getting-started.md"`
+- `sourcePath`: Example: `"components/runtime/docs/getting-started.md"`
 
 <a id="unitcontributionmanifestwire"></a>
 ### UnitContributionManifestWire

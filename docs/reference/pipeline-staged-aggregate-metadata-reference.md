@@ -196,7 +196,7 @@ Entry in `data/content-index.json`.
 | <a id="contentindexentry-weight"></a>`weight` | int | no | Optional ordering hint used by renderers for listings or navigation. |
 | <a id="contentindexentry-parentid"></a>`parentId` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | no | Identifier of the parent indexed page when the page belongs to a hierarchy. |
 | <a id="contentindexentry-ancestorids"></a>`ancestorIds` | list[[NonEmptyString](../pipeline-shared-types-reference/#nonemptystring)] | no | Ancestor page identifiers ordered from nearest to farthest. |
-| <a id="contentindexentry-sourcepath"></a>`sourcePath` | [RepoRelativePath](../pipeline-shared-types-reference/#reporelativepath) | no | Repository-relative source file path for the page when it is known. |
+| <a id="contentindexentry-source"></a>`source` | [PageSourceProvenance](../pipeline-staged-front-matter-reference/#pagesourceprovenance) | no | Repository-neutral provenance for the authored source file that produced this indexed page. |
 | <a id="contentindexentry-versionkind"></a>`versionKind` | [RecordKind](../pipeline-shared-types-reference/#recordkind) | no | Version-context kind attached when the page belongs to a versioned route set. |
 | <a id="contentindexentry-versionlabel"></a>`versionLabel` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | no | Human-readable version label attached to the page, if present. |
 | <a id="contentindexentry-releaseline"></a>`releaseLine` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | no | Release-line key attached to the page, if present. |
@@ -225,7 +225,6 @@ Entry in `data/content-index.json`.
 - `weight`: Example: `100`
 - `parentId`: Example: `"spark-runtime-4.0.0-docs-root"`
 - `ancestorIds`: Example: `["spark-runtime-4.0.0-docs-root","spark-runtime-root"]`
-- `sourcePath`: Example: `"docs/runtime/getting-started.md"`
 - `versionLabel`: Example: `"4.0.0"`
 - `releaseLine`: Example: `"4.0"`
 - `supportStatus`: Example: `"supported"`

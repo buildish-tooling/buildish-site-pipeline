@@ -105,7 +105,9 @@ withdrawn-release redirects.
 ## Inspect one staged page
 
 Open a staged page under `content/` and look for the injected `pipeline` front
-matter:
+matter. Fields such as `title` outside this namespace came from the authored
+page. The reserved `pipeline` namespace is derived during staging and must not
+be added to the source page:
 
 ```yaml
 pipeline:
@@ -118,9 +120,19 @@ pipeline:
     version:
       kind: released
       label: 4.0.0
+    source:
+      key: runtime
+      path: docs/releases/4.0.0/index.md
+      repository: https://github.com/example/runtime
+      viewRef: main
+      editRef: main
 ```
 
 That is the bridge between one page file and the normalized publication model.
+In particular, `source.path` is relative to the resolved `runtime` source
+binding. It is not the path of the staged copy. A renderer can use the optional
+repository and refs to build provider-specific source links; it should omit
+those links when the values are absent.
 
 ## Then inspect cross-page discovery
 
@@ -129,11 +141,20 @@ scanning the whole content tree:
 
 ```json
 {
+  "id": "spark-runtime-4.0.0-index",
   "componentSlug": "spark",
   "artifactKey": "runtime",
   "pageKind": "release-page",
+  "originKey": "docs",
   "path": "/spark/releases/4.0.0",
-  "sourcePath": "components/runtime/docs/releases/4.0.0/index.md",
+  "url": "https://docs.example.org/spark/releases/4.0.0/",
+  "source": {
+    "key": "runtime",
+    "path": "docs/releases/4.0.0/index.md",
+    "repository": "https://github.com/example/runtime",
+    "viewRef": "main",
+    "editRef": "main"
+  },
   "versionKind": "released",
   "versionLabel": "4.0.0",
   "provider": "github"
@@ -162,7 +183,8 @@ cat site/.stage/data/content-index.json
 
 ## Read this next
 
-- [../concepts/staged-output-and-consumers.md](../../concepts/staged-output-and-consumers/)
-- [http-server-config-how-to.md](../http-server-config-how-to/)
-- [staged output contract](../../development/reference/staged-output-contract/)
-- [pipeline model schema reference](../../development/reference/pipeline-model-schema-reference/)
+- [Staged output and consumers](../../concepts/staged-output-and-consumers/)
+- [Pipeline-enhanced front matter](../../concepts/pipeline-enhanced-front-matter/)
+- [HTTP server configuration](../http-server-config-how-to/)
+- [Unreleased development staged-output contract](../../development/reference/staged-output-contract/)
+- [Unreleased development pipeline model schema reference](../../development/reference/pipeline-model-schema-reference/)

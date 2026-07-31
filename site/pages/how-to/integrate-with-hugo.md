@@ -118,6 +118,14 @@ Two important details:
 If your site imports a theme as a Hugo module, keep the existing `module.imports`
 configuration and add these mounts alongside it.
 
+## Keep the Hugo version boundary explicit
+
+Site Pipeline writes renderer-neutral files and does not execute Hugo, so it
+does not impose a Hugo version requirement. The sibling Buildish site currently
+declares Hugo Extended 0.160.1 as its minimum and uses the integration pattern
+shown here. Treat that as a known consumer baseline, not as a Site Pipeline
+minimum; your theme and Hugo configuration may require a different version.
+
 ## Recommended local development loop
 
 Use Site Pipeline to keep the stage fresh, and let Hugo keep owning the preview
@@ -171,7 +179,7 @@ serve-local:
 	cleanup() { status=$$?; if [ -n "$$watch_pid" ] && kill -0 "$$watch_pid" 2>/dev/null; then kill "$$watch_pid" 2>/dev/null || true; wait "$$watch_pid" 2>/dev/null || true; fi; if [ -n "$$events_file" ]; then rm -f "$$events_file"; fi; exit $$status; }; \
 	trap cleanup EXIT INT TERM; \
 	events_file="$$(mktemp .watch-events.XXXXXX.jsonl)"; \
-	site-pipeline watch --workspace-root . --catalog site/catalog.yaml --unstable-events-output "$$events_file" & \
+	site-pipeline watch --workspace-root . --catalog site/catalog.yaml --unstable-events jsonl --unstable-events-output "$$events_file" & \
 	watch_pid=$$!; \
 	wait-for-watch-ready --events-file "$$events_file" --pid "$$watch_pid" --timeout 60; \
 	hugo server --source site --config site/hugo.yaml --renderToMemory

@@ -168,6 +168,22 @@ class FrontMatterHelpersTests(unittest.TestCase):
             self.assertEqual(staged_post["title"], "Authored Title")
             self.assertEqual(staged_post["description"], "Authored description")
 
+    def test_stage_authored_page_accepts_crlf_front_matter(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            source_path = Path(tempdir) / "guide.md"
+            destination_path = Path(tempdir) / "staged.md"
+            source_path.write_bytes(
+                b"---\r\ntitle: Authored Title\r\n---\r\nBody.\r\n"
+            )
+
+            staged_page = stage_authored_page(
+                source_path=source_path,
+                destination_path=destination_path,
+                namespace=None,
+            )
+
+        self.assertEqual(staged_page.authored_metadata["title"], "Authored Title")
+
     def test_detect_locale_strips_supported_locale_prefixes(self) -> None:
         locale, is_default, relative = detect_locale(
             Path("fr/guide/install.md"),

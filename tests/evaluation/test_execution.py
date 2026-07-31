@@ -714,7 +714,10 @@ class EvaluationExecutionTests(unittest.TestCase):
         self.assertEqual(limit_diagnostic.details["metric"], "selectedVersionContextCount")
 
     def test_provider_snapshot_size_limit_blocks_stage(self) -> None:
-        with tempfile.TemporaryDirectory() as tempdir, patch("buildish_site_pipeline.evaluation.limits._PROVIDER_SNAPSHOT_BYTES_LIMIT", 1):
+        with tempfile.TemporaryDirectory() as tempdir, patch(
+            "buildish_site_pipeline.evaluation.limits.DEFAULT_PROVIDER_SNAPSHOT_BYTES",
+            1,
+        ):
             planning = _planning_eval(Path(tempdir))
             result = run_evaluation(
                 request=EvaluationRequest(mode=EvaluationMode.BUILD),

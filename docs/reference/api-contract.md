@@ -162,6 +162,49 @@ That shared flag family should apply to:
 - `site-pipeline build`
 - `site-pipeline watch`
 
+### Failures before a command report exists
+
+After the CLI has successfully parsed and validated a JSON report request, an
+input, planning, or internal failure that prevents the normal command report is
+written to the selected `--report-output` sink as a distinct failure envelope:
+
+```json
+{
+  "schemaVersion": 1,
+  "kind": "cliFailure",
+  "command": "check",
+  "exitCode": 1,
+  "error": {
+    "category": "input",
+    "code": "input-validation-failed",
+    "message": "Document does not satisfy its schema",
+    "source": "site/catalog.yaml",
+    "issues": [
+      {
+        "location": "components[0].slug",
+        "code": "required",
+        "message": "Field required"
+      }
+    ]
+  }
+}
+```
+
+`kind: cliFailure` deliberately distinguishes this envelope from successful or
+domain-result planning, check, and stage-run reports. Automation should branch
+on `kind` and stable `error.category` / `error.code` values rather than parsing
+human message text. Input and expected planning failures use exit code `1`,
+invalid invocation uses `2`, and unexpected internal failure uses `3`. Failure
+payloads omit raw input objects, tracebacks, and implementation exception names.
+The complete machine-readable contract is exported as
+[`cli-failure-report-v1.schema.json`](/components/site-pipeline/schemas/cli-failure-report-v1.schema.json).
+
+When an invocation error prevents the CLI from constructing a valid report
+request, including an incomplete JSON flag combination, the CLI cannot safely
+select that machine sink and writes a concise diagnostic to `stderr` instead.
+Text-mode input failures likewise use concise `stderr` diagnostics with the
+stable code, affected input name, and first actionable validation location.
+
 Command-specific flags such as `--fail-on` may extend that shared base.
 
 ## Shared human-log flags

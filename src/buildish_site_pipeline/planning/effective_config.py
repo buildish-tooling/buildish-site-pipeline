@@ -50,6 +50,7 @@ from buildish_site_pipeline.source_roots import (
     resolve_repo_path as _resolve_repo_path,
 )
 
+from .errors import PlanningInputFailure
 from .types import (
     ResolvedArtifactConfig,
     ResolvedComponentConfig,
@@ -304,7 +305,7 @@ def _resolve_publication(
         or (defaults.origin if defaults is not None else None)
     )
     if origin_key is None:
-        raise ValueError(
+        raise PlanningInputFailure(
             f"Component {component.slug!r} cannot resolve a publication origin"
         )
 
@@ -324,7 +325,7 @@ def _resolve_publication(
         else mount_path
     )
     if component_path is None:
-        raise ValueError(
+        raise PlanningInputFailure(
             f"Component {component.slug!r} cannot resolve a component publication path"
         )
 

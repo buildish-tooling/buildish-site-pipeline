@@ -159,6 +159,46 @@ class StagingPipelineTests(unittest.TestCase):
                 self.assertIsNotNone(relative_path)
                 self.assertTrue((stage_root / relative_path).is_file(), key)
 
+    def test_finalized_stage_metadata_contains_no_absolute_workspace_paths(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            with _cwd(workspace_root):
+                exit_code = _run(
+                    argv=["build"],
+                    stdout=io.StringIO(),
+                    stderr=io.StringIO(),
+                )
+            stage_root = workspace_root / "site/.stage"
+            metadata_documents = tuple(stage_root.rglob("*.json"))
+            metadata_payloads = {
+                metadata_path.relative_to(stage_root).as_posix(): metadata_path.read_text(
+                    encoding="utf-8"
+                )
+                for metadata_path in metadata_documents
+            }
+            unit_contributions = json.loads(
+                (stage_root / "data/_pipeline/unit-contributions.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+
+        self.assertEqual(exit_code, 0)
+        self.assertTrue(metadata_payloads)
+        for relative_path, metadata_payload in metadata_payloads.items():
+            self.assertNotIn(
+                str(workspace_root),
+                metadata_payload,
+                relative_path,
+            )
+        source_paths = [
+            page["sourcePath"]
+            for unit in unit_contributions["units"]
+            for page in unit["pages"]
+            if page.get("sourcePath") is not None
+        ]
+        self.assertTrue(source_paths)
+        self.assertTrue(all(not Path(path).is_absolute() for path in source_paths))
+        self.assertTrue(all(".." not in Path(path).parts for path in source_paths))
+
     def test_build_stages_site_and_vendor_static_assets(self) -> None:
         with _workspace(with_content_file=True) as workspace_root:
             _expand_workspace_for_multiple_owned_units(workspace_root)

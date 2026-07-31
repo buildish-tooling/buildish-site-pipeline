@@ -20,8 +20,10 @@ import io
 import importlib
 import json
 import logging
+import shutil
 import sys
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -1146,6 +1148,133 @@ class CliTests(unittest.TestCase):
         self.assertEqual(stdout.getvalue(), "")
         self.assertEqual(stderr.getvalue(), "")
 
+    def test_watch_reconciles_edit_made_during_startup_registration(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            report_path = workspace_root / "watch-report.json"
+            source_page = (
+                workspace_root
+                / "components/runtime/docs/releases/4.0.0/index.md"
+            )
+            staged_page = (
+                workspace_root
+                / "site/.stage/content/spark/releases/4.0.0/index.md"
+            )
+            watcher_registered = threading.Event()
+
+            def _edit_after_registration() -> None:
+                watcher_registered.set()
+                source_page.write_text(
+                    "edited during startup registration\n", encoding="utf-8"
+                )
+
+            with mock.patch(
+                "buildish_site_pipeline.commands.watch._open_watch_event_stream",
+                new=_fake_watch_event_stream_factory(
+                    responses=[(True, None)],
+                    on_prime=_edit_after_registration,
+                ),
+            ), _cwd(workspace_root):
+                exit_code = _run(
+                    argv=[
+                        "watch",
+                        "--quiet",
+                        "--report-format",
+                        "json",
+                        "--report-schema-version",
+                        "1",
+                        "--report-output",
+                        str(report_path),
+                    ],
+                    stdout=io.StringIO(),
+                    stderr=io.StringIO(),
+                )
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+            staged_text = staged_page.read_text(encoding="utf-8")
+
+        self.assertEqual(exit_code, 0)
+        self.assertTrue(watcher_registered.is_set())
+        self.assertEqual(report["cycle"], 1)
+        self.assertIn("edited during startup registration", staged_text)
+
+    def test_watch_adopts_added_root_before_a_later_edit(self) -> None:
+        with _workspace(with_content_file=True) as workspace_root:
+            report_path = workspace_root / "watch-report.json"
+            catalog_path = workspace_root / "site/catalog.yaml"
+            old_root = workspace_root / "components/runtime"
+            new_root = workspace_root / "components/runtime-next"
+            shutil.copytree(old_root, new_root)
+            new_source_page = new_root / "docs/releases/4.0.0/index.md"
+            staged_page = (
+                workspace_root
+                / "site/.stage/content/spark/releases/4.0.0/index.md"
+            )
+            replacement_registered = threading.Event()
+            captured_watch_roots: list[tuple[Path, ...]] = []
+
+            def _switch_catalog_root() -> tuple[Path, ...]:
+                catalog_path.write_text(
+                    catalog_path.read_text(encoding="utf-8").replace(
+                        "localDir: components/runtime",
+                        "localDir: components/runtime-next",
+                    ),
+                    encoding="utf-8",
+                )
+                return (catalog_path,)
+
+            def _record_replacement(watch_roots: tuple[Path, ...]) -> None:
+                self.assertIn(new_root.resolve(strict=False), watch_roots)
+                replacement_registered.set()
+                new_source_page.write_text(
+                    "edited during root replacement\n", encoding="utf-8"
+                )
+
+            def _edit_new_root() -> tuple[Path, ...]:
+                self.assertTrue(replacement_registered.is_set())
+                self.assertIn(
+                    "edited during root replacement",
+                    staged_page.read_text(encoding="utf-8"),
+                )
+                new_source_page.write_text(
+                    "edited after root replacement\n", encoding="utf-8"
+                )
+                return (new_source_page,)
+
+            with mock.patch(
+                "buildish_site_pipeline.commands.watch._open_watch_event_stream",
+                new=_fake_watch_event_stream_factory(
+                    responses=[
+                        (True, _switch_catalog_root),
+                        (False, _edit_new_root),
+                        (False, ()),
+                        (True, None),
+                    ],
+                    captured_watch_roots=captured_watch_roots,
+                    on_replace=_record_replacement,
+                ),
+            ), _cwd(workspace_root):
+                exit_code = _run(
+                    argv=[
+                        "watch",
+                        "--quiet",
+                        "--report-format",
+                        "json",
+                        "--report-schema-version",
+                        "1",
+                        "--report-output",
+                        str(report_path),
+                    ],
+                    stdout=io.StringIO(),
+                    stderr=io.StringIO(),
+                )
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+            staged_text = staged_page.read_text(encoding="utf-8")
+
+        self.assertEqual(exit_code, 0)
+        self.assertTrue(replacement_registered.is_set())
+        self.assertEqual(report["cycle"], 4)
+        self.assertIn("edited after root replacement", staged_text)
+        self.assertEqual(captured_watch_roots[-1][1], new_root.resolve(strict=False))
+
     def test_watch_runs_immediate_follow_up_cycle_for_pending_dirty_set(self) -> None:
         with _workspace(with_content_file=True) as workspace_root:
             report_path = workspace_root / "watch-report.json"
@@ -1271,6 +1400,11 @@ class CliTests(unittest.TestCase):
                 ("load", "build", f"{expected_workspace_root}:{expected_catalog_path}"),
                 ("planning", "build", f"build:{expected_workspace_root}:{expected_stage_root}:{expected_work_root}"),
                 ("evaluation", "build", "build"),
+                ("load", "watch", f"{expected_workspace_root}:{expected_catalog_path}"),
+                ("planning", "watch", f"watch:{expected_workspace_root}:{expected_stage_root}:{expected_work_root}"),
+                ("evaluation", "watch", "watch"),
+                # Watch repeats the initial scan after native watcher
+                # registration so edits in the startup handoff are observable.
                 ("load", "watch", f"{expected_workspace_root}:{expected_catalog_path}"),
                 ("planning", "watch", f"watch:{expected_workspace_root}:{expected_stage_root}:{expected_work_root}"),
                 ("evaluation", "watch", "watch"),

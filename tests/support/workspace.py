@@ -19,6 +19,7 @@ from __future__ import annotations
 import json
 import os
 import tempfile
+from collections.abc import Callable
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -689,8 +690,33 @@ def _cwd(path: Path):
 
 
 class _FakeWatchEventStream:
-    def __init__(self, responses: list[tuple[bool, object]]) -> None:
+    def __init__(
+        self,
+        responses: list[tuple[bool, object]],
+        *,
+        watch_roots: tuple[Path, ...],
+        captured_watch_roots: list[tuple[Path, ...]] | None,
+        on_prime: Callable[[], None] | None,
+        on_replace: Callable[[tuple[Path, ...]], None] | None,
+    ) -> None:
         self._responses = list(responses)
+        self.watch_roots = watch_roots
+        self._captured_watch_roots = captured_watch_roots
+        self._on_prime = on_prime
+        self._on_replace = on_replace
+
+    def prime(self) -> bool:
+        if self._on_prime is not None:
+            self._on_prime()
+        return True
+
+    def replace_watch_roots(self, watch_roots: tuple[Path, ...]) -> bool:
+        self.watch_roots = watch_roots
+        if self._captured_watch_roots is not None:
+            self._captured_watch_roots.append(watch_roots)
+        if self._on_replace is not None:
+            self._on_replace(watch_roots)
+        return True
 
     def collect_dirty_paths(self, *, wait_for_first: bool):
         if not self._responses:
@@ -708,6 +734,8 @@ def _fake_watch_event_stream_factory(
     *,
     responses: list[tuple[bool, object]],
     captured_watch_roots: list[tuple[Path, ...]] | None = None,
+    on_prime: Callable[[], None] | None = None,
+    on_replace: Callable[[tuple[Path, ...]], None] | None = None,
 ):
     @contextmanager
     def _factory(
@@ -722,6 +750,12 @@ def _fake_watch_event_stream_factory(
         del stage_root, work_root, report_output, event_output, stop_event
         if captured_watch_roots is not None:
             captured_watch_roots.append(watch_roots)
-        yield _FakeWatchEventStream(list(responses))
+        yield _FakeWatchEventStream(
+            list(responses),
+            watch_roots=watch_roots,
+            captured_watch_roots=captured_watch_roots,
+            on_prime=on_prime,
+            on_replace=on_replace,
+        )
 
     return _factory

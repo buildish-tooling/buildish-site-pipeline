@@ -124,9 +124,10 @@ class InventoryPage:
 
 @dataclass(frozen=True, slots=True)
 class PageInventory:
-    """Shared read-only page inventory for contextual evaluation checks."""
+    """Shared page inventory, marked incomplete when discovery hit its budget."""
 
     pages: tuple[InventoryPage, ...]
+    complete: bool = True
 
 
 ScannedPage = InventoryPage

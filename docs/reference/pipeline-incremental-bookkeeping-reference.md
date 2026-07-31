@@ -212,7 +212,7 @@ Metadata emitted by one page-staging worker for later aggregation.
 | <a id="stagedpagecontributionwire-description"></a>`description` | str | no | Primary page description extracted or derived during staging, if present. |
 | <a id="stagedpagecontributionwire-derivedtitle"></a>`derivedTitle` | str | no | Body-derived page title inferred from authored content during staging, if present. |
 | <a id="stagedpagecontributionwire-deriveddescription"></a>`derivedDescription` | str | no | Body-derived page description inferred from authored content during staging, if present. |
-| <a id="stagedpagecontributionwire-sourcepath"></a>`sourcePath` | str | yes | Source file path that produced the staged page. |
+| <a id="stagedpagecontributionwire-sourcepath"></a>`sourcePath` | str | no | Source file path that produced the staged page. Private worker fragments may use an absolute path; the coordinator rewrites workspace sources to repository-relative form and omits other sources before retaining this metadata in the stage. |
 | <a id="stagedpagecontributionwire-canonicalurl"></a>`canonicalUrl` | str | no | Explicit canonical URL for the page when it should differ from `publicUrl`. |
 
 #### Selected field examples

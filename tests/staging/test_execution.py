@@ -114,6 +114,7 @@ class StagingExecutionTests(unittest.TestCase):
             with self.assertRaises(StageIntegrityError) as raised:
                 _load_unit_contribution_manifests(
                     layout=layout,
+                    workspace_root=workspace_root,
                     worker_results=(
                         WorkerResultWire(
                             unit_id="component:spark",
@@ -138,6 +139,7 @@ class StagingExecutionTests(unittest.TestCase):
             with self.assertRaises(StageIntegrityError) as raised:
                 _load_unit_contribution_manifests(
                     layout=layout,
+                    workspace_root=workspace_root,
                     worker_results=(
                         WorkerResultWire(
                             unit_id="component:spark",
@@ -162,6 +164,7 @@ class StagingExecutionTests(unittest.TestCase):
             with self.assertRaises(StageIntegrityError) as raised:
                 _load_unit_contribution_manifests(
                     layout=layout,
+                    workspace_root=workspace_root,
                     worker_results=(
                         WorkerResultWire(
                             unit_id="component:spark",
@@ -188,6 +191,7 @@ class StagingExecutionTests(unittest.TestCase):
             with self.assertRaises(StageIntegrityError) as raised:
                 _load_unit_contribution_manifests(
                     layout=layout,
+                    workspace_root=workspace_root,
                     worker_results=(
                         WorkerResultWire(
                             unit_id="component:spark",

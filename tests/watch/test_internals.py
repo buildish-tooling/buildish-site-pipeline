@@ -515,6 +515,113 @@ class WatchInternalTests(unittest.TestCase):
         self.assertEqual(dirty_paths, ())
 
     @mock.patch.dict("os.environ", {"WATCHFILES_FORCE_POLLING": "1"}, clear=False)
+    def test_watch_event_stream_prime_advances_the_native_generator(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            raw_events = mock.MagicMock()
+            raw_events.__next__.return_value = set()
+            with mock.patch(
+                "buildish_site_pipeline.commands.watch.watch",
+                return_value=raw_events,
+            ):
+                stream = _WatchEventStream(
+                    watch_roots=(workspace_root,),
+                    stage_root=workspace_root / "site/.stage",
+                    work_root=workspace_root / ".buildish/work",
+                    report_output=None,
+                    event_output=None,
+                    stop_event=threading.Event(),
+                )
+                try:
+                    primed = stream.prime()
+                finally:
+                    stream.close()
+
+        self.assertTrue(primed)
+        raw_events.__next__.assert_called_once_with()
+
+    @mock.patch.dict("os.environ", {"WATCHFILES_FORCE_POLLING": "1"}, clear=False)
+    def test_watch_event_stream_replacement_closes_and_primes_new_generator(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            first_root = workspace_root / "components/first"
+            second_root = workspace_root / "components/second"
+            first_events = mock.MagicMock()
+            second_events = mock.MagicMock()
+            second_events.__next__.return_value = set()
+            with mock.patch(
+                "buildish_site_pipeline.commands.watch.watch",
+                side_effect=(first_events, second_events),
+            ) as open_watch:
+                stream = _WatchEventStream(
+                    watch_roots=(first_root,),
+                    stage_root=workspace_root / "site/.stage",
+                    work_root=workspace_root / ".buildish/work",
+                    report_output=None,
+                    event_output=None,
+                    stop_event=threading.Event(),
+                )
+                try:
+                    replaced = stream.replace_watch_roots((second_root,))
+                finally:
+                    stream.close()
+
+        self.assertTrue(replaced)
+        self.assertEqual(stream.watch_roots, (second_root,))
+        self.assertEqual(open_watch.call_count, 2)
+        self.assertEqual(open_watch.call_args_list[1].args, (str(second_root),))
+        first_events.close.assert_called_once_with()
+        second_events.__next__.assert_called_once_with()
+        second_events.close.assert_called_once_with()
+
+    @mock.patch.dict("os.environ", {"WATCHFILES_FORCE_POLLING": "1"}, clear=False)
+    def test_watch_event_stream_collects_from_replacement_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workspace_root = Path(tempdir)
+            first_root = workspace_root / "components/first"
+            second_root = workspace_root / "components/second"
+            first_root.mkdir(parents=True)
+            second_root.mkdir(parents=True)
+            stop_event = threading.Event()
+            stream = _WatchEventStream(
+                watch_roots=(first_root,),
+                stage_root=workspace_root / "site/.stage",
+                work_root=workspace_root / ".buildish/work",
+                report_output=None,
+                event_output=None,
+                stop_event=stop_event,
+            )
+            try:
+                self.assertTrue(stream.prime())
+                self.assertTrue(stream.replace_watch_roots((second_root,)))
+                ignored_file = first_root / "ignored.md"
+                watched_file = second_root / "watched.md"
+                ignored_file.write_text("old root\n", encoding="utf-8")
+                watched_file.write_text("new root\n", encoding="utf-8")
+
+                dirty_paths = stream.collect_dirty_paths(wait_for_first=True)
+            finally:
+                stop_event.set()
+                stream.close()
+
+        if dirty_paths is None:
+            self.fail("replacement watcher stopped before observing the new root")
+        self.assertTrue(
+            any(
+                watched_file.resolve(strict=False) == dirty_path
+                or watched_file.resolve(strict=False).is_relative_to(dirty_path)
+                for dirty_path in dirty_paths
+            )
+        )
+        self.assertFalse(
+            any(
+                ignored_file.resolve(strict=False) == dirty_path
+                or ignored_file.resolve(strict=False).is_relative_to(dirty_path)
+                for dirty_path in dirty_paths
+            )
+        )
+
+    @mock.patch.dict("os.environ", {"WATCHFILES_FORCE_POLLING": "1"}, clear=False)
     def test_watch_event_stream_returns_none_when_shutdown_is_already_requested(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             workspace_root = Path(tempdir)

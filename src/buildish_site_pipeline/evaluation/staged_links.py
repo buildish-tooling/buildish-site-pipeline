@@ -20,19 +20,27 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import urljoin, urlsplit
 
 from buildish_site_pipeline.models.enums import DiagnosticSeverity, LinkCheckMode
-from buildish_site_pipeline.page_support import strips_suffix_in_pretty_route
+from buildish_site_pipeline.page_support import (
+    SUPPORTED_PAGE_EXTENSIONS,
+    strips_suffix_in_pretty_route,
+)
 from buildish_site_pipeline.public_paths import normalize_public_path
+from buildish_site_pipeline.planning.types import (
+    PlanningEvaluation,
+    ResolvedLinkCheckPolicy,
+)
 from buildish_site_pipeline.staging.front_matter import public_page_path
 
 from . import diagnostic_codes
 from .collector import DiagnosticCollector
 from .types import ExtractedLinkReference, InventoryPage, PageInventory
 
-_AUTHORED_PAGE_SUFFIXES = {".md", ".mdx", ".adoc", ".asciidoc", ".html"}
-
 
 def validate_staged_links(
-    *, planning, page_inventory: PageInventory, collector: DiagnosticCollector
+    *,
+    planning: PlanningEvaluation,
+    page_inventory: PageInventory,
+    collector: DiagnosticCollector,
 ) -> None:
     """Warn when authored internal page links do not resolve to any known page route."""
 
@@ -84,7 +92,9 @@ def validate_staged_links(
             )
 
 
-def _resolve_link_target(*, page: InventoryPage, href: str, policy) -> str | None:
+def _resolve_link_target(
+    *, page: InventoryPage, href: str, policy: ResolvedLinkCheckPolicy
+) -> str | None:
     parsed = urlsplit(href.strip())
     if parsed.scheme or parsed.netloc or not parsed.path or href.startswith("#"):
         return None
@@ -143,7 +153,7 @@ def _looks_like_page_target(path: str) -> bool:
     if path.endswith("/"):
         return True
     suffix = PurePosixPath(path).suffix.lower()
-    return suffix == "" or suffix in _AUTHORED_PAGE_SUFFIXES
+    return suffix == "" or suffix in SUPPORTED_PAGE_EXTENSIONS
 
 
 def _matches_internal_prefix(path: str, internal_prefixes: tuple[str, ...]) -> bool:

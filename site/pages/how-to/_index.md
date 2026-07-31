@@ -38,6 +38,9 @@ component metadata or when you need the generated file-contract schemas:
 Use these guides when you already understand the staged output and now want to
 wire it into a concrete renderer workflow:
 
-- [integrate with Hugo](integrate-with-hugo/)
-- [integrate with Jekyll](integrate-with-jekyll/)
-- [integrate with MkDocs](integrate-with-mkdocs/)
+- [integrate with Hugo](integrate-with-hugo/) — documented direct mounts
+- [integrate with Roq](integrate-with-roq/) — documented consumer-side adapter
+- [Jekyll integration](integrate-with-jekyll/) — planned-guide status page, not
+  a turnkey recipe
+- [MkDocs integration](integrate-with-mkdocs/) — planned-guide status page, not
+  a turnkey recipe

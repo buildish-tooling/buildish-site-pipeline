@@ -59,6 +59,7 @@ Back to the [reference overview](../pipeline-model-schema-reference/).
 | --- | --- | --- |
 | <a id="candidateselectionmode"></a>`CandidateSelectionMode` | `none`, `latest`, `explicit` | Strategy used to select a candidate version. |
 | <a id="checkfailurethreshold"></a>`CheckFailureThreshold` | `error`, `warning` | Lowest severity that causes ``check`` to fail. |
+| <a id="clierrorcategory"></a>`CliErrorCategory` | `invocation`, `input`, `planning`, `internal` | Stable high-level failure categories for CLI automation. |
 | <a id="diagnosticseverity"></a>`DiagnosticSeverity` | `info`, `warning`, `error` | Severity level for pipeline diagnostics. |
 | <a id="indexbehavior"></a>`IndexBehavior` | `full`, `metadataOnly`, `none` | Renderer hint for version/ref index visibility. |
 | <a id="lineheadselectionmode"></a>`LineHeadSelectionMode` | `none`, `allAuthored`, `explicit` | Strategy used to derive a release-line head record. |

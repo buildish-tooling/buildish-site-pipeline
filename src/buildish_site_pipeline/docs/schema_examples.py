@@ -24,6 +24,36 @@ from buildish_site_pipeline.models.loading import (
 )
 
 
+def cli_failure_example_document() -> object:
+    """Return a representative machine-readable CLI failure report."""
+
+    from buildish_site_pipeline.models.emitted.cli_failure import (
+        CliFailureReportV1,
+    )
+
+    return CliFailureReportV1.model_validate(
+        {
+            "schemaVersion": 1,
+            "kind": "cliFailure",
+            "command": "check",
+            "exitCode": 1,
+            "error": {
+                "category": "input",
+                "code": "input-validation-failed",
+                "message": "Document does not satisfy its schema",
+                "source": "site/catalog.yaml",
+                "issues": [
+                    {
+                        "location": "components[0].slug",
+                        "code": "required",
+                        "message": "Field required",
+                    }
+                ],
+            },
+        }
+    )
+
+
 def catalog_example_document() -> object:
     """Return a realistic authored catalog example used in generated docs."""
 

@@ -174,7 +174,7 @@ class StagedPageContributionWire(SitePipelineBaseModel):
     description: str | None = Field(default=None, description="Primary page description extracted or derived during staging, if present.")
     derived_title: str | None = Field(default=None, description="Body-derived page title inferred from authored content during staging, if present.", examples=["Getting Started"])
     derived_description: str | None = Field(default=None, description="Body-derived page description inferred from authored content during staging, if present.")
-    source_path: str = Field(description="Source file path that produced the staged page.", examples=["docs/runtime/getting-started.md"])
+    source_path: str | None = Field(default=None, description="Source file path that produced the staged page. Private worker fragments may use an absolute path; the coordinator rewrites workspace sources to repository-relative form and omits other sources before retaining this metadata in the stage.", examples=["docs/runtime/getting-started.md"])
     canonical_url: str | None = Field(default=None, description="Explicit canonical URL for the page when it should differ from `publicUrl`.")
 
 

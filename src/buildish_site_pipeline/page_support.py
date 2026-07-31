@@ -23,12 +23,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-SUPPORTED_PAGE_EXTENSIONS = frozenset(
-    {".adoc", ".asciidoc", ".htm", ".html", ".md", ".markdown", ".mdx"}
+MARKDOWN_PAGE_EXTENSIONS = frozenset({".md", ".markdown", ".mdx"})
+ASCIIDOC_PAGE_EXTENSIONS = frozenset({".adoc", ".asciidoc"})
+HTML_PAGE_EXTENSIONS = frozenset({".htm", ".html"})
+SUPPORTED_PAGE_EXTENSIONS = (
+    MARKDOWN_PAGE_EXTENSIONS | ASCIIDOC_PAGE_EXTENSIONS | HTML_PAGE_EXTENSIONS
 )
-PRETTY_ROUTE_PAGE_EXTENSIONS = frozenset(
-    {".adoc", ".asciidoc", ".md", ".markdown", ".mdx"}
-)
+PRETTY_ROUTE_PAGE_EXTENSIONS = MARKDOWN_PAGE_EXTENSIONS | ASCIIDOC_PAGE_EXTENSIONS
 
 
 def is_supported_page_path(path: Path) -> bool:

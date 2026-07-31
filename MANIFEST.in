@@ -13,4 +13,3 @@
 # limitations under the License.
 
 include tools/helpers/__init__.py
-include tools/helpers/build_hooks.py

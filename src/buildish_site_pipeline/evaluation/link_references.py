@@ -17,6 +17,8 @@
 from __future__ import annotations
 
 import re
+from bisect import bisect_right
+from collections import defaultdict, deque
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
@@ -26,10 +28,13 @@ from mistletoe import Document
 from mistletoe.block_token import BlockCode, BlockToken, CodeFence
 from mistletoe.span_token import AutoLink, InlineCode, Link, SpanToken
 
+from buildish_site_pipeline.page_support import (
+    ASCIIDOC_PAGE_EXTENSIONS,
+    MARKDOWN_PAGE_EXTENSIONS,
+)
+
 from .types import ExtractedLinkReference
 
-_MARKDOWN_SUFFIXES = {".md", ".mdx"}
-_ASCIIDOC_SUFFIXES = {".adoc", ".asciidoc"}
 _HTML_HREF_PATTERN = re.compile(
     r"href\s*=\s*(?P<quote>[\"'])(?P<href>.*?)(?P=quote)",
     re.IGNORECASE,
@@ -37,11 +42,30 @@ _HTML_HREF_PATTERN = re.compile(
 _ASCIIDOC_LINK_PATTERN = re.compile(r"(?:^|[^A-Za-z0-9_])link:(?P<href>[^\[]+)\[[^\]]*\]")
 
 
-@dataclass(slots=True)
+@dataclass(frozen=True, slots=True)
 class _LocatedHrefCandidate:
     href: str
     offset: int
-    used: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class _SourceLocator:
+    """Translate character offsets without rescanning the source prefix."""
+
+    line_starts: tuple[int, ...]
+
+    @classmethod
+    def for_text(cls, text: str) -> _SourceLocator:
+        return cls(
+            line_starts=(
+                0,
+                *(match.end() for match in re.finditer("\n", text)),
+            )
+        )
+
+    def line_column(self, offset: int) -> tuple[int, int]:
+        line_index = bisect_right(self.line_starts, offset) - 1
+        return line_index + 1, offset - self.line_starts[line_index] + 1
 
 
 def extract_link_references(
@@ -50,11 +74,11 @@ def extract_link_references(
     """Extract authored link occurrences with optional source locations."""
 
     suffix = source_path.suffix.lower()
-    if suffix in _MARKDOWN_SUFFIXES:
+    if suffix in MARKDOWN_PAGE_EXTENSIONS:
         return _with_occurrence_indexes(
             _markdown_links(text=text, source_line_offset=source_line_offset)
         )
-    if suffix in _ASCIIDOC_SUFFIXES:
+    if suffix in ASCIIDOC_PAGE_EXTENSIONS:
         return _with_occurrence_indexes(
             _regex_links(
                 text=text,
@@ -74,6 +98,20 @@ def extract_link_references(
 
 
 def _markdown_links(*, text: str, source_line_offset: int) -> tuple[ExtractedLinkReference, ...]:
+    fast_candidates = _fast_inline_markdown_candidates(text)
+    if fast_candidates is not None:
+        locator = _SourceLocator.for_text(text)
+        return tuple(
+            _reference_from_offset(
+                locator=locator,
+                href=candidate.href,
+                offset=candidate.offset,
+                source_line_offset=source_line_offset,
+                approximate_line_column=False,
+            )
+            for candidate in fast_candidates
+        )
+
     document = Document(text)
     lines = text.splitlines(keepends=True)
     leaf_blocks = tuple(_leaf_blocks(document))
@@ -96,6 +134,34 @@ def _markdown_links(*, text: str, source_line_offset: int) -> tuple[ExtractedLin
     return tuple(references)
 
 
+def _fast_inline_markdown_candidates(
+    text: str,
+) -> tuple[_LocatedHrefCandidate, ...] | None:
+    """Return candidates when plain inline-link scanning is unambiguous.
+
+    Mistletoe remains the correctness fallback for code, raw HTML, autolinks,
+    references, escapes, and entity handling. Plain inline links can avoid its
+    quadratic span-token search on very link-dense paragraphs.
+    """
+
+    if any(marker in text for marker in ("`", "<", "][", "\\", "&")):
+        return None
+    if any(
+        line.startswith(("    ", "\t"))
+        or line.lstrip().startswith(("~~~", "```"))
+        for line in text.splitlines()
+    ):
+        return None
+    candidates = tuple(_iter_markdown_link_candidates(text))
+    expected_candidate_count = len(re.findall(r"(?<!!)\][ \t]*\(", text))
+    if len(candidates) != expected_candidate_count or any(
+        "\n" in candidate.href or "\r" in candidate.href
+        for candidate in candidates
+    ):
+        return None
+    return candidates
+
+
 def _leaf_blocks(node: BlockToken) -> Iterator[BlockToken]:
     children = tuple(cast(Iterable[object], getattr(node, "children", ()) or ()))
     block_children = tuple(child for child in children if isinstance(child, BlockToken))
@@ -111,15 +177,17 @@ def _markdown_block_links(
     *, block: BlockToken, block_text: str, source_line_offset: int
 ) -> tuple[ExtractedLinkReference, ...]:
     masked_text = _mask_inline_code(block_text)
+    locator = _SourceLocator.for_text(masked_text)
     references = list(
         _regex_links(
             text=masked_text,
             source_line_offset=source_line_offset,
             pattern=_HTML_HREF_PATTERN,
             href_group="href",
+            locator=locator,
         )
     )
-    markdown_candidates = list(_iter_markdown_link_candidates(masked_text))
+    markdown_candidates = _index_markdown_link_candidates(masked_text)
     autolink_cursor = 0
     for href, is_autolink in _token_targets(block):
         if is_autolink:
@@ -128,7 +196,7 @@ def _markdown_block_links(
                 autolink_cursor = candidate.offset + len(href) + 2
                 references.append(
                     _reference_from_offset(
-                        text=masked_text,
+                        locator=locator,
                         href=href,
                         offset=candidate.offset,
                         source_line_offset=source_line_offset,
@@ -141,7 +209,7 @@ def _markdown_block_links(
             if candidate is not None:
                 references.append(
                     _reference_from_offset(
-                        text=masked_text,
+                        locator=locator,
                         href=href,
                         offset=candidate.offset,
                         source_line_offset=source_line_offset,
@@ -190,14 +258,19 @@ def _walk_span_targets(node: object) -> Iterator[tuple[str, bool]]:
 
 
 def _consume_candidate(
-    candidates: list[_LocatedHrefCandidate], href: str
+    candidates: dict[str, deque[_LocatedHrefCandidate]], href: str
 ) -> _LocatedHrefCandidate | None:
-    for candidate in candidates:
-        if candidate.used or candidate.href != href:
-            continue
-        candidate.used = True
-        return candidate
-    return None
+    matching_candidates = candidates.get(href)
+    return matching_candidates.popleft() if matching_candidates else None
+
+
+def _index_markdown_link_candidates(
+    text: str,
+) -> dict[str, deque[_LocatedHrefCandidate]]:
+    candidates: defaultdict[str, deque[_LocatedHrefCandidate]] = defaultdict(deque)
+    for candidate in _iter_markdown_link_candidates(text):
+        candidates[candidate.href].append(candidate)
+    return dict(candidates)
 
 
 def _find_autolink_candidate(
@@ -332,8 +405,14 @@ def _mask_inline_code(text: str) -> str:
 
 
 def _regex_links(
-    *, text: str, source_line_offset: int, pattern: re.Pattern[str], href_group: str
+    *,
+    text: str,
+    source_line_offset: int,
+    pattern: re.Pattern[str],
+    href_group: str,
+    locator: _SourceLocator | None = None,
 ) -> tuple[ExtractedLinkReference, ...]:
+    effective_locator = locator or _SourceLocator.for_text(text)
     references: list[ExtractedLinkReference] = []
     for match in pattern.finditer(text):
         href = match.group(href_group).strip()
@@ -341,7 +420,7 @@ def _regex_links(
             continue
         references.append(
             _reference_from_offset(
-                text=text,
+                locator=effective_locator,
                 href=href,
                 offset=match.start(href_group),
                 source_line_offset=source_line_offset,
@@ -368,13 +447,13 @@ def _with_occurrence_indexes(
 
 def _reference_from_offset(
     *,
-    text: str,
+    locator: _SourceLocator,
     href: str,
     offset: int,
     source_line_offset: int,
     approximate_line_column: bool,
 ) -> ExtractedLinkReference:
-    source_line, source_column = _offset_to_line_column(text=text, offset=offset)
+    source_line, source_column = locator.line_column(offset)
     return ExtractedLinkReference(
         href=href,
         occurrence_index=-1,
@@ -382,10 +461,3 @@ def _reference_from_offset(
         source_column=source_column,
         approximate_line_column=approximate_line_column,
     )
-
-
-def _offset_to_line_column(*, text: str, offset: int) -> tuple[int, int]:
-    source_line = text.count("\n", 0, offset) + 1
-    line_start = text.rfind("\n", 0, offset)
-    source_column = offset + 1 if line_start == -1 else offset - line_start
-    return source_line, source_column

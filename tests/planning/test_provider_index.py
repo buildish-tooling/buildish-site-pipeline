@@ -69,7 +69,10 @@ class ProviderIndexTests(unittest.TestCase):
                 )
 
     def test_rejects_provider_snapshot_when_byte_ceiling_is_exceeded(self) -> None:
-        with patch("buildish_site_pipeline.planning.provider_index._MAX_PROVIDER_SNAPSHOT_BYTES", 1):
+        with patch(
+            "buildish_site_pipeline.planning.provider_index.DEFAULT_PROVIDER_SNAPSHOT_BYTES",
+            1,
+        ):
             with self.assertRaisesRegex(ValueError, "16 MiB planning ceiling"):
                 build_provider_snapshot_index(
                     provider_snapshot=_provider_snapshot(

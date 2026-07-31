@@ -189,12 +189,20 @@
           "type": "string"
         },
         "sourcePath": {
-          "description": "Source file path that produced the staged page.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Source file path that produced the staged page. Private worker fragments may use an absolute path; the coordinator rewrites workspace sources to repository-relative form and omits other sources before retaining this metadata in the stage.",
           "examples": [
             "docs/runtime/getting-started.md"
           ],
-          "title": "Sourcepath",
-          "type": "string"
+          "title": "Sourcepath"
         },
         "stageRelativePath": {
           "description": "Stage-relative file path of the staged page contribution.",
@@ -306,8 +314,7 @@
         "pageKind",
         "publicPath",
         "componentPath",
-        "originKey",
-        "sourcePath"
+        "originKey"
       ],
       "title": "StagedPageContributionWire",
       "type": "object"

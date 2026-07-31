@@ -20,6 +20,7 @@ from pathlib import Path
 
 from buildish_site_pipeline.models.enums import DiagnosticSeverity
 from buildish_site_pipeline.planning.types import PlanningEvaluation
+from buildish_site_pipeline.resource_limits import DEFAULT_PROVIDER_SNAPSHOT_BYTES
 
 from . import diagnostic_codes
 from .collector import DiagnosticCollector
@@ -30,7 +31,12 @@ _REDIRECT_INVENTORY_LIMIT = 100_000
 _CONTENT_INDEX_LIMIT = 100_000
 _WATCH_FILESYSTEM_ENTRY_LIMIT = 100_000
 _SELECTED_VERSION_CONTEXT_LIMIT = 512
-_PROVIDER_SNAPSHOT_BYTES_LIMIT = 16 * 1024 * 1024
+
+
+def content_index_limit() -> int:
+    """Return the effective page-inventory ceiling for the current run."""
+
+    return _CONTENT_INDEX_LIMIT
 
 
 def validate_limits(
@@ -74,14 +80,17 @@ def validate_limits(
         collector=collector,
         metric="providerSnapshotBytes",
         measured=planning.provider_index.snapshot_bytes,
-        allowed=_PROVIDER_SNAPSHOT_BYTES_LIMIT,
+        allowed=DEFAULT_PROVIDER_SNAPSHOT_BYTES,
         message="Provider snapshot size exceeds the documented default safety ceiling",
     )
     if planning.watch_plan is not None:
         _check_limit(
             collector=collector,
             metric="watchFilesystemEntryCount",
-            measured=_count_watch_entries(planning),
+            measured=_count_watch_entries(
+                planning,
+                limit=_WATCH_FILESYSTEM_ENTRY_LIMIT,
+            ),
             allowed=_WATCH_FILESYSTEM_ENTRY_LIMIT,
             message="Watch startup filesystem breadth exceeds the documented default safety ceiling",
         )
@@ -110,17 +119,31 @@ def _check_limit(
     )
 
 
-def _count_watch_entries(planning: PlanningEvaluation) -> int:
+def _count_watch_entries(
+    planning: PlanningEvaluation,
+    *,
+    limit: int | None = None,
+) -> int:
+    """Count watch entries, stopping once ``limit + 1`` proves an excess."""
+
     if planning.watch_plan is None:
         raise ValueError("Watch-entry counting requires one watch plan")
     total = 0
     seen_dirs: set[Path] = set()
     for root in planning.watch_plan.roots:
-        total += _count_entries_beneath(root, seen_dirs)
+        remaining = None if limit is None else limit - total
+        total += _count_entries_beneath(root, seen_dirs, limit=remaining)
+        if limit is not None and total > limit:
+            return total
     return total
 
 
-def _count_entries_beneath(root: Path, seen_dirs: set[Path]) -> int:
+def _count_entries_beneath(
+    root: Path,
+    seen_dirs: set[Path],
+    *,
+    limit: int | None,
+) -> int:
     count = 0
     root_real = root.resolve(strict=False)
     stack = [root]
@@ -132,6 +155,8 @@ def _count_entries_beneath(root: Path, seen_dirs: set[Path]) -> int:
         seen_dirs.add(directory_real)
         for entry in directory.iterdir():
             count += 1
+            if limit is not None and count > limit:
+                return count
             if entry.is_dir() and entry.resolve(strict=False).is_relative_to(root_real):
                 stack.append(entry)
     return count

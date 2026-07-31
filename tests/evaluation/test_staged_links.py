@@ -23,12 +23,49 @@ from types import SimpleNamespace
 from buildish_site_pipeline.evaluation.collector import DiagnosticCollector
 from buildish_site_pipeline.evaluation.link_references import extract_link_references
 from buildish_site_pipeline.evaluation.staged_links import validate_staged_links
-from buildish_site_pipeline.evaluation.types import InventoryPage, PageInventory
+from buildish_site_pipeline.evaluation.types import (
+    ExtractedLinkReference,
+    InventoryPage,
+    PageInventory,
+)
 from buildish_site_pipeline.models.enums import LinkCheckMode
 from buildish_site_pipeline.planning.types import ResolvedLinkCheckPolicy
 
 
 class StagedLinksTests(unittest.TestCase):
+    def test_all_supported_page_extension_families_are_checked(self) -> None:
+        markdown = extract_link_references(
+            source_path=Path("index.markdown"),
+            text="[Missing](missing.htm)",
+        )
+        html = extract_link_references(
+            source_path=Path("index.htm"),
+            text='<a href="missing.markdown">Missing</a>',
+        )
+
+        self.assertEqual([link.href for link in markdown], ["missing.htm"])
+        self.assertEqual([link.href for link in html], ["missing.markdown"])
+
+        collector = DiagnosticCollector()
+        validate_staged_links(
+            planning=self._planning(
+                mode=LinkCheckMode.DIRECTORY,
+                check_root_absolute=False,
+            ),
+            page_inventory=PageInventory(
+                pages=(
+                    self._page("index.markdown", "[Missing](missing.htm)"),
+                    self._page(
+                        "other.htm",
+                        '<a href="missing.markdown">Missing</a>',
+                    ),
+                )
+            ),
+            collector=collector,
+        )
+
+        self.assertEqual(len(collector.build()), 2)
+
     def test_directory_mode_warns_for_missing_relative_page_links(self) -> None:
         collector = DiagnosticCollector()
         planning = self._planning(
@@ -146,6 +183,25 @@ Inline example: `<a href="missing/">Missing</a>`
 
         diagnostics = collector.build()
         self.assertEqual(diagnostics, ())
+
+    def test_malformed_inline_markdown_does_not_consume_following_text(self) -> None:
+        references = extract_link_references(
+            source_path=Path("index.md"),
+            text="[Valid](guide/) [broken](missing/\n",
+        )
+
+        self.assertEqual(
+            references,
+            (
+                ExtractedLinkReference(
+                    href="guide/",
+                    occurrence_index=0,
+                    source_line=1,
+                    source_column=9,
+                    approximate_line_column=False,
+                ),
+            ),
+        )
 
     def test_root_absolute_links_require_declared_internal_prefixes(self) -> None:
         collector = DiagnosticCollector()

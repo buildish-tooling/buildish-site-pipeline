@@ -1,6 +1,6 @@
 ---
 title: Use JSON Schema for Site Pipeline file contracts
-description: "Use the published schema URLs to get completion, hover help, and early validation while editing Site Pipeline inputs."
+description: "Use local Site Pipeline schema exports for completion, hover help, and early validation, and understand their intended canonical URLs."
 weight: 23
 ---
 
@@ -20,36 +20,48 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-Use the published JSON Schema URLs when you want faster feedback while editing
-Site Pipeline inputs. A good editor can use them for:
+Use the JSON Schema exports when you want faster feedback while editing Site
+Pipeline inputs. A good editor can use them for:
 
 - field completion
 - required-field validation
 - hover help for documented fields
 - early detection of misspelled or misplaced keys
 
-## Start with the published schema URLs
+## Start with the current schema filenames
 
 Most users only need the schemas for the authored input files:
 
-- `site/catalog.yaml`: `https://buildish.org/components/site-pipeline/schemas/site-pipeline-catalog-v1.schema.json`
-- `site/component.yaml`: `https://buildish.org/components/site-pipeline/schemas/site-pipeline-component-v1.schema.json`
-- optional `site/provider-snapshot.json`: `https://buildish.org/components/site-pipeline/schemas/site-pipeline-provider-snapshot-v1.schema.json`
+- `site/catalog.yaml`: `catalog-v1.schema.json`
+- `site/component.yaml`: `component-v1.schema.json`
+- optional `site/provider-snapshot.json`: `provider-snapshot-v1.schema.json`
 
-If you also validate generated JSON in automation, matching schemas are
-published for stage outputs and CLI reports under:
+The generated schemas are checked into the Site Pipeline source tree under
+`site/pages/schemas/`. The Buildish site does not publish those files yet, so
+the corresponding `buildish.org` URLs are not currently downloadable.
 
-- `https://buildish.org/components/site-pipeline/schemas/`
+Each schema already uses its intended canonical URL as its `$id`. Once schema
+publication is in place, the authored-input URLs will be:
+
+- `site/catalog.yaml`: `https://buildish.org/components/site-pipeline/schemas/catalog-v1.schema.json`
+- `site/component.yaml`: `https://buildish.org/components/site-pipeline/schemas/component-v1.schema.json`
+- optional `site/provider-snapshot.json`: `https://buildish.org/components/site-pipeline/schemas/provider-snapshot-v1.schema.json`
+
+Treat those URLs as contract identifiers until publication is available, not
+as working download locations.
 
 ## Add schema hints to authored YAML
 
 If your editor supports `yaml-language-server`, add a schema hint comment at
-the top of each authored YAML file.
+the top of each authored YAML file. Until the canonical URLs are published,
+point the hint at a local schema file. For example, if you copy the schemas you
+use into `site/schemas/`, refresh those copies whenever you update Site
+Pipeline.
 
 For `site/catalog.yaml`:
 
 ```yaml
-# yaml-language-server: $schema=https://buildish.org/components/site-pipeline/schemas/site-pipeline-catalog-v1.schema.json
+# yaml-language-server: $schema=schemas/catalog-v1.schema.json
 schemaVersion: 1
 site: {}
 ```
@@ -57,29 +69,32 @@ site: {}
 For `site/component.yaml`:
 
 ```yaml
-# yaml-language-server: $schema=https://buildish.org/components/site-pipeline/schemas/site-pipeline-component-v1.schema.json
+# yaml-language-server: $schema=schemas/component-v1.schema.json
 schemaVersion: 1
 component:
   slug: spark
 ```
 
 If you edit `site/provider-snapshot.json` directly, use your editor's JSON
-schema-mapping feature to associate that filename with the published provider
-snapshot schema URL.
+schema-mapping feature to associate that filename with a local copy of
+`provider-snapshot-v1.schema.json`.
 
 ## Use the schemas as contract references
 
-The published schema URLs are also useful outside the editor:
+The checked-in schema exports are also useful outside the editor:
 
-- CI checks can validate `manifest.json`, `data/components.json`, or `data/routes.json` against the matching published schema
-- downstream tools can treat those URLs as the stable machine-readable contract
-- teams can share one schema URL across multiple repositories instead of relying on local relative paths
+- CI checks can validate `manifest.json`, `data/components.json`, or
+  `data/routes.json` against a matching local schema file
+- downstream tools can use each schema's `$id` as the stable
+  machine-readable contract identifier
+- after publication is available, teams can share one canonical URL across
+  multiple repositories instead of relying on local relative paths
 
 Examples:
 
-- [`manifest.json`](../../schemas/site-pipeline-stage-manifest-v1.schema.json)
-- [`data/components.json`](../../schemas/site-pipeline-components-data-v1.schema.json)
-- [`data/routes.json`](../../schemas/site-pipeline-routes-data-v1.schema.json)
+- [`manifest.json`](../../schemas/stage-manifest-v1.schema.json)
+- [`data/components.json`](../../schemas/components-data-v1.schema.json)
+- [`data/routes.json`](../../schemas/routes-data-v1.schema.json)
 
 Links to all JSON schema files can be found in the [schema reference](../../development/reference/pipeline-model-schema-reference/).
 

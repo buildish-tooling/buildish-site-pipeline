@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import tempfile
 from collections.abc import Sequence
@@ -37,10 +38,27 @@ from .contract import (
     WatchEventRequest,
 )
 from .errors import (
+    CliFailureReport,
     InvocationError,
     ReportWriteError,
     UnsupportedReportSchemaVersionError,
 )
+
+
+def emit_cli_failure_report(
+    *, request: ReportRequest, report: CliFailureReport, stdout: TextIO
+) -> None:
+    """Emit a JSON CLI-failure envelope to the validated report sink."""
+
+    if request.report_format is not ReportFormat.JSON or request.schema_version != 1:
+        raise ValueError("CLI failure reports require JSON report schema version 1")
+    serialized = json.dumps(report.to_json_payload(), indent=2)
+    if request.output_path is None:
+        stdout.write(serialized)
+        stdout.write("\n")
+        stdout.flush()
+        return
+    _write_report_file(path=request.output_path, content=serialized)
 
 
 def build_report_request(

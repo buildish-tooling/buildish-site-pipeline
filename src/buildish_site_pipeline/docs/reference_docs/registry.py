@@ -58,7 +58,10 @@ MODEL_SECTION_DEFINITIONS = (
         title="Planning and stage-contract types",
         description="Pipeline-emitted planning, diagnostics, and stage-manifest contracts.",
         page_slug="pipeline-planning-and-stage-contract-reference",
-        module_prefixes=("buildish_site_pipeline.models.emitted.planning_stage_contract",),
+        module_prefixes=(
+            "buildish_site_pipeline.models.emitted.cli_failure",
+            "buildish_site_pipeline.models.emitted.planning_stage_contract",
+        ),
     ),
     ModelSectionDefinition(
         title="Staged front matter types",

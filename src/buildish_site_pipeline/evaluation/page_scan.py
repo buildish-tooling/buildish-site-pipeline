@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from itertools import islice
 from pathlib import Path
 
 from buildish_site_pipeline.models.authored.page_metadata import (
@@ -27,7 +28,10 @@ from buildish_site_pipeline.models.enums import (
     MaterializationInputKind,
     MaterializationStatus,
 )
-from buildish_site_pipeline.models.loading import LoadingError, load_yaml_mapping
+from buildish_site_pipeline.authored_page import (
+    AuthoredPageParseError,
+    parse_authored_page,
+)
 from buildish_site_pipeline.page_support import is_supported_page_path
 from buildish_site_pipeline.planning.types import (
     LocalInputIdentity,
@@ -41,8 +45,9 @@ from buildish_site_pipeline.staging.publication_paths import public_path_for_con
 
 from . import diagnostic_codes
 from .collector import DiagnosticCollector
+from .limits import content_index_limit
 from .link_references import extract_link_references
-from .types import InventoryPage, PageInventory
+from .types import ExtractedLinkReference, InventoryPage, PageInventory
 
 _PAGE_INPUT_KINDS = {
     MaterializationInputKind.SITE_PAGES,
@@ -69,9 +74,18 @@ def validate_page_scan(
 ) -> PageInventory:
     """Build the shared page inventory and emit basic authored-page diagnostics."""
 
+    stop_after = content_index_limit() + 1
     pages: list[InventoryPage] = []
     for context in _page_root_contexts(planning):
-        pages.extend(_scan_page_root(context=context, collector=collector))
+        pages.extend(
+            _scan_page_root(
+                context=context,
+                collector=collector,
+                max_pages=stop_after - len(pages),
+            )
+        )
+        if len(pages) >= stop_after:
+            return PageInventory(pages=tuple(pages), complete=False)
     return PageInventory(pages=tuple(pages))
 
 
@@ -144,8 +158,13 @@ def _page_root_contexts(planning: PlanningEvaluation) -> tuple[_PageRootContext,
 
 
 def _scan_page_root(
-    *, context: _PageRootContext, collector: DiagnosticCollector
+    *,
+    context: _PageRootContext,
+    collector: DiagnosticCollector,
+    max_pages: int,
 ) -> list[InventoryPage]:
+    if max_pages <= 0:
+        return []
     root_real = context.root.resolve(strict=False)
     pages: list[InventoryPage] = []
     seen_dirs: set[Path] = set()
@@ -158,31 +177,60 @@ def _scan_page_root(
             continue
         seen_dirs.add(directory_real)
         try:
-            entries = sorted(directory.iterdir(), key=lambda entry: entry.name)
+            entries = iter(directory.iterdir())
+            while len(pages) < max_pages:
+                # Bound each batch by the remaining page budget so discovery
+                # never pre-enumerates entries beyond a decisive limit hit.
+                # The accepted inventory is normalized below after discovery.
+                batch = sorted(
+                    islice(entries, max_pages - len(pages)),
+                    key=lambda entry: entry.name,
+                )
+                if not batch:
+                    break
+                for entry in batch:
+                    entry_real = entry.resolve(strict=False)
+                    relative_path = entry.relative_to(context.root).as_posix()
+                    if not entry_real.is_relative_to(root_real):
+                        collector.add(
+                            severity=DiagnosticSeverity.ERROR,
+                            code=diagnostic_codes.PAGE_PATH_OUTSIDE_ROOT,
+                            message=(
+                                f"Scanned page path {relative_path} for {context.input_id} resolves outside the declared source root"
+                            ),
+                            component_slug=context.component_slug,
+                            artifact_key=context.artifact_key,
+                            details={"inputId": context.input_id, "path": relative_path},
+                        )
+                        continue
+                    if entry.is_dir():
+                        # Directory symlinks are aliases rather than authored
+                        # subtrees. Staging's Path.rglob traversal follows the
+                        # same rule; contained file symlinks remain accepted.
+                        if entry.is_symlink():
+                            continue
+                        stack.append(entry)
+                        continue
+                    if not is_supported_page_path(entry):
+                        continue
+                    pages.append(
+                        _scan_page_file(
+                            entry=entry,
+                            context=context,
+                            collector=collector,
+                        )
+                    )
+                    if len(pages) >= max_pages:
+                        return _ordered_pages(pages)
         except OSError as exc:
             _add_scan_failure(context=context, collector=collector, reason=str(exc))
-            continue
-        for entry in entries:
-            entry_real = entry.resolve(strict=False)
-            relative_path = entry.relative_to(context.root).as_posix()
-            if not entry_real.is_relative_to(root_real):
-                collector.add(
-                    severity=DiagnosticSeverity.ERROR,
-                    code=diagnostic_codes.PAGE_PATH_OUTSIDE_ROOT,
-                    message=(
-                        f"Scanned page path {relative_path} for {context.input_id} resolves outside the declared source root"
-                    ),
-                    component_slug=context.component_slug,
-                    artifact_key=context.artifact_key,
-                    details={"inputId": context.input_id, "path": relative_path},
-                )
-                continue
-            if entry.is_dir():
-                stack.append(entry)
-                continue
-            if not is_supported_page_path(entry):
-                continue
-            pages.append(_scan_page_file(entry=entry, context=context, collector=collector))
+    return _ordered_pages(pages)
+
+
+def _ordered_pages(pages: list[InventoryPage]) -> list[InventoryPage]:
+    """Return one root inventory in stable repository-relative path order."""
+
+    pages.sort(key=lambda page: page.relative_path)
     return pages
 
 
@@ -265,38 +313,27 @@ def _scan_page_file(
 def _extract_front_matter(
     *, text: str, relative_path: str, context: _PageRootContext, collector: DiagnosticCollector
 ) -> tuple[dict[str, object] | None, str | None, int]:
-    if not text.startswith("---\n"):
-        return None, text, 0
-    end_marker = text.find("\n---\n", 4)
-    if end_marker == -1:
-        end_marker = text.find("\n...\n", 4)
-    if end_marker == -1:
-        collector.add(
-            severity=DiagnosticSeverity.ERROR,
-            code=diagnostic_codes.PAGE_FRONT_MATTER_INVALID,
-            message=f"Page front matter for {relative_path} in {context.input_id} is not terminated",
-            component_slug=context.component_slug,
-            artifact_key=context.artifact_key,
-            details={"inputId": context.input_id, "path": relative_path},
-        )
-        return None, None, 0
-    raw_front_matter = text[4:end_marker]
-    body_text = text[end_marker + 5 :]
-    source_line_offset = text[: end_marker + 5].count("\n")
-    if raw_front_matter.strip() == "":
-        return {}, body_text, source_line_offset
     try:
-        return dict(load_yaml_mapping(raw_front_matter)), body_text, source_line_offset
-    except LoadingError as exc:
+        parsed = parse_authored_page(text)
+    except AuthoredPageParseError as exc:
+        malformed = exc.content is not None
         collector.add(
             severity=DiagnosticSeverity.ERROR,
             code=diagnostic_codes.PAGE_FRONT_MATTER_INVALID,
-            message=f"Page front matter for {relative_path} in {context.input_id} is malformed",
+            message=(
+                f"Page front matter for {relative_path} in {context.input_id} "
+                f"is {'malformed' if malformed else 'not terminated'}"
+            ),
             component_slug=context.component_slug,
             artifact_key=context.artifact_key,
-            details={"inputId": context.input_id, "path": relative_path, "reason": str(exc)},
+            details={
+                "inputId": context.input_id,
+                "path": relative_path,
+                **({"reason": str(exc)} if malformed else {}),
+            },
         )
-        return None, body_text, source_line_offset
+        return None, exc.content, exc.source_line_offset
+    return parsed.metadata, parsed.content, parsed.source_line_offset
 
 
 def _page_record(
@@ -305,7 +342,7 @@ def _page_record(
     entry: Path,
     relative_path: str,
     translation_key: str | None,
-    extracted_links,
+    extracted_links: tuple[ExtractedLinkReference, ...],
 ) -> InventoryPage:
     _, _, routed_relative_path = detect_locale(Path(relative_path), context.localization)
     return InventoryPage(

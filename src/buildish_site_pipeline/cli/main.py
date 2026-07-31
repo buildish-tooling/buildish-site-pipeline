@@ -27,6 +27,7 @@ from buildish_site_pipeline.models.enums import (
     CheckFailureThreshold,
     PlanningTarget,
 )
+from buildish_site_pipeline.planning.errors import PlanningInputFailure
 
 from ..commands.component_source_roots import run_component_source_roots
 from ..commands.watch import run_watch
@@ -45,7 +46,14 @@ from .contract import (
     WatchInvocation,
 )
 from .dispatch import dispatch_command
-from .errors import CommandExecutionError, InvocationError, SitePipelineCliError
+from .errors import (
+    CliFailureReport,
+    CommandExecutionError,
+    InputDiagnosticError,
+    InvocationError,
+    PlanningInputError,
+    SitePipelineCliError,
+)
 from .logging_support import (
     configure_cli_logging,
     derive_cli_log_mode,
@@ -54,6 +62,7 @@ from .logging_support import (
 from .reporting import (
     build_report_request,
     build_watch_event_request,
+    emit_cli_failure_report,
     emit_report,
     revalidate_report_request,
     revalidate_watch_event_request,
@@ -76,6 +85,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 def _run(*, argv: Sequence[str] | None, stdout: TextIO, stderr: TextIO) -> int:
     configure_cli_logging(mode=derive_cli_log_mode(argv), stderr=stderr)
+    invocation: CommandInvocation | None = None
     try:
         invocation = parse_invocation(argv)
         if isinstance(invocation, WatchInvocation):
@@ -88,14 +98,132 @@ def _run(*, argv: Sequence[str] | None, stdout: TextIO, stderr: TextIO) -> int:
             )
         return _run_non_watch_invocation(invocation=invocation, stdout=stdout)
     except InvocationError as exc:
-        _emit_error(str(exc), stderr=stderr)
-        return int(ApplicationExitCode.INVOCATION_ERROR)
+        return _finish_cli_failure(
+            error=exc,
+            exit_code=ApplicationExitCode.INVOCATION_ERROR,
+            invocation=invocation,
+            stdout=stdout,
+            stderr=stderr,
+        )
+    except InputDiagnosticError as exc:
+        return _finish_cli_failure(
+            error=exc,
+            exit_code=ApplicationExitCode.DOMAIN_FAILURE,
+            invocation=invocation,
+            stdout=stdout,
+            stderr=stderr,
+        )
+    except PlanningInputFailure as exc:
+        return _finish_cli_failure(
+            error=PlanningInputError(str(exc)),
+            exit_code=ApplicationExitCode.DOMAIN_FAILURE,
+            invocation=invocation,
+            stdout=stdout,
+            stderr=stderr,
+        )
     except CommandExecutionError as exc:
-        _emit_error(str(exc), stderr=stderr)
-        return int(ApplicationExitCode.INTERNAL_FAILURE)
+        return _finish_cli_failure(
+            error=exc,
+            exit_code=ApplicationExitCode.INTERNAL_FAILURE,
+            invocation=invocation,
+            stdout=stdout,
+            stderr=stderr,
+        )
     except SitePipelineCliError as exc:
-        _emit_error(str(exc), stderr=stderr)
-        return int(ApplicationExitCode.INTERNAL_FAILURE)
+        return _finish_cli_failure(
+            error=exc,
+            exit_code=ApplicationExitCode.INTERNAL_FAILURE,
+            invocation=invocation,
+            stdout=stdout,
+            stderr=stderr,
+        )
+    except Exception:
+        _LOGGER.debug("Unexpected site-pipeline failure", exc_info=True)
+        return _finish_cli_failure(
+            error=CommandExecutionError(
+                "The command failed unexpectedly",
+                code="internal-unexpected-failure",
+            ),
+            exit_code=ApplicationExitCode.INTERNAL_FAILURE,
+            invocation=invocation,
+            stdout=stdout,
+            stderr=stderr,
+        )
+
+
+def _finish_cli_failure(
+    *,
+    error: SitePipelineCliError,
+    exit_code: ApplicationExitCode,
+    invocation: CommandInvocation | None,
+    stdout: TextIO,
+    stderr: TextIO,
+) -> int:
+    """Emit one failure without mixing human text into a requested JSON sink."""
+
+    if isinstance(invocation, WatchInvocation) and isinstance(
+        error, CommandExecutionError
+    ):
+        # Watch writes its terminal StageRunReport before raising a hard terminal
+        # error. Keep that command report intact and send only the terminal notice
+        # to the human stream.
+        _emit_error(error.diagnostic.render_text(), stderr=stderr)
+        return int(exit_code)
+
+    report_request = _report_request_for_invocation(invocation)
+    if report_request is not None and report_request.report_format.value == "json":
+        if invocation is None:
+            raise AssertionError("a report request requires a parsed invocation")
+        try:
+            validated_request = _revalidate_report_request_for_layout(
+                layout=invocation.layout,
+                request=report_request,
+            )
+            emit_cli_failure_report(
+                request=validated_request,
+                report=CliFailureReport.model_validate(
+                    {
+                        "schemaVersion": 1,
+                        "kind": "cliFailure",
+                        "command": _command_name(invocation),
+                        "exitCode": int(exit_code),
+                        "error": error.diagnostic,
+                    }
+                ),
+                stdout=stdout,
+            )
+            return int(exit_code)
+        except InvocationError as emission_error:
+            _emit_error(emission_error.diagnostic.render_text(), stderr=stderr)
+            return int(ApplicationExitCode.INVOCATION_ERROR)
+        except SitePipelineCliError as emission_error:
+            _emit_error(emission_error.diagnostic.render_text(), stderr=stderr)
+            return int(ApplicationExitCode.INTERNAL_FAILURE)
+    _emit_error(error.diagnostic.render_text(), stderr=stderr)
+    return int(exit_code)
+
+
+def _report_request_for_invocation(
+    invocation: CommandInvocation | None,
+) -> ReportRequest | None:
+    if isinstance(
+        invocation,
+        (PlanInvocation, CheckInvocation, BuildInvocation, WatchInvocation),
+    ):
+        return invocation.report_request
+    return None
+
+
+def _command_name(invocation: CommandInvocation) -> str:
+    if isinstance(invocation, PlanInvocation):
+        return "plan"
+    if isinstance(invocation, CheckInvocation):
+        return "check"
+    if isinstance(invocation, BuildInvocation):
+        return "build"
+    if isinstance(invocation, WatchInvocation):
+        return "watch"
+    return "component-source-roots"
 
 
 def _run_watch_invocation(
@@ -293,10 +421,21 @@ def parse_invocation(argv: Sequence[str] | None = None) -> CommandInvocation:
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    parser = _ArgumentParser(prog="site-pipeline", allow_abbrev=False)
+    parser = _ArgumentParser(
+        prog="site-pipeline",
+        allow_abbrev=False,
+        description=(
+            "Validate, plan, and stage renderer-neutral documentation-site inputs."
+        ),
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    plan_parser = subparsers.add_parser("plan", allow_abbrev=False)
+    plan_parser = subparsers.add_parser(
+        "plan",
+        allow_abbrev=False,
+        help="Report the local inputs required for a build or watch run.",
+        description="Resolve and report required local inputs without staging files.",
+    )
     _add_workspace_arguments(plan_parser)
     _add_logging_arguments(plan_parser)
     plan_parser.add_argument(
@@ -304,10 +443,16 @@ def _build_parser() -> argparse.ArgumentParser:
         dest="planning_target",
         choices=[value.value for value in PlanningTarget],
         default=PlanningTarget.BUILD.value,
+        help="Plan inputs for build or watch (default: build).",
     )
     _add_report_arguments(plan_parser)
 
-    check_parser = subparsers.add_parser("check", allow_abbrev=False)
+    check_parser = subparsers.add_parser(
+        "check",
+        allow_abbrev=False,
+        help="Validate inputs without creating a staged site tree.",
+        description="Validate the workspace using the same gates required by build.",
+    )
     _add_workspace_arguments(check_parser)
     _add_logging_arguments(check_parser)
     check_parser.add_argument(
@@ -315,21 +460,35 @@ def _build_parser() -> argparse.ArgumentParser:
         dest="fail_on_severity",
         choices=[value.value for value in CheckFailureThreshold],
         default=CheckFailureThreshold.ERROR.value,
+        help="Fail on error diagnostics, or on warnings too (default: error).",
     )
     _add_report_arguments(check_parser)
 
-    build_parser = subparsers.add_parser("build", allow_abbrev=False)
+    build_parser = subparsers.add_parser(
+        "build",
+        allow_abbrev=False,
+        help="Validate and create the normalized staged site tree.",
+        description="Validate inputs and publish a normalized stage for a renderer.",
+    )
     _add_workspace_arguments(build_parser)
     _add_logging_arguments(build_parser)
     _add_report_arguments(build_parser)
 
     component_source_roots_parser = subparsers.add_parser(
-        "component-source-roots", allow_abbrev=False
+        "component-source-roots",
+        allow_abbrev=False,
+        help="Print effective local component source roots.",
+        description="Print one effective local component source root per line.",
     )
     _add_workspace_arguments(component_source_roots_parser)
     _add_logging_arguments(component_source_roots_parser)
 
-    watch_parser = subparsers.add_parser("watch", allow_abbrev=False)
+    watch_parser = subparsers.add_parser(
+        "watch",
+        allow_abbrev=False,
+        help="Keep the normalized staged site tree up to date.",
+        description="Build once, then update the normalized stage after local changes.",
+    )
     _add_workspace_arguments(watch_parser)
     _add_logging_arguments(watch_parser)
     watch_parser.add_argument(
@@ -337,6 +496,7 @@ def _build_parser() -> argparse.ArgumentParser:
         dest="fail_on_severity",
         choices=[value.value for value in CheckFailureThreshold],
         default=CheckFailureThreshold.ERROR.value,
+        help="Apply error or warning validation gates during watch cycles (default: error).",
     )
     watch_parser.add_argument(
         "--unstable-events",
@@ -355,14 +515,44 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def _add_workspace_arguments(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--workspace-root", default=None)
-    parser.add_argument("--catalog", default=None)
+    parser.add_argument(
+        "--workspace-root",
+        default=None,
+        metavar="PATH",
+        help="Resolve workspace-relative inputs from PATH (default: current directory).",
+    )
+    parser.add_argument(
+        "--catalog",
+        default=None,
+        metavar="PATH",
+        help=(
+            "Read the site catalog from PATH (default: "
+            "<workspace-root>/site/catalog.yaml); its directory owns provider, stage, "
+            "and work defaults."
+        ),
+    )
 
 
 def _add_report_arguments(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--report-format", choices=["text", "json"], default="text")
-    parser.add_argument("--report-schema-version", type=int, default=None)
-    parser.add_argument("--report-output", default="-")
+    parser.add_argument(
+        "--report-format",
+        choices=["text", "json"],
+        default="text",
+        help="Select human-readable text or machine-readable JSON (default: text).",
+    )
+    parser.add_argument(
+        "--report-schema-version",
+        type=int,
+        default=None,
+        metavar="VERSION",
+        help="Select JSON report schema version 1; required with --report-format json.",
+    )
+    parser.add_argument(
+        "--report-output",
+        default="-",
+        metavar="PATH|-",
+        help="Write the report to PATH or '-' for stdout (default: '-').",
+    )
 
 
 def _add_logging_arguments(parser: argparse.ArgumentParser) -> None:

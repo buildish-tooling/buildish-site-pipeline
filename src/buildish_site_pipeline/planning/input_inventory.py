@@ -16,6 +16,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from buildish_site_pipeline.models.enums import (
     MaterializationInputKind,
     MaterializationStatus,
@@ -100,7 +102,7 @@ def derive_local_inputs(
     return tuple(inputs)
 
 
-def _expected_context_path(context: SelectedVersionContext):
+def _expected_context_path(context: SelectedVersionContext) -> Path:
     if context.input_kind is MaterializationInputKind.DEVELOPMENT:
         return context.docs_root
     if (

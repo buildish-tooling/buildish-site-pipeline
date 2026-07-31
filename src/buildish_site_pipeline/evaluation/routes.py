@@ -27,6 +27,7 @@ from .collector import DiagnosticCollector
 from .publication import public_path_for_context, target_id_for_context
 from .reference_index import (
     KnownRoute,
+    ReferenceIndex,
     build_reference_index,
     resolve_internal_reference,
     route_from_published_target,
@@ -283,7 +284,7 @@ def _validate_component_redirect_targets(
     *,
     component: ResolvedComponentConfig,
     collector: DiagnosticCollector,
-    reference_index,
+    reference_index: ReferenceIndex,
     redirect_edges: dict[tuple[str, str], tuple[str, str]],
 ) -> None:
     for index, redirect in enumerate(component.publication.redirects):
@@ -305,7 +306,7 @@ def _validate_context_redirect_target(
     context: SelectedVersionContext,
     component_by_slug: dict[str, ResolvedComponentConfig],
     collector: DiagnosticCollector,
-    reference_index,
+    reference_index: ReferenceIndex,
     redirect_edges: dict[tuple[str, str], tuple[str, str]],
 ) -> None:
     if (
@@ -337,7 +338,7 @@ def _validate_redirect_target(
     component_slug: str,
     redirect_id: str,
     collector: DiagnosticCollector,
-    reference_index,
+    reference_index: ReferenceIndex,
     redirect_edges: dict[tuple[str, str], tuple[str, str]],
     artifact_key: str | None = None,
     target_id: str | None = None,

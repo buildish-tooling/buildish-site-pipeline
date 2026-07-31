@@ -27,6 +27,9 @@ Back to the [reference overview](../pipeline-model-schema-reference/).
 
 - [CheckReportV1](#checkreportv1) — Machine-readable result of ``site-pipeline check``.
 - [CheckSummary](#checksummary) — Outcome counts and pass/fail decision for one `check` run.
+- [CliDiagnostic](#clidiagnostic) — Structured operator-facing failure without internal exception details.
+- [CliDiagnosticIssue](#clidiagnosticissue) — One bounded, actionable detail attached to a CLI failure.
+- [CliFailureReportV1](#clifailurereportv1) — Stable JSON envelope emitted when no command report can be produced.
 - [PipelineDiagnosticEntry](#pipelinediagnosticentry) — Structured diagnostic emitted during planning, checking, or staging.
 - [ReducedDiagnosticDetailsSummary](#reduceddiagnosticdetailssummary) — Compact placeholder used when full diagnostic details were too large to keep.
 - [ResolvedMaterializationEntry](#resolvedmaterializationentry) — One local checkout or fetched input that the planner expects to exist.
@@ -98,6 +101,94 @@ Outcome counts and pass/fail decision for one `check` run.
 | <a id="checksummary-errorcount"></a>`errorCount` | [NonNegativeInteger](../pipeline-shared-types-reference/#nonnegativeinteger) | yes | Number of error diagnostics emitted during the run. |
 | <a id="checksummary-warningcount"></a>`warningCount` | [NonNegativeInteger](../pipeline-shared-types-reference/#nonnegativeinteger) | yes | Number of warning diagnostics emitted during the run. |
 | <a id="checksummary-infocount"></a>`infoCount` | [NonNegativeInteger](../pipeline-shared-types-reference/#nonnegativeinteger) | yes | Number of informational diagnostics emitted during the run. |
+
+<a id="clidiagnostic"></a>
+### CliDiagnostic
+
+Structured operator-facing failure without internal exception details.
+
+- category: `emitted`
+- ownership: `pipeline-derived`
+- file contract: (inner type)
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| <a id="clidiagnostic-category"></a>`category` | [CliErrorCategory](../pipeline-shared-types-reference/#clierrorcategory) | yes | High-level failure category suitable for automation branching. |
+| <a id="clidiagnostic-code"></a>`code` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | yes | Stable machine-readable CLI failure code. |
+| <a id="clidiagnostic-message"></a>`message` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | yes | Concise human-readable summary of the failure. |
+| <a id="clidiagnostic-source"></a>`source` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | no | Sanitized input name associated with the failure, when available. |
+| <a id="clidiagnostic-issues"></a>`issues` | tuple[[CliDiagnosticIssue](#clidiagnosticissue), ...] | no | Bounded actionable issue details retained for this failure. |
+| <a id="clidiagnostic-omittedissuecount"></a>`omittedIssueCount` | [NonNegativeInteger](../pipeline-shared-types-reference/#nonnegativeinteger) | no | Number of additional issues omitted to keep the failure bounded. |
+
+#### Selected field examples
+
+- `code`: Example: `"input-validation-failed"`
+- `source`: Example: `"site/catalog.yaml"`
+
+<a id="clidiagnosticissue"></a>
+### CliDiagnosticIssue
+
+One bounded, actionable detail attached to a CLI failure.
+
+- category: `emitted`
+- ownership: `pipeline-derived`
+- file contract: (inner type)
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| <a id="clidiagnosticissue-location"></a>`location` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | yes | Bounded source or field location for the issue. |
+| <a id="clidiagnosticissue-code"></a>`code` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | yes | Stable machine-readable issue code. |
+| <a id="clidiagnosticissue-message"></a>`message` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | yes | Concise human-readable explanation of the issue. |
+| <a id="clidiagnosticissue-actualbytes"></a>`actualBytes` | [NonNegativeInteger](../pipeline-shared-types-reference/#nonnegativeinteger) | no | Observed input size when the issue reports a size limit. |
+| <a id="clidiagnosticissue-limitbytes"></a>`limitBytes` | [NonNegativeInteger](../pipeline-shared-types-reference/#nonnegativeinteger) | no | Configured maximum input size when the issue reports a size limit. |
+
+#### Selected field examples
+
+- `location`: Example: `"components[0].slug"`
+- `code`: Example: `"required"`
+- `message`: Example: `"Field required"`
+
+<a id="clifailurereportv1"></a>
+### CliFailureReportV1
+
+Stable JSON envelope emitted when no command report can be produced.
+
+- category: `emitted`
+- ownership: `pipeline-derived`
+- file contract: (inner type)
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| <a id="clifailurereportv1-schemaversion"></a>`schemaVersion` | Literal[1] | yes | Schema version for the CLI failure report. |
+| <a id="clifailurereportv1-kind"></a>`kind` | Literal['cliFailure'] | yes | Discriminator separating failures from command-specific reports. |
+| <a id="clifailurereportv1-command"></a>`command` | Literal['plan', 'check', 'build', 'watch'] | yes | Command whose normal JSON report could not be produced. |
+| <a id="clifailurereportv1-exitcode"></a>`exitCode` | Literal[1, 2, 3] | yes | CLI process exit code associated with this failure. |
+| <a id="clifailurereportv1-error"></a>`error` | [CliDiagnostic](#clidiagnostic) | yes | Structured error category, code, message, and bounded issue details. |
+
+#### Example: Authored input validation failure with one actionable issue.
+
+```json
+{
+  "schemaVersion": 1,
+  "kind": "cliFailure",
+  "command": "check",
+  "exitCode": 1,
+  "error": {
+    "category": "input",
+    "code": "input-validation-failed",
+    "message": "Document does not satisfy its schema",
+    "source": "site/catalog.yaml",
+    "issues": [
+      {
+        "location": "components[0].slug",
+        "code": "required",
+        "message": "Field required"
+      }
+    ],
+    "omittedIssueCount": 0
+  }
+}
+```
 
 <a id="pipelinediagnosticentry"></a>
 ### PipelineDiagnosticEntry

@@ -16,13 +16,66 @@
 
 from __future__ import annotations
 
+from buildish_site_pipeline.models.emitted.cli_failure import (
+    CliDiagnostic,
+    CliDiagnosticIssue,
+    CliErrorCategory,
+    CliFailureReportV1,
+)
+
+CliFailureReport = CliFailureReportV1
+
 
 class SitePipelineCliError(Exception):
     """Base class for operator-visible CLI failures."""
 
+    default_category = CliErrorCategory.INTERNAL
+    default_code = "internal-command-failed"
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        code: str | None = None,
+        source: str | None = None,
+        issues: tuple[CliDiagnosticIssue, ...] = (),
+        omitted_issue_count: int = 0,
+    ) -> None:
+        super().__init__(message)
+        self.diagnostic = CliDiagnostic(
+            category=self.default_category,
+            code=code or self.default_code,
+            message=message,
+            source=source,
+            issues=issues,
+            omitted_issue_count=omitted_issue_count,
+        )
+
+    def __str__(self) -> str:
+        """Keep direct exception rendering as actionable as the CLI boundary."""
+
+        return self.diagnostic.render_text()
+
 
 class InvocationError(SitePipelineCliError):
     """The caller supplied invalid arguments or an unsafe output path."""
+
+    default_category = CliErrorCategory.INVOCATION
+    default_code = "invocation-invalid"
+
+
+class InputDiagnosticError(SitePipelineCliError):
+    """An authored or provider input could not be safely loaded or validated."""
+
+    default_category = CliErrorCategory.INPUT
+    default_code = "input-invalid"
+
+
+class PlanningInputError(SitePipelineCliError):
+    """Validated inputs could not produce a coherent planning result."""
+
+    default_category = CliErrorCategory.PLANNING
+    default_code = "planning-input-invalid"
 
 
 class UnsupportedReportSchemaVersionError(InvocationError):

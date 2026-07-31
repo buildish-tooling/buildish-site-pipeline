@@ -527,12 +527,12 @@ class AggregateHelperTests(unittest.TestCase):
             )
             relative_artifact = SimpleNamespace(
                 key="runtime",
-                authored=SimpleNamespace(),
+                authored=SimpleNamespace(docs_root=None),
                 docs_root=workspace_root / "components/runtime/docs",
             )
             outside_artifact = SimpleNamespace(
                 key="runtime",
-                authored=SimpleNamespace(),
+                authored=SimpleNamespace(docs_root=None),
                 docs_root=Path("/outside/docs"),
             )
 
@@ -560,13 +560,19 @@ class AggregateHelperTests(unittest.TestCase):
                 UnitContributionManifestWire(
                     unit_id="component:spark",
                     pages=(
-                        self._contribution(stage_relative_path=str(absolute_stage_path)),
+                        self._contribution(
+                            stage_relative_path=str(absolute_stage_path),
+                            source_path=str(
+                                workspace_root / "components/runtime/docs/guide.md"
+                            ),
+                        ),
                     ),
                 ),
             )
 
             manifests = _load_unit_contribution_manifests(
                 layout=layout,
+                workspace_root=workspace_root,
                 worker_results=(
                     WorkerResultWire(
                         unit_id="component:spark",
@@ -574,16 +580,35 @@ class AggregateHelperTests(unittest.TestCase):
                     ),
                     WorkerResultWire(unit_id="component:skip"),
                 ),
-                retained_unit_manifests=(UnitContributionManifestWire(unit_id="retained"),),
+                retained_unit_manifests=(
+                    UnitContributionManifestWire(
+                        unit_id="retained",
+                        pages=(
+                            self._contribution(
+                                source_path="/outside/generated/guide.md",
+                            ),
+                        ),
+                    ),
+                ),
             )
 
             self.assertEqual(manifests[0].unit_id, "retained")
+            self.assertIsNone(manifests[0].pages[0].source_path)
             self.assertEqual(
                 manifests[1].pages[0].stage_relative_path,
                 "content/spark/guide.md",
             )
+            self.assertEqual(
+                manifests[1].pages[0].source_path,
+                "components/runtime/docs/guide.md",
+            )
             relative = self._contribution(stage_relative_path="content/spark/guide.md")
-            self.assertIs(_normalize_page_contribution(layout=layout, contribution=relative), relative)
+            normalized = _normalize_page_contribution(
+                layout=layout,
+                workspace_root=workspace_root,
+                contribution=relative,
+            )
+            self.assertEqual(normalized, relative)
 
             manifest_path.unlink()
             manifest_path.mkdir()

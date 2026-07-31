@@ -72,6 +72,7 @@ Schema-root report and namespace types that do not correspond to one stable chec
 
 | Root type(s) | Schema file | Summary |
 | --- | --- | --- |
+| [CliFailureReportV1](../pipeline-planning-and-stage-contract-reference/#clifailurereportv1) | [`cli-failure-report-v1.schema.json`](/components/site-pipeline/schemas/cli-failure-report-v1.schema.json) | Versioned CLI failure envelope emitted in place of a requested JSON command report. |
 | [CheckReportV1](../pipeline-planning-and-stage-contract-reference/#checkreportv1) | [`check-report-v1.schema.json`](/components/site-pipeline/schemas/check-report-v1.schema.json) | Validation result for one `site-pipeline check` invocation. |
 | [PipelineFrontMatterNamespace](../pipeline-staged-front-matter-reference/#pipelinefrontmatternamespace) | [`front-matter-namespace-v1.schema.json`](/components/site-pipeline/schemas/front-matter-namespace-v1.schema.json) | Reserved front matter namespace containing pipeline-derived component and page metadata. |
 | [ResolvedMaterializationReportV1](../pipeline-planning-and-stage-contract-reference/#resolvedmaterializationreportv1) | [`materialization-report-v1.schema.json`](/components/site-pipeline/schemas/materialization-report-v1.schema.json) | Planning inventory of required local inputs and their current materialization status. |

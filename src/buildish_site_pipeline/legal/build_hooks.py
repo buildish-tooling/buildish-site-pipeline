@@ -39,6 +39,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import shutil
+import tempfile
 
 try:
     from setuptools.command.bdist_wheel import bdist_wheel as _bdist_wheel
@@ -56,13 +57,34 @@ _FLATTENED_LICENSE_PATHS = {
     "dist-release-legal/LICENSE": "LICENSE",
     "dist-release-legal/NOTICE": "NOTICE",
 }
+
+
 class FlattenedLicenseFilesBdistWheel(_bdist_wheel):
-    """Flatten selected wheel license files after setuptools copies them.
+    """Build from isolated intermediates and flatten selected license files.
 
     ``project.license-files`` remains the source of truth for what gets bundled.
     This class only adjusts the wheel-facing paths for the two curated
     release files that should appear directly under ``.dist-info/licenses/``.
+
+    Setuptools normally reuses the repository's ``build/`` directory. A stale
+    package left there can then leak into a later wheel even though it is no
+    longer selected by package discovery. Each wheel build therefore gets its
+    own temporary build and installation trees. The caller's output directory
+    remains unchanged, and no existing repository build artifacts are removed.
     """
+
+    def run(self) -> None:
+        """Build the wheel without consuming persistent build intermediates."""
+
+        with tempfile.TemporaryDirectory(prefix="buildish-site-pipeline-wheel-") as temp:
+            temporary_root = Path(temp)
+            build_command = self.reinitialize_command(
+                "build",
+                reinit_subcommands=True,
+            )
+            build_command.build_base = str(temporary_root / "build")
+            self.bdist_dir = str(temporary_root / "wheel")
+            super().run()
 
     def egg2dist(self, egginfo_path: str, distinfo_path: str) -> None:
         """Convert egg metadata, then normalize the wheel license layout.

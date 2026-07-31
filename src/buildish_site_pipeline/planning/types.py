@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Self
 
 from buildish_site_pipeline.models.authored.site_catalog import (
+    ArtifactConfig,
     ArtifactLifecycleConfig,
     ArtifactVersioningConfig,
     ComponentCatalogEntry,
@@ -112,7 +113,7 @@ class ResolvedArtifactConfig:
     """Resolved component artifact runtime view."""
 
     key: str
-    authored: object
+    authored: ArtifactConfig
     source_binding: ResolvedSourceBinding
     docs_root: Path
     assets_root: Path | None

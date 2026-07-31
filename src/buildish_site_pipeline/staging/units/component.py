@@ -38,6 +38,8 @@ from ..front_matter import (
 from ..source_tree import iter_source_tree_files
 from ..worker_protocol import (
     ContributionFileRefs,
+    LocalizationWire,
+    PagePublicationWire,
     StagedPageContributionWire,
     UnitContributionManifestWire,
     WorkerOutputStats,
@@ -144,7 +146,7 @@ def _stage_pages_tree(
     *,
     source_root: Path,
     destination_root: Path,
-    base_publication,
+    base_publication: PagePublicationWire,
     component_slug: str,
     artifact_key: str | None,
     section: str,
@@ -153,7 +155,7 @@ def _stage_pages_tree(
     record_kind: str | None,
     version_ref: str | None,
     version: str | None,
-    localization,
+    localization: LocalizationWire | None,
     component_namespace: PipelineComponentFrontMatter | None,
 ) -> tuple[list[StagedPageContributionWire], tuple[int, int]]:
     contributions: list[StagedPageContributionWire] = []

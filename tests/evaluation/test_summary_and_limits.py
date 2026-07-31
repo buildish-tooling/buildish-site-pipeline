@@ -135,7 +135,10 @@ class SummaryAndLimitsTests(unittest.TestCase):
             patch("buildish_site_pipeline.evaluation.limits._REDIRECT_INVENTORY_LIMIT", 0),
             patch("buildish_site_pipeline.evaluation.limits._CONTENT_INDEX_LIMIT", 0),
             patch("buildish_site_pipeline.evaluation.limits._SELECTED_VERSION_CONTEXT_LIMIT", 0),
-            patch("buildish_site_pipeline.evaluation.limits._PROVIDER_SNAPSHOT_BYTES_LIMIT", 0),
+            patch(
+                "buildish_site_pipeline.evaluation.limits.DEFAULT_PROVIDER_SNAPSHOT_BYTES",
+                0,
+            ),
         ):
             validate_limits(
                 planning=planning,
@@ -169,3 +172,111 @@ class SummaryAndLimitsTests(unittest.TestCase):
             counted = _count_watch_entries(planning)
 
         self.assertEqual(counted, 3)
+
+    def test_page_inventory_limit_accepts_exact_limit_and_measures_one_over(self) -> None:
+        planning = SimpleNamespace(
+            selected_versions=SimpleNamespace(contexts=()),
+            provider_index=SimpleNamespace(snapshot_bytes=0),
+            watch_plan=None,
+        )
+        exact_collector = DiagnosticCollector()
+        exceeded_collector = DiagnosticCollector()
+
+        with patch(
+            "buildish_site_pipeline.evaluation.limits._CONTENT_INDEX_LIMIT",
+            1,
+        ):
+            validate_limits(
+                planning=planning,
+                route_inventory=RouteInventory(route_count=0, redirect_count=0),
+                page_inventory=PageInventory(pages=(object(),)),
+                collector=exact_collector,
+            )
+            validate_limits(
+                planning=planning,
+                route_inventory=RouteInventory(route_count=0, redirect_count=0),
+                page_inventory=PageInventory(pages=(object(), object()), complete=False),
+                collector=exceeded_collector,
+            )
+
+        self.assertEqual(exact_collector.build(), ())
+        diagnostic = exceeded_collector.build()[0]
+        self.assertEqual(diagnostic.details["metric"], "contentIndexCount")
+        self.assertEqual(diagnostic.details["measured"], 2)
+        self.assertEqual(diagnostic.details["allowed"], 1)
+
+    def test_count_watch_entries_stops_after_limit_plus_one(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            first_entry = root / "first.md"
+            second_entry = root / "second.md"
+            first_entry.write_text("first\n", encoding="utf-8")
+            second_entry.write_text("second\n", encoding="utf-8")
+            original_iterdir = type(root).iterdir
+            yielded_entries: list[Path] = []
+
+            def _iterdir(path: Path):
+                if path != root:
+                    return original_iterdir(path)
+
+                def _adversarial_entries():
+                    for entry in (first_entry, second_entry):
+                        yielded_entries.append(entry)
+                        yield entry
+                    raise AssertionError("watch discovery continued after limit plus one")
+
+                return _adversarial_entries()
+
+            planning = SimpleNamespace(watch_plan=SimpleNamespace(roots=(root,)))
+            with patch.object(
+                type(root),
+                "iterdir",
+                autospec=True,
+                side_effect=_iterdir,
+            ):
+                counted = _count_watch_entries(planning, limit=1)
+
+        self.assertEqual(counted, 2)
+        self.assertEqual(yielded_entries, [first_entry, second_entry])
+
+    def test_watch_entry_limit_accepts_exact_limit_and_measures_one_over(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            first_entry = root / "first.md"
+            first_entry.write_text("first\n", encoding="utf-8")
+            planning = SimpleNamespace(
+                selected_versions=SimpleNamespace(contexts=()),
+                provider_index=SimpleNamespace(snapshot_bytes=0),
+                watch_plan=SimpleNamespace(roots=(root,)),
+            )
+            exact_collector = DiagnosticCollector()
+            with patch(
+                "buildish_site_pipeline.evaluation.limits._WATCH_FILESYSTEM_ENTRY_LIMIT",
+                1,
+            ):
+                validate_limits(
+                    planning=planning,
+                    route_inventory=RouteInventory(route_count=0, redirect_count=0),
+                    page_inventory=PageInventory(pages=()),
+                    collector=exact_collector,
+                )
+
+            second_entry = root / "second.md"
+            second_entry.write_text("second\n", encoding="utf-8")
+            exceeded_collector = DiagnosticCollector()
+            with patch(
+                "buildish_site_pipeline.evaluation.limits._WATCH_FILESYSTEM_ENTRY_LIMIT",
+                1,
+            ):
+                validate_limits(
+                    planning=planning,
+                    route_inventory=RouteInventory(route_count=0, redirect_count=0),
+                    page_inventory=PageInventory(pages=()),
+                    collector=exceeded_collector,
+                )
+
+        self.assertEqual(exact_collector.build(), ())
+        diagnostic = exceeded_collector.build()[0]
+        self.assertEqual(diagnostic.details["metric"], "watchFilesystemEntryCount")
+        self.assertEqual(diagnostic.details["measured"], 2)
+        self.assertEqual(diagnostic.details["allowed"], 1)

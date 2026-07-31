@@ -49,16 +49,17 @@ def collect_evaluation_artifacts(
     )
     route_inventory = validate_routes(planning, publication_index, collector)
     page_inventory = validate_page_scan(planning, collector)
-    validate_localization(
-        planning=planning,
-        page_scan=page_inventory,
-        collector=collector,
-    )
-    validate_staged_links(
-        planning=planning,
-        page_inventory=page_inventory,
-        collector=collector,
-    )
+    if page_inventory.complete:
+        validate_localization(
+            planning=planning,
+            page_scan=page_inventory,
+            collector=collector,
+        )
+        validate_staged_links(
+            planning=planning,
+            page_inventory=page_inventory,
+            collector=collector,
+        )
     validate_providers(planning, collector)
     validate_inputs(planning, collector)
     validate_limits(

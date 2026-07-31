@@ -34,20 +34,61 @@ class WheelLegalFilesTests(unittest.TestCase):
         }
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            out_dir = Path(temp_dir)
+            temp_root = Path(temp_dir)
+            source_root = temp_root / "source"
+            out_dir = temp_root / "dist"
+            shutil.copytree(
+                project_root,
+                source_root,
+                ignore=shutil.ignore_patterns(
+                    ".git",
+                    ".mypy_cache",
+                    ".pytest_cache",
+                    ".ruff_cache",
+                    ".venv",
+                    "__pycache__",
+                    "build",
+                    "dist",
+                ),
+            )
+
+            stale_package = (
+                source_root
+                / "build/lib/apache_buildish_site_pipeline/__init__.py"
+            )
+            stale_package.parent.mkdir(parents=True)
+            stale_package.write_text(
+                '"""Stale package that must not leak into the wheel."""\n',
+                encoding="utf-8",
+            )
+
             subprocess.run(  # noqa: S603
                 [uv_executable, "build", "--wheel", "--out-dir", str(out_dir)],
                 check=True,
-                cwd=project_root,
+                cwd=source_root,
             )
 
             wheel_path = next(out_dir.glob("*.whl"))
             with zipfile.ZipFile(wheel_path) as wheel_zip:
                 names = set(wheel_zip.namelist())
+                archive_roots = {
+                    name.partition("/")[0]
+                    for name in names
+                    if "/" in name
+                }
+                packaged_top_level_names = {
+                    root
+                    for root in archive_roots
+                    if not root.endswith((".dist-info", ".data"))
+                }
                 metadata_path = (
                     "buildish_site_pipeline-0.1.0.dist-info/METADATA"
                 )
                 metadata_text = wheel_zip.read(metadata_path).decode("utf-8")
+                self.assertEqual(
+                    packaged_top_level_names,
+                    {"buildish_site_pipeline"},
+                )
                 self.assertNotIn("LICENSE", names)
                 self.assertNotIn("NOTICE", names)
                 self.assertNotIn("DISCLAIMER", names)

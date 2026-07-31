@@ -22,6 +22,10 @@ from pathlib import Path
 import re
 import frontmatter
 
+from buildish_site_pipeline.authored_page import (
+    AuthoredPageParseError,
+    parse_authored_page,
+)
 from buildish_site_pipeline.cli.errors import StageIntegrityError
 from buildish_site_pipeline.models.authored.site_catalog import (
     ArtifactLifecycleConfig,
@@ -62,6 +66,7 @@ from buildish_site_pipeline.staging.publication_paths import (
     public_path_for_context,
 )
 from buildish_site_pipeline.staging.worker_protocol import (
+    LocalizationWire,
     StagedPageContributionWire,
 )
 
@@ -505,7 +510,8 @@ def _normalize_extracted_text(value: str) -> str | None:
 
 
 def detect_locale(
-    relative_source_path: Path, localization: ResolvedLocalizationPolicy | None
+    relative_source_path: Path,
+    localization: ResolvedLocalizationPolicy | LocalizationWire | None,
 ) -> tuple[str | None, bool, Path]:
     """Resolve locale and routed relative path for one staged page."""
 
@@ -643,7 +649,13 @@ def _load_authored_post(
     *, source_path: Path, allow_existing_pipeline: bool
 ) -> frontmatter.Post:
     raw_text = source_path.read_text(encoding="utf-8")
-    post = frontmatter.loads(raw_text)
+    try:
+        parsed = parse_authored_page(raw_text)
+    except AuthoredPageParseError as exc:
+        raise StageIntegrityError(
+            f"Could not parse authored page front matter in {source_path}: {exc}"
+        ) from exc
+    post = _frontmatter_post_with_metadata(parsed.content, parsed.metadata)
     if not allow_existing_pipeline and "pipeline" in post.metadata:
         raise StageIntegrityError(
             f"Authored page front matter in {source_path} must not define the reserved 'pipeline' namespace",
@@ -660,8 +672,7 @@ def _frontmatter_post_with_metadata(
 
 
 def _artifact_display_name(artifact: ResolvedArtifactConfig) -> str | None:
-    display_name = getattr(artifact.authored, "display_name", None)
-    return display_name if isinstance(display_name, str) else None
+    return artifact.authored.display_name
 
 
 def _component_display_name(component: ResolvedComponentConfig) -> str | None:

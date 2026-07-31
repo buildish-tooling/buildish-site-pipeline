@@ -136,6 +136,25 @@ class PublicSafetyTests(unittest.TestCase):
                     workspace_root=workspace_root,
                 )
             )
+            self.assertEqual(
+                public_source_path(
+                    source_path="components/runtime/docs/index.md",
+                    workspace_root=workspace_root,
+                ),
+                "components/runtime/docs/index.md",
+            )
+            self.assertIsNone(
+                public_source_path(
+                    source_path="../outside/docs/index.md",
+                    workspace_root=workspace_root,
+                )
+            )
+            self.assertIsNone(
+                public_source_path(
+                    source_path=None,
+                    workspace_root=workspace_root,
+                )
+            )
 
     def test_leaves_reduced_detail_summaries_unchanged(self) -> None:
         summary = ReducedDiagnosticDetailsSummary(

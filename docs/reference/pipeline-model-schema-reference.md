@@ -42,6 +42,6 @@ It covers authored inputs, provider inputs, pipeline-emitted outputs, shared sca
 
 ## Coverage notes
 
-- generated schema files: `24`
+- generated schema files: `25`
 - stable contract pages are split by contract family to keep navigation and review manageable.
 

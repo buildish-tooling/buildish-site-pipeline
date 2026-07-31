@@ -77,11 +77,20 @@ def sanitize_public_diagnostics(
     )
 
 
-def public_source_path(*, source_path: str, workspace_root: Path) -> str | None:
+def public_source_path(
+    *, source_path: str | None, workspace_root: Path
+) -> str | None:
     """Return a repo-relative public source path or ``None`` for non-workspace sources."""
 
+    if source_path is None:
+        return None
+    raw_source_path = Path(source_path)
+    if not raw_source_path.is_absolute():
+        if raw_source_path == Path() or ".." in raw_source_path.parts:
+            return None
+        return raw_source_path.as_posix()
     normalized_workspace_root = workspace_root.resolve(strict=False)
-    normalized_source_path = Path(source_path).resolve(strict=False)
+    normalized_source_path = raw_source_path.resolve(strict=False)
     if not normalized_source_path.is_relative_to(normalized_workspace_root):
         return None
     return normalized_source_path.relative_to(normalized_workspace_root).as_posix()

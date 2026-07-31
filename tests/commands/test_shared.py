@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import unittest
 
-from buildish_site_pipeline.cli.errors import InvocationError
+from buildish_site_pipeline.cli.errors import InputDiagnosticError
 from buildish_site_pipeline.commands.shared import load_workspace_inputs
 
 from tests.support.workspace import _workspace
@@ -36,14 +36,15 @@ def _set_default_metadata_file(workspace_root, metadata_file: str) -> None:
 
 
 class SharedWorkspaceLoadingTests(unittest.TestCase):
-    def test_missing_catalog_document_raises_invocation_error(self) -> None:
+    def test_missing_catalog_document_raises_input_diagnostic(self) -> None:
         with _workspace() as workspace_root:
             (workspace_root / "site/catalog.yaml").unlink()
 
-            with self.assertRaises(InvocationError) as raised:
+            with self.assertRaises(InputDiagnosticError) as raised:
                 load_workspace_inputs(workspace_root=workspace_root)
 
-        self.assertIn("Missing catalog document", str(raised.exception))
+        self.assertEqual(raised.exception.diagnostic.code, "input-not-found")
+        self.assertIn("Catalog document does not exist", str(raised.exception))
 
     def test_missing_provider_snapshot_returns_empty_default_snapshot(self) -> None:
         with _workspace() as workspace_root:
@@ -62,7 +63,7 @@ class SharedWorkspaceLoadingTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            with self.assertRaises(InvocationError) as raised:
+            with self.assertRaises(InputDiagnosticError) as raised:
                 load_workspace_inputs(workspace_root=workspace_root)
 
         self.assertIn("multiple default provider snapshot files", str(raised.exception))
@@ -91,7 +92,7 @@ class SharedWorkspaceLoadingTests(unittest.TestCase):
                 outside_metadata
             )
 
-            with self.assertRaises(InvocationError) as raised:
+            with self.assertRaises(InputDiagnosticError) as raised:
                 load_workspace_inputs(workspace_root=workspace_root)
 
         self.assertIn("escapes declared root", str(raised.exception))
@@ -104,7 +105,11 @@ class SharedWorkspaceLoadingTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            with self.assertRaises(InvocationError) as raised:
+            with self.assertRaises(InputDiagnosticError) as raised:
                 load_workspace_inputs(workspace_root=workspace_root)
 
-        self.assertIn("Unsupported document format", str(raised.exception))
+        self.assertEqual(
+            raised.exception.diagnostic.code,
+            "input-format-unsupported",
+        )
+        self.assertIn(".json, .yaml, or .yml", str(raised.exception))

@@ -36,7 +36,7 @@ from collections import defaultdict
 from collections.abc import Mapping
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from buildish_site_pipeline.cli.errors import StageIntegrityError
 from buildish_site_pipeline.models.emitted.aggregates import (
@@ -58,6 +58,7 @@ from buildish_site_pipeline.models.emitted.aggregates import (
 from buildish_site_pipeline.models.authored.site_catalog import (
     CompatibilityAssertionConfig,
     MountConfig,
+    SupportWindow,
 )
 from buildish_site_pipeline.models.enums import RecordKind
 from buildish_site_pipeline.models.emitted.planning_stage_contract import (
@@ -124,6 +125,7 @@ def finalize_pages_and_write_aggregates(
 
     unit_contribution_manifests = _load_unit_contribution_manifests(
         layout=layout,
+        workspace_root=build_plan.workspace_root,
         worker_results=worker_results,
         retained_unit_manifests=retained_unit_manifests,
     )
@@ -1115,7 +1117,7 @@ def _support_status_for_context(
 
 def _support_window_for_context(
     artifact: ResolvedArtifactConfig, context: SelectedVersionContext
-):
+) -> SupportWindow | None:
     provider_record = context.provider_record
     if artifact.lifecycle is None:
         return None
@@ -1133,12 +1135,11 @@ def _support_window_for_context(
 
 
 def _artifact_display_name(artifact: ResolvedArtifactConfig) -> str | None:
-    display_name = getattr(artifact.authored, "display_name", None)
-    return display_name if isinstance(display_name, str) else None
+    return artifact.authored.display_name
 
 
 def _artifact_docs_root(artifact: ResolvedArtifactConfig, workspace_root: Path) -> str:
-    docs_root = getattr(artifact.authored, "docs_root", None)
+    docs_root = cast(object, artifact.authored.docs_root)
     if isinstance(docs_root, Path):
         return docs_root.as_posix()
     if isinstance(docs_root, str):
@@ -1153,19 +1154,13 @@ def _artifact_docs_root(artifact: ResolvedArtifactConfig, workspace_root: Path) 
 def _artifact_compatibility_entries(
     artifact: ResolvedArtifactConfig,
 ) -> tuple[CompatibilityAssertionConfig, ...]:
-    compatibility = getattr(artifact.authored, "compatibility", None)
-    return tuple(
-        item
-        for item in compatibility or ()
-        if isinstance(item, CompatibilityAssertionConfig)
-    )
+    return tuple(artifact.authored.compatibility or ())
 
 
 def _artifact_mount_entries(
     artifact: ResolvedArtifactConfig,
 ) -> tuple[MountConfig, ...]:
-    mounts = getattr(artifact.authored, "mounts", None)
-    return tuple(item for item in mounts or () if isinstance(item, MountConfig))
+    return tuple(artifact.authored.mounts or ())
 
 
 def _provider_record_for_context(
@@ -1228,29 +1223,33 @@ def _parse_timestamp(value: datetime | str | None) -> datetime | None:
 def _load_unit_contribution_manifests(
     *,
     layout: WorkRootLayout,
+    workspace_root: Path,
     worker_results: tuple[WorkerResultWire, ...],
     retained_unit_manifests: tuple[UnitContributionManifestWire, ...],
 ) -> tuple[UnitContributionManifestWire, ...]:
     manifests: list[UnitContributionManifestWire] = []
     seen_unit_ids: set[str] = set()
     for manifest in retained_unit_manifests:
-        _register_loaded_unit_manifest(seen_unit_ids=seen_unit_ids, manifest=manifest)
-        manifests.append(manifest)
+        normalized_manifest = _normalize_unit_manifest(
+            layout=layout,
+            workspace_root=workspace_root,
+            manifest=manifest,
+        )
+        _register_loaded_unit_manifest(
+            seen_unit_ids=seen_unit_ids,
+            manifest=normalized_manifest,
+        )
+        manifests.append(normalized_manifest)
     for result in worker_results:
         manifest_path = _validated_unit_manifest_path(layout=layout, result=result)
         if manifest_path is None:
             continue
         manifest = read_unit_manifest(manifest_path)
         _validate_manifest_matches_worker_result(result=result, manifest=manifest)
-        normalized_manifest = manifest.model_copy(
-            update={
-                "pages": tuple(
-                    _normalize_page_contribution(
-                        layout=layout, contribution=contribution
-                    )
-                    for contribution in manifest.pages
-                ),
-            },
+        normalized_manifest = _normalize_unit_manifest(
+            layout=layout,
+            workspace_root=workspace_root,
+            manifest=manifest,
         )
         _register_loaded_unit_manifest(
             seen_unit_ids=seen_unit_ids,
@@ -1258,6 +1257,28 @@ def _load_unit_contribution_manifests(
         )
         manifests.append(normalized_manifest)
     return tuple(manifests)
+
+
+def _normalize_unit_manifest(
+    *,
+    layout: WorkRootLayout,
+    workspace_root: Path,
+    manifest: UnitContributionManifestWire,
+) -> UnitContributionManifestWire:
+    """Normalize private worker paths before retaining metadata in the stage."""
+
+    return manifest.model_copy(
+        update={
+            "pages": tuple(
+                _normalize_page_contribution(
+                    layout=layout,
+                    workspace_root=workspace_root,
+                    contribution=contribution,
+                )
+                for contribution in manifest.pages
+            ),
+        },
+    )
 
 
 def _validate_manifest_matches_worker_result(
@@ -1283,16 +1304,20 @@ def _register_loaded_unit_manifest(
 def _normalize_page_contribution(
     *,
     layout: WorkRootLayout,
+    workspace_root: Path,
     contribution: StagedPageContributionWire,
 ) -> StagedPageContributionWire:
-    if not Path(contribution.stage_relative_path).is_absolute():
-        return contribution
+    stage_relative_path = contribution.stage_relative_path
+    if Path(stage_relative_path).is_absolute():
+        stage_relative_path = str(
+            Path(stage_relative_path).relative_to(layout.next_stage_root)
+        )
     return contribution.model_copy(
         update={
-            "stage_relative_path": str(
-                Path(contribution.stage_relative_path).relative_to(
-                    layout.next_stage_root
-                )
+            "stage_relative_path": stage_relative_path,
+            "source_path": public_source_path(
+                source_path=contribution.source_path,
+                workspace_root=workspace_root,
             ),
         },
     )

@@ -60,6 +60,7 @@ class SchemaExportTests(unittest.TestCase):
             manifest_schema = json.loads((Path(tempdir) / "stage-manifest-v1.schema.json").read_text(encoding="utf-8"))
             components_data_schema = json.loads((Path(tempdir) / "components-data-v1.schema.json").read_text(encoding="utf-8"))
             diagnostics_schema = json.loads((Path(tempdir) / "diagnostics-data-v1.schema.json").read_text(encoding="utf-8"))
+            cli_failure_schema = json.loads((Path(tempdir) / "cli-failure-report-v1.schema.json").read_text(encoding="utf-8"))
 
         self.assertEqual(catalog_schema["$schema"], "https://json-schema.org/draft/2020-12/schema")
         self.assertEqual(
@@ -126,6 +127,14 @@ class SchemaExportTests(unittest.TestCase):
             "data/diagnostics.json",
         )
         self.assertEqual(diagnostics_schema["type"], "array")
+        self.assertEqual(
+            cli_failure_schema["properties"]["kind"]["const"],
+            "cliFailure",
+        )
+        self.assertEqual(
+            cli_failure_schema["examples"][0]["error"]["category"],
+            "input",
+        )
 
     def test_generated_reference_doc_matches_checked_in_output(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
@@ -212,6 +221,7 @@ class SchemaExportTests(unittest.TestCase):
         self.assertIn("components-data-v1.schema.json", export_names)
         self.assertIn("unit-contributions-v1.schema.json", export_names)
         self.assertIn("front-matter-namespace-v1.schema.json", export_names)
+        self.assertIn("cli-failure-report-v1.schema.json", export_names)
         self.assertGreaterEqual(len(export_names), 20)
 
     def test_checked_in_schema_files_match_generated_output(self) -> None:

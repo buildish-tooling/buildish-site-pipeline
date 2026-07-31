@@ -27,9 +27,10 @@ effective component source-root locators.
 
 - the `buildish_site_pipeline` Python package,
 - the `site-pipeline` CLI entrypoint,
-- an optional multi-platform container image that runs `site-pipeline`,
+- a multi-platform container definition and CI publication workflow for
+  `site-pipeline`,
 - reader and maintainer pages under `site/pages/`,
-- stable reference and versioned docs under `docs/`, and
+- development and reference docs under `docs/`, and
 - a small self-contained generic test suite.
 
 ## What the pipeline owns
@@ -37,7 +38,7 @@ effective component source-root locators.
 - catalog and component-metadata interpretation,
 - workspace path validation and safety checks,
 - normalized staged content, data, and static outputs, and
-- build, clean, watch, and preview workflows.
+- check, plan, build, and watch workflows.
 
 ## What the consumer owns
 
@@ -46,19 +47,62 @@ effective component source-root locators.
 - renderer choice, templates, navigation, and branding, and
 - publishing and release workflows.
 
-## Quick start
+## Quick start from a source checkout
 
-1. Either add the package to the consumer site's Python environment or use the published container image in CI.
-2. Create a component catalog, defaulting to `site/components.yaml`.
-3. Provide per-component `site/component.yaml`, `site/pages/`, `site/docs/`,
-   and optional `site/assets/` inputs.
-4. Keep any machine-local checkout remapping in `site/components.local.yaml`
-   only; it should remain untracked.
-5. Run `site-pipeline build --repo-root <consumer-repo>`.
-6. Point the downstream renderer at the staged outputs under `site/.stage/`.
+Site Pipeline does not currently document a package-index installation
+coordinate. The reproducible first-use path is a source checkout with
+[uv](https://docs.astral.sh/uv/) and Python 3.13 or newer:
 
-`site-pipeline preview` is also available for a deliberately barebones preview,
-but it is far away from a real rendered website.
+```bash
+git clone https://github.com/buildish-tooling/buildish-site-pipeline.git
+cd buildish-site-pipeline
+uv sync --frozen
+SITE_PIPELINE="$PWD/.venv/bin/site-pipeline"
+"$SITE_PIPELINE" --help
+```
+
+Keep that shell open and move to the consumer workspace you want to stage. The
+smallest useful workspace has a consumer-owned `site/catalog.yaml` and at least
+one component source tree:
+
+```text
+consumer-workspace/
+  site/
+    catalog.yaml
+  components/
+    runtime/
+      docs/
+```
+
+The [tiny-site guide](site/pages/how-to/create-a-tiny-site.md) contains a
+copyable catalog and authored page. After creating those inputs, run from the
+consumer workspace root:
+
+```bash
+cd /path/to/consumer-workspace
+"$SITE_PIPELINE" check
+"$SITE_PIPELINE" build
+```
+
+Both commands default to the current directory as `--workspace-root` and to
+`site/catalog.yaml` below that root. `check` validates without writing the stage;
+`build` writes the renderer hand-off under `site/.stage/`. For a split checkout
+layout, select both inputs explicitly:
+
+```bash
+"$SITE_PIPELINE" build \
+  --workspace-root /workspace \
+  --catalog /workspace/buildish-site/site/catalog.yaml
+```
+
+Point the downstream renderer at the completed staged outputs rather than at
+the component repositories. Site Pipeline deliberately does not include a
+preview server; the renderer owns preview and publication.
+
+If Site Pipeline is already installed in a consumer environment, use
+`site-pipeline` in place of `"$SITE_PIPELINE"`. Maintainers can also create a
+uniquely versioned local wheel with `make publish-snapshot-local`; see
+[Local wheel snapshots](#local-wheel-snapshots).
 
 Human-facing diagnostics use a centralized CLI logger. Use `--quiet`,
 `--verbose`, or `--debug` on commands such as `site-pipeline watch` to adjust
@@ -76,7 +120,8 @@ stderr log detail without changing explicit report or JSONL event outputs.
 
 ## Local development
 
-Run the extracted repo checks with:
+See [CONTRIBUTING.md](CONTRIBUTING.md) for prerequisites and focused workflows.
+Run the complete repository gate with:
 
 - `make check`
 
@@ -118,8 +163,18 @@ The checked-in container-image legal payload lives separately under
 
 ## Container image
 
-The repository also publishes a renderer-agnostic container image whose entrypoint is `site-pipeline`.
+The canonical repository's CI is configured to publish the renderer-agnostic
+`ghcr.io/buildish-tooling/buildish-site-pipeline:latest` image after checks pass
+on `main`. Its entrypoint is `site-pipeline`.
 
-That image is intended primarily for CI or other container-first environments. Consumers that also need Hugo, Node, or site-specific publishing helpers should build their own derived images on top of this base image rather than asking the generic pipeline image to own renderer-specific tooling.
+`latest` is a moving development image, not a versioned release coordinate.
+Verify registry access and pin an immutable digest before relying on it in a
+production workflow. The source-checkout path above remains the canonical
+first-use route while release distribution is being adopted.
+
+That image is intended primarily for CI or other container-first environments.
+Consumers that also need Hugo, Node, or site-specific publishing helpers should
+build their own derived images on top of this base image rather than asking the
+generic pipeline image to own renderer-specific tooling.
 
 Local image build/publish helpers live under `tools/site-pipeline-image/`.

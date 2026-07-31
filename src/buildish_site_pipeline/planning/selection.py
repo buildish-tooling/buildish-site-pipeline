@@ -32,6 +32,7 @@ from buildish_site_pipeline.models.enums import (
     ReleaseSelectionMode,
 )
 
+from .errors import PlanningInputFailure
 from .types import (
     IndexedProviderRecord,
     ProviderContextIndex,
@@ -95,7 +96,9 @@ def select_version_contexts(
             )
 
     if len(selected_contexts) > _MAX_SELECTED_CONTEXTS:
-        raise ValueError("Planning selected more than the 512 version-context ceiling")
+        raise PlanningInputFailure(
+            "Planning selected more than the 512 version-context ceiling"
+        )
     ordered_contexts = tuple(sorted(selected_contexts, key=_context_sort_key))
     return SelectedVersionSet(
         contexts=ordered_contexts,
@@ -443,7 +446,7 @@ def _descending_version_sort_key(version: str) -> tuple[object, ...]:
 
 def _version_sort_key(version: str) -> tuple[object, ...]:
     if not _SEMVER_PATTERN.fullmatch(version):
-        raise ValueError(
+        raise PlanningInputFailure(
             f"Version {version!r} is not sortable by the conservative planning comparator"
         )
     main_version, _, suffix = version.partition("-")

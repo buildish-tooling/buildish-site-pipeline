@@ -268,13 +268,14 @@ class LocalizationAndPageScanTests(unittest.TestCase):
         translation_page = next(page for page in scanned.pages if page.relative_path == "translation.md")
         self.assertIsNone(translation_page.translation_key)
 
-    def test_validate_page_scan_skips_duplicate_real_directories(self) -> None:
+    def test_validate_page_scan_does_not_traverse_directory_symlink_aliases(self) -> None:
         collector = DiagnosticCollector()
         with TemporaryDirectory() as temp_dir:
             docs_root = Path(temp_dir) / "docs"
             docs_root.mkdir()
             real_dir = docs_root / "real"
             real_dir.mkdir()
+            (real_dir / "guide.md").write_text("guide\n", encoding="utf-8")
             (docs_root / "alias").symlink_to(real_dir, target_is_directory=True)
 
             scanned = validate_page_scan(
@@ -282,7 +283,30 @@ class LocalizationAndPageScanTests(unittest.TestCase):
                 collector,
             )
 
-        self.assertEqual(scanned.pages, ())
+        self.assertEqual(
+            tuple(page.relative_path for page in scanned.pages),
+            ("real/guide.md",),
+        )
+        self.assertEqual(collector.build(), ())
+
+    def test_validate_page_scan_accepts_contained_file_symlinks(self) -> None:
+        collector = DiagnosticCollector()
+        with TemporaryDirectory() as temp_dir:
+            docs_root = Path(temp_dir) / "docs"
+            docs_root.mkdir()
+            target = docs_root / "guide.md"
+            target.write_text("guide\n", encoding="utf-8")
+            (docs_root / "alias.md").symlink_to(target)
+
+            scanned = validate_page_scan(
+                self._planning(self._local_input(docs_root)),
+                collector,
+            )
+
+        self.assertEqual(
+            tuple(page.relative_path for page in scanned.pages),
+            ("alias.md", "guide.md"),
+        )
         self.assertEqual(collector.build(), ())
 
     def test_validate_page_scan_reports_directory_scan_failures(self) -> None:
@@ -341,6 +365,113 @@ class LocalizationAndPageScanTests(unittest.TestCase):
         self.assertEqual(scanned.pages[0].input_id, "componentPages:spark")
         self.assertEqual(scanned.pages[0].base_public_path, "/spark")
         self.assertEqual(scanned.pages[0].extracted_links, ())
+
+    def test_validate_page_scan_stops_after_limit_plus_one_entries(self) -> None:
+        collector = DiagnosticCollector()
+        with TemporaryDirectory() as temp_dir:
+            docs_root = Path(temp_dir) / "docs"
+            docs_root.mkdir()
+            first_page = docs_root / "first.md"
+            second_page = docs_root / "second.md"
+            first_page.write_text("first\n", encoding="utf-8")
+            second_page.write_text("second\n", encoding="utf-8")
+            original_iterdir = type(docs_root).iterdir
+            yielded_entries: list[Path] = []
+
+            def _iterdir(path: Path):
+                if path != docs_root:
+                    return original_iterdir(path)
+
+                def _adversarial_entries():
+                    for entry in (first_page, second_page):
+                        yielded_entries.append(entry)
+                        yield entry
+                    raise AssertionError("page discovery continued after limit plus one")
+
+                return _adversarial_entries()
+
+            with (
+                mock.patch(
+                    "buildish_site_pipeline.evaluation.limits._CONTENT_INDEX_LIMIT",
+                    1,
+                ),
+                mock.patch.object(
+                    type(docs_root),
+                    "iterdir",
+                    autospec=True,
+                    side_effect=_iterdir,
+                ),
+            ):
+                scanned = validate_page_scan(
+                    self._planning(self._local_input(docs_root)),
+                    collector,
+                )
+
+        self.assertFalse(scanned.complete)
+        self.assertEqual(len(scanned.pages), 2)
+        self.assertEqual(yielded_entries, [first_page, second_page])
+        self.assertEqual(collector.build(), ())
+
+    def test_validate_page_scan_orders_accepted_inventory_across_batches(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            docs_root = Path(temp_dir) / "docs"
+            docs_root.mkdir()
+            first_page = docs_root / "a.md"
+            last_page = docs_root / "z.md"
+            ignored_entries = tuple(docs_root / f"ignored-{index}.txt" for index in range(3))
+            for path in (first_page, last_page, *ignored_entries):
+                path.write_text(path.name, encoding="utf-8")
+            original_iterdir = type(docs_root).iterdir
+
+            def _scan(entries: tuple[Path, ...]):
+                def _iterdir(path: Path):
+                    if path == docs_root:
+                        return iter(entries)
+                    return original_iterdir(path)
+
+                with (
+                    mock.patch(
+                        "buildish_site_pipeline.evaluation.limits._CONTENT_INDEX_LIMIT",
+                        2,
+                    ),
+                    mock.patch.object(
+                        type(docs_root),
+                        "iterdir",
+                        autospec=True,
+                        side_effect=_iterdir,
+                    ),
+                ):
+                    return validate_page_scan(
+                        self._planning(self._local_input(docs_root)),
+                        DiagnosticCollector(),
+                    )
+
+            forward = _scan(
+                (
+                    last_page,
+                    ignored_entries[0],
+                    ignored_entries[1],
+                    first_page,
+                    ignored_entries[2],
+                )
+            )
+            reverse = _scan(
+                (
+                    first_page,
+                    ignored_entries[2],
+                    ignored_entries[1],
+                    last_page,
+                    ignored_entries[0],
+                )
+            )
+
+        self.assertTrue(forward.complete)
+        self.assertTrue(reverse.complete)
+        self.assertEqual(
+            tuple(page.relative_path for page in forward.pages),
+            ("a.md", "z.md"),
+        )
+        self.assertEqual(forward.pages, reverse.pages)
 
     @staticmethod
     def _component(

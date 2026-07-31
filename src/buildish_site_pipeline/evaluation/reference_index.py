@@ -167,7 +167,7 @@ def validate_references(
         _validate_compatibility_references(
             component_slug=component.slug,
             artifact_key=None,
-            compatibility=getattr(component.authored, "compatibility", ()) or (),
+            compatibility=tuple(component.authored.compatibility or ()),
             reference_index=reference_index,
             collector=collector,
         )
@@ -184,7 +184,7 @@ def validate_references(
             _validate_compatibility_references(
                 component_slug=component.slug,
                 artifact_key=artifact.key,
-                compatibility=getattr(artifact.authored, "compatibility", ()) or (),
+                compatibility=tuple(artifact.authored.compatibility or ()),
                 reference_index=reference_index,
                 collector=collector,
             )

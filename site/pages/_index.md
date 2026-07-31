@@ -30,7 +30,7 @@ pulling renderer logic, branding, or publishing policy into every component.
 [Get started](getting-started/)
 {{< /buildish-button >}}
 
-{{< buildish-component-link kind="development" label="Read docs" appearance="primary" >}}
+{{< buildish-component-link kind="development" label="Read unreleased development docs" appearance="primary" >}}
 
 {{< buildish-component-link kind="source" label="Browse source" appearance="outline-secondary" >}}
 
@@ -43,14 +43,15 @@ pulling renderer logic, branding, or publishing policy into every component.
 
 ## What you integrate
 
-Participating repositories provide the content inputs the pipeline knows how to
-stage:
+The consumer repository owns `site/catalog.yaml`. That catalog selects the
+participating source trees, component identities, content roots, and publication
+policy. It may also opt into a provider snapshot and top-level site pages or
+assets.
 
-- `site/component.yaml` for component identity and content settings,
-- `site/pages/` for non-versioned component pages,
-- `site/docs/` for versioned documentation, and
-- optional `site/assets/` content for static files that should be published with
-  the docs.
+Participating repositories provide the page, documentation, and asset roots
+selected by the catalog. They may provide `site/component.yaml` when the catalog
+or shared defaults select a component metadata file, but the smallest working
+catalog does not require one.
 
 The consumer repository keeps ownership of the rendered site experience:
 
@@ -66,7 +67,8 @@ The consumer repository keeps ownership of the rendered site experience:
 - [Concepts](concepts/) for the mental model and staged-output boundary
 - [How-to](how-to/) for task-oriented procedures
 - [Architecture](architecture/) for deeper system shape and rationale
-- [Reference](development/reference/) for stable contracts, schemas, and trust rules
+- [Unreleased development reference](development/reference/) for contracts,
+  schemas, and trust rules that have not been published as a release
 - [Maintenance](maintenance/) for maintainer-facing implementation guidance
 
 ## Source layout in this repository

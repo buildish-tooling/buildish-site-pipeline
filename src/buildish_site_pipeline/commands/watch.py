@@ -29,11 +29,12 @@ from pathlib import Path
 from types import FrameType
 from typing import TextIO
 
-from watchfiles import DefaultFilter, watch
+from watchfiles import Change, DefaultFilter, watch
 
 from buildish_site_pipeline.evaluation import (
     EvaluationMode,
     EvaluationRequest,
+    EvaluationResult,
     run_evaluation,
 )
 from buildish_site_pipeline.models import (
@@ -66,7 +67,11 @@ from buildish_site_pipeline.staging.publication import (
     validate_materialized_stage_tree,
     validate_visible_stage_target_path,
 )
-from buildish_site_pipeline.staging.types import BuildRequest, StageDestination
+from buildish_site_pipeline.staging.types import (
+    BuildRequest,
+    EffectiveBuildPlan,
+    StageDestination,
+)
 from buildish_site_pipeline.staging.worker_protocol import (
     UnitContributionManifestWire,
 )
@@ -256,12 +261,44 @@ class _WatchEventStream:
         )
         self._stop_event = stop_event
         self._default_filter = DefaultFilter()
-        self._raw_events = watch(
+        self._watch_roots = watch_roots
+        self._raw_events = self._open_raw_events(watch_roots)
+
+    @property
+    def watch_roots(self) -> tuple[Path, ...]:
+        """Return the roots owned by the current native watcher."""
+
+        return self._watch_roots
+
+    def prime(self) -> bool:
+        """Advance through a timeout so native watch registration is complete."""
+
+        return self.collect_dirty_paths(wait_for_first=False) is not None
+
+    def replace_watch_roots(self, watch_roots: tuple[Path, ...]) -> bool:
+        """Replace and prime the native watcher for a changed root set.
+
+        Callers must reconcile the full pipeline state after this handoff. That
+        reconciliation covers changes made after the preceding scan but before
+        the replacement watcher completed registration.
+        """
+
+        if watch_roots == self._watch_roots:
+            return not self._stop_event.is_set()
+        self._close_raw_events(self._raw_events)
+        self._watch_roots = watch_roots
+        self._raw_events = self._open_raw_events(watch_roots)
+        return self.prime()
+
+    def _open_raw_events(
+        self, watch_roots: tuple[Path, ...]
+    ) -> Iterator[set[tuple[Change, str]]]:
+        return watch(
             *(str(path) for path in watch_roots),
             watch_filter=self._watch_filter,
             debounce=_WATCH_DEBOUNCE_MS,
             step=_WATCH_STEP_MS,
-            stop_event=stop_event,
+            stop_event=self._stop_event,
             rust_timeout=_WATCH_RUST_TIMEOUT_MS,
             yield_on_timeout=True,
             raise_interrupt=False,
@@ -292,11 +329,17 @@ class _WatchEventStream:
             )
 
     def close(self) -> None:
-        close = getattr(self._raw_events, "close", None)
+        self._close_raw_events(self._raw_events)
+
+    @staticmethod
+    def _close_raw_events(
+        raw_events: Iterator[set[tuple[Change, str]]],
+    ) -> None:
+        close = getattr(raw_events, "close", None)
         if callable(close):
             close()
 
-    def _watch_filter(self, change, changed_path: str) -> bool:
+    def _watch_filter(self, change: Change, changed_path: str) -> bool:
         return self._default_filter(
             change, changed_path
         ) and not _is_pipeline_owned_path(
@@ -356,37 +399,35 @@ def run_watch(invocation: WatchInvocation, *, stdout: TextIO) -> CommandResult:
             )
         trusted_stage = _load_trusted_stage(invocation.layout.stage_root)
         cycle_number = 1
+        initial_watch_roots = _derive_watch_roots(
+            site_root=invocation.layout.site_root,
+            catalog_path=invocation.layout.catalog_path,
+            provider_snapshot_path=None,
+            planning_roots=(),
+        )
         outcome = _run_watch_cycle(
             invocation=invocation,
             cycle_number=cycle_number,
             trusted_stage=trusted_stage,
-            prior_watch_roots=_derive_watch_roots(
-                site_root=invocation.layout.site_root,
-                    catalog_path=invocation.layout.catalog_path,
-                    provider_snapshot_path=None,
-                planning_roots=(),
-            ),
+            prior_watch_roots=initial_watch_roots,
             dirty_paths=(),
         )
-        _emit_cycle_report(invocation=invocation, report=outcome.report, stdout=stdout)
-        watch_io.emit_cycle_event(outcome.report)
-        watch_io.emit_cycle_log(
-            report=outcome.report, dirty_paths=(), watch_roots=outcome.watch_roots
-        )
-
         if not outcome.report.summary.stage_usable:
+            _emit_watch_cycle(
+                invocation=invocation,
+                outcome=outcome,
+                dirty_paths=(),
+                stdout=stdout,
+                watch_io=watch_io,
+            )
             raise StageIntegrityError(
                 "Initial watch cycle failed before any trustworthy stage existed"
             )
 
-        watch_io.emit_ready(outcome.report)
-        trusted_stage = outcome.trusted_stage
-        last_report = outcome.report
-        current_watch_roots = outcome.watch_roots
         with (
             _graceful_watch_shutdown() as shutdown_controller,
             _open_watch_event_stream(
-                watch_roots=current_watch_roots,
+                watch_roots=outcome.watch_roots,
                 stage_root=invocation.layout.stage_root,
                 work_root=invocation.layout.work_root,
                 report_output=invocation.report_request.output_path,
@@ -396,6 +437,38 @@ def run_watch(invocation: WatchInvocation, *, stdout: TextIO) -> CommandResult:
                 stop_event=shutdown_controller.stop_event,
             ) as event_stream,
         ):
+            if not event_stream.prime():
+                _emit_watch_cycle(
+                    invocation=invocation,
+                    outcome=outcome,
+                    dirty_paths=(),
+                    stdout=stdout,
+                    watch_io=watch_io,
+                )
+                return _watch_success_result(outcome.report)
+
+            # The first result is provisional because watchfiles registration
+            # happens only when its generator is advanced. Re-run cycle 1 after
+            # the explicit prime handshake so startup edits cannot be lost.
+            outcome = _reconcile_initial_watch_cycle(
+                invocation=invocation,
+                outcome=outcome,
+                event_stream=event_stream,
+            )
+            _emit_watch_cycle(
+                invocation=invocation,
+                outcome=outcome,
+                dirty_paths=(),
+                stdout=stdout,
+                watch_io=watch_io,
+            )
+            if shutdown_controller.stop_event.is_set():
+                return _watch_success_result(outcome.report)
+            watch_io.emit_ready(outcome.report)
+            trusted_stage = outcome.trusted_stage
+            last_report = outcome.report
+            current_watch_roots = outcome.watch_roots
+
             while True:
                 pending_dirty_paths = event_stream.collect_dirty_paths(
                     wait_for_first=True
@@ -403,30 +476,7 @@ def run_watch(invocation: WatchInvocation, *, stdout: TextIO) -> CommandResult:
                 if pending_dirty_paths is None:
                     return _watch_success_result(last_report)
 
-                follow_up = _run_follow_up_cycle(
-                    invocation=invocation,
-                    cycle_number=cycle_number,
-                    trusted_stage=trusted_stage,
-                    last_watch_roots=current_watch_roots,
-                    dirty_paths=pending_dirty_paths,
-                    stdout=stdout,
-                    watch_io=watch_io,
-                )
-                cycle_number = follow_up.cycle_number
-                trusted_stage = follow_up.trusted_stage
-                current_watch_roots = follow_up.watch_roots
-                last_report = follow_up.report
-                if shutdown_controller.shutdown_requested:
-                    return _watch_success_result(last_report)
-
                 while True:
-                    pending_dirty_paths = event_stream.collect_dirty_paths(
-                        wait_for_first=False
-                    )
-                    if pending_dirty_paths is None:
-                        return _watch_success_result(last_report)
-                    if not pending_dirty_paths:
-                        break
                     follow_up = _run_follow_up_cycle(
                         invocation=invocation,
                         cycle_number=cycle_number,
@@ -441,6 +491,101 @@ def run_watch(invocation: WatchInvocation, *, stdout: TextIO) -> CommandResult:
                     current_watch_roots = follow_up.watch_roots
                     last_report = follow_up.report
 
+                    reconciled_follow_up = _reconcile_changed_watch_roots(
+                        invocation=invocation,
+                        follow_up=follow_up,
+                        event_stream=event_stream,
+                        stdout=stdout,
+                        watch_io=watch_io,
+                    )
+                    if reconciled_follow_up is None:
+                        return _watch_success_result(last_report)
+                    follow_up = reconciled_follow_up
+                    cycle_number = follow_up.cycle_number
+                    trusted_stage = follow_up.trusted_stage
+                    current_watch_roots = follow_up.watch_roots
+                    last_report = follow_up.report
+                    if shutdown_controller.shutdown_requested:
+                        return _watch_success_result(last_report)
+
+                    pending_dirty_paths = event_stream.collect_dirty_paths(
+                        wait_for_first=False
+                    )
+                    if pending_dirty_paths is None:
+                        return _watch_success_result(last_report)
+                    if not pending_dirty_paths:
+                        break
+
+
+def _emit_watch_cycle(
+    *,
+    invocation: WatchInvocation,
+    outcome: WatchCycleOutcome,
+    dirty_paths: tuple[Path, ...],
+    stdout: TextIO,
+    watch_io: _WatchIo,
+) -> None:
+    """Emit all human- and machine-facing output for one visible cycle."""
+
+    _emit_cycle_report(invocation=invocation, report=outcome.report, stdout=stdout)
+    watch_io.emit_cycle_event(outcome.report)
+    watch_io.emit_cycle_log(
+        report=outcome.report,
+        dirty_paths=dirty_paths,
+        watch_roots=outcome.watch_roots,
+    )
+
+
+def _reconcile_initial_watch_cycle(
+    *,
+    invocation: WatchInvocation,
+    outcome: WatchCycleOutcome,
+    event_stream: _WatchEventStream,
+) -> WatchCycleOutcome:
+    """Re-scan after watcher registration and stabilize its initial roots."""
+
+    while True:
+        outcome = _run_watch_cycle(
+            invocation=invocation,
+            cycle_number=1,
+            trusted_stage=outcome.trusted_stage,
+            prior_watch_roots=outcome.watch_roots,
+            dirty_paths=(),
+        )
+        if not outcome.report.summary.stage_usable:
+            raise StageIntegrityError(
+                "Initial watch reconciliation left no trustworthy stage to serve"
+            )
+        if outcome.watch_roots == event_stream.watch_roots:
+            return outcome
+        if not event_stream.replace_watch_roots(outcome.watch_roots):
+            return outcome
+
+
+def _reconcile_changed_watch_roots(
+    *,
+    invocation: WatchInvocation,
+    follow_up: FollowUpCycleOutcome,
+    event_stream: _WatchEventStream,
+    stdout: TextIO,
+    watch_io: _WatchIo,
+) -> FollowUpCycleOutcome | None:
+    """Adopt changed roots and run a full cycle after each watcher handoff."""
+
+    while follow_up.watch_roots != event_stream.watch_roots:
+        if not event_stream.replace_watch_roots(follow_up.watch_roots):
+            return None
+        follow_up = _run_follow_up_cycle(
+            invocation=invocation,
+            cycle_number=follow_up.cycle_number,
+            trusted_stage=follow_up.trusted_stage,
+            last_watch_roots=follow_up.watch_roots,
+            dirty_paths=(),
+            stdout=stdout,
+            watch_io=watch_io,
+        )
+    return follow_up
+
 
 def _run_follow_up_cycle(
     *,
@@ -449,7 +594,7 @@ def _run_follow_up_cycle(
     trusted_stage: TrustedStageState | None,
     last_watch_roots: tuple[Path, ...],
     dirty_paths: tuple[Path, ...],
-    stdout,
+    stdout: TextIO,
     watch_io: _WatchIo,
 ) -> FollowUpCycleOutcome:
     """Run one later watch cycle and enforce stage-integrity rules."""
@@ -669,7 +814,7 @@ def _run_watch_cycle(
 def _select_incremental_build(
     *,
     trusted_stage: TrustedStageState | None,
-    build_plan,
+    build_plan: EffectiveBuildPlan,
     dirty_paths: tuple[Path, ...],
     workspace_root: Path,
     site_root: Path,
@@ -718,7 +863,7 @@ def _select_incremental_build(
 
 def _dirty_unit_ids_for_paths(
     *,
-    build_plan,
+    build_plan: EffectiveBuildPlan,
     units: tuple[OwnedUnit, ...],
     dirty_paths: tuple[Path, ...],
     workspace_root: Path,
@@ -786,7 +931,9 @@ def _dirty_unit_ids_for_paths(
     return frozenset(dirty_unit_ids)
 
 
-def _dirty_component_unit_id(*, build_plan, dirty_path: Path) -> str | None:
+def _dirty_component_unit_id(
+    *, build_plan: EffectiveBuildPlan, dirty_path: Path
+) -> str | None:
     for component in build_plan.site.components:
         if any(
             _matches_stage_input(dirty_path, candidate)
@@ -794,7 +941,9 @@ def _dirty_component_unit_id(*, build_plan, dirty_path: Path) -> str | None:
                 component.metadata_file,
                 component.pages_root,
                 component.assets_root,
-                component.content_source.local_dir,
+                component.content_source.local_dir
+                if component.content_source is not None
+                else None,
             )
         ):
             return f"component:{component.slug}"
@@ -862,7 +1011,7 @@ def _failed_cycle_outcome(
     trusted_stage: TrustedStageState | None,
     prior_watch_roots: tuple[Path, ...],
     diagnostics: tuple[PipelineDiagnosticEntry, ...],
-    evaluation=None,
+    evaluation: EvaluationResult | None = None,
     workspace_root: Path | None = None,
     private_roots: tuple[Path, ...] = (),
 ) -> WatchCycleOutcome:
@@ -889,7 +1038,9 @@ def _failed_cycle_outcome(
     )
 
 
-def _emit_cycle_report(*, invocation: WatchInvocation, report, stdout) -> None:
+def _emit_cycle_report(
+    *, invocation: WatchInvocation, report: StageRunReportV1, stdout: TextIO
+) -> None:
     if invocation.report_request.output_path is None:
         return
     request = revalidate_report_request(
@@ -995,7 +1146,7 @@ def _derive_watch_roots(
     )
 
 
-def _build_plan_watch_roots(build_plan) -> tuple[Path, ...]:
+def _build_plan_watch_roots(build_plan: EffectiveBuildPlan) -> tuple[Path, ...]:
     """Collect the concrete local inputs that can invalidate an incremental watch build."""
 
     return tuple(
@@ -1011,7 +1162,9 @@ def _build_plan_watch_roots(build_plan) -> tuple[Path, ...]:
                     component.metadata_file,
                     component.pages_root,
                     component.assets_root,
-                    component.content_source.local_dir,
+                    component.content_source.local_dir
+                    if component.content_source is not None
+                    else None,
                 )
             ),
         )

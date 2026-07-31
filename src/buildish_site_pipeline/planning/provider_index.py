@@ -22,7 +22,9 @@ from buildish_site_pipeline.models.enums import RecordKind
 from buildish_site_pipeline.models.provider.provider_snapshot import (
     ProviderSnapshotDocumentV1,
 )
+from buildish_site_pipeline.resource_limits import DEFAULT_PROVIDER_SNAPSHOT_BYTES
 
+from .errors import PlanningInputFailure
 from .types import (
     IndexedProviderRecord,
     ProviderContextIndex,
@@ -30,7 +32,6 @@ from .types import (
     ResolvedSiteConfig,
 )
 
-_MAX_PROVIDER_SNAPSHOT_BYTES = 16 * 1024 * 1024
 _MAX_PROVIDER_RECORDS = 50_000
 
 
@@ -64,10 +65,14 @@ def build_provider_snapshot_index(
             "utf-8"
         )
     )
-    if encoded_size > _MAX_PROVIDER_SNAPSHOT_BYTES:
-        raise ValueError("Provider snapshot exceeds the 16 MiB planning ceiling")
+    if encoded_size > DEFAULT_PROVIDER_SNAPSHOT_BYTES:
+        raise PlanningInputFailure(
+            "Provider snapshot exceeds the 16 MiB planning ceiling"
+        )
     if len(provider_snapshot.records) > _MAX_PROVIDER_RECORDS:
-        raise ValueError("Provider snapshot exceeds the 50,000 record planning ceiling")
+        raise PlanningInputFailure(
+            "Provider snapshot exceeds the 50,000 record planning ceiling"
+        )
 
     known_artifacts = {
         (component.slug, artifact.key)
@@ -80,7 +85,7 @@ def build_provider_snapshot_index(
     for record in provider_snapshot.records:
         artifact_identity = (record.component_slug, record.artifact_key)
         if artifact_identity not in known_artifacts:
-            raise ValueError(
+            raise PlanningInputFailure(
                 f"Provider record references unknown artifact {record.component_slug}:{record.artifact_key}",
             )
 

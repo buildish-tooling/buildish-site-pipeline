@@ -19,6 +19,9 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch
+
+from mistletoe import Document as MistletoeDocument
 
 from buildish_site_pipeline.evaluation.collector import DiagnosticCollector
 from buildish_site_pipeline.evaluation.link_references import extract_link_references
@@ -291,6 +294,94 @@ Inline example: `<a href="missing/">Missing</a>`
             diagnostics[0].message,
             "index.md:~1: internal page link 'missing/' resolves to missing staged page /missing",
         )
+
+    def test_plain_full_reference_links_avoid_the_general_markdown_parser(self) -> None:
+        text = (
+            "[First][TARGET  ONE]\n"
+            "[Second][target one]\n"
+            "[Ignored][missing]\n\n"
+            "[target one]: guide/\n"
+            "[target one]: ignored-duplicate/\n"
+        )
+
+        with patch(
+            "buildish_site_pipeline.evaluation.link_references.Document",
+            side_effect=AssertionError(
+                "plain full references should use the fast path"
+            ),
+        ):
+            references = extract_link_references(
+                source_path=Path("index.md"),
+                text=text,
+                source_line_offset=4,
+            )
+
+        self.assertEqual(
+            references,
+            (
+                ExtractedLinkReference(
+                    href="guide/",
+                    occurrence_index=0,
+                    source_line=5,
+                    source_column=None,
+                    approximate_line_column=True,
+                ),
+                ExtractedLinkReference(
+                    href="guide/",
+                    occurrence_index=1,
+                    source_line=5,
+                    source_column=None,
+                    approximate_line_column=True,
+                ),
+            ),
+        )
+
+    def test_complex_reference_syntax_keeps_the_general_markdown_parser(self) -> None:
+        cases = {
+            "multiple references on one line": (
+                "[First][target] [Second][target]\n\n[target]: guide/\n",
+                ["guide/", "guide/"],
+            ),
+            "definition title": (
+                '[First][target]\n\n[target]: guide/ "Title"\n',
+                ["guide/"],
+            ),
+            "collapsed reference": (
+                "[First][]\n\n[First]: guide/\n",
+                ["guide/"],
+            ),
+            "image reference": (
+                "![First][target]\n\n[target]: guide/\n",
+                [],
+            ),
+            "block container": (
+                "> [First][target]\n\n[target]: guide/\n",
+                ["guide/"],
+            ),
+            "whitespace-only label": (
+                "[First][ ]\n\n[ ]: guide/\n",
+                [],
+            ),
+            "definition cannot interrupt a paragraph": (
+                "[First][target]\n[target]: guide/\n",
+                [],
+            ),
+        }
+
+        for name, (text, expected_hrefs) in cases.items():
+            with self.subTest(name=name), patch(
+                "buildish_site_pipeline.evaluation.link_references.Document",
+                wraps=MistletoeDocument,
+            ) as document:
+                references = extract_link_references(
+                    source_path=Path("index.md"),
+                    text=text,
+                )
+
+            document.assert_called_once_with(text)
+            self.assertEqual(
+                [reference.href for reference in references], expected_hrefs
+            )
 
     def test_approximate_same_line_occurrences_are_not_collapsed(self) -> None:
         collector = DiagnosticCollector()

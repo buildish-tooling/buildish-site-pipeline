@@ -40,12 +40,28 @@ _HTML_HREF_PATTERN = re.compile(
     re.IGNORECASE,
 )
 _ASCIIDOC_LINK_PATTERN = re.compile(r"(?:^|[^A-Za-z0-9_])link:(?P<href>[^\[]+)\[[^\]]*\]")
+_SIMPLE_REFERENCE_DEFINITION_PATTERN = re.compile(
+    r"^ {0,3}\[(?P<label>[^\[\]\r\n]+)\]:[ \t]*(?P<href>[^ \t\r\n]+)[ \t]*$"
+)
+_REFERENCE_DEFINITION_PREFIX_PATTERN = re.compile(
+    r"^ {0,3}\[[^\[\]\r\n]+\]:"
+)
+_FULL_REFERENCE_LINK_PATTERN = re.compile(
+    r"(?<!!)\[(?P<text>[^\[\]\r\n]+)\]\[(?P<label>[^\[\]\r\n]+)\]"
+)
+_MARKDOWN_BLOCK_PREFIX_PATTERN = re.compile(
+    r"^ {0,3}(?:#{1,6}(?:[ \t]|$)|>|(?:[-+*]|\d{1,9}[.)])[ \t]+)"
+)
+_MARKDOWN_BREAK_PATTERN = re.compile(
+    r"^ {0,3}(?:(?:\*[ \t]*){3,}|(?:-[ \t]*){3,}|(?:_[ \t]*){3,}|=+)[ \t]*$"
+)
 
 
 @dataclass(frozen=True, slots=True)
 class _LocatedHrefCandidate:
     href: str
     offset: int
+    approximate_line_column: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -99,6 +115,8 @@ def extract_link_references(
 
 def _markdown_links(*, text: str, source_line_offset: int) -> tuple[ExtractedLinkReference, ...]:
     fast_candidates = _fast_inline_markdown_candidates(text)
+    if fast_candidates is None:
+        fast_candidates = _fast_full_reference_markdown_candidates(text)
     if fast_candidates is not None:
         locator = _SourceLocator.for_text(text)
         return tuple(
@@ -107,7 +125,7 @@ def _markdown_links(*, text: str, source_line_offset: int) -> tuple[ExtractedLin
                 href=candidate.href,
                 offset=candidate.offset,
                 source_line_offset=source_line_offset,
-                approximate_line_column=False,
+                approximate_line_column=candidate.approximate_line_column,
             )
             for candidate in fast_candidates
         )
@@ -160,6 +178,105 @@ def _fast_inline_markdown_candidates(
     ):
         return None
     return candidates
+
+
+def _fast_full_reference_markdown_candidates(
+    text: str,
+) -> tuple[_LocatedHrefCandidate, ...] | None:
+    """Return plain full-reference links without invoking Mistletoe.
+
+    This intentionally narrow path accepts one ``[text][label]`` occurrence per
+    source line and simple single-line ``[label]: target`` definitions. More
+    expressive reference syntax remains with Mistletoe so this optimization
+    does not become a second general-purpose Markdown parser.
+    """
+
+    if any(marker in text for marker in ("`", "<", "\\", "&")):
+        return None
+    if re.search(r"(?<!!)\][ \t]*\(", text):
+        return None
+    lines = text.splitlines(keepends=True)
+    if any(
+        line.startswith(("    ", "\t"))
+        or line.lstrip().startswith(("~~~", "```"))
+        for line in lines
+    ):
+        return None
+
+    definitions: dict[str, str] = {}
+    definition_lines: set[int] = set()
+    definition_allowed = True
+    for line_index, line in enumerate(lines):
+        line_without_ending = line.rstrip("\r\n")
+        if not line_without_ending.strip():
+            definition_allowed = True
+            continue
+        definition_match = _SIMPLE_REFERENCE_DEFINITION_PATTERN.fullmatch(
+            line_without_ending
+        )
+        if definition_match is not None:
+            if not definition_allowed:
+                return None
+            href = definition_match.group("href")
+            if any(marker in href for marker in ("(", ")", '"', "'")):
+                return None
+            normalized_label = _normalize_reference_label(
+                definition_match.group("label")
+            )
+            if not normalized_label:
+                return None
+            definitions.setdefault(normalized_label, href)
+            definition_lines.add(line_index)
+            continue
+        if _REFERENCE_DEFINITION_PREFIX_PATTERN.match(line_without_ending):
+            return None
+        definition_allowed = False
+    if not definitions:
+        return None
+
+    candidates: list[_LocatedHrefCandidate] = []
+    line_offset = 0
+    paragraph_offset: int | None = None
+    saw_full_reference = False
+    for line_index, line in enumerate(lines):
+        if line_index in definition_lines:
+            paragraph_offset = None
+            line_offset += len(line)
+            continue
+        if not line.strip():
+            paragraph_offset = None
+            line_offset += len(line)
+            continue
+        if _MARKDOWN_BLOCK_PREFIX_PATTERN.match(
+            line
+        ) or _MARKDOWN_BREAK_PATTERN.fullmatch(line.rstrip("\r\n")):
+            return None
+        if paragraph_offset is None:
+            paragraph_offset = line_offset
+        marker_count = line.count("][")
+        if marker_count == 0:
+            line_offset += len(line)
+            continue
+        matches = tuple(_FULL_REFERENCE_LINK_PATTERN.finditer(line))
+        if marker_count != 1 or len(matches) != 1:
+            return None
+        saw_full_reference = True
+        match = matches[0]
+        href = definitions.get(_normalize_reference_label(match.group("label")))
+        if href is not None:
+            candidates.append(
+                _LocatedHrefCandidate(
+                    href=href,
+                    offset=paragraph_offset,
+                    approximate_line_column=True,
+                )
+            )
+        line_offset += len(line)
+    return tuple(candidates) if saw_full_reference else None
+
+
+def _normalize_reference_label(label: str) -> str:
+    return " ".join(label.split()).casefold()
 
 
 def _leaf_blocks(node: BlockToken) -> Iterator[BlockToken]:
@@ -458,6 +575,6 @@ def _reference_from_offset(
         href=href,
         occurrence_index=-1,
         source_line=source_line + source_line_offset,
-        source_column=source_column,
+        source_column=None if approximate_line_column else source_column,
         approximate_line_column=approximate_line_column,
     )

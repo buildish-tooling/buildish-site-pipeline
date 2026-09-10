@@ -68,7 +68,7 @@ bdist_wheel = "buildish_site_pipeline.legal.build_hooks.FlattenedLicenseFilesBdi
 dev = [
     "coverage>=7.15.2",
     "mypy==2.3.0",
-    "ruff==0.16.1",
+    "ruff==0.16.7",
 ]
 
 [tool.ruff]

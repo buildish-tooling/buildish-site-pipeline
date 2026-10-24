@@ -41,6 +41,11 @@
 
   packageRules: [
     {
+      matchDatasources: ['docker'],
+      matchPackageNames: ['docker.io/library/python'],
+      allowedVersions: '/^3\\.13-bookworm$/',
+    },
+    {
       matchManagers: [
         'pip_requirements',
         'pip_setup',

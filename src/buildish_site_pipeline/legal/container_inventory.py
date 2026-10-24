@@ -41,6 +41,9 @@ _COPY_FROM_PATTERN = re.compile(
     r"^\s*COPY\s+(?:--[^\s]+\s+)*--from=(?P<source>[^\s]+)",
     re.IGNORECASE,
 )
+_PINNED_IMAGE_PATTERN = re.compile(
+    r"(?P<repository>[^@\s]+):(?P<tag>[^/:@\s]+)@sha256:[a-f0-9]{64}"
+)
 
 
 def collect_container_base_image_entries(
@@ -170,16 +173,38 @@ def curated_container_image_bundles_by_ref(
     project_dir: Path,
     manifest_path: Path,
 ) -> dict[str, CuratedContainerImageBundle]:
-    """Load repo-managed legal metadata for bundled container base images."""
+    """Resolve curated metadata against the Containerfile's pinned images.
+
+    Curated bundles describe repositories and supported tags; version and digest
+    changes belong only in the Containerfile.
+    """
 
     manifest = tomllib.loads(manifest_path.read_text(encoding="utf-8"))
-    bundles_by_ref: dict[str, CuratedContainerImageBundle] = {}
+    bundles_by_repository = {}
     for raw_bundle in manifest.get("bundles", []):
-        image_ref = str(raw_bundle["image-ref"])
+        repository = str(raw_bundle["repository"])
+        if repository in bundles_by_repository:
+            raise RuntimeError(f"Duplicate curated container repository: {repository}")
+        bundles_by_repository[repository] = raw_bundle
+    bundles_by_ref: dict[str, CuratedContainerImageBundle] = {}
+    for image_ref in bundled_container_image_refs(
+        project_dir / _SITE_PIPELINE_CONTAINERFILE_PATH
+    ):
+        match = _PINNED_IMAGE_PATTERN.fullmatch(image_ref)
+        if match is None:
+            raise RuntimeError(f"Expected a tagged, SHA-256-pinned container image: {image_ref}")
+        raw_bundle = bundles_by_repository.get(match["repository"])
+        if raw_bundle is None:
+            continue
+        version = match["tag"]
+        if re.fullmatch(str(raw_bundle["tag-pattern"]), version) is None:
+            raise RuntimeError(
+                f"Container image tag is outside its curated bundle's supported tags: {image_ref}"
+            )
         bundles_by_ref[image_ref] = CuratedContainerImageBundle(
             image_ref=image_ref,
             name=str(raw_bundle["name"]),
-            version=str(raw_bundle["version"]),
+            version=version,
             output_key=str(raw_bundle["output-key"]),
             home_page=_optional_string(raw_bundle.get("home-page")),
             license_expression=_optional_string(raw_bundle.get("license-expression")),

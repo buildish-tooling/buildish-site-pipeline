@@ -417,14 +417,14 @@ directory = { path = ".", editable = true }
                 output_dir
                 / "licenses"
                 / "container-base-images"
-                / "python-3.13-bookworm"
+                / "python"
                 / "LICENSE"
             ).is_file()
             uv_license_exists = (
                 output_dir
                 / "licenses"
                 / "container-base-images"
-                / "uv-0.9.7"
+                / "uv"
                 / "LICENSE-MIT"
             ).is_file()
 
@@ -613,32 +613,32 @@ directory = { path = ".", editable = true }
             "\n".join(
                 (
                     "[[bundles]]",
-                    'image-ref = "docker.io/library/python:3.13-bookworm@sha256:345d669f21b1ab934cb67f2015a713ec041bb2ebb8e3f069484839361f64cc53"',
+                    'repository = "docker.io/library/python"',
                     'name = "python"',
-                    'version = "3.13-bookworm"',
-                    'output-key = "python-3.13-bookworm"',
+                    'tag-pattern = "3[.]13-bookworm"',
+                    'output-key = "python"',
                     'home-page = "https://www.python.org/"',
                     'license-expression = "Python-2.0"',
-                    'license-files = ["tools/site-pipeline-image/legal/base-images/python-3.13-bookworm/LICENSE"]',
+                    'license-files = ["tools/site-pipeline-image/legal/base-images/python/LICENSE"]',
                     "",
                     "[[bundles]]",
-                    'image-ref = "ghcr.io/astral-sh/uv:0.9.7@sha256:ba4857bf2a068e9bc0e64eed8563b065908a4cd6bfb66b531a9c424c8e25e142"',
+                    'repository = "ghcr.io/astral-sh/uv"',
                     'name = "uv"',
-                    'version = "0.9.7"',
-                    'output-key = "uv-0.9.7"',
+                    'tag-pattern = "0[.][0-9]+[.][0-9]+"',
+                    'output-key = "uv"',
                     'home-page = "https://docs.astral.sh/uv/"',
                     'license-expression = "Apache-2.0 OR MIT"',
-                    'license-files = ["tools/site-pipeline-image/legal/base-images/uv-0.9.7/LICENSE-APACHE", "tools/site-pipeline-image/legal/base-images/uv-0.9.7/LICENSE-MIT"]',
+                    'license-files = ["tools/site-pipeline-image/legal/base-images/uv/LICENSE-APACHE", "tools/site-pipeline-image/legal/base-images/uv/LICENSE-MIT"]',
                     "",
                 )
             ),
             encoding="utf-8",
         )
-        (root / "tools" / "site-pipeline-image" / "legal" / "base-images" / "python-3.13-bookworm").mkdir(
+        (root / "tools" / "site-pipeline-image" / "legal" / "base-images" / "python").mkdir(
             parents=True,
             exist_ok=True,
         )
-        (root / "tools" / "site-pipeline-image" / "legal" / "base-images" / "uv-0.9.7").mkdir(
+        (root / "tools" / "site-pipeline-image" / "legal" / "base-images" / "uv").mkdir(
             parents=True,
             exist_ok=True,
         )
@@ -648,7 +648,7 @@ directory = { path = ".", editable = true }
             / "site-pipeline-image"
             / "legal"
             / "base-images"
-            / "python-3.13-bookworm"
+            / "python"
             / "LICENSE"
         ).write_text("Python license text\n", encoding="utf-8")
         (
@@ -657,7 +657,7 @@ directory = { path = ".", editable = true }
             / "site-pipeline-image"
             / "legal"
             / "base-images"
-            / "uv-0.9.7"
+            / "uv"
             / "LICENSE-APACHE"
         ).write_text("Apache license text\n", encoding="utf-8")
         (
@@ -666,7 +666,7 @@ directory = { path = ".", editable = true }
             / "site-pipeline-image"
             / "legal"
             / "base-images"
-            / "uv-0.9.7"
+            / "uv"
             / "LICENSE-MIT"
         ).write_text("MIT license text\n", encoding="utf-8")
 

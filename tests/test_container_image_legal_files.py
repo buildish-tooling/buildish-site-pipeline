@@ -13,6 +13,8 @@
 # limitations under the License.
 
 from pathlib import Path
+import shutil
+import tempfile
 import unittest
 
 from buildish_site_pipeline.legal.container_inventory import (
@@ -102,9 +104,67 @@ class ContainerImageLegalFilesTests(unittest.TestCase):
             image_refs,
         )
         self.assertEqual(
-            {(entry.name, entry.version) for entry in entries},
-            {("python", "3.13-bookworm"), ("uv", "0.12.1")},
+            {entry.name for entry in entries},
+            {"python", "uv"},
         )
+        self.assertTrue(all(entry.license_files for entry in entries))
+
+
+class ContainerImageUpdateTests(unittest.TestCase):
+    def setUp(self) -> None:
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        image_dir = Path("tools/site-pipeline-image")
+        shutil.copytree(image_dir / "legal", self.root / image_dir / "legal")
+        shutil.copyfile("LICENSE", self.root / "LICENSE")
+        self.containerfile = self.root / image_dir / "Containerfile"
+        self.containerfile.write_text(
+            f"FROM ghcr.io/astral-sh/uv:0.12.1@sha256:{'a' * 64} AS uvbin\n"
+            f"FROM docker.io/library/python:3.13-bookworm@sha256:{'b' * 64}\n"
+            "COPY --from=uvbin /uv /usr/local/bin/uv\n",
+            encoding="utf-8",
+        )
+
+    def test_digest_and_uv_updates_need_only_containerfile_changes(self) -> None:
+        before = collect_container_base_image_entries(self.root)
+        text = self.containerfile.read_text(encoding="utf-8")
+        text = text.replace("0.12.1", "0.13.5").replace("b" * 64, "c" * 64)
+        self.containerfile.write_text(text, encoding="utf-8")
+
+        after = collect_container_base_image_entries(self.root)
+
+        self.assertEqual([entry.version for entry in after], ["0.13.5", "3.13-bookworm"])
+        self.assertEqual(after[1].source_reference, f"docker.io/library/python:3.13-bookworm@sha256:{'c' * 64}")
+        self.assertEqual(
+            [entry.captured_legal_files for entry in before],
+            [entry.captured_legal_files for entry in after],
+        )
+
+    def test_unsupported_python_tags_are_rejected(self) -> None:
+        original = self.containerfile.read_text(encoding="utf-8")
+        for tag in ("3.15-bookworm", "3.13-alpine", "3.13-bookworm-extra"):
+            with self.subTest(tag=tag):
+                self.containerfile.write_text(original.replace("3.13-bookworm", tag), encoding="utf-8")
+                with self.assertRaisesRegex(RuntimeError, "outside.*supported tags"):
+                    collect_container_base_image_entries(self.root)
+
+    def test_unknown_image_repository_is_rejected(self) -> None:
+        text = self.containerfile.read_text(encoding="utf-8")
+        self.containerfile.write_text(text.replace("ghcr.io/astral-sh/uv", "example.invalid/uv"), encoding="utf-8")
+        with self.assertRaisesRegex(RuntimeError, "no curated.*metadata"):
+            collect_container_base_image_entries(self.root)
+
+    def test_unpinned_image_is_rejected(self) -> None:
+        text = self.containerfile.read_text(encoding="utf-8")
+        self.containerfile.write_text(text.replace(f"@sha256:{'a' * 64}", ""), encoding="utf-8")
+        with self.assertRaisesRegex(RuntimeError, "SHA-256-pinned"):
+            collect_container_base_image_entries(self.root)
+
+    def test_missing_curated_license_is_rejected(self) -> None:
+        (self.root / "tools/site-pipeline-image/legal/base-images/uv/LICENSE-MIT").unlink()
+        with self.assertRaisesRegex(RuntimeError, "Missing curated license"):
+            collect_container_base_image_entries(self.root)
 
 
 if __name__ == "__main__":

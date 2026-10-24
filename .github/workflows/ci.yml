@@ -179,6 +179,18 @@ jobs:
           print('Verified manifest platforms:', ', '.join(f'{os_name}/{arch}' for os_name, arch in sorted(found)))
           PY
 
+      - name: Verify base-image legal texts and smoke-test each platform
+        run: |
+          IFS=',' read -r -a platforms <<< "$PLATFORMS"
+          for platform in "${platforms[@]}"; do
+            docker run --rm --platform "$platform" --read-only \
+              --cap-drop ALL --security-opt no-new-privileges \
+              --tmpfs /tmp:rw,nosuid,nodev,mode=1777 \
+              --mount "type=bind,source=$PWD,target=/review,readonly" \
+              --workdir /review --entrypoint python3 "$IMAGE_REF" \
+              tools/helpers/verify_container_image.py
+          done
+
       - name: Stop ephemeral local registry
         if: ${{ always() }}
         run: docker rm -f site-pipeline-ci-registry || true

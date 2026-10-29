@@ -32,8 +32,11 @@ class ContainerImageVerificationTests(unittest.TestCase):
         self.root = Path(temporary.name)
         image_dir = Path("tools/site-pipeline-image")
         shutil.copytree(image_dir / "legal", self.root / image_dir / "legal")
-        shutil.copyfile(
-            image_dir / "Containerfile", self.root / image_dir / "Containerfile"
+        (self.root / image_dir / "Containerfile").write_text(
+            f"FROM ghcr.io/astral-sh/uv:0.13.5@sha256:{'a' * 64} AS uvbin\n"
+            f"FROM docker.io/library/python:3.13-bookworm@sha256:{'b' * 64}\n"
+            "COPY --from=uvbin /uv /uvx /usr/local/bin/\n",
+            encoding="utf-8",
         )
         shutil.copyfile("LICENSE", self.root / "LICENSE")
         self.python_license = self.root / image_dir / "legal/base-images/python/LICENSE"
@@ -48,11 +51,6 @@ class ContainerImageVerificationTests(unittest.TestCase):
         )
 
     def test_unchanged_texts_pass_and_use_the_pinned_uv_version(self) -> None:
-        containerfile = self.root / "tools/site-pipeline-image/Containerfile"
-        containerfile.write_text(
-            containerfile.read_text(encoding="utf-8").replace("uv:0.12.1", "uv:0.13.5"),
-            encoding="utf-8",
-        )
         verify_licenses(self.root, self.python_license, self.fetch_uv)
         self.assertEqual(
             self.fetch_uv.call_args_list,

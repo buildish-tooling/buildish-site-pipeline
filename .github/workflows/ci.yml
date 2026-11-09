@@ -33,7 +33,7 @@ concurrency:
 jobs:
   changes:
     name: Detect relevant changes
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       container_image: ${{ steps.filter.outputs.container_image }}
     steps:
@@ -55,7 +55,7 @@ jobs:
   check:
     name: Check
     needs: changes
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -90,7 +90,7 @@ jobs:
     # Canonical main publishes in the separate job below; this job verifies pull
     # requests and noncanonical repository runs without publishing.
     if: needs.changes.outputs.container_image == 'true' && (github.event_name == 'pull_request' || (github.repository_owner != 'buildish-tooling' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')))
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     env:
@@ -202,7 +202,7 @@ jobs:
       - check
     # Publish latest only from the canonical repository's main branch.
     if: needs.changes.outputs.container_image == 'true' && github.repository_owner == 'buildish-tooling' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       packages: write
@@ -235,7 +235,7 @@ jobs:
     ## Temporarily disabled because GitHub Advanced Security is unavailable.
     if: false
     #if: github.repository_owner == 'buildish-tooling'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       actions: read
       contents: read
@@ -257,7 +257,7 @@ jobs:
 
   zizmor:
     name: zizmor
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       actions: read
       contents: read
@@ -282,7 +282,7 @@ jobs:
       - container-publish
       - codeql
       - zizmor
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Assert all required jobs succeeded or were intentionally skipped
         env:
@@ -323,7 +323,7 @@ jobs:
       github.event_name == 'push' &&
       github.ref == 'refs/heads/main'
       && false
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions: {}
     steps:
       - name: Dispatch aggregate site publishing

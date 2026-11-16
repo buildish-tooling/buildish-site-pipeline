@@ -132,6 +132,9 @@ components:
         versioning:
           developmentRef: main
           tagPattern: ^v.*$
+        publicationSelection:
+          releases:
+            mode: allKnown
 """,
             encoding="utf-8",
         )

@@ -258,6 +258,7 @@ def _resolve_component(
         localization=localization,
         publication_selection=component.publication_selection,
         artifacts=tuple(artifacts),
+        snapshot_path=_resolve_repo_path(sources[component.provider_snapshot.source].local_dir, component.provider_snapshot.path) if component.provider_snapshot else None,
     )
 
 

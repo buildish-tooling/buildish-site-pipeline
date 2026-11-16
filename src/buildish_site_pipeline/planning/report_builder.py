@@ -33,6 +33,9 @@ def build_resolved_materialization_report(
 
     return ResolvedMaterializationReportV1(
         schema_version=1,
+        profile=evaluation.profile,
+        snapshot_inputs=list(evaluation.snapshot_inputs),
+        context_dispositions=list(evaluation.context_dispositions),
         generated_at=datetime.now(UTC),
         target=evaluation.target,
         entries=[

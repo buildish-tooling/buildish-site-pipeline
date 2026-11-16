@@ -15,6 +15,7 @@
 
 .git/**
 .idea/**
+.agents/**
 CODE_OF_CONDUCT.md
 build/**
 dist/**

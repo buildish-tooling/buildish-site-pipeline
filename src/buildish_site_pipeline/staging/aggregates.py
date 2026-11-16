@@ -401,7 +401,7 @@ def _build_artifacts_entries(
     selected_by_artifact: dict[tuple[str, str], list[SelectedVersionContext]] = (
         defaultdict(list)
     )
-    for context in build_plan.selected_versions:
+    for context in (build_plan.desired_versions or build_plan.selected_versions):
         if context.artifact_key is None:
             continue
         selected_by_artifact[(context.component_slug, context.artifact_key)].append(
@@ -427,7 +427,7 @@ def _build_artifacts_entries(
         for artifact in component.artifacts:
             contexts = selected_by_artifact.get((component.slug, artifact.key), [])
             released_contexts = [
-                context for context in contexts if context.kind is RecordKind.RELEASED
+                context for context in contexts if context.kind is RecordKind.RELEASED and context.identity_verified
             ]
             candidate_contexts = [
                 context for context in contexts if context.kind is RecordKind.CANDIDATE
@@ -551,7 +551,7 @@ def _build_route_entries(build_plan: EffectiveBuildPlan) -> list[RouteAggregateE
                     route_kind="alias",
                 ),
             )
-    for context in build_plan.selected_versions:
+    for context in (build_plan.desired_versions or build_plan.selected_versions):
         publication = component_by_slug[context.component_slug].publication
         entries.append(
             _route_entry(
@@ -598,7 +598,7 @@ def _build_redirect_entries(
                     source_kind="catalog",
                 ),
             )
-    for context in build_plan.selected_versions:
+    for context in (build_plan.desired_versions or build_plan.selected_versions):
         if (
             context.kind is not RecordKind.RELEASED
             or context.withdrawal_behavior != "redirect"
@@ -671,7 +671,7 @@ def _build_redirect_resolution_index(
             )
         )
 
-    for context in build_plan.selected_versions:
+    for context in (build_plan.desired_versions or build_plan.selected_versions):
         publication = component_by_slug[context.component_slug].publication
         resolved_route = (
             publication.origin.key,
@@ -775,39 +775,37 @@ def _build_release_entries(
         component.slug: component for component in build_plan.site.components
     }
     entries = []
-    for context in build_plan.selected_versions:
-        if context.kind is not RecordKind.RELEASED:
+    for context in build_plan.desired_versions or build_plan.selected_versions:
+        if context.kind is not RecordKind.RELEASED or not context.identity_verified:
             continue
-        provider_record = _provider_record_for_context(context)
+        record = context.provider_record
         artifact = _artifact_for_context(
             component_by_slug[context.component_slug], context
         )
         entries.append(
             ReleaseAggregateEntry(
-                provider=provider_record.provider,
-                external_id=provider_record.external_id,
-                external_url=provider_record.external_url,
+                provider=record.provider if record else None,
+                external_id=record.external_id if record else None,
+                external_url=record.external_url if record else None,
                 component_slug=context.component_slug,
                 artifact_key=_required_context_artifact_key(context),
                 version=_required_context_version(context),
-                display_version=provider_record.display_version,
-                release_line=provider_record.release_line,
-                tag=provider_record.tag,
-                publication_state=provider_record.publication_state,
-                published_at=_parse_timestamp(provider_record.published_at),
+                display_version=context.display_version,
+                release_line=record.release_line if record else context.release_line,
+                tag=context.tag,
+                publication_state=context.publication_state,
+                published_at=_parse_timestamp(record.published_at) if record else None,
                 support_status=_support_status_for_context(artifact, context),
                 support_window=_support_window_for_context(artifact, context),
-                release_line_ancestors=list(
-                    provider_record.release_line_ancestors or ()
-                ),
+                release_line_ancestors=list(record.release_line_ancestors or ())
+                if record
+                else None,
                 withdrawal_behavior=context.withdrawal_behavior,
                 redirect_target=context.redirect_target,
-                maturity=provider_record.maturity,
-                assets=list(provider_record.assets)
-                if provider_record.assets is not None
-                else None,
-                urls=provider_record.urls,
-            ),
+                maturity=record.maturity if record else context.maturity,
+                assets=list(record.assets) if record else None,
+                urls=record.urls if record else None,
+            )
         )
     return entries
 
@@ -864,11 +862,11 @@ def _build_ref_entries(build_plan: EffectiveBuildPlan) -> list[RefAggregateEntry
 def _ref_entry(
     component: ResolvedComponentConfig, context: SelectedVersionContext
 ) -> RefAggregateEntry:
-    provider_record = _provider_record_for_context(context)
+    provider_record = context.provider_record
     return RefAggregateEntry(
-        provider=provider_record.provider,
-        external_id=provider_record.external_id,
-        external_url=provider_record.external_url,
+        provider=provider_record.provider if provider_record else None,
+        external_id=provider_record.external_id if provider_record else None,
+        external_url=provider_record.external_url if provider_record else None,
         component_slug=context.component_slug,
         artifact_key=_required_context_artifact_key(context),
         ref=_required_context_ref(context),
@@ -1052,17 +1050,17 @@ def _latest_release_summary(
     context = max(
         contexts,
         key=lambda item: (
-            (_provider_record_for_context(item).published_at or ""),
+            (item.provider_record.published_at or "") if item.provider_record else "",
             item.version or "",
         ),
     )
-    provider_record = _provider_record_for_context(context)
+    record = context.provider_record
     return LatestReleaseSummary(
         version=_required_context_version(context),
-        display_version=provider_record.display_version,
-        tag=provider_record.tag,
-        publication_state=provider_record.publication_state,
-        published_at=_parse_timestamp(provider_record.published_at),
+        display_version=context.display_version,
+        tag=context.tag,
+        publication_state=context.publication_state,
+        published_at=_parse_timestamp(record.published_at) if record else None,
     )
 
 

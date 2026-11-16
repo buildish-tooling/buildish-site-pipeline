@@ -135,6 +135,30 @@ Recommended flag meanings are:
   default
 - `--fail-on` accepts `error` or `warning`; default is `error`
 
+## Execution profiles and input availability
+
+`plan`, `check`, `build`, and `watch` accept `--profile local|publication`, defaulting
+to `local`. The profile controls component snapshot requirements and their narrow
+release-content consequences. It does not infer CI status or change missing
+component checkout policy. Full publication automation must select `publication`
+explicitly; local preview commands may keep the default.
+
+All four command reports carry typed `profile`, `snapshotInputs`, and
+`contextDispositions` fields. Snapshot inputs identify source files, requirements,
+active-profile necessity, readiness, and per-file refresh provenance. Dispositions
+identify known desired exact releases and whether original docs, omission, a notice,
+or a redirect is effective. Ordinary materialization entries remain the original
+local trees required by that effective plan. Do not mistake release inventory for
+an assertion that original docs were staged.
+
+Planning remains an acquisition report: missing required snapshots or trees do
+not alone make a completed `plan` fail. `check` and stage-producing commands enforce
+those requirements. Error diagnostics such as state conflicts do fail planning;
+informational and warning diagnostics alone do not. Allowed inventory absence and
+its local omissions are informational, so `--fail-on warning` remains usable.
+Reports for failed watch cycles describe that attempted cycle's assessment; a
+retained usable stage still contains the previous successful cycle's output.
+
 ## Shared report flags
 
 The stable machine-readable report flag family should be shared across all

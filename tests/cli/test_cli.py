@@ -166,7 +166,7 @@ class CliTests(unittest.TestCase):
 
             report_text = report_path.read_text(encoding="utf-8")
 
-        self.assertEqual(exit_code, 1)
+        self.assertEqual(exit_code, 0)
         self.assertEqual(stdout.getvalue(), "")
         self.assertIn("plan watch:", report_text)
         self.assertIn("diagnostics:", report_text)
@@ -229,7 +229,7 @@ class CliTests(unittest.TestCase):
         self.assertIn("warning page-link-target-missing", text_report)
         self.assertIn("component=spark", text_report)
         self.assertIn(
-            "releases/4.0.0/index.md:1:",
+            "index.md:1:",
             text_report,
         )
         self.assertIn(
@@ -292,7 +292,7 @@ class CliTests(unittest.TestCase):
         self.assertIn("warning page-link-target-missing", report_text)
         self.assertIn("component=spark", report_text)
         self.assertIn(
-            "releases/4.0.0/index.md:1:",
+            "index.md:1:",
             report_text,
         )
         self.assertEqual(stderr.getvalue(), "")

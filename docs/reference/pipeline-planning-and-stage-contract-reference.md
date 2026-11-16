@@ -30,10 +30,12 @@ Back to the [reference overview](../pipeline-model-schema-reference/).
 - [CliDiagnostic](#clidiagnostic) — Structured operator-facing failure without internal exception details.
 - [CliDiagnosticIssue](#clidiagnosticissue) — One bounded, actionable detail attached to a CLI failure.
 - [CliFailureReportV1](#clifailurereportv1) — Stable JSON envelope emitted when no command report can be produced.
+- [ContextDisposition](#contextdisposition) — Publication action for one desired exact release in this invocation.
 - [PipelineDiagnosticEntry](#pipelinediagnosticentry) — Structured diagnostic emitted during planning, checking, or staging.
 - [ReducedDiagnosticDetailsSummary](#reduceddiagnosticdetailssummary) — Compact placeholder used when full diagnostic details were too large to keep.
 - [ResolvedMaterializationEntry](#resolvedmaterializationentry) — One local checkout or fetched input that the planner expects to exist.
 - [ResolvedMaterializationReportV1](#resolvedmaterializationreportv1) — Machine-readable planning report for required local inputs.
+- [SnapshotInput](#snapshotinput) — One configured component-owned provider file and its observed availability.
 - [StageDataFiles](#stagedatafiles) — Stage-relative paths of aggregate metadata files currently present in one stage tree.
 - [StageManifestV1](#stagemanifestv1) — Authoritative entry-point document for a staged output tree.
 - [StageRoots](#stageroots) — Named top-level directories inside a stage tree.
@@ -51,6 +53,9 @@ Machine-readable result of `site-pipeline check`.
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
+| <a id="checkreportv1-profile"></a>`profile` | object | no | Explicit execution profile used by this invocation. |
+| <a id="checkreportv1-snapshotinputs"></a>`snapshotInputs` | object | no | Configured component provider inputs and their readiness. |
+| <a id="checkreportv1-contextdispositions"></a>`contextDispositions` | object | no | Publication actions for known desired release contexts. |
 | <a id="checkreportv1-schemaversion"></a>`schemaVersion` | Literal[1] | yes | Schema version for the check report. |
 | <a id="checkreportv1-generatedat"></a>`generatedAt` | [TimestampString](../pipeline-shared-types-reference/#timestampstring) | yes | Timestamp when the check report was generated. |
 | <a id="checkreportv1-command"></a>`command` | Literal['check'] | yes | Command name that produced this report; always `check` for this contract. |
@@ -61,6 +66,9 @@ Machine-readable result of `site-pipeline check`.
 
 ```json
 {
+  "profile": "local",
+  "snapshotInputs": [],
+  "contextDispositions": [],
   "schemaVersion": 1,
   "generatedAt": "2026-04-06T08:35:00Z",
   "command": "check",
@@ -190,6 +198,24 @@ Stable JSON envelope emitted when no command report can be produced.
 }
 ```
 
+<a id="contextdisposition"></a>
+### ContextDisposition
+
+Publication action for one desired exact release in this invocation.
+
+- category: `emitted`
+- ownership: `pipeline-derived`
+- file contract: (inner type)
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| <a id="contextdisposition-componentslug"></a>`componentSlug` | typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=None, min_length=1, max_length=None, pattern=None, ascii_only=None)] | yes | Owning component. |
+| <a id="contextdisposition-artifactkey"></a>`artifactKey` | typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=None, min_length=1, max_length=None, pattern=None, ascii_only=None)] | yes | Owning artifact. |
+| <a id="contextdisposition-version"></a>`version` | typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=None, min_length=1, max_length=None, pattern=None, ascii_only=None)] | yes | Desired release version. |
+| <a id="contextdisposition-action"></a>`action` | <enum '[ContextAction](../pipeline-shared-types-reference/#contextaction)'> | yes | Effective action for original docs or a withdrawal route. |
+| <a id="contextdisposition-publicationstate"></a>`publicationState` | buildish_site_pipeline.models.enums.[PublicationState](../pipeline-shared-types-reference/#publicationstate) | no | Resolved authored/provider publication state. |
+| <a id="contextdisposition-reason"></a>`reason` | typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=None, min_length=1, max_length=None, pattern=None, ascii_only=None)] | no | Why original docs are not staged. |
+
 <a id="pipelinediagnosticentry"></a>
 ### PipelineDiagnosticEntry
 
@@ -289,6 +315,9 @@ Machine-readable planning report for required local inputs.
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
+| <a id="resolvedmaterializationreportv1-profile"></a>`profile` | object | no | Explicit execution profile used by this invocation. |
+| <a id="resolvedmaterializationreportv1-snapshotinputs"></a>`snapshotInputs` | object | no | Configured component provider inputs and their readiness. |
+| <a id="resolvedmaterializationreportv1-contextdispositions"></a>`contextDispositions` | object | no | Publication actions for known desired release contexts. |
 | <a id="resolvedmaterializationreportv1-schemaversion"></a>`schemaVersion` | Literal[1] | yes | Schema version for the materialization planning report. |
 | <a id="resolvedmaterializationreportv1-generatedat"></a>`generatedAt` | [TimestampString](../pipeline-shared-types-reference/#timestampstring) | yes | Timestamp when this planning report was generated. |
 | <a id="resolvedmaterializationreportv1-target"></a>`target` | [PlanningTarget](../pipeline-shared-types-reference/#planningtarget) | yes | Planning target that this report was generated for, such as build or watch preparation. |
@@ -299,6 +328,9 @@ Machine-readable planning report for required local inputs.
 
 ```json
 {
+  "profile": "local",
+  "snapshotInputs": [],
+  "contextDispositions": [],
   "schemaVersion": 1,
   "generatedAt": "2026-04-06T08:30:00Z",
   "target": "build",
@@ -319,6 +351,25 @@ Machine-readable planning report for required local inputs.
   "diagnostics": []
 }
 ```
+
+<a id="snapshotinput"></a>
+### SnapshotInput
+
+One configured component-owned provider file and its observed availability.
+
+- category: `emitted`
+- ownership: `pipeline-derived`
+- file contract: (inner type)
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| <a id="snapshotinput-componentslug"></a>`componentSlug` | typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=None, min_length=1, max_length=None, pattern=None, ascii_only=None)] | no | Owning component, or absent for aggregate inventory. |
+| <a id="snapshotinput-sourcekey"></a>`sourceKey` | typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=None, min_length=1, max_length=None, pattern=None, ascii_only=None)] | no | Catalog source, or absent for the aggregate file beside the catalog. |
+| <a id="snapshotinput-expectedlocalpath"></a>`expectedLocalPath` | typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=None, min_length=1, max_length=None, pattern=None, ascii_only=None), AfterValidator(func=<function validate_local_path_string at 0x7ed5bcc809e0>)] | yes | Expected local snapshot file location. |
+| <a id="snapshotinput-requirement"></a>`requirement` | <enum '[SnapshotRequirement](../pipeline-shared-types-reference/#snapshotrequirement)'> | yes | Authored availability requirement. |
+| <a id="snapshotinput-required"></a>`required` | <class 'bool'> | yes | Whether the active execution profile requires this file. |
+| <a id="snapshotinput-status"></a>`status` | <enum '[MaterializationStatus](../pipeline-shared-types-reference/#materializationstatus)'> | yes | Observed file availability. |
+| <a id="snapshotinput-fetchedat"></a>`fetchedAt` | dict[str, pydantic.types.AwareDatetime] | no | Actual per-provider refresh times in this file. |
 
 <a id="stagedatafiles"></a>
 ### StageDataFiles
@@ -446,6 +497,9 @@ Machine-readable result of `build` or one completed watch cycle.
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
+| <a id="stagerunreportv1-profile"></a>`profile` | object | no | Explicit execution profile used by this invocation. |
+| <a id="stagerunreportv1-snapshotinputs"></a>`snapshotInputs` | object | no | Configured component provider inputs and their readiness. |
+| <a id="stagerunreportv1-contextdispositions"></a>`contextDispositions` | object | no | Publication actions for known desired release contexts. |
 | <a id="stagerunreportv1-schemaversion"></a>`schemaVersion` | Literal[1] | yes | Schema version for the stage run report. |
 | <a id="stagerunreportv1-generatedat"></a>`generatedAt` | [TimestampString](../pipeline-shared-types-reference/#timestampstring) | yes | Timestamp when the stage run report was generated. |
 | <a id="stagerunreportv1-command"></a>`command` | [StageCommand](../pipeline-shared-types-reference/#stagecommand) | yes | Stage-producing command that produced this report, such as `build` or `watch`. |
@@ -463,6 +517,9 @@ Machine-readable result of `build` or one completed watch cycle.
 
 ```json
 {
+  "profile": "local",
+  "snapshotInputs": [],
+  "contextDispositions": [],
   "schemaVersion": 1,
   "generatedAt": "2026-04-06T08:40:00Z",
   "command": "build",

@@ -36,6 +36,7 @@ Back to the [reference overview](../pipeline-model-schema-reference/).
 - [ComponentIdentity](#componentidentity) — Stable identity for a component repository.
 - [ComponentLifecycleHints](#componentlifecyclehints) — Optional lifecycle defaults shared across all artifacts in a component repository.
 - [ComponentMetadataDocumentV1](#componentmetadatadocumentv1) — Canonical component metadata that defines stable identity, repository content roots, and optional lifecycle defaults shared across a component repository.
+- [ComponentProviderSnapshot](#componentprovidersnapshot) — Source-relative component provider inventory binding.
 - [ContentRoots](#contentroots) — Repository-relative locations of authored component content.
 - [ExactReleaseConfig](#exactreleaseconfig) — Per-version lifecycle metadata and publication overrides for one exact release.
 - [GroupConfig](#groupconfig) — Reusable defaults and grouping hints shared by several components.
@@ -207,6 +208,7 @@ Component entry in the consumer catalog.
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
+| <a id="componentcatalogentry-providersnapshot"></a>`providerSnapshot` | [ComponentProviderSnapshot](#componentprovidersnapshot) | no | Optional binding to a component-owned normalized provider inventory. |
 | <a id="componentcatalogentry-slug"></a>`slug` | [Slug](../pipeline-shared-types-reference/#slug) | yes | Stable component identifier. |
 | <a id="componentcatalogentry-displayname"></a>`displayName` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | no | Human-readable component name override or convenience value. |
 | <a id="componentcatalogentry-localdir"></a>`localDir` | [RepoRelativePath](../pipeline-shared-types-reference/#reporelativepath) | no | Simple shorthand for binding the component to one workspace-local checkout directory. |
@@ -298,6 +300,21 @@ lifecycle:
       displayName: Active
       order: 10
 ```
+
+<a id="componentprovidersnapshot"></a>
+### ComponentProviderSnapshot
+
+Source-relative component provider inventory binding.
+
+- category: `authored`
+- ownership: `consumer-owned`
+- file contract: (inner type)
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| <a id="componentprovidersnapshot-source"></a>`source` | [SourceKey](../pipeline-shared-types-reference/#sourcekey) | yes | Named catalog source containing this component's inventory. |
+| <a id="componentprovidersnapshot-path"></a>`path` | [RepoRelativePath](../pipeline-shared-types-reference/#reporelativepath) | yes | Snapshot file path relative to the named source root. |
+| <a id="componentprovidersnapshot-requirement"></a>`requirement` | [SnapshotRequirement](../pipeline-shared-types-reference/#snapshotrequirement) | no | Required for publication by default, always required, or always optional. |
 
 <a id="contentroots"></a>
 ### ContentRoots

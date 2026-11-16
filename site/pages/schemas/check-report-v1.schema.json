@@ -61,6 +61,83 @@
         "ownership": "pipeline-derived"
       }
     },
+    "ContextAction": {
+      "description": "Publication disposition independent from release identity.",
+      "enum": [
+        "docs",
+        "omit",
+        "notice",
+        "redirect"
+      ],
+      "title": "ContextAction",
+      "type": "string"
+    },
+    "ContextDisposition": {
+      "additionalProperties": false,
+      "description": "Publication action for one desired exact release in this invocation.",
+      "properties": {
+        "action": {
+          "$ref": "#/$defs/ContextAction",
+          "description": "Effective action for original docs or a withdrawal route."
+        },
+        "artifactKey": {
+          "description": "Owning artifact.",
+          "minLength": 1,
+          "title": "Artifactkey",
+          "type": "string"
+        },
+        "componentSlug": {
+          "description": "Owning component.",
+          "minLength": 1,
+          "title": "Componentslug",
+          "type": "string"
+        },
+        "publicationState": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PublicationState"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Resolved authored/provider publication state."
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Why original docs are not staged.",
+          "title": "Reason"
+        },
+        "version": {
+          "description": "Desired release version.",
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "componentSlug",
+        "artifactKey",
+        "version",
+        "action"
+      ],
+      "title": "ContextDisposition",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    },
     "DiagnosticSeverity": {
       "description": "Severity level for pipeline diagnostics.",
       "enum": [
@@ -69,6 +146,26 @@
         "error"
       ],
       "title": "DiagnosticSeverity",
+      "type": "string"
+    },
+    "ExecutionProfile": {
+      "description": "Explicit input requirement context, independent from CI environment.",
+      "enum": [
+        "local",
+        "publication"
+      ],
+      "title": "ExecutionProfile",
+      "type": "string"
+    },
+    "MaterializationStatus": {
+      "description": "Readiness state of a required local input.",
+      "enum": [
+        "present",
+        "missing",
+        "stale",
+        "unresolved"
+      ],
+      "title": "MaterializationStatus",
       "type": "string"
     },
     "PipelineDiagnosticEntry": {
@@ -178,6 +275,17 @@
         "ownership": "pipeline-derived"
       }
     },
+    "PublicationState": {
+      "description": "Observed provider-side publication state.",
+      "enum": [
+        "published",
+        "hidden",
+        "withdrawn",
+        "tombstoned"
+      ],
+      "title": "PublicationState",
+      "type": "string"
+    },
     "ReducedDiagnosticDetailsSummary": {
       "additionalProperties": false,
       "description": "Compact placeholder used when full diagnostic details were too large to keep.",
@@ -263,6 +371,90 @@
       ],
       "title": "RunStatus",
       "type": "string"
+    },
+    "SnapshotInput": {
+      "additionalProperties": false,
+      "description": "One configured component-owned provider file and its observed availability.",
+      "properties": {
+        "componentSlug": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Owning component, or absent for aggregate inventory.",
+          "title": "Componentslug"
+        },
+        "expectedLocalPath": {
+          "description": "Expected local snapshot file location.",
+          "minLength": 1,
+          "title": "Expectedlocalpath",
+          "type": "string"
+        },
+        "fetchedAt": {
+          "additionalProperties": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "description": "Actual per-provider refresh times in this file.",
+          "title": "Fetchedat",
+          "type": "object"
+        },
+        "required": {
+          "description": "Whether the active execution profile requires this file.",
+          "title": "Required",
+          "type": "boolean"
+        },
+        "requirement": {
+          "$ref": "#/$defs/SnapshotRequirement",
+          "description": "Authored availability requirement."
+        },
+        "sourceKey": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Catalog source, or absent for the aggregate file beside the catalog.",
+          "title": "Sourcekey"
+        },
+        "status": {
+          "$ref": "#/$defs/MaterializationStatus",
+          "description": "Observed file availability."
+        }
+      },
+      "required": [
+        "expectedLocalPath",
+        "requirement",
+        "required",
+        "status"
+      ],
+      "title": "SnapshotInput",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    },
+    "SnapshotRequirement": {
+      "description": "When a configured component inventory must exist.",
+      "enum": [
+        "publication",
+        "required",
+        "optional"
+      ],
+      "title": "SnapshotRequirement",
+      "type": "string"
     }
   },
   "$id": "https://buildish.org/components/site-pipeline/schemas/check-report-v1.schema.json",
@@ -272,6 +464,7 @@
   "examples": [
     {
       "command": "check",
+      "contextDispositions": [],
       "diagnostics": [
         {
           "code": "catalog.redirectReasonMissing",
@@ -282,7 +475,9 @@
         }
       ],
       "generatedAt": "2026-04-06T08:35:00Z",
+      "profile": "local",
       "schemaVersion": 1,
+      "snapshotInputs": [],
       "summary": {
         "errorCount": 0,
         "failOnSeverity": "error",
@@ -300,6 +495,14 @@
       "title": "Command",
       "type": "string"
     },
+    "contextDispositions": {
+      "description": "Publication actions for known desired release contexts.",
+      "items": {
+        "$ref": "#/$defs/ContextDisposition"
+      },
+      "title": "Contextdispositions",
+      "type": "array"
+    },
     "diagnostics": {
       "description": "Structured diagnostics emitted during the check run.",
       "items": {
@@ -314,11 +517,24 @@
       "title": "Generatedat",
       "type": "string"
     },
+    "profile": {
+      "$ref": "#/$defs/ExecutionProfile",
+      "default": "local",
+      "description": "Explicit execution profile used by this invocation."
+    },
     "schemaVersion": {
       "const": 1,
       "description": "Schema version for the check report.",
       "title": "Schemaversion",
       "type": "integer"
+    },
+    "snapshotInputs": {
+      "description": "Configured component provider inputs and their readiness.",
+      "items": {
+        "$ref": "#/$defs/SnapshotInput"
+      },
+      "title": "Snapshotinputs",
+      "type": "array"
     },
     "summary": {
       "$ref": "#/$defs/CheckSummary",

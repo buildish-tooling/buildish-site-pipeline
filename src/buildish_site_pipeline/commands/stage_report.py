@@ -24,7 +24,7 @@ from buildish_site_pipeline.evaluation.types import (
     DiagnosticCounts,
     EvaluationResult,
 )
-from buildish_site_pipeline.models.enums import DiagnosticSeverity, StageCommand
+from buildish_site_pipeline.models.enums import DiagnosticSeverity, StageCommand, ExecutionProfile
 from buildish_site_pipeline.models.emitted.planning_stage_contract import (
     PipelineDiagnosticEntry,
     StageRunReportV1,
@@ -32,6 +32,7 @@ from buildish_site_pipeline.models.emitted.planning_stage_contract import (
 )
 from buildish_site_pipeline.staging.public_safety import (
     sanitize_public_diagnostics,
+    sanitize_snapshot_inputs,
 )
 
 
@@ -46,6 +47,7 @@ def build_stage_run_report(
     manifest_path: Path | None,
     diagnostics: tuple[PipelineDiagnosticEntry, ...] | None = None,
     cycle: int | None = None,
+    profile: ExecutionProfile = ExecutionProfile.LOCAL,
     workspace_root: Path | None = None,
     private_roots: tuple[Path, ...] = (),
 ) -> StageRunReportV1:
@@ -66,6 +68,17 @@ def build_stage_run_report(
     counts = _count_diagnostics(effective_diagnostics)
     return StageRunReportV1(
         schema_version=1,
+        profile=evaluation.planning.profile if evaluation is not None else profile,
+        snapshot_inputs=sanitize_snapshot_inputs(
+            evaluation.planning.snapshot_inputs,
+            workspace_root=report_workspace_root,
+            private_roots=private_roots,
+        )
+        if evaluation is not None and report_workspace_root is not None
+        else [],
+        context_dispositions=list(evaluation.planning.context_dispositions)
+        if evaluation is not None
+        else [],
         generated_at=datetime.now(UTC),
         command=command,
         summary=StageRunSummary(

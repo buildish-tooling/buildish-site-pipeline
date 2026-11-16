@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import stat
 from pathlib import Path
 
 from buildish_site_pipeline.models import ProviderSnapshotDocumentV1
@@ -24,7 +25,8 @@ from buildish_site_pipeline.models.authored.site_catalog import SiteCatalogDocum
 from buildish_site_pipeline.models.authored.component_metadata import (
     ComponentMetadataDocumentV1,
 )
-from buildish_site_pipeline.models.enums import DocumentFormat
+from buildish_site_pipeline.models.enums import DocumentFormat, ExecutionProfile, SnapshotRequirement, MaterializationStatus
+from buildish_site_pipeline.models.emitted.execution import SnapshotInput
 from buildish_site_pipeline.models.loading import (
     DocumentDecodingError,
     DocumentRootTypeError,
@@ -40,6 +42,7 @@ from buildish_site_pipeline.models.loading import (
 )
 from buildish_site_pipeline.resource_limits import DEFAULT_PROVIDER_SNAPSHOT_BYTES
 from buildish_site_pipeline.source_roots import (
+    resolve_repo_path,
     resolve_catalog_source_bindings,
     resolve_component_content_source_binding,
 )
@@ -74,6 +77,8 @@ class LoadedWorkspaceInputs:
     component_documents: dict[str, ComponentMetadataDocumentV1]
     catalog_path: Path
     provider_snapshot_path: Path | None
+    snapshot_inputs: tuple[SnapshotInput, ...] = ()
+    provider_snapshot_paths: tuple[Path, ...] = ()
 
 
 def load_catalog_input(
@@ -108,7 +113,7 @@ def load_catalog_input(
 
 
 def load_workspace_inputs(
-    workspace_root: Path, catalog_path: Path | None = None
+    workspace_root: Path, catalog_path: Path | None = None, *, profile: ExecutionProfile = ExecutionProfile.LOCAL
 ) -> LoadedWorkspaceInputs:
     """Load default catalog, provider snapshot, and component metadata inputs."""
 
@@ -120,11 +125,15 @@ def load_workspace_inputs(
     site_root = loaded_catalog.catalog_path.parent
 
     try:
-        provider_snapshot, provider_snapshot_path = _load_provider_snapshot(
+        provider_snapshot, provider_snapshot_path, aggregate_bytes = _load_provider_snapshot(
             site_root, resolved_workspace_root
         )
         component_documents = _load_component_documents(
             resolved_workspace_root, loaded_catalog.catalog
+        )
+        provider_snapshot, snapshot_inputs, snapshot_paths = _load_component_snapshots(
+            catalog=loaded_catalog.catalog, workspace_root=resolved_workspace_root,
+            aggregate=provider_snapshot, aggregate_path=provider_snapshot_path, aggregate_bytes=aggregate_bytes, profile=profile,
         )
     except LoadingError as exc:
         raise _input_error_from_loading(exc) from exc
@@ -142,12 +151,14 @@ def load_workspace_inputs(
         component_documents=component_documents,
         catalog_path=loaded_catalog.catalog_path,
         provider_snapshot_path=provider_snapshot_path,
+        snapshot_inputs=snapshot_inputs,
+        provider_snapshot_paths=snapshot_paths,
     )
 
 
 def _load_provider_snapshot(
     site_root: Path, workspace_root: Path
-) -> tuple[ProviderSnapshotDocumentV1, Path | None]:
+) -> tuple[ProviderSnapshotDocumentV1, Path | None, int]:
     found_paths = [
         (site_root / candidate_name).resolve(strict=False)
         for candidate_name in _PROVIDER_SNAPSHOT_CANDIDATE_NAMES
@@ -161,20 +172,26 @@ def _load_provider_snapshot(
             source=_display_input_path(site_root, workspace_root),
         )
     if not found_paths:
-        return ProviderSnapshotDocumentV1(schema_version=1, providers=[], records=[]), None
+        return (
+            ProviderSnapshotDocumentV1(schema_version=1, providers=[], records=[]),
+            None,
+            0,
+        )
     provider_snapshot_path = found_paths[0]
     source_name = _display_input_path(provider_snapshot_path, workspace_root)
+    raw = _read_document_bytes(
+        provider_snapshot_path,
+        source_name=source_name,
+        max_bytes=DEFAULT_PROVIDER_SNAPSHOT_BYTES,
+    )
     return (
         load_provider_snapshot_document(
-            _read_document_bytes(
-                provider_snapshot_path,
-                source_name=source_name,
-                max_bytes=DEFAULT_PROVIDER_SNAPSHOT_BYTES,
-            ),
+            raw,
             document_format=_infer_document_format(provider_snapshot_path),
             source_name=source_name,
         ),
         provider_snapshot_path,
+        len(raw),
     )
 
 
@@ -372,3 +389,159 @@ def _display_input_path(path: Path, workspace_root: Path) -> str:
     if resolved_path.is_relative_to(resolved_workspace_root):
         return resolved_path.relative_to(resolved_workspace_root).as_posix()
     return f"<external-input>/{resolved_path.name or 'input'}"
+
+
+def _load_component_snapshots(
+    *,
+    catalog: SiteCatalogDocumentV1,
+    workspace_root: Path,
+    aggregate: ProviderSnapshotDocumentV1,
+    aggregate_path: Path | None,
+    profile: ExecutionProfile,
+    aggregate_bytes: int,
+) -> tuple[ProviderSnapshotDocumentV1, tuple[SnapshotInput, ...], tuple[Path, ...]]:
+    """Compose validated component inventory files with aggregate inventory."""
+    sources = resolve_catalog_source_bindings(
+        catalog=catalog, workspace_root=workspace_root
+    )
+    providers = {item.key: item for item in aggregate.providers}
+    records = list(aggregate.records)
+    aggregate_name = str(aggregate_path) if aggregate_path else "aggregate inventory"
+    origins = {
+        (item.provider, item.external_id): aggregate_name
+        for item in records
+        if item.external_id is not None
+    }
+    descriptor_origins = {item.key: aggregate_name for item in aggregate.providers}
+    paths = [aggregate_path] if aggregate_path is not None else []
+    inputs = []
+    consumed_bytes = aggregate_bytes
+    for component in catalog.components:
+        binding = component.provider_snapshot
+        if binding is None:
+            continue
+        path = resolve_repo_path(sources[binding.source].local_dir, binding.path)
+        paths.append(path)
+        required = binding.requirement is SnapshotRequirement.REQUIRED or (
+            binding.requirement is SnapshotRequirement.PUBLICATION
+            and profile is ExecutionProfile.PUBLICATION
+        )
+        source_name = _display_input_path(path, workspace_root)
+        try:
+            mode = path.stat().st_mode
+        except FileNotFoundError:
+            inputs.append(
+                SnapshotInput(
+                    component_slug=component.slug,
+                    source_key=binding.source,
+                    expected_local_path=str(path),
+                    requirement=binding.requirement,
+                    required=required,
+                    status=MaterializationStatus.MISSING,
+                )
+            )
+            continue
+        except OSError as exc:
+            raise InputDiagnosticError(
+                "Could not inspect component snapshot",
+                code="input-read-failed",
+                source=source_name,
+            ) from exc
+        if not stat.S_ISREG(mode):
+            raise InputDiagnosticError(
+                "Component snapshot must be a regular file",
+                code="input-not-file",
+                source=source_name,
+            )
+        raw = _read_document_bytes(
+            path, source_name=source_name, max_bytes=DEFAULT_PROVIDER_SNAPSHOT_BYTES
+        )
+        consumed_bytes += len(raw)
+        if consumed_bytes > DEFAULT_PROVIDER_SNAPSHOT_BYTES:
+            raise InputDiagnosticError(
+                "Combined provider inputs exceed the 16 MiB ceiling",
+                code="input-too-large",
+                source=source_name,
+            )
+        document = load_provider_snapshot_document(
+            raw, document_format=_infer_document_format(path), source_name=source_name
+        )
+        artifacts = {item.key: item for item in component.artifacts or ()}
+        for record in document.records:
+            if (
+                record.component_slug != component.slug
+                or record.artifact_key not in artifacts
+            ):
+                raise InputDiagnosticError(
+                    f"Snapshot owned by {component.slug!r} references invalid artifact {record.component_slug}:{record.artifact_key}",
+                    code="input-configuration-invalid",
+                    source=source_name,
+                )
+            if (
+                record.source_key is not None
+                and record.source_key != artifacts[record.artifact_key].source
+            ):
+                raise InputDiagnosticError(
+                    f"Record sourceKey {record.source_key!r} does not match artifact source",
+                    code="input-configuration-invalid",
+                    source=source_name,
+                )
+            if record.external_id is not None:
+                identity = (record.provider, record.external_id)
+                if identity in origins:
+                    raise InputDiagnosticError(
+                        f"Duplicate provider record {identity!r} in {origins[identity]} and {source_name}",
+                        code="input-configuration-invalid",
+                        source=source_name,
+                    )
+                origins[identity] = source_name
+        for descriptor in document.providers:
+            previous = providers.get(descriptor.key)
+            if previous is not None:
+                if previous.model_dump(exclude={"fetched_at"}) != descriptor.model_dump(
+                    exclude={"fetched_at"}
+                ):
+                    raise InputDiagnosticError(
+                        f"Conflicting provider {descriptor.key!r} in {descriptor_origins[descriptor.key]} and {source_name}",
+                        code="input-configuration-invalid",
+                        source=source_name,
+                    )
+                if previous.fetched_at >= descriptor.fetched_at:
+                    continue
+            providers[descriptor.key] = descriptor
+            descriptor_origins[descriptor.key] = source_name
+        records.extend(document.records)
+        if len(records) > 50_000:
+            raise InputDiagnosticError(
+                "Combined provider inputs exceed the 50,000 record ceiling",
+                code="input-too-large",
+                source=source_name,
+            )
+        inputs.append(
+            SnapshotInput(
+                component_slug=component.slug,
+                source_key=binding.source,
+                expected_local_path=str(path),
+                requirement=binding.requirement,
+                required=required,
+                status=MaterializationStatus.PRESENT,
+                fetched_at={item.key: item.fetched_at for item in document.providers},
+            )
+        )
+    if aggregate_path is not None:
+        inputs.append(
+            SnapshotInput(
+                expected_local_path=str(aggregate_path),
+                requirement=SnapshotRequirement.OPTIONAL,
+                required=False,
+                status=MaterializationStatus.PRESENT,
+                fetched_at={item.key: item.fetched_at for item in aggregate.providers},
+            )
+        )
+    return (
+        ProviderSnapshotDocumentV1(
+            schema_version=1, providers=list(providers.values()), records=records
+        ),
+        tuple(inputs),
+        tuple(paths),
+    )

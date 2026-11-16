@@ -215,7 +215,7 @@ def _serialize_report(
 def render_text_report(report: ReportModel) -> str:
     """Render a human-readable report summary plus diagnostic entries."""
 
-    summary = render_text_report_summary(report)
+    summary = render_text_report_summary(report) + f"\nprofile: {report.profile.value}"
     rendered_diagnostics = _render_text_diagnostics(report.diagnostics)
     if not rendered_diagnostics:
         return summary

@@ -564,7 +564,7 @@ class StagingPipelineTests(unittest.TestCase):
             stage_root = workspace_root / "site/.stage"
             staged_development_index = (
                 stage_root / "content/spark/development/releases/4.0.0/index.md"
-            ).read_text(encoding="utf-8")
+            ).exists()
             staged_release_index = (stage_root / "content/spark/releases/4.0.0/index.md").read_text(
                 encoding="utf-8"
             )
@@ -577,16 +577,15 @@ class StagingPipelineTests(unittest.TestCase):
         self.assertEqual(check_stderr.getvalue(), "")
         self.assertTrue(check_report["summary"]["passed"])
         self.assertEqual(check_report["summary"]["warningCount"], 1)
-        self.assertEqual(missing_diagnostic["details"]["sourceRelativePath"], "releases/4.0.0/index.md")
+        self.assertEqual(missing_diagnostic["details"]["sourceRelativePath"], "index.md")
         self.assertEqual(missing_diagnostic["details"]["sourceLine"], 1)
-        self.assertEqual(missing_diagnostic["details"]["sourceRoute"], "/spark/development/releases/4.0.0")
+        self.assertEqual(missing_diagnostic["details"]["sourceRoute"], "/spark/releases/4.0.0")
         self.assertEqual(missing_diagnostic["details"]["resolvedPath"], "/spark/releases/4.0.0/missing")
         self.assertEqual(build_exit_code, 0)
         self.assertEqual(stderr.getvalue(), "")
-        self.assertTrue(staged_development_guide_exists)
+        self.assertFalse(staged_development_guide_exists)
         self.assertTrue(staged_release_guide_exists)
-        self.assertIn("[Guide](/spark/releases/4.0.0/guide/)", staged_development_index)
-        self.assertIn("[Missing](/spark/releases/4.0.0/missing/)", staged_development_index)
+        self.assertFalse(staged_development_index)
         self.assertIn("[Guide](/spark/releases/4.0.0/guide/)", staged_release_index)
         self.assertIn("[Missing](/spark/releases/4.0.0/missing/)", staged_release_index)
 

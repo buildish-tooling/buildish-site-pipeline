@@ -22,6 +22,7 @@ from enum import IntEnum, StrEnum
 from pathlib import Path
 
 from buildish_site_pipeline.models.enums import (
+    ExecutionProfile,
     CheckFailureThreshold,
     PlanningTarget,
     RunStatus,
@@ -239,6 +240,7 @@ class PlanInvocation:
     layout: RepositoryLayout
     planning_target: PlanningTarget
     report_request: ReportRequest
+    profile: ExecutionProfile = ExecutionProfile.LOCAL
 
 
 @dataclass(frozen=True, slots=True)
@@ -248,6 +250,7 @@ class CheckInvocation:
     layout: RepositoryLayout
     fail_on_severity: CheckFailureThreshold
     report_request: ReportRequest
+    profile: ExecutionProfile = ExecutionProfile.LOCAL
 
 
 @dataclass(frozen=True, slots=True)
@@ -256,6 +259,7 @@ class BuildInvocation:
 
     layout: RepositoryLayout
     report_request: ReportRequest
+    profile: ExecutionProfile = ExecutionProfile.LOCAL
 
 
 @dataclass(frozen=True, slots=True)
@@ -273,6 +277,7 @@ class WatchInvocation:
     fail_on_severity: CheckFailureThreshold
     report_request: ReportRequest
     unstable_event_request: WatchEventRequest | None
+    profile: ExecutionProfile = ExecutionProfile.LOCAL
 
 
 CommandInvocation = (

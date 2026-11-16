@@ -17,6 +17,8 @@
 from __future__ import annotations
 
 from pathlib import Path
+from buildish_site_pipeline.models.emitted.execution import SnapshotInput
+from buildish_site_pipeline.models.enums import ExecutionProfile
 
 from buildish_site_pipeline.models.authored.site_catalog import (
     SiteCatalogDocumentV1,
@@ -25,14 +27,12 @@ from buildish_site_pipeline.models.authored.component_metadata import (
     ComponentMetadataDocumentV1,
 )
 from buildish_site_pipeline.models.enums import PlanningTarget
-from buildish_site_pipeline.models.emitted.planning_stage_contract import (
-    PipelineDiagnosticEntry,
-)
 from buildish_site_pipeline.models.provider.provider_snapshot import (
     ProviderSnapshotDocumentV1,
 )
 
 from .build_plan import build_effective_build_plan
+from .dispositions import resolve_dispositions
 from .effective_config import resolve_site_config
 from .input_inventory import derive_local_inputs
 from .provider_index import build_provider_snapshot_index
@@ -53,6 +53,8 @@ def evaluate_planning(
     stage_root: Path | None = None,
     work_root: Path | None = None,
     report_output: Path | None = None,
+    profile: ExecutionProfile = ExecutionProfile.LOCAL,
+    snapshot_inputs: tuple[SnapshotInput, ...] = (),
 ) -> PlanningEvaluation:
     """Run the full planning pass and return the immutable in-memory result."""
 
@@ -67,6 +69,9 @@ def evaluate_planning(
     selected_versions = select_version_contexts(
         site=site, provider_index=provider_index
     )
+    selected_versions, desired_versions, context_dispositions, diagnostics = resolve_dispositions(
+        site=site, selected=selected_versions, snapshot_inputs=snapshot_inputs,
+    )
     local_inputs = derive_local_inputs(site=site, selected_versions=selected_versions)
     ready_inputs = classify_input_readiness(local_inputs)
     watched_inputs, watch_plan = derive_watch_plan(
@@ -77,15 +82,20 @@ def evaluate_planning(
         work_root=work_root,
         report_output=report_output,
     )
-    diagnostics: tuple[PipelineDiagnosticEntry, ...] = ()
     build_plan_result = build_effective_build_plan(
         target=target,
         site=site,
         selected_versions=selected_versions,
         local_inputs=watched_inputs,
         watch_plan=watch_plan,
+        desired_versions=desired_versions,
+        snapshot_paths=tuple(Path(item.expected_local_path) for item in snapshot_inputs),
     )
     return PlanningEvaluation(
+        desired_versions=desired_versions,
+        context_dispositions=context_dispositions,
+        profile=profile,
+        snapshot_inputs=snapshot_inputs,
         target=target,
         site=site,
         provider_index=provider_index,

@@ -16,6 +16,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from buildish_site_pipeline.models.enums import (
     MaterializationStatus,
     PlanningTarget,
@@ -40,6 +42,8 @@ def build_effective_build_plan(
     selected_versions: SelectedVersionSet,
     local_inputs: tuple[ResolvedLocalInput, ...],
     watch_plan: WatchInputPlan | None,
+    desired_versions: tuple = (),
+    snapshot_paths: tuple[Path, ...] = (),
 ) -> EffectiveBuildPlanResult:
     """Build the staging handoff document when planning is usable."""
 
@@ -68,5 +72,7 @@ def build_effective_build_plan(
             selected_versions=selected_versions.contexts,
             planned_inputs=local_inputs,
             watch_roots=watch_plan.roots if watch_plan is not None else (),
+            desired_versions=desired_versions,
+            snapshot_paths=snapshot_paths,
         ),
     )

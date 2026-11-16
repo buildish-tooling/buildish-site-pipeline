@@ -648,7 +648,9 @@ Inline example: `<a href="missing/">Missing</a>`
         internal_prefixes: tuple[str, ...] = (),
     ) -> SimpleNamespace:
         return SimpleNamespace(
+            profile=SimpleNamespace(value="local"), context_dispositions=(), desired_versions=(), selected_versions=SimpleNamespace(contexts=()),
             site=SimpleNamespace(
+                components=(),
                 link_checks=ResolvedLinkCheckPolicy(
                     enabled=True,
                     mode=mode,

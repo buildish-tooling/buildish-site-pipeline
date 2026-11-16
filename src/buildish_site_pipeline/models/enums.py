@@ -162,3 +162,27 @@ class RouteMode(StrEnum):
 
     NONE = "none"
     PREFIX_ALL = "prefixAll"
+
+
+class ExecutionProfile(StrEnum):
+    """Explicit input requirement context, independent from CI environment."""
+
+    LOCAL = "local"
+    PUBLICATION = "publication"
+
+
+class SnapshotRequirement(StrEnum):
+    """When a configured component inventory must exist."""
+
+    PUBLICATION = "publication"
+    REQUIRED = "required"
+    OPTIONAL = "optional"
+
+
+class ContextAction(StrEnum):
+    """Publication disposition independent from release identity."""
+
+    DOCS = "docs"
+    OMIT = "omit"
+    NOTICE = "notice"
+    REDIRECT = "redirect"

@@ -650,7 +650,7 @@ class StagingWorkerTests(unittest.TestCase):
                 command=StageCommand.BUILD,
                 evaluation=SimpleNamespace(
                     build_plan=None,
-                    planning=SimpleNamespace(site=SimpleNamespace(workspace_root=workspace_root)),
+                    planning=SimpleNamespace(profile="local", snapshot_inputs=(), context_dispositions=(), site=SimpleNamespace(workspace_root=workspace_root)),
                 ),
                 diagnostics=(
                     PipelineDiagnosticEntry(

@@ -16,6 +16,8 @@
 
 from __future__ import annotations
 
+from buildish_site_pipeline.models.enums import ContextAction
+
 from pathlib import Path
 
 from buildish_site_pipeline.models.enums import (
@@ -79,6 +81,8 @@ def derive_local_inputs(
             ),
         )
     for context in selected_versions.contexts:
+        if context.action is not ContextAction.DOCS:
+            continue
         expected_local_path = _expected_context_path(context)
         inputs.append(
             ResolvedLocalInput(

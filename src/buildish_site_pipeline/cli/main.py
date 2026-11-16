@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import Never, TextIO
 
 from buildish_site_pipeline.models.enums import (
+    ExecutionProfile,
     CheckFailureThreshold,
     PlanningTarget,
 )
@@ -295,6 +296,7 @@ def _revalidate_watch_invocation_outputs(invocation: WatchInvocation) -> WatchIn
         fail_on_severity=invocation.fail_on_severity,
         report_request=report_request,
         unstable_event_request=watch_event_request,
+        profile=invocation.profile,
     )
 
 
@@ -395,6 +397,7 @@ def parse_invocation(argv: Sequence[str] | None = None) -> CommandInvocation:
             layout=layout,
             planning_target=PlanningTarget(namespace.planning_target),
             report_request=report_request,
+            profile=ExecutionProfile(namespace.profile),
         )
     if namespace.command == "check":
         if report_request is None:
@@ -403,11 +406,12 @@ def parse_invocation(argv: Sequence[str] | None = None) -> CommandInvocation:
             layout=layout,
             fail_on_severity=CheckFailureThreshold(namespace.fail_on_severity),
             report_request=report_request,
+            profile=ExecutionProfile(namespace.profile),
         )
     if namespace.command == "build":
         if report_request is None:
             raise AssertionError("build requires a report request")
-        return BuildInvocation(layout=layout, report_request=report_request)
+        return BuildInvocation(layout=layout, report_request=report_request, profile=ExecutionProfile(namespace.profile))
     if namespace.command == "component-source-roots":
         return ComponentSourceRootsInvocation(layout=layout)
     if report_request is None:
@@ -417,6 +421,7 @@ def parse_invocation(argv: Sequence[str] | None = None) -> CommandInvocation:
         fail_on_severity=CheckFailureThreshold(namespace.fail_on_severity),
         report_request=report_request,
         unstable_event_request=watch_event_request,
+        profile=ExecutionProfile(namespace.profile),
     )
 
 
@@ -511,6 +516,8 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Write unstable watch events to PATH or '-' for stdout (default).",
     )
     _add_report_arguments(watch_parser)
+    for command_parser in (plan_parser, check_parser, build_parser, watch_parser):
+        command_parser.add_argument("--profile", choices=[value.value for value in ExecutionProfile], default=ExecutionProfile.LOCAL.value, help="Input requirements: local or publication (default: local).")
     return parser
 
 

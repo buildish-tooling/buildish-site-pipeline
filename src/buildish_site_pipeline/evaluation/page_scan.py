@@ -16,6 +16,10 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+
+from buildish_site_pipeline.content_scope import context_exclusions, excluded_relative_path
+
 from dataclasses import dataclass
 from itertools import islice
 from pathlib import Path
@@ -67,6 +71,8 @@ class _PageRootContext:
     artifact_key: str | None
     base_public_path: str
     localization: ResolvedLocalizationPolicy | None
+    exclusions: tuple[str, ...] = (".git",)
+    excluded_files: tuple[Path, ...] = ()
 
 
 def validate_page_scan(
@@ -133,6 +139,7 @@ def _page_root_contexts(planning: PlanningEvaluation) -> tuple[_PageRootContext,
                 input_id=_format_input_id(local_input.identity),
                 component_slug=selected_context.component_slug,
                 artifact_key=selected_context.artifact_key,
+                exclusions=selected_context.source_exclusions or context_exclusions(selected_context.kind.value),
                 base_public_path=public_path_for_context(
                     components_by_slug[selected_context.component_slug].publication,
                     selected_context,
@@ -154,7 +161,8 @@ def _page_root_contexts(planning: PlanningEvaluation) -> tuple[_PageRootContext,
                 localization=component.localization,
             )
         )
-    return tuple(contexts)
+    excluded_files = tuple(Path(item.expected_local_path) for item in planning.snapshot_inputs)
+    return tuple(replace(context, excluded_files=excluded_files) for context in contexts)
 
 
 def _scan_page_root(
@@ -189,6 +197,8 @@ def _scan_page_root(
                 if not batch:
                     break
                 for entry in batch:
+                    if entry.resolve(strict=False) in context.excluded_files or excluded_relative_path(entry.relative_to(context.root), context.exclusions):
+                        continue
                     entry_real = entry.resolve(strict=False)
                     relative_path = entry.relative_to(context.root).as_posix()
                     if not entry_real.is_relative_to(root_real):

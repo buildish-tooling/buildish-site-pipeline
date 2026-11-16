@@ -172,6 +172,9 @@ class AggregateHelperTests(unittest.TestCase):
             "release_line": "4.x",
             "display_version": "4.0.0",
             "maturity": "ga",
+            "tag": "v4.0.0",
+            "publication_state": PublicationState.PUBLISHED,
+            "identity_verified": True,
             "provider_record": self._provider_record(RecordKind.RELEASED),
         }
         payload.update(overrides)
@@ -240,6 +243,7 @@ class AggregateHelperTests(unittest.TestCase):
             redirects=(),
         )
         build_plan = SimpleNamespace(
+                desired_versions=(),
             site=SimpleNamespace(
                 origins={"docs": origin},
                 components=(SimpleNamespace(slug="spark", publication=publication),),
@@ -267,6 +271,7 @@ class AggregateHelperTests(unittest.TestCase):
 
     def test_build_ref_entries_skips_component_owned_development_contexts_without_artifacts(self) -> None:
         build_plan = SimpleNamespace(
+                desired_versions=(),
             site=SimpleNamespace(
                 components=(SimpleNamespace(slug="spark"),),
             ),
@@ -330,6 +335,7 @@ class AggregateHelperTests(unittest.TestCase):
                 ),
             )
             build_plan = SimpleNamespace(
+                desired_versions=(),
                 workspace_root=workspace_root,
                 site=SimpleNamespace(components=(component,)),
                 selected_versions=(),
@@ -426,6 +432,7 @@ class AggregateHelperTests(unittest.TestCase):
             ),
         )
         build_plan = SimpleNamespace(
+                desired_versions=(),
             site=SimpleNamespace(
                 components=(
                     SimpleNamespace(

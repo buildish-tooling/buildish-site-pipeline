@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from buildish_site_pipeline.models.emitted.execution import SnapshotInput
 
 from buildish_site_pipeline.models.emitted.planning_stage_contract import (
     PipelineDiagnosticEntry,
@@ -75,6 +76,30 @@ def sanitize_public_diagnostics(
         )
         for entry in diagnostics
     )
+
+
+def sanitize_snapshot_inputs(
+    inputs: tuple[SnapshotInput, ...],
+    *,
+    workspace_root: Path,
+    private_roots: tuple[Path, ...] = (),
+) -> list[SnapshotInput]:
+    """Apply the same public path rules to typed input provenance and diagnostics."""
+    return [
+        item.model_copy(
+            update={
+                "expected_local_path": _sanitize_detail_string(
+                    item.expected_local_path,
+                    field_name="expectedLocalPath",
+                    workspace_root=workspace_root.resolve(strict=False),
+                    private_roots=tuple(
+                        root.resolve(strict=False) for root in private_roots
+                    ),
+                )
+            }
+        )
+        for item in inputs
+    ]
 
 
 def public_source_path(

@@ -98,7 +98,9 @@ from ..cli.reporting import (
     revalidate_report_request,
     revalidate_watch_event_request,
 )
-from .shared import load_workspace_inputs
+from buildish_site_pipeline.models.enums import ExecutionProfile
+from .shared import load_workspace_inputs, load_catalog_input
+from buildish_site_pipeline.source_roots import resolve_catalog_source_bindings, resolve_repo_path
 from .stage_report import build_stage_run_report
 from .watch_events import (
     _WatchEventStream,
@@ -260,6 +262,7 @@ def run_watch(invocation: WatchInvocation, *, stdout: TextIO) -> CommandResult:
         fail_on_severity=invocation.fail_on_severity,
         report_request=invocation.report_request,
         unstable_event_request=watch_event_request,
+        profile=invocation.profile,
     )
 
     with _open_watch_event_output(
@@ -533,12 +536,14 @@ def _run_watch_cycle(
 ) -> WatchCycleOutcome:
     try:
         loaded_inputs = load_workspace_inputs(
-            invocation.layout.workspace_root, invocation.layout.catalog_path
+            invocation.layout.workspace_root, invocation.layout.catalog_path, profile=invocation.profile
         )
         planning = evaluate_planning(
             target=PlanningTarget.WATCH,
             catalog=loaded_inputs.catalog,
             provider_snapshot=loaded_inputs.provider_snapshot,
+            profile=invocation.profile,
+            snapshot_inputs=loaded_inputs.snapshot_inputs,
             workspace_root=invocation.layout.workspace_root,
             component_documents=loaded_inputs.component_documents,
             stage_root=invocation.layout.stage_root,
@@ -554,9 +559,10 @@ def _run_watch_cycle(
         )
     except (InvocationError, SitePipelineCliError) as exc:
         return _failed_cycle_outcome(
+            profile=invocation.profile,
             cycle_number=cycle_number,
             trusted_stage=trusted_stage,
-            prior_watch_roots=prior_watch_roots,
+            prior_watch_roots=_failed_input_watch_roots(invocation, prior_watch_roots),
             diagnostics=(_build_cycle_failure_diagnostic(str(exc)),),
             workspace_root=invocation.layout.workspace_root,
             private_roots=(invocation.layout.work_root, invocation.layout.stage_root),
@@ -576,7 +582,7 @@ def _run_watch_cycle(
         site_root=invocation.layout.site_root,
         catalog_path=loaded_inputs.catalog_path,
         provider_snapshot_path=loaded_inputs.provider_snapshot_path,
-        planning_roots=planning_roots + build_input_roots,
+        planning_roots=planning_roots + build_input_roots + _snapshot_watch_roots(loaded_inputs.provider_snapshot_paths, invocation.layout.workspace_root),
     )
     if not evaluation.stage_gate.allowed or evaluation.build_plan is None:
         return WatchCycleOutcome(
@@ -632,6 +638,7 @@ def _run_watch_cycle(
         )
     except StageIntegrityError as exc:
         return _failed_cycle_outcome(
+            profile=invocation.profile,
             cycle_number=cycle_number,
             trusted_stage=trusted_stage,
             prior_watch_roots=watch_roots,
@@ -650,6 +657,7 @@ def _run_watch_cycle(
         )
     except (RetainedStageError, StageIntegrityError) as exc:
         return _failed_cycle_outcome(
+            profile=invocation.profile,
             cycle_number=cycle_number,
             trusted_stage=trusted_stage,
             prior_watch_roots=watch_roots,
@@ -667,6 +675,7 @@ def _run_watch_cycle(
     next_trusted_stage = _load_trusted_stage(publication.stage_root)
     if next_trusted_stage is None:
         return _failed_cycle_outcome(
+            profile=invocation.profile,
             cycle_number=cycle_number,
             trusted_stage=trusted_stage,
             prior_watch_roots=watch_roots,
@@ -773,6 +782,11 @@ def _dirty_unit_ids_for_paths(
     dirty_unit_ids: set[str] = set()
     for dirty_path in dirty_paths:
         normalized_dirty_path = dirty_path.resolve(strict=False)
+        if any(normalized_dirty_path == dependency or dependency.is_relative_to(normalized_dirty_path)
+            for dependency in build_plan.snapshot_paths):
+            return current_unit_ids
+        if _is_immutable_context_change(build_plan, normalized_dirty_path):
+            continue
         if normalized_dirty_path in (
             normalized_catalog_path,
             normalized_provider_snapshot_path,
@@ -895,6 +909,7 @@ def _stage_path_is_claimed(
 def _failed_cycle_outcome(
     *,
     cycle_number: int,
+    profile: ExecutionProfile = ExecutionProfile.LOCAL,
     trusted_stage: TrustedStageState | None,
     prior_watch_roots: tuple[Path, ...],
     diagnostics: tuple[PipelineDiagnosticEntry, ...],
@@ -905,6 +920,7 @@ def _failed_cycle_outcome(
     return WatchCycleOutcome(
         report=build_stage_run_report(
             command=StageCommand.WATCH,
+            profile=profile,
             evaluation=evaluation,
             diagnostics=diagnostics,
             succeeded=False,
@@ -1027,3 +1043,66 @@ def _build_cycle_failure_diagnostic(message: str) -> PipelineDiagnosticEntry:
         code=_WATCH_FAILURE_DIAGNOSTIC_CODE,
         message=message,
     )
+
+
+def _snapshot_watch_roots(
+    paths: tuple[Path, ...], workspace_root: Path
+) -> tuple[Path, ...]:
+    """Watch an existing ancestor so absent files and directories can appear."""
+    roots = []
+    workspace_root = workspace_root.resolve(strict=False)
+    for path in paths:
+        candidate = path.parent
+        while not candidate.exists() and candidate != candidate.parent:
+            candidate = candidate.parent
+        if candidate.is_relative_to(workspace_root):
+            roots.append(candidate)
+    return tuple(roots)
+
+
+def _is_immutable_context_change(build_plan: EffectiveBuildPlan, path: Path) -> bool:
+    """Ignore cached historical page edits, while detecting context-root removal."""
+    for component in build_plan.site.components:
+        if component.authored.provider_snapshot is None:
+            continue
+        roots = {artifact.docs_root for artifact in component.artifacts}
+        for root in roots:
+            for storage in ("releases", "candidates"):
+                cache = root / storage
+                if not path.is_relative_to(cache):
+                    continue
+                for context in build_plan.desired_versions:
+                    if context.version and path == cache / context.version:
+                        return False
+                return path != cache
+    return False
+
+
+def _failed_input_watch_roots(
+    invocation: WatchInvocation, prior_roots: tuple[Path, ...]
+) -> tuple[Path, ...]:
+    """Retain recovery coverage when a newly configured inventory cannot load."""
+    try:
+        loaded = load_catalog_input(
+            invocation.layout.workspace_root, invocation.layout.catalog_path
+        )
+        sources = resolve_catalog_source_bindings(
+            catalog=loaded.catalog, workspace_root=invocation.layout.workspace_root
+        )
+        paths = tuple(
+            resolve_repo_path(
+                sources[item.provider_snapshot.source].local_dir,
+                item.provider_snapshot.path,
+            )
+            for item in loaded.catalog.components
+            if item.provider_snapshot is not None
+        )
+        return _derive_watch_roots(
+            site_root=invocation.layout.site_root,
+            catalog_path=loaded.catalog_path,
+            provider_snapshot_path=None,
+            planning_roots=prior_roots
+            + _snapshot_watch_roots(paths, invocation.layout.workspace_root),
+        )
+    except (SitePipelineCliError, ValueError, OSError):
+        return prior_roots

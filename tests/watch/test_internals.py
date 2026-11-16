@@ -1018,6 +1018,7 @@ class WatchInternalTests(unittest.TestCase):
                 ),
             )
             loaded_inputs = SimpleNamespace(
+                snapshot_inputs=(), provider_snapshot_paths=(),
                 catalog=object(),
                 catalog_path=invocation.layout.catalog_path,
                 provider_snapshot=object(),
@@ -1073,6 +1074,7 @@ class WatchInternalTests(unittest.TestCase):
                 diagnostics=(),
             )
             loaded_inputs = SimpleNamespace(
+                snapshot_inputs=(), provider_snapshot_paths=(),
                 catalog=object(),
                 provider_snapshot=object(),
                 component_documents=object(),
@@ -1129,6 +1131,7 @@ class WatchInternalTests(unittest.TestCase):
                 diagnostics=(),
             )
             loaded_inputs = SimpleNamespace(
+                snapshot_inputs=(), provider_snapshot_paths=(),
                 catalog=object(),
                 provider_snapshot=object(),
                 component_documents=object(),

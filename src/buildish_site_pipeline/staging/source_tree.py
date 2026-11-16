@@ -18,27 +18,36 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from pathlib import Path
+import os
+from buildish_site_pipeline.content_scope import excluded_relative_path
 
 from buildish_site_pipeline.cli.errors import StageIntegrityError
 
 
-def iter_source_tree_files(*, source_root: Path) -> Iterator[tuple[Path, Path]]:
-    """Yield files under one source root while rejecting symlink escapes.
-
-    The trust model treats the declared source root as the maximum authority for
-    staged inputs. We therefore resolve every discovered path before using it so
-    symlinked files or directories cannot silently pull bytes from outside that
-    root.
-    """
-
+def iter_source_tree_files(
+    *,
+    source_root: Path,
+    exclusions: tuple[str, ...] = (".git",),
+    snapshot_paths: tuple[str, ...] = (),
+) -> Iterator[tuple[Path, Path]]:
+    """Yield contained files, pruning context-owned and bookkeeping subtrees."""
+    snapshot_files = {Path(item) for item in snapshot_paths}
     normalized_root = source_root.resolve(strict=False)
-    for source_path in sorted(source_root.rglob("*")):
-        normalized_source_path = source_path.resolve(strict=False)
-        if not normalized_source_path.is_relative_to(normalized_root):
-            raise StageIntegrityError(
-                "Source path escapes declared root after symlink resolution: "
-                f"{source_path} -> {normalized_source_path}"
-            )
-        if source_path.is_dir():
-            continue
-        yield source_path, source_path.relative_to(source_root)
+    for directory, dirnames, filenames in os.walk(source_root, followlinks=False):
+        current = Path(directory)
+        for name in sorted(dirnames + filenames):
+            source_path = current / name
+            relative = source_path.relative_to(source_root)
+            if source_path.resolve(
+                strict=False
+            ) in snapshot_files or excluded_relative_path(relative, exclusions):
+                if name in dirnames:
+                    dirnames.remove(name)
+                continue
+            if not source_path.resolve(strict=False).is_relative_to(normalized_root):
+                raise StageIntegrityError(
+                    f"Source path escapes declared root after symlink resolution: {source_path}"
+                )
+            if name in filenames:
+                yield source_path, relative
+        dirnames.sort()

@@ -38,6 +38,9 @@ def run_evaluation(
 
     build_plan_result = planning.build_plan_result
     collector = DiagnosticCollector()
+    collector.extend(planning.diagnostics)
+    if planning.watch_plan is not None:
+        collector.extend(planning.watch_plan.diagnostics)
     artifacts = collect_evaluation_artifacts(planning=planning, collector=collector)
     if build_plan_result.candidate is None:
         collector.add(

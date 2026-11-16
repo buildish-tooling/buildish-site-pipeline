@@ -92,6 +92,27 @@ The publication model talks about development refs, release lines, and
 exact releases. A cache branch is simply one way to materialize the content for
 those identities efficiently.
 
+### Component inventory and local execution profiles
+
+A component-owned snapshot can be bound through the catalog's `providerSnapshot`
+source-relative path. Its publication/required/optional requirement is interpreted
+under an explicit local or publication profile. The default local profile permits
+missing publication-only inventory and unavailable release docs, while retaining
+known desired contexts and their effective dispositions in reports. Full publication
+requires the consumer to acquire the configured inventory and select the
+publication profile. This is independent of the cache branch's name.
+
+For versioned artifacts, `releases/` and `candidates/` beneath a development
+docs root contain materialized versions. Authored maintenance lines and named refs
+exclude their specific `maintenance/<line>/` and `refs/<key>/` subdirectories from
+development. Ordinary maintenance guides and artifactless documentation trees
+remain authored content. These boundaries prevent publishing cached historical
+docs a second time. Configured provider files and Git bookkeeping are not content inputs.
+Watch observes snapshot creation/removal through existing ancestors and invalidates
+the owning inputs. Historical cache page edits for configured component inventories
+do not independently restage development content; refresh inventory to publish a
+changed cached release. Ordinary mutable development/maintenance inputs remain live.
+
 ## Recommended architectural split
 
 The clean split is:

@@ -61,6 +61,7 @@ MODEL_SECTION_DEFINITIONS = (
         module_prefixes=(
             "buildish_site_pipeline.models.emitted.cli_failure",
             "buildish_site_pipeline.models.emitted.planning_stage_contract",
+            "buildish_site_pipeline.models.emitted.execution",
         ),
     ),
     ModelSectionDefinition(

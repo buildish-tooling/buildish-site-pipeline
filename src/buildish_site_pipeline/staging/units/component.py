@@ -17,6 +17,8 @@
 from __future__ import annotations
 
 import shutil
+import frontmatter
+from buildish_site_pipeline.content_scope import context_exclusions
 from pathlib import Path
 
 from buildish_site_pipeline.models.emitted.staged_front_matter import (
@@ -69,6 +71,7 @@ def run_component_unit(spec: WorkerSpecWire) -> WorkerResultWire:
     ):
         contributions, written = _stage_pages_tree(
             source_root=Path(spec.component_pages_source),
+            snapshot_paths=spec.snapshot_paths,
             destination_root=Path(spec.component_pages_stage_root),
             base_publication=spec.component_publication,
             component_slug=spec.component_slug or "",
@@ -91,21 +94,32 @@ def run_component_unit(spec: WorkerSpecWire) -> WorkerResultWire:
         and spec.component_assets_stage_root is not None
     ):
         written_assets = _copy_tree(
-            Path(spec.component_assets_source), Path(spec.component_assets_stage_root)
+            Path(spec.component_assets_source), Path(spec.component_assets_stage_root), snapshot_paths=spec.snapshot_paths
         )
         files_written += written_assets
         asset_files_written += written_assets
 
-    for context in spec.contexts:
-        if context.source_docs_root is not None:
+    for index, context in enumerate(spec.contexts):
+        docs_source = context.source_docs_root
+        if context.action == "notice":
+            generated = Path(spec.fragment_path).parent / "notices" / str(index)
+            generated.mkdir(parents=True, exist_ok=True)
+            body = "This release has been withdrawn."
+            if context.notice_text:
+                body += "\n\n" + context.notice_text
+            (generated / "index.md").write_text(frontmatter.dumps(frontmatter.Post(body, title=f"Release {context.version} withdrawn")) + "\n", encoding="utf-8")
+            docs_source = str(generated)
+        if docs_source is not None:
             contributions, written = _stage_pages_tree(
-                source_root=Path(context.source_docs_root),
+                source_root=Path(docs_source),
+                snapshot_paths=spec.snapshot_paths,
+                exclusions=context.source_exclusions or context_exclusions(context.record_kind),
                 destination_root=Path(context.content_stage_root),
                 base_publication=context.publication,
                 component_slug=spec.component_slug or "",
                 artifact_key=context.artifact_key,
                 section=context.section,
-                page_kind=context.page_kind,
+                page_kind="withdrawal-notice" if context.action == "notice" else context.page_kind,
                 version_context=context.version_context,
                 record_kind=context.record_kind,
                 version_ref=context.version_ref,
@@ -113,12 +127,14 @@ def run_component_unit(spec: WorkerSpecWire) -> WorkerResultWire:
                 localization=spec.localization,
                 component_namespace=component_namespace,
             )
+            if context.action == "notice":
+                contributions = [item.model_copy(update={"source_path": None}) for item in contributions]
             page_contributions.extend(contributions)
             files_written += written[0]
             page_files_written += written[1]
         if context.source_assets_root is not None:
             written_assets = _copy_tree(
-                Path(context.source_assets_root), Path(context.static_stage_root)
+                Path(context.source_assets_root), Path(context.static_stage_root), exclusions=context.source_exclusions or context_exclusions(context.record_kind), snapshot_paths=spec.snapshot_paths
             )
             files_written += written_assets
             asset_files_written += written_assets
@@ -157,11 +173,13 @@ def _stage_pages_tree(
     version: str | None,
     localization: LocalizationWire | None,
     component_namespace: PipelineComponentFrontMatter | None,
+    exclusions: tuple[str, ...] = (".git",),
+    snapshot_paths: tuple[str, ...] = (),
 ) -> tuple[list[StagedPageContributionWire], tuple[int, int]]:
     contributions: list[StagedPageContributionWire] = []
     files_written = 0
     page_files_written = 0
-    for source_path, relative_path in iter_source_tree_files(source_root=source_root):
+    for source_path, relative_path in iter_source_tree_files(source_root=source_root, exclusions=exclusions, snapshot_paths=snapshot_paths):
         destination_path = destination_root / relative_path
         if not is_page_path(source_path):
             destination_path.parent.mkdir(parents=True, exist_ok=True)
@@ -220,9 +238,9 @@ def _stage_pages_tree(
     return contributions, (files_written, page_files_written)
 
 
-def _copy_tree(source_root: Path, target_root: Path) -> int:
+def _copy_tree(source_root: Path, target_root: Path, *, exclusions: tuple[str, ...] = (".git",), snapshot_paths: tuple[str, ...] = ()) -> int:
     count = 0
-    for source_path, relative_path in iter_source_tree_files(source_root=source_root):
+    for source_path, relative_path in iter_source_tree_files(source_root=source_root, exclusions=exclusions, snapshot_paths=snapshot_paths):
         destination_path = target_root / relative_path
         destination_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source_path, destination_path)

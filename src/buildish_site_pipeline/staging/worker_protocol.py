@@ -115,6 +115,9 @@ class ComponentContextWire(SitePipelineBaseModel):
 
     context_id: str = Field(description="Stable identifier for the selected version context.", examples=["runtime:release:4.0.0"])
     artifact_key: str | None = Field(default=None, description="Owning artifact key when the context belongs to a specific artifact.", examples=["runtime"])
+    source_exclusions: tuple[str, ...] = Field(default=(), description="Context-owned source-relative files and subtrees excluded from development staging.")
+    action: str = Field(default="docs", description="Original docs, withdrawal notice, or redirect publication action.")
+    notice_text: str | None = Field(default=None, description="Authored reason for a synthesized withdrawal notice.")
     source_docs_root: str | None = Field(default=None, description="Absolute or workspace-relative docs source root selected for this context.")
     source_assets_root: str | None = Field(default=None, description="Absolute or workspace-relative asset source root selected for this context.")
     content_stage_root: str = Field(description="Stage-relative root where the worker should write staged page output for this context.", examples=["content/spark/4.0.0"])
@@ -131,6 +134,7 @@ class ComponentContextWire(SitePipelineBaseModel):
 class WorkerSpecWire(SitePipelineBaseModel):
     """Coordinator-to-worker specification for one owned unit."""
 
+    snapshot_paths: tuple[str, ...] = Field(default=(), description="Provider input files excluded from all published content trees.")
     unit_id: str = Field(description="Stable identifier of the staging unit assigned to the worker.", examples=["component:spark:runtime"])
     unit_kind: str = Field(description="Worker-unit kind, such as site root, component root, or versioned artifact context.", examples=["componentArtifact"])
     owner_id: str = Field(description="Logical owner identifier used for retained-stage ownership accounting.", examples=["artifact:spark/runtime"])

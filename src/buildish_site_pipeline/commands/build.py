@@ -35,12 +35,14 @@ def run_build(invocation: BuildInvocation) -> CommandResult:
     """Execute one `build` command."""
 
     loaded_inputs = load_workspace_inputs(
-        invocation.layout.workspace_root, invocation.layout.catalog_path
+        invocation.layout.workspace_root, invocation.layout.catalog_path, profile=invocation.profile
     )
     planning = evaluate_planning(
         target=PlanningTarget.BUILD,
         catalog=loaded_inputs.catalog,
         provider_snapshot=loaded_inputs.provider_snapshot,
+        profile=invocation.profile,
+        snapshot_inputs=loaded_inputs.snapshot_inputs,
         workspace_root=invocation.layout.workspace_root,
         component_documents=loaded_inputs.component_documents,
         stage_root=invocation.layout.stage_root,

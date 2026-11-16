@@ -174,7 +174,8 @@ def _validate_replacement_cleanup_scope(
 ) -> None:
     existing_entries = _collect_stage_tree_entries(stage_root)
     candidate_entries = _collect_stage_tree_entries(candidate_stage_root)
-    extra_existing_paths = sorted(existing_entries.keys() - candidate_entries.keys())
+    retired_aggregates = _retired_optional_aggregates(stage_root, candidate_stage_root)
+    extra_existing_paths = sorted(existing_entries.keys() - candidate_entries.keys() - retired_aggregates)
     if extra_existing_paths:
         extra_existing_paths = _ambiguous_deletion_paths(
             stage_root=stage_root,
@@ -381,3 +382,39 @@ def _fsync_directory(path: Path) -> None:
     finally:
         if fd is not None:
             os.close(fd)
+
+
+def _retired_optional_aggregates(
+    stage_root: Path, candidate_stage_root: Path
+) -> set[str]:
+    """Allow optional metadata to disappear only when the new manifest retires it."""
+    try:
+        previous = load_stage_manifest(
+            (stage_root / "manifest.json").read_text(encoding="utf-8"),
+            document_format=DocumentFormat.JSON,
+            source_name="previous manifest",
+        )
+        current = load_stage_manifest(
+            (candidate_stage_root / "manifest.json").read_text(encoding="utf-8"),
+            document_format=DocumentFormat.JSON,
+            source_name="candidate manifest",
+        )
+    except Exception:
+        return set()
+    optional_fields = (
+        "providers",
+        "releases",
+        "candidates",
+        "refs",
+        "translations",
+        "compatibility",
+        "mounts",
+        "content_index",
+        "diagnostics",
+    )
+    return {
+        str(value)
+        for name in optional_fields
+        if (value := getattr(previous.data_files, name)) is not None
+        and getattr(current.data_files, name) is None
+    }

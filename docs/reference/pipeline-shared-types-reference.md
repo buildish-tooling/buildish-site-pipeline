@@ -60,7 +60,9 @@ Back to the [reference overview](../pipeline-model-schema-reference/).
 | <a id="candidateselectionmode"></a>`CandidateSelectionMode` | `none`, `latest`, `explicit` | Strategy used to select a candidate version. |
 | <a id="checkfailurethreshold"></a>`CheckFailureThreshold` | `error`, `warning` | Lowest severity that causes ``check`` to fail. |
 | <a id="clierrorcategory"></a>`CliErrorCategory` | `invocation`, `input`, `planning`, `internal` | Stable high-level failure categories for CLI automation. |
+| <a id="contextaction"></a>`ContextAction` | `docs`, `omit`, `notice`, `redirect` | Publication disposition independent from release identity. |
 | <a id="diagnosticseverity"></a>`DiagnosticSeverity` | `info`, `warning`, `error` | Severity level for pipeline diagnostics. |
+| <a id="executionprofile"></a>`ExecutionProfile` | `local`, `publication` | Explicit input requirement context, independent from CI environment. |
 | <a id="indexbehavior"></a>`IndexBehavior` | `full`, `metadataOnly`, `none` | Renderer hint for version/ref index visibility. |
 | <a id="lineheadselectionmode"></a>`LineHeadSelectionMode` | `none`, `allAuthored`, `explicit` | Strategy used to derive a release-line head record. |
 | <a id="linkcheckmode"></a>`LinkCheckMode` | `directory`, `file-html` | Supported staged public-path resolution strategies for internal page links. |
@@ -72,6 +74,7 @@ Back to the [reference overview](../pipeline-model-schema-reference/).
 | <a id="releaseselectionmode"></a>`ReleaseSelectionMode` | `latestPerLine`, `latestN`, `allKnown`, `explicit` | Strategy used to select a released version. |
 | <a id="routemode"></a>`RouteMode` | `none`, `prefixAll` | Locale routing strategy for a published route set. |
 | <a id="runstatus"></a>`RunStatus` | `clean`, `warnings`, `errors` | Overall diagnostic class for a run or cycle. |
+| <a id="snapshotrequirement"></a>`SnapshotRequirement` | `publication`, `required`, `optional` | When a configured component inventory must exist. |
 | <a id="stagecommand"></a>`StageCommand` | `build`, `watch` | Stable stage-producing command modes. |
 | <a id="trustclass"></a>`TrustClass` | `passive`, `active` | Trust posture of a mounted content subtree. |
 | <a id="withdrawalbehavior"></a>`WithdrawalBehavior` | `notice`, `redirect`, `omit` | Author-directed behavior for a withdrawn release. |

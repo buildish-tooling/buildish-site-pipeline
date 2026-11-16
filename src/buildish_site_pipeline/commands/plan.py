@@ -23,6 +23,7 @@ from buildish_site_pipeline.planning import (
 
 from ..cli.contract import ApplicationExitCode, CommandResult, PlanInvocation
 from ..cli.reporting import render_text_report
+from buildish_site_pipeline.models.enums import DiagnosticSeverity
 from .shared import load_workspace_inputs
 
 
@@ -30,12 +31,14 @@ def run_plan(invocation: PlanInvocation) -> CommandResult:
     """Execute one `plan` command."""
 
     loaded_inputs = load_workspace_inputs(
-        invocation.layout.workspace_root, invocation.layout.catalog_path
+        invocation.layout.workspace_root, invocation.layout.catalog_path, profile=invocation.profile
     )
     planning = evaluate_planning(
         target=invocation.planning_target,
         catalog=loaded_inputs.catalog,
         provider_snapshot=loaded_inputs.provider_snapshot,
+        profile=invocation.profile,
+        snapshot_inputs=loaded_inputs.snapshot_inputs,
         workspace_root=invocation.layout.workspace_root,
         component_documents=loaded_inputs.component_documents,
         stage_root=invocation.layout.stage_root,
@@ -45,7 +48,7 @@ def run_plan(invocation: PlanInvocation) -> CommandResult:
     report = build_resolved_materialization_report(planning)
     exit_code = (
         ApplicationExitCode.DOMAIN_FAILURE
-        if report.diagnostics
+        if any(item.severity is DiagnosticSeverity.ERROR for item in report.diagnostics)
         else ApplicationExitCode.SUCCESS
     )
     return CommandResult(

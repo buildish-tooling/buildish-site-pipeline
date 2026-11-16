@@ -48,6 +48,7 @@ def build_worker_spec_for_unit(
 ) -> WorkerSpecWire:
     """Translate one owned unit into the exact worker wire payload it needs."""
 
+    snapshot_paths = tuple(str(component.snapshot_path) for component in site_components if component.snapshot_path is not None)
     unit_workspace = run_workspace.workspace_for_unit(unit)
     stage_meta = WorkerStageMetaWire(
         content_roots=tuple(str(root) for root in unit_workspace.content_roots),
@@ -59,6 +60,7 @@ def build_worker_spec_for_unit(
             unit_kind=unit.kind.value,
             owner_id=unit.owner_id,
             workspace_root=str(workspace_root),
+            snapshot_paths=snapshot_paths,
             unit_root=str(unit_workspace.unit_root),
             fragment_path=str(unit_workspace.fragment_path),
             site_pages_source=str(unit.site_pages_source),
@@ -70,6 +72,7 @@ def build_worker_spec_for_unit(
             unit_kind=unit.kind.value,
             owner_id=unit.owner_id,
             workspace_root=str(workspace_root),
+            snapshot_paths=snapshot_paths,
             unit_root=str(unit_workspace.unit_root),
             fragment_path=str(unit_workspace.fragment_path),
             site_assets_source=str(unit.site_assets_source),
@@ -81,6 +84,7 @@ def build_worker_spec_for_unit(
             unit_kind=unit.kind.value,
             owner_id=unit.owner_id,
             workspace_root=str(workspace_root),
+            snapshot_paths=snapshot_paths,
             unit_root=str(unit_workspace.unit_root),
             fragment_path=str(unit_workspace.fragment_path),
             vendor_assets=tuple(
@@ -102,6 +106,7 @@ def build_worker_spec_for_unit(
         unit_kind=unit.kind.value,
         owner_id=unit.owner_id,
         workspace_root=str(workspace_root),
+        snapshot_paths=snapshot_paths,
         unit_root=str(unit_workspace.unit_root),
         fragment_path=str(unit_workspace.fragment_path),
         component_slug=component.slug,
@@ -167,10 +172,13 @@ def build_context_wire(
         else None,
     }
     page_kind, section = _page_descriptor_for_kind(context.kind)
-    docs_root = _source_root_for_context(context.docs_root, context)
-    assets_root = _source_root_for_context(context.assets_root, context)
+    docs_root = _source_root_for_context(context.docs_root, context) if context.action.value == "docs" else None
+    assets_root = _source_root_for_context(context.assets_root, context) if context.action.value == "docs" else None
     return ComponentContextWire(
         context_id=owned_context.context_id,
+        action=context.action.value,
+        source_exclusions=context.source_exclusions,
+        notice_text=context.withdrawal_reason,
         artifact_key=context.artifact_key,
         source_docs_root=str(docs_root) if docs_root is not None else None,
         source_assets_root=str(assets_root) if assets_root is not None else None,

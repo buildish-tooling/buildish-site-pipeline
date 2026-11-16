@@ -138,6 +138,7 @@ class ReadinessAndReportBuilderTests(unittest.TestCase):
             provenance="component:runtime",
         )
         evaluation = SimpleNamespace(
+            profile="local", snapshot_inputs=(), context_dispositions=(),
             target=PlanningTarget.WATCH,
             local_inputs=(local_input,),
             diagnostics=(

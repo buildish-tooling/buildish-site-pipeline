@@ -29,6 +29,7 @@ from ...docs.documentation import (
 from ...docs.reference_docs import ReferenceDocumentation, ReferenceMarkdown, ReferenceSection
 from ...docs.schema_examples import catalog_example_document
 from ..enums import (
+    SnapshotRequirement,
     CandidateSelectionMode,
     IndexBehavior,
     LinkCheckMode,
@@ -989,9 +990,18 @@ class ArtifactConfig(SitePipelineBaseModel):
     )
 
 
+class ComponentProviderSnapshot(SitePipelineBaseModel):
+    """Source-relative component provider inventory binding."""
+
+    source: SourceKey = Field(description="Named catalog source containing this component's inventory.")
+    path: RepoRelativePath = Field(description="Snapshot file path relative to the named source root.")
+    requirement: SnapshotRequirement = Field(default=SnapshotRequirement.PUBLICATION, description="Required for publication by default, always required, or always optional.")
+
+
 class ComponentCatalogEntry(SitePipelineBaseModel):
     """Component entry in the consumer catalog."""
 
+    provider_snapshot: ComponentProviderSnapshot | None = Field(default=None, description="Optional binding to a component-owned normalized provider inventory.")
     slug: Slug = Field(description="Stable component identifier.")
     display_name: NonEmptyString | None = Field(
         default=None,
@@ -1167,6 +1177,8 @@ class SiteCatalogDocumentV1(SitePipelineBaseModel):
                 )
 
         for component in self.components:
+            if component.provider_snapshot is not None and component.provider_snapshot.source not in source_keys:
+                raise ValueError(f"Unknown snapshot source {component.provider_snapshot.source!r} for component {component.slug!r}")
             if component.group is not None and component.group not in group_keys:
                 raise ValueError(
                     f"Unknown group key {component.group!r} referenced by component {component.slug!r}"

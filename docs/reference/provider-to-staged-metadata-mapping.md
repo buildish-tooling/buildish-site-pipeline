@@ -259,8 +259,8 @@ Recommended mapping behavior:
 
 - `released`
   - emit entry in `data/releases.json`
-  - merge authored exact-release publication state and withdrawal behavior when
-    present
+  - resolve authored/provider exact-release state with explicit agreement checks
+    and preserve authored withdrawal behavior
   - enrich `data/artifacts.json` latest release and line summaries
   - copy page-local release context into front matter for pages staged from that
     release

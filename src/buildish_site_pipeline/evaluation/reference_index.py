@@ -357,7 +357,10 @@ def _validate_selection_references(
         and selection.releases.mode is ReleaseSelectionMode.EXPLICIT
     ):
         for version in selection.releases.versions or ():
-            if version in known_releases:
+            if version in known_releases or any(
+                item.component_slug == component_slug and item.status.value == "missing" and not item.required
+                for item in planning.snapshot_inputs
+            ):
                 continue
             _add_reference_error(
                 collector=collector,

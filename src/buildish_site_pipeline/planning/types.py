@@ -16,6 +16,9 @@
 
 from __future__ import annotations
 
+from buildish_site_pipeline.models.emitted.execution import SnapshotInput, ContextDisposition
+from buildish_site_pipeline.models.enums import ExecutionProfile, ContextAction
+
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
@@ -160,6 +163,7 @@ class ResolvedComponentConfig:
     localization: ResolvedLocalizationPolicy
     publication_selection: PublicationSelectionPolicy | None
     artifacts: tuple[ResolvedArtifactConfig, ...]
+    snapshot_path: Path | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -253,6 +257,10 @@ class SelectedVersionContext:
     provider_record: IndexedProviderRecord | None = None
     support_status: str | None = None
     deterministic: bool = True
+    action: ContextAction = ContextAction.DOCS
+    withdrawal_reason: str | None = None
+    identity_verified: bool = True
+    source_exclusions: tuple[str, ...] = ()
 
     @property
     def input_kind(self) -> MaterializationInputKind:
@@ -375,3 +383,7 @@ class PlanningEvaluation:
     watch_plan: WatchInputPlan | None
     build_plan_result: EffectiveBuildPlanResult
     diagnostics: tuple[PipelineDiagnosticEntry, ...]
+    profile: ExecutionProfile = ExecutionProfile.LOCAL
+    snapshot_inputs: tuple[SnapshotInput, ...] = ()
+    context_dispositions: tuple[ContextDisposition, ...] = ()
+    desired_versions: tuple[SelectedVersionContext, ...] = ()

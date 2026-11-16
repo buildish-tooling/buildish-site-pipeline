@@ -27,7 +27,7 @@ def run_site_assets_unit(spec: WorkerSpecWire) -> WorkerResultWire:
     """Stage site-owned static assets into the site static subtree."""
 
     files_written = _copy_tree(
-        Path(spec.site_assets_source or ""), Path(spec.stage_meta.static_roots[0])
+        Path(spec.site_assets_source or ""), Path(spec.stage_meta.static_roots[0]), snapshot_paths=spec.snapshot_paths
     )
     return WorkerResultWire(
         unit_id=spec.unit_id,
@@ -47,7 +47,7 @@ def run_vendor_assets_unit(spec: WorkerSpecWire) -> WorkerResultWire:
     for asset in spec.vendor_assets:
         source_root = Path(asset["source_path"])
         target_root = vendor_root / asset["key"]
-        files_written += _copy_tree(source_root, target_root)
+        files_written += _copy_tree(source_root, target_root, snapshot_paths=spec.snapshot_paths)
     return WorkerResultWire(
         unit_id=spec.unit_id,
         output_stats=WorkerOutputStats(
@@ -58,9 +58,9 @@ def run_vendor_assets_unit(spec: WorkerSpecWire) -> WorkerResultWire:
     )
 
 
-def _copy_tree(source_root: Path, target_root: Path) -> int:
+def _copy_tree(source_root: Path, target_root: Path, *, snapshot_paths: tuple[str, ...] = ()) -> int:
     count = 0
-    for source_path, relative_path in iter_source_tree_files(source_root=source_root):
+    for source_path, relative_path in iter_source_tree_files(source_root=source_root, snapshot_paths=snapshot_paths):
         destination_path = target_root / relative_path
         destination_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source_path, destination_path)

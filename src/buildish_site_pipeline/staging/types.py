@@ -47,6 +47,8 @@ class EffectiveBuildPlan:
     selected_versions: tuple[SelectedVersionContext, ...]
     planned_inputs: tuple[ResolvedLocalInput, ...]
     watch_roots: tuple[Path, ...]
+    desired_versions: tuple[SelectedVersionContext, ...] = ()
+    snapshot_paths: tuple[Path, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

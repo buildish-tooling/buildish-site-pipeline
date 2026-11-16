@@ -54,6 +54,7 @@ class InputProviderAndPublicationTests(unittest.TestCase):
 
         validate_inputs(
             SimpleNamespace(
+                snapshot_inputs=(),
                 local_inputs=(
                     self._local_input(MaterializationStatus.PRESENT),
                     self._local_input(

@@ -211,11 +211,11 @@ def build_version_context(
             publication.origin.base_url,
             public_path_for_context(publication=publication, context=context),
         ),
-        docs_path=public_path_for_context(publication=publication, context=context),
+        docs_path=public_path_for_context(publication=publication, context=context) if context.action.value == "docs" else None,
         docs_url=_public_url_for_path(
             publication.origin.base_url,
             public_path_for_context(publication=publication, context=context),
-        ),
+        ) if context.action.value == "docs" else None,
         tag=context.tag
         or (provider_record.tag if provider_record is not None else None),
         ref=context.ref,

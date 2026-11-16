@@ -243,3 +243,55 @@ The pipeline should reject at least:
 - records whose `kind` is outside the shared normalized vocabulary, and
 - unknown extra fields outside the documented provider, record, and asset
   schemas.
+
+## Component-owned inventory files
+
+An aggregate snapshot beside the catalog remains supported. A component may also
+bind its own normalized file in the catalog:
+
+```yaml
+components:
+  - slug: release-tooling
+    content:
+      source: release-tooling
+    providerSnapshot:
+      source: release-tooling
+      path: docs/releases/provider-snapshot.json
+      requirement: publication
+```
+
+The source must be an existing named catalog source. The path is relative to that
+source checkout, never to the process working directory. It follows the ordinary
+containment rules. Records must name the owning component and one of its catalog
+artifacts; an explicit record sourceKey must match that artifact's source.
+
+`requirement` accepts `publication` (the default), `required`, and `optional`.
+Commands default to `--profile local`; publication automation must explicitly use
+`--profile publication`. A publication requirement allows absence locally and
+requires the file for publication. A required file must exist in both profiles;
+an optional file may be absent in either. An always-optional file can intentionally
+produce incomplete publication. Profiles are not inferred from CI environment
+variables or branch names. Present invalid or unreadable files are always errors.
+
+Pipeline composes these inputs internally. Provider descriptors sharing a key must
+agree on type, display name, and base URL. Their refresh times may differ: per-file
+provenance retains the actual times; a combined descriptor uses the latest time.
+Duplicate `(provider, externalId)` identities across files fail with both sources
+identified. Multiple records for a selected context retain ambiguity diagnostics.
+The 16 MiB input and 50,000-record ceilings also apply to the combined inventory.
+
+When absence is allowed, unavailable original release-doc trees belonging to that
+component may be omitted locally. Explicit selection stays visible in report
+context dispositions; an absent inventory cannot enumerate unknown versions for
+`allKnown` or `latestN`. Existing local trees remain usable without provider data.
+A present snapshot, or a present aggregate record for a selected release, still
+requires that release's original docs unless publication state excludes them.
+An empty present snapshot is not an absent checkout. Unverified explicit selections
+receive a notice during allowed absence; strict identity checks resume once the
+inventory is present. Other components and non-release contexts are unaffected.
+
+A `versioned-docs` branch is one consumer-owned materialization strategy. Pipeline
+neither checks out that branch nor fetches a provider API. Consumers must acquire
+inventory and docs consistently and select the publication profile in their full
+publication build. Configured provider files and Git bookkeeping are not published
+as ordinary documentation assets, including beneath a development docs root.

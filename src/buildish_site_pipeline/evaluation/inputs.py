@@ -32,6 +32,11 @@ def validate_inputs(
 ) -> None:
     """Turn planning readiness results into shared evaluation diagnostics."""
 
+    for snapshot in planning.snapshot_inputs:
+        if snapshot.required and snapshot.status is not MaterializationStatus.PRESENT:
+            collector.add(severity=DiagnosticSeverity.ERROR, code="provider-snapshot-required",
+                component_slug=snapshot.component_slug, message="Required provider snapshot is absent",
+                details={"expectedLocalPath": snapshot.expected_local_path, "requirement": snapshot.requirement.value})
     for local_input in planning.local_inputs:
         if local_input.readiness.status is MaterializationStatus.PRESENT:
             continue

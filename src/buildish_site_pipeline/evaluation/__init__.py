@@ -31,6 +31,9 @@ def build_check_report(result: EvaluationResult) -> CheckReportV1:
 
     return CheckReportV1(
         schema_version=1,
+        profile=result.planning.profile,
+        snapshot_inputs=list(result.planning.snapshot_inputs),
+        context_dispositions=list(result.planning.context_dispositions),
         generated_at=datetime.now(UTC),
         command="check",
         summary=result.check_summary,

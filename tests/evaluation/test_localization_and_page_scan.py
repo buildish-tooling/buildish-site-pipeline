@@ -527,6 +527,7 @@ class LocalizationAndPageScanTests(unittest.TestCase):
         selected_contexts: tuple[SimpleNamespace, ...] = (),
     ) -> SimpleNamespace:
         return SimpleNamespace(
+            snapshot_inputs=(),
             local_inputs=local_inputs,
             site=SimpleNamespace(components=components),
             selected_versions=SimpleNamespace(contexts=selected_contexts),

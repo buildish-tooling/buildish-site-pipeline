@@ -641,6 +641,36 @@ Example:
 				  redirectTarget: /security/runtime/3.2.0/
 ```
 
+### Resolved release publication behavior
+
+Exact authored and observed provider publication states must agree when both are
+explicit. A disagreement is a validation error; neither silently wins. When only
+one supplies a state, use it. When neither does, retain unspecified state and apply
+normal selection without asserting verified publication.
+
+| Resolved state | Withdrawal behavior | Reader surface |
+| --- | --- | --- |
+| unspecified or published | absent | Selected original docs |
+| hidden | absent | No release-doc route |
+| withdrawn or tombstoned | absent or omit | No release-doc route |
+| withdrawn or tombstoned | notice | Generated withdrawal notice at the release root |
+| withdrawn or tombstoned | redirect | Validated redirect from the release root |
+
+Omitted, notice, and redirect dispositions do not require or publish the original
+docs or their assets. A notice contains release identity and the optional authored
+reason. Redirect targets retain normal existence and loop validation. The existing
+schema requires an authored withdrawn/tombstoned state beside withdrawalBehavior;
+a provider-only state does not relax that authored field-consistency rule.
+
+Apply visibility after release selection; excluding a selected release does not
+implicitly select an older replacement. Keep known desired releases in metadata,
+including withdrawn releases. Keep `latestStable` as authored and `latestRelease`
+as a known-release summary, even when that release has no ordinary staged docs.
+Neither field alone promises a documentation link. Renderers must verify resolved
+release state and a concrete staged landing page using release, route/redirect,
+and content-index data. A withdrawal notice or redirect is not ordinary release
+docs, and development docs are never a fallback for a missing released target.
+
 ## Routing rules
 
 ### Core rules

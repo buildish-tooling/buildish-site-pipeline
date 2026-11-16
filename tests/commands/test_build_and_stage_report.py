@@ -51,6 +51,7 @@ class BuildAndStageReportTests(unittest.TestCase):
                 catalog=object(),
                 provider_snapshot=object(),
                 component_documents=object(),
+                snapshot_inputs=(),
             )
 
             with mock.patch.object(
@@ -113,6 +114,7 @@ class BuildAndStageReportTests(unittest.TestCase):
                 catalog=object(),
                 provider_snapshot=provider_snapshot,
                 component_documents=object(),
+                snapshot_inputs=(),
             )
 
             with mock.patch.object(

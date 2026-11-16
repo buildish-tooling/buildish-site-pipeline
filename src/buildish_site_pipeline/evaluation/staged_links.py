@@ -19,7 +19,7 @@ from __future__ import annotations
 from pathlib import Path, PurePosixPath
 from urllib.parse import urljoin, urlsplit
 
-from buildish_site_pipeline.models.enums import DiagnosticSeverity, LinkCheckMode
+from buildish_site_pipeline.models.enums import DiagnosticSeverity, LinkCheckMode, RecordKind
 from buildish_site_pipeline.page_support import (
     SUPPORTED_PAGE_EXTENSIONS,
     strips_suffix_in_pretty_route,
@@ -30,6 +30,7 @@ from buildish_site_pipeline.planning.types import (
     ResolvedLinkCheckPolicy,
 )
 from buildish_site_pipeline.staging.front_matter import public_page_path
+from buildish_site_pipeline.staging.publication_paths import public_path_for_context
 
 from . import diagnostic_codes
 from .collector import DiagnosticCollector
@@ -51,6 +52,35 @@ def validate_staged_links(
     known_paths = {
         _page_public_path(page, mode=policy.mode) for page in page_inventory.pages
     }
+    components = {component.slug: component for component in planning.site.components}
+    known_paths.update(
+        _normalize_public_path(
+            public_path_for_context(components[item.component_slug].publication, item)
+        )
+        for item in planning.selected_versions.contexts
+        if item.action.value in {"notice", "redirect"}
+    )
+    if policy.mode is LinkCheckMode.FILE_HTML:
+        known_paths.update(
+            _normalize_public_path(
+                public_path_for_context(
+                    components[item.component_slug].publication, item
+                )
+                + "index.html"
+            )
+            for item in planning.selected_versions.contexts
+            if item.action.value in {"notice", "redirect"}
+        )
+    omitted_identities = {
+        (item.component_slug, item.artifact_key, item.version)
+        for item in planning.context_dispositions
+        if item.action.value == "omit" and item.reason == "snapshot-absent"
+    }
+    omitted_roots = tuple(
+        public_path_for_context(components[item.component_slug].publication, item)
+        for item in planning.desired_versions
+        if item.kind is RecordKind.RELEASED and (item.component_slug, item.artifact_key, item.version) in omitted_identities
+    )
     seen_occurrences: set[tuple[str, int, str, str]] = set()
     for page in page_inventory.pages:
         for reference in page.extracted_links:
@@ -67,8 +97,13 @@ def validate_staged_links(
             if occurrence_key in seen_occurrences:
                 continue
             seen_occurrences.add(occurrence_key)
+            local_omission = planning.profile.value == "local" and any(
+                _within_omitted_route(resolved, root) for root in omitted_roots
+            )
             collector.add(
-                severity=DiagnosticSeverity.WARNING,
+                severity=DiagnosticSeverity.INFO
+                if local_omission
+                else DiagnosticSeverity.WARNING,
                 code=diagnostic_codes.PAGE_LINK_TARGET_MISSING,
                 message=(
                     f"{_diagnostic_source_location(page.relative_path, reference)}: "
@@ -178,3 +213,8 @@ def _diagnostic_source_location(relative_path: str, reference: ExtractedLinkRefe
         f"{relative_path}:{prefix}{reference.source_line}:"
         f"{prefix}{reference.source_column}"
     )
+
+
+def _within_omitted_route(resolved: str, root: str) -> bool:
+    normalized = _normalize_public_path(root)
+    return resolved == normalized or resolved.startswith(normalized + "/")

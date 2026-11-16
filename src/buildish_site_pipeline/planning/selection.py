@@ -298,9 +298,9 @@ def _select_release_contexts(
                 if provider_record
                 else version,
                 tag=provider_record.tag if provider_record else None,
-                publication_state=provider_record.publication_state
-                if provider_record
-                else (authored_release.publication_state if authored_release else None),
+                publication_state=(authored_release.publication_state if authored_release else None)
+                or (provider_record.publication_state if provider_record else None),
+                withdrawal_reason=authored_release.reason if authored_release else None,
                 withdrawal_behavior=authored_release.withdrawal_behavior
                 if authored_release
                 else None,

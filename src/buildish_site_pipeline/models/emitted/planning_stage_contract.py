@@ -32,6 +32,7 @@ from ...docs.schema_examples import (
     stage_manifest_example_document,
     stage_run_report_example_document,
 )
+from .execution import ExecutionReportContext
 from ..enums import (
     CheckFailureThreshold,
     DiagnosticSeverity,
@@ -198,7 +199,7 @@ class PipelineDiagnosticEntry(SitePipelineBaseModel):
         return details
 
 
-class ResolvedMaterializationReportV1(SitePipelineBaseModel):
+class ResolvedMaterializationReportV1(ExecutionReportContext):
     """Machine-readable planning report for required local inputs."""
 
     contract_documentation: ClassVar[ContractDocumentation] = ContractDocumentation(
@@ -293,7 +294,7 @@ class CheckSummary(SitePipelineBaseModel):
         return self
 
 
-class CheckReportV1(SitePipelineBaseModel):
+class CheckReportV1(ExecutionReportContext):
     """Machine-readable result of ``site-pipeline check``."""
 
     contract_documentation: ClassVar[ContractDocumentation] = ContractDocumentation(
@@ -375,7 +376,7 @@ class StageRunSummary(SitePipelineBaseModel):
         return self
 
 
-class StageRunReportV1(SitePipelineBaseModel):
+class StageRunReportV1(ExecutionReportContext):
     """Machine-readable result of ``build`` or one completed watch cycle."""
 
     contract_documentation: ClassVar[ContractDocumentation] = ContractDocumentation(

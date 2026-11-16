@@ -695,6 +695,18 @@
           "description": "Component-level generated or imported documentation mounts.",
           "title": "Mounts"
         },
+        "providerSnapshot": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ComponentProviderSnapshot"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional binding to a component-owned normalized provider inventory."
+        },
         "publication": {
           "anyOf": [
             {
@@ -769,6 +781,39 @@
         }
       },
       "title": "ComponentContentSelection",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
+    },
+    "ComponentProviderSnapshot": {
+      "additionalProperties": false,
+      "description": "Source-relative component provider inventory binding.",
+      "properties": {
+        "path": {
+          "description": "Snapshot file path relative to the named source root.",
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "requirement": {
+          "$ref": "#/$defs/SnapshotRequirement",
+          "default": "publication",
+          "description": "Required for publication by default, always required, or always optional."
+        },
+        "source": {
+          "description": "Named catalog source containing this component's inventory.",
+          "minLength": 1,
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source",
+        "path"
+      ],
+      "title": "ComponentProviderSnapshot",
       "type": "object",
       "x-buildish-contract": {
         "category": "authored",
@@ -2153,6 +2198,16 @@
         "category": "authored",
         "ownership": "consumer-owned"
       }
+    },
+    "SnapshotRequirement": {
+      "description": "When a configured component inventory must exist.",
+      "enum": [
+        "publication",
+        "required",
+        "optional"
+      ],
+      "title": "SnapshotRequirement",
+      "type": "string"
     },
     "SourceConfig": {
       "additionalProperties": false,

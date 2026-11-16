@@ -109,6 +109,7 @@ class SelectionAndReferenceIndexTests(unittest.TestCase):
             )
         )
         planning = SimpleNamespace(
+            snapshot_inputs=(),
             site=SimpleNamespace(
                 components=(
                     SimpleNamespace(
@@ -661,6 +662,7 @@ class SelectionAndReferenceIndexTests(unittest.TestCase):
             authored=SimpleNamespace(compatibility=("component-compat",)),
         )
         planning = SimpleNamespace(
+            snapshot_inputs=(),
             site=SimpleNamespace(components=(component,)),
             selected_versions=SimpleNamespace(contexts=()),
             provider_index=ProviderSnapshotIndex(
@@ -785,6 +787,7 @@ class SelectionAndReferenceIndexTests(unittest.TestCase):
             ),
         )
         planning = SimpleNamespace(
+            snapshot_inputs=(),
             provider_index=ProviderSnapshotIndex(
                 providers={},
                 contexts_by_artifact={},
@@ -826,6 +829,7 @@ class SelectionAndReferenceIndexTests(unittest.TestCase):
             ),
         )
         planning = SimpleNamespace(
+            snapshot_inputs=(),
             provider_index=ProviderSnapshotIndex(
                 providers={},
                 contexts_by_artifact={

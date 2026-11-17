@@ -74,7 +74,6 @@ from buildish_site_pipeline.models.provider.provider_snapshot import (
     ProviderSnapshotDocumentV1,
 )
 from buildish_site_pipeline.models.emitted.staged_front_matter import (
-    PageSourceProvenance,
     PipelineComponentFrontMatter,
     TranslationLinkSummary,
 )
@@ -86,7 +85,7 @@ from buildish_site_pipeline.planning.types import (
     ResolvedPublicationPolicy,
     SelectedVersionContext,
 )
-from buildish_site_pipeline.source_roots import ResolvedSourceBinding
+from buildish_site_pipeline.models.validation.paths import validate_stage_relative_path
 
 from .file_writes import write_utf8_text_file
 from .front_matter import (
@@ -101,6 +100,7 @@ from .incremental_metadata import (
     build_output_ownership_map,
 )
 from .ownership import OwnedUnit, build_owned_units
+from .page_provenance import UnitPageSources, build_page_source_index, page_source_provenance
 from .public_safety import public_source_path, sanitize_public_diagnostics
 from .publication_paths import public_path_for_context, target_id_for_context
 from .types import EffectiveBuildPlan, WorkRootLayout
@@ -125,11 +125,13 @@ def finalize_pages_and_write_aggregates(
 ) -> StageManifestV1:
     """Finalize worker outputs into public aggregates plus coordinator metadata."""
 
+    current_units = owned_units if owned_units is not None else build_owned_units(build_plan)
     unit_contribution_manifests = _load_unit_contribution_manifests(
         layout=layout,
         build_plan=build_plan,
         worker_results=worker_results,
         retained_unit_manifests=retained_unit_manifests,
+        owned_units=current_units,
     )
     page_contributions = tuple(
         page for manifest in unit_contribution_manifests for page in manifest.pages
@@ -152,7 +154,7 @@ def finalize_pages_and_write_aggregates(
         provider_snapshot=provider_snapshot,
         page_contributions=page_contributions,
         unit_contribution_manifests=unit_contribution_manifests,
-        owned_units=owned_units or build_owned_units(build_plan),
+        owned_units=current_units,
     )
     manifest = StageManifestV1(
         schema_version=1,
@@ -1232,15 +1234,18 @@ def _load_unit_contribution_manifests(
     build_plan: EffectiveBuildPlan,
     worker_results: tuple[WorkerResultWire, ...],
     retained_unit_manifests: tuple[UnitContributionManifestWire, ...],
+    owned_units: tuple[OwnedUnit, ...] | None = None,
 ) -> tuple[UnitContributionManifestWire, ...]:
     manifests: list[UnitContributionManifestWire] = []
     seen_unit_ids: set[str] = set()
-    source_bindings = _page_source_binding_index(build_plan)
+    source_index = build_page_source_index(
+        build_plan, owned_units if owned_units is not None else build_owned_units(build_plan)
+    )
     for manifest in retained_unit_manifests:
         normalized_manifest = _normalize_unit_manifest(
             layout=layout,
             build_plan=build_plan,
-            source_bindings=source_bindings,
+            source_index=source_index,
             manifest=manifest,
         )
         _register_loaded_unit_manifest(
@@ -1257,7 +1262,7 @@ def _load_unit_contribution_manifests(
         normalized_manifest = _normalize_unit_manifest(
             layout=layout,
             build_plan=build_plan,
-            source_bindings=source_bindings,
+            source_index=source_index,
             manifest=manifest,
         )
         _register_loaded_unit_manifest(
@@ -1272,18 +1277,21 @@ def _normalize_unit_manifest(
     *,
     layout: WorkRootLayout,
     build_plan: EffectiveBuildPlan,
-    source_bindings: Mapping[tuple[str, str | None], ResolvedSourceBinding],
+    source_index: Mapping[str, UnitPageSources],
     manifest: UnitContributionManifestWire,
 ) -> UnitContributionManifestWire:
     """Normalize private worker paths before retaining metadata in the stage."""
 
+    sources = source_index.get(manifest.unit_id)
+    if sources is None:
+        raise StageIntegrityError(f"Unknown page contribution unit: {manifest.unit_id}")
     return manifest.model_copy(
         update={
             "pages": tuple(
                 _normalize_page_contribution(
                     layout=layout,
                     build_plan=build_plan,
-                    source_bindings=source_bindings,
+                    sources=sources,
                     contribution=contribution,
                 )
                 for contribution in manifest.pages
@@ -1316,15 +1324,16 @@ def _normalize_page_contribution(
     *,
     layout: WorkRootLayout,
     build_plan: EffectiveBuildPlan,
-    source_bindings: Mapping[tuple[str, str | None], ResolvedSourceBinding]
-    | None = None,
+    sources: UnitPageSources,
     contribution: StagedPageContributionWire,
 ) -> StagedPageContributionWire:
     stage_relative_path = contribution.stage_relative_path
-    if Path(stage_relative_path).is_absolute():
-        stage_relative_path = str(
-            Path(stage_relative_path).relative_to(layout.next_stage_root)
-        )
+    try:
+        if Path(stage_relative_path).is_absolute():
+            stage_relative_path = Path(stage_relative_path).relative_to(layout.next_stage_root).as_posix()
+        validate_stage_relative_path(stage_relative_path)
+    except ValueError as exc:
+        raise StageIntegrityError("Invalid page contribution destination") from exc
     normalized_source_path = public_source_path(
         source_path=contribution.source_path,
         workspace_root=build_plan.workspace_root,
@@ -1333,126 +1342,14 @@ def _normalize_page_contribution(
         update={
             "stage_relative_path": stage_relative_path,
             "source_path": normalized_source_path,
-            "source": _page_source_provenance(
+            "source": page_source_provenance(
                 build_plan=build_plan,
-                source_bindings=(
-                    source_bindings
-                    if source_bindings is not None
-                    else _page_source_binding_index(build_plan)
-                ),
-                contribution=contribution,
+                sources=sources,
+                contribution=contribution.model_copy(update={"stage_relative_path": stage_relative_path}),
             ),
         },
     )
 
-
-def _page_source_provenance(
-    *,
-    build_plan: EffectiveBuildPlan,
-    source_bindings: Mapping[tuple[str, str | None], ResolvedSourceBinding],
-    contribution: StagedPageContributionWire,
-) -> PageSourceProvenance | None:
-    """Derive public page provenance from the trusted build plan and worker path."""
-
-    source_path = contribution.source_path
-    if source_path is None:
-        return None
-    source_binding = _source_binding_for_page(
-        build_plan=build_plan,
-        source_bindings=source_bindings,
-        contribution=contribution,
-    )
-    if source_binding.key not in build_plan.site.sources:
-        return None
-    raw_source_path = Path(source_path)
-    candidate_path = (
-        raw_source_path
-        if raw_source_path.is_absolute()
-        else build_plan.workspace_root / raw_source_path
-    )
-    normalized_binding_root = source_binding.local_dir.resolve(strict=False)
-    normalized_source_path = candidate_path.resolve(strict=False)
-    if not normalized_source_path.is_relative_to(normalized_binding_root):
-        return None
-
-    try:
-        binding_relative_path = candidate_path.relative_to(
-            normalized_binding_root
-        ).as_posix()
-    except ValueError:
-        return None
-    if binding_relative_path in {"", "."} or ".." in Path(binding_relative_path).parts:
-        return None
-
-    return PageSourceProvenance(
-        key=source_binding.key,
-        path=binding_relative_path,
-        repository=source_binding.repository,
-        view_ref=source_binding.default_branch,
-        edit_ref=source_binding.default_branch,
-    )
-
-
-def _source_binding_for_page(
-    *,
-    build_plan: EffectiveBuildPlan,
-    source_bindings: Mapping[tuple[str, str | None], ResolvedSourceBinding],
-    contribution: StagedPageContributionWire,
-) -> ResolvedSourceBinding:
-    source_binding = source_bindings.get(
-        (contribution.component_slug, contribution.artifact_key)
-    )
-    if source_binding is not None:
-        return source_binding
-
-    component = next(
-        (
-            candidate
-            for candidate in build_plan.site.components
-            if candidate.slug == contribution.component_slug
-        ),
-        None,
-    )
-    if component is None:
-        raise StageIntegrityError(
-            "Staged page contribution references an unknown component: "
-            f"{contribution.component_slug}"
-        )
-    if contribution.artifact_key is None:
-        if component.content_source is None:
-            raise StageIntegrityError(
-                "Staged page contribution has no resolved component source binding: "
-                f"{contribution.component_slug}"
-            )
-        return component.content_source
-    artifact = next(
-        (
-            candidate
-            for candidate in component.artifacts
-            if candidate.key == contribution.artifact_key
-        ),
-        None,
-    )
-    if artifact is None:
-        raise StageIntegrityError(
-            "Staged page contribution references an unknown artifact: "
-            f"{contribution.component_slug}/{contribution.artifact_key}"
-        )
-    return artifact.source_binding
-
-
-def _page_source_binding_index(
-    build_plan: EffectiveBuildPlan,
-) -> dict[tuple[str, str | None], ResolvedSourceBinding]:
-    """Index page-owning bindings once for constant-time contribution lookup."""
-
-    source_bindings: dict[tuple[str, str | None], ResolvedSourceBinding] = {}
-    for component in build_plan.site.components:
-        if component.content_source is not None:
-            source_bindings[(component.slug, None)] = component.content_source
-        for artifact in component.artifacts:
-            source_bindings[(component.slug, artifact.key)] = artifact.source_binding
-    return source_bindings
 
 
 def _validated_unit_manifest_path(

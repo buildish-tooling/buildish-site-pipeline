@@ -252,6 +252,29 @@ One practical template pattern is:
 This is the simplest way to make page chrome react to the staged publication
 model.
 
+## Render source links from explicit provenance
+
+`pipeline.page.source` describes the original authored file, which can differ
+from the local file read during staging. Use its `repository`, `path` and
+`viewRef` together for a view-source link. Only offer editing when `editRef` is
+present; the single `path` applies to both links. Released and candidate docs
+have no edit link. Direct static and development pages can retain declared branch
+links.
+
+Exported docs need an explicit per-record `docsSource` mapping in the provider
+snapshot. Without it, release, candidate, maintenance and named-ref materializations
+omit source links rather than combine the export path with `main`. A source
+binding's `key` identifies the physical supplier, not necessarily the original
+repository. Treat source metadata as optional: a Pipeline page with no source
+target must not fall back to the site's repository or default branch.
+
+Keep repository-host support and path/ref escaping in the renderer. Pipeline
+emits repository-neutral values, not GitHub URLs; refs can contain slashes.
+For example, `path: docs/_index.md` and a commit `viewRef` form an original-source
+target even when staging read `docs/releases/0.1.3/_index.md`. The existing Buildish
+source-link partial accepts this shape and hides links when required fields are
+absent.
+
 ## Normalize component context once in a helper partial
 
 The Buildish site uses a dedicated partial to normalize page metadata before any

@@ -156,6 +156,18 @@ class PublicSafetyTests(unittest.TestCase):
                 )
             )
 
+    def test_public_source_path_preserves_contained_alias_but_omits_escaping_alias(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "workspace"
+            root.mkdir()
+            (root / "target.md").write_text("target\n")
+            (root / "alias.md").symlink_to("target.md")
+            (root / "escape.md").symlink_to(Path(tmp) / "outside.md")
+            for raw in ("alias.md", str(root / "alias.md")):
+                self.assertEqual(public_source_path(source_path=raw, workspace_root=root), "alias.md")
+            for raw in ("escape.md", str(root / "escape.md")):
+                self.assertIsNone(public_source_path(source_path=raw, workspace_root=root))
+
     def test_leaves_reduced_detail_summaries_unchanged(self) -> None:
         summary = ReducedDiagnosticDetailsSummary(
             omitted=True,

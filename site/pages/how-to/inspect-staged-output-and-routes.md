@@ -122,17 +122,18 @@ pipeline:
       label: 4.0.0
     source:
       key: runtime
-      path: docs/releases/4.0.0/index.md
+      path: docs/index.md
       repository: https://github.com/example/runtime
-      viewRef: main
-      editRef: main
+      viewRef: v4.0.0
 ```
 
 That is the bridge between one page file and the normalized publication model.
-In particular, `source.path` is relative to the resolved `runtime` source
-binding. It is not the path of the staged copy. A renderer can use the optional
-repository and refs to build provider-specific source links; it should omit
-those links when the values are absent.
+This example assumes the release record declares `docsSource` with root `docs`
+and ref `v4.0.0`. The `source.path` is relative to the emitted original repository;
+`key` identifies the physical supplier. Neither identifies the staged copy.
+A renderer can use the optional repository and refs to build source links and
+must omit links when their values are absent. Unmapped exported releases omit
+`source`, and mapped releases omit `editRef`.
 
 ## Then inspect cross-page discovery
 
@@ -150,10 +151,9 @@ scanning the whole content tree:
   "url": "https://docs.example.org/spark/releases/4.0.0/",
   "source": {
     "key": "runtime",
-    "path": "docs/releases/4.0.0/index.md",
+    "path": "docs/index.md",
     "repository": "https://github.com/example/runtime",
-    "viewRef": "main",
-    "editRef": "main"
+    "viewRef": "v4.0.0"
   },
   "versionKind": "released",
   "versionLabel": "4.0.0",

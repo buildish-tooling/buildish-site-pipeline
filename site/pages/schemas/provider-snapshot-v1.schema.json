@@ -1,6 +1,58 @@
 {
   "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
   "$defs": {
+    "DocsSource": {
+      "additionalProperties": false,
+      "description": "Producer-declared original source of a tree-preserving docs export.",
+      "properties": {
+        "ref": {
+          "description": "Exact original-source revision to view, preferably the exported commit. Tags and named refs may move; no other record ref overrides this value.",
+          "examples": [
+            "v4.0.0"
+          ],
+          "minLength": 1,
+          "title": "Ref",
+          "type": "string"
+        },
+        "repository": {
+          "description": "Public original repository URL, without credentials, query or fragment; independent of the materialization binding.",
+          "examples": [
+            "https://github.com/example/runtime"
+          ],
+          "minLength": 1,
+          "title": "Repository",
+          "type": "string"
+        },
+        "root": {
+          "anyOf": [
+            {
+              "const": ".",
+              "type": "string"
+            },
+            {
+              "minLength": 1,
+              "type": "string"
+            }
+          ],
+          "description": "Original repository-relative docs root; '.' means repository root. Every exported filename suffix must be preserved.",
+          "examples": [
+            "docs"
+          ],
+          "title": "Root"
+        }
+      },
+      "required": [
+        "repository",
+        "root",
+        "ref"
+      ],
+      "title": "DocsSource",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "provider",
+        "ownership": "provider-derived"
+      }
+    },
     "ExactReleaseConfig": {
       "additionalProperties": false,
       "description": "Per-version lifecycle metadata and publication overrides for one exact release.",
@@ -456,6 +508,18 @@
             "4.0.0 GA"
           ],
           "title": "Displayversion"
+        },
+        "docsSource": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DocsSource"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional explicit original repository/root/revision for this record's tree-preserving docs export. Absence leaves rematerialized source links unknown; it does not affect publication selection."
         },
         "externalId": {
           "anyOf": [
@@ -1140,6 +1204,11 @@
             }
           ],
           "componentSlug": "spark",
+          "docsSource": {
+            "ref": "v4.0.0",
+            "repository": "https://github.com/apache/spark",
+            "root": "docs"
+          },
           "externalId": "spark-4.0.0",
           "externalUrl": "https://github.com/apache/spark/releases/tag/v4.0.0",
           "kind": "released",

@@ -26,7 +26,7 @@ Back to the [reference overview](../pipeline-model-schema-reference/).
 ## Type index
 
 - [ArtifactFrontMatterSummary](#artifactfrontmattersummary) — Small artifact summary embedded in component front matter.
-- [PageSourceProvenance](#pagesourceprovenance) — Repository-neutral pointer to the authored source file for one staged page.
+- [PageSourceProvenance](#pagesourceprovenance) — Repository-neutral original-source target, distinct from the physical input.
 - [PipelineComponentFrontMatter](#pipelinecomponentfrontmatter) — Component-level pipeline metadata injected into staged page front matter.
 - [PipelineFrontMatterNamespace](#pipelinefrontmatternamespace) — Reserved top-level front matter namespace that the pipeline injects into staged pages.
 - [PipelinePageFrontMatter](#pipelinepagefrontmatter) — Page-local pipeline metadata injected into staged page front matter.
@@ -65,7 +65,7 @@ Small artifact summary embedded in component front matter.
 <a id="pagesourceprovenance"></a>
 ### PageSourceProvenance
 
-Repository-neutral pointer to the authored source file for one staged page.
+Repository-neutral original-source target, distinct from the physical input.
 
 - category: `emitted`
 - ownership: `pipeline-derived`
@@ -73,11 +73,11 @@ Repository-neutral pointer to the authored source file for one staged page.
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| <a id="pagesourceprovenance-key"></a>`key` | [SourceKey](../pipeline-shared-types-reference/#sourcekey) | yes | Resolved source-binding key that owns the authored page. |
-| <a id="pagesourceprovenance-path"></a>`path` | [RepoRelativePath](../pipeline-shared-types-reference/#reporelativepath) | yes | Source file path relative to the resolved source binding root. |
-| <a id="pagesourceprovenance-repository"></a>`repository` | [UrlString](../pipeline-shared-types-reference/#urlstring) | no | Remote repository URL whose repository root corresponds to the resolved source binding root, when declared. |
-| <a id="pagesourceprovenance-viewref"></a>`viewRef` | [RefString](../pipeline-shared-types-reference/#refstring) | no | Source-control ref that renderers may use for a view-source link. |
-| <a id="pagesourceprovenance-editref"></a>`editRef` | [RefString](../pipeline-shared-types-reference/#refstring) | no | Source-control ref that renderers may use for an edit-source link. |
+| <a id="pagesourceprovenance-key"></a>`key` | [SourceKey](../pipeline-shared-types-reference/#sourcekey) | yes | Named source binding supplying the physical page input; this attribution does not establish original repository identity. |
+| <a id="pagesourceprovenance-path"></a>`path` | [RepoRelativePath](../pipeline-shared-types-reference/#reporelativepath) | yes | Original file path relative to the emitted repository root, or the supplying binding root for a local-only direct page; not necessarily a path in the physical checkout. |
+| <a id="pagesourceprovenance-repository"></a>`repository` | [UrlString](../pipeline-shared-types-reference/#urlstring) | no | Declared original repository for this source target; it may differ from the repository of the physical input binding. |
+| <a id="pagesourceprovenance-viewref"></a>`viewRef` | [RefString](../pipeline-shared-types-reference/#refstring) | no | Exact declared original-source revision for viewing this file. A commit pins content; tags and named refs may move. |
+| <a id="pagesourceprovenance-editref"></a>`editRef` | [RefString](../pipeline-shared-types-reference/#refstring) | no | Declared same-file edit branch for supported direct pages; omitted for rematerialized docs, including releases and candidates. |
 
 #### Selected field examples
 
@@ -162,8 +162,7 @@ page:
     key: runtime
     path: docs/getting-started.md
     repository: https://github.com/apache/spark
-    viewRef: main
-    editRef: main
+    viewRef: v4.0.0
 ```
 
 <a id="pipelinepagefrontmatter"></a>

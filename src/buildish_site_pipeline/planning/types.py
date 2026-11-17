@@ -61,6 +61,7 @@ from buildish_site_pipeline.models.emitted.planning_stage_contract import (
     PipelineDiagnosticEntry,
 )
 from buildish_site_pipeline.models.provider.provider_snapshot import (
+    DocsSource,
     ProviderAsset,
     ProviderDescriptor,
 )
@@ -217,6 +218,7 @@ class IndexedProviderRecord:
     updated_at: TimestampString | None
     urls: dict[str, str]
     assets: tuple[ProviderAsset, ...]
+    docs_source: DocsSource | None = None
 
 
 @dataclass(frozen=True, slots=True)

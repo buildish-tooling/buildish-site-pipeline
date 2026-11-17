@@ -105,20 +105,25 @@ def sanitize_snapshot_inputs(
 def public_source_path(
     *, source_path: str | None, workspace_root: Path
 ) -> str | None:
-    """Return a workspace-relative internal source path, or ``None`` if unsafe."""
+    """Retain the lexical input filename after checking resolved containment."""
 
     if source_path is None:
         return None
     raw_source_path = Path(source_path)
-    if not raw_source_path.is_absolute():
-        if raw_source_path == Path() or ".." in raw_source_path.parts:
-            return None
-        return raw_source_path.as_posix()
-    normalized_workspace_root = workspace_root.resolve(strict=False)
-    normalized_source_path = raw_source_path.resolve(strict=False)
-    if not normalized_source_path.is_relative_to(normalized_workspace_root):
+    if raw_source_path == Path() or ".." in raw_source_path.parts:
         return None
-    return normalized_source_path.relative_to(normalized_workspace_root).as_posix()
+    normalized_workspace_root = workspace_root.resolve(strict=False)
+    candidate = (
+        raw_source_path if raw_source_path.is_absolute()
+        else normalized_workspace_root / raw_source_path
+    )
+    if not candidate.resolve(strict=False).is_relative_to(normalized_workspace_root):
+        return None
+    try:
+        relative = candidate.relative_to(normalized_workspace_root)
+    except ValueError:
+        return None
+    return relative.as_posix() if relative != Path() else None
 
 
 def _sanitize_diagnostic(

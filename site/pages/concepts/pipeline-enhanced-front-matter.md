@@ -79,10 +79,9 @@ pipeline:
       externalId: release-4.0.0
     source:
       key: runtime
-      path: docs/releases/4.0.0/getting-started.md
+      path: docs/getting-started.md
       repository: https://github.com/example/runtime
-      viewRef: main
-      editRef: main
+      viewRef: v4.0.0
 ```
 
 Fields are omitted when they do not apply. A local-only source, for example,
@@ -114,13 +113,15 @@ querying a release provider.
 
 ## Source provenance and useful repository links
 
-`pipeline.page.source` identifies the source binding and a path relative to
-that binding's root. It never points into `site/.stage`:
+`pipeline.page.source` identifies the original authored file. Its target may
+differ from the physical input, and never points into `site/.stage`:
 
-- `key` identifies the named source binding
-- `path` is repository-relative within that source binding
-- `repository` is present when the binding declares a remote repository
-- `viewRef` and `editRef` come from the binding's declared default branch
+- `key` identifies the named binding supplying the physical input
+- `path` is relative to the emitted original repository, or to the binding root
+  for a local-only direct page
+- `repository` is the declared source target repository
+- `viewRef` is the declared original revision; supported directly staged pages
+  may also carry a same-file `editRef` branch
 
 A GitHub-aware renderer could combine those values into `blob` and `edit` URLs;
 another renderer could apply GitLab, Forgejo, or a company-specific URL shape.
@@ -128,7 +129,13 @@ The pipeline deliberately emits structured provenance instead of a
 provider-specific URL. Consumers must URL-encode path and ref segments and
 should omit a link when the required repository or ref is absent.
 
-When a source declares `repository`, its binding root must correspond to that
+The released-page example assumes the record declares `docsSource` with original
+root `docs` at `v4.0.0`. Such mappings assert a tree-preserving docs export and
+provide view-only provenance. Unmapped released, candidate, maintenance and named-ref
+materializations omit source metadata; consumers must not invent a default branch
+or edit target.
+
+For direct pages, when a source declares `repository`, its binding root must correspond to that
 repository's root because the current contract has no separate repository-path
 prefix. A source binding rooted in one subdirectory of a larger repository can
 still be used locally, but it must be moved to the repository root (with

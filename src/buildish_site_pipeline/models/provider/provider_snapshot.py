@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 from typing import ClassVar, Literal, Self
+from urllib.parse import urlsplit
 
 from pydantic import Field, model_validator
 
@@ -41,12 +42,14 @@ from ..scalars import (
     ProviderBaseUrl,
     ProviderKey,
     RefString,
+    RepoRelativePath,
     Slug,
     SourceKey,
     TimestampString,
     UrlString,
     VersionString,
 )
+from ..validation.provenance import validate_source_target_path
 
 
 class ProviderDescriptor(SitePipelineBaseModel):
@@ -120,6 +123,32 @@ class ProviderAsset(SitePipelineBaseModel):
     )
 
 
+class DocsSource(SitePipelineBaseModel):
+    """Producer-declared original source of a tree-preserving docs export."""
+
+    repository: UrlString = Field(
+        description="Public original repository URL, without credentials, query or fragment; independent of the materialization binding.",
+        examples=["https://github.com/example/runtime"],
+    )
+    root: Literal["."] | RepoRelativePath = Field(
+        description="Original repository-relative docs root; '.' means repository root. Every exported filename suffix must be preserved.",
+        examples=["docs"],
+    )
+    ref: RefString = Field(
+        description="Exact original-source revision to view, preferably the exported commit. Tags and named refs may move; no other record ref overrides this value.",
+        examples=["v4.0.0"],
+    )
+
+    @model_validator(mode="after")
+    def validate_target(self) -> Self:
+        parsed = urlsplit(self.repository)
+        if parsed.query or parsed.fragment:
+            raise ValueError("Docs source repository must not carry query or fragment")
+        if self.root != ".":
+            validate_source_target_path(self.root)
+        return self
+
+
 class ProviderRecord(SitePipelineBaseModel):
     """Normalized provider fact about one release, candidate, or ref context."""
 
@@ -176,6 +205,10 @@ class ProviderRecord(SitePipelineBaseModel):
         default=None,
         description="Resolved commit SHA for the record when the provider exposes it.",
         examples=["6f0fd1f7b2c4a6d8e9f00123456789abcdef0123"],
+    )
+    docs_source: DocsSource | None = Field(
+        default=None,
+        description="Optional explicit original repository/root/revision for this record's tree-preserving docs export. Absence leaves rematerialized source links unknown; it does not affect publication selection.",
     )
     named_ref_key: NonEmptyString | None = Field(
         default=None,

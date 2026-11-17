@@ -358,29 +358,29 @@ class ProviderProvenance(SitePipelineBaseModel):
 
 
 class PageSourceProvenance(SitePipelineBaseModel):
-    """Repository-neutral pointer to the authored source file for one staged page."""
+    """Repository-neutral original-source target, distinct from the physical input."""
 
     key: SourceKey = Field(
-        description="Resolved source-binding key that owns the authored page.",
+        description="Named source binding supplying the physical page input; this attribution does not establish original repository identity.",
         examples=["runtime"],
     )
     path: RepoRelativePath = Field(
-        description="Source file path relative to the resolved source binding root.",
+        description="Original file path relative to the emitted repository root, or the supplying binding root for a local-only direct page; not necessarily a path in the physical checkout.",
         examples=["docs/getting-started.md"],
     )
     repository: UrlString | None = Field(
         default=None,
-        description="Remote repository URL whose repository root corresponds to the resolved source binding root, when declared.",
+        description="Declared original repository for this source target; it may differ from the repository of the physical input binding.",
         examples=["https://github.com/buildish-tooling/buildish-site-pipeline"],
     )
     view_ref: RefString | None = Field(
         default=None,
-        description="Source-control ref that renderers may use for a view-source link.",
+        description="Exact declared original-source revision for viewing this file. A commit pins content; tags and named refs may move.",
         examples=["main"],
     )
     edit_ref: RefString | None = Field(
         default=None,
-        description="Source-control ref that renderers may use for an edit-source link.",
+        description="Declared same-file edit branch for supported direct pages; omitted for rematerialized docs, including releases and candidates.",
         examples=["main"],
     )
 

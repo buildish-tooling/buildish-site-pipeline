@@ -74,16 +74,18 @@ pipeline:
       tag: v4.0.0
     source:
       key: runtime
-      path: docs/releases/4.0.0/index.md
+      path: docs/index.md
       repository: https://github.com/example/runtime
-      viewRef: main
-      editRef: main
+      viewRef: v4.0.0
 ```
 
 That means a renderer can read one staged page and still know which component,
 publication surface, provider, version context, and authored source it belongs
 to. The structured `source` object gives a repository-aware consumer the data
-needed to construct view or edit links without pointing users at `.stage`.
+needed to construct supported view or edit links without pointing users at `.stage`.
+This released-page example assumes an explicit record `docsSource` mapping to
+`docs` at `v4.0.0`. Without that mapping an exported release omits `source`;
+released pages never infer an edit link to `main`.
 See [pipeline-enhanced front matter](../pipeline-enhanced-front-matter/) for the
 ownership boundary and common renderer use cases.
 
@@ -111,10 +113,9 @@ For example, one `content-index.json` item looks like this:
   "canonicalUrl": "https://docs.example.org/spark/releases/4.0.0/",
   "source": {
     "key": "runtime",
-    "path": "docs/releases/4.0.0/index.md",
+    "path": "docs/index.md",
     "repository": "https://github.com/example/runtime",
-    "viewRef": "main",
-    "editRef": "main"
+    "viewRef": "v4.0.0"
   },
   "versionKind": "released",
   "versionLabel": "4.0.0",

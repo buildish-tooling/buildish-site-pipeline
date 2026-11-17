@@ -21,6 +21,7 @@ from enum import StrEnum
 from pathlib import Path
 
 from ..cli.errors import StageIntegrityError
+from ..models.enums import RecordKind
 from ..planning.types import ResolvedVendorAsset, SelectedVersionContext
 from .publication_paths import (
     public_path_for_context,
@@ -65,6 +66,21 @@ class OwnedUnit:
     component_pages_source: Path | None = None
     component_assets_source: Path | None = None
     contexts: tuple[OwnedContextInput, ...] = ()
+
+
+def source_root_for_context(root: Path | None, context: SelectedVersionContext) -> Path | None:
+    """Resolve the physical tree shared by worker specs and provenance matching."""
+    if root is None:
+        return None
+    if context.kind is RecordKind.RELEASED and context.version is not None:
+        return root / "releases" / context.version
+    if context.kind is RecordKind.CANDIDATE and context.version is not None:
+        return root / "candidates" / context.version
+    if context.kind is RecordKind.LINE_HEAD and context.release_line is not None:
+        return root / "maintenance" / context.release_line
+    if context.kind is RecordKind.NAMED_REF and context.named_ref_key is not None:
+        return root / "refs" / context.named_ref_key
+    return root
 
 def _unique_stage_roots(*roots: Path) -> tuple[Path, ...]:
     """Return one stable tuple of stage roots without duplicates."""

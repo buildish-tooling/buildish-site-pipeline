@@ -25,6 +25,18 @@ from buildish_site_pipeline.planning.provider_index import build_provider_snapsh
 
 
 class ProviderIndexTests(unittest.TestCase):
+    def test_index_retains_explicit_docs_source_independently_of_other_refs(self):
+        snapshot = _provider_snapshot([{
+            "provider": "github", "kind": "development", "componentSlug": "spark",
+            "artifactKey": "runtime", "ref": "main", "tag": "other-tag", "commitSha": "other-commit",
+            "docsSource": {"repository": "https://forge.example/original", "root": "manual", "ref": "exported/commit"},
+        }])
+        index = build_provider_snapshot_index(provider_snapshot=snapshot, site=_site_with_runtime_artifact())
+        record = index.contexts_by_artifact[("spark", "runtime")].development_records[0]
+        self.assertEqual(record.ref, "main")
+        self.assertEqual(record.docs_source.ref, "exported/commit")
+        self.assertEqual(record.docs_source.repository, "https://forge.example/original")
+
     def test_rejects_provider_record_for_unknown_artifact(self) -> None:
         with self.assertRaisesRegex(ValueError, "unknown artifact spark:missing"):
             build_provider_snapshot_index(

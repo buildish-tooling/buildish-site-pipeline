@@ -17,6 +17,8 @@
 from __future__ import annotations
 
 import unittest
+import json
+from pydantic import ValidationError
 
 from buildish_site_pipeline.models.enums import DocumentFormat, RecordKind
 from buildish_site_pipeline.models.loading import (
@@ -24,12 +26,44 @@ from buildish_site_pipeline.models.loading import (
     load_provider_snapshot_document,
 )
 from buildish_site_pipeline.models.provider.provider_snapshot import (
+    DocsSource,
     ProviderSnapshotDocumentV1,
 )
 
 
 class ProviderSnapshotTests(unittest.TestCase):
     """Validate provider snapshot contracts and cross-record checks."""
+
+    def test_docs_source_round_trip_and_narrow_validation(self):
+        for root in (".", "manual/developer-guide"):
+            with self.subTest(root=root):
+                target = {"repository": "https://forge.example/original", "root": root, "ref": "releases/4.0"}
+                self.assertEqual(DocsSource.model_validate(target).model_dump(), target)
+        valid = {"repository": "https://forge.example/original", "root": "docs", "ref": "v4.0.0"}
+        invalid = [
+            dict(valid, root=root)
+            for root in ("/outside/docs", "../docs", "docs/../private", "docs\\private", "C:/docs", "C:docs", ".git", "docs/.GIT/hooks", "docs//nested")
+        ] + [
+            dict(valid, repository=repository)
+            for repository in ("https://user:secret@forge.example/repo", "https://forge.example/repo?token=x", "https://forge.example/repo#fragment", "file:///tmp/repo")
+        ] + [{key: value for key, value in valid.items() if key != missing} for missing in valid]
+        for target in invalid:
+            with self.subTest(target=target), self.assertRaises(ValidationError):
+                DocsSource.model_validate(target)
+
+    def test_docs_source_survives_snapshot_loading(self):
+        document = {
+            "schemaVersion": 1,
+            "providers": [{"key": "git", "type": "git", "fetchedAt": "2026-11-17T00:00:00Z"}],
+            "records": [{
+                "provider": "git", "kind": "released", "componentSlug": "spark", "artifactKey": "runtime",
+                "version": "4.0.0", "tag": "different-tag",
+                "docsSource": {"repository": "https://forge.example/original", "root": ".", "ref": "exported/commit"},
+            }],
+        }
+        loaded = load_provider_snapshot_document(json.dumps(document), document_format=DocumentFormat.JSON, source_name="test")
+        self.assertEqual(loaded.records[0].docs_source.ref, "exported/commit")
+        self.assertEqual(loaded.model_dump(by_alias=True, exclude_none=True)["records"][0]["docsSource"], document["records"][0]["docsSource"])
 
     def test_loads_valid_provider_snapshot(self) -> None:
         snapshot = load_provider_snapshot_document(

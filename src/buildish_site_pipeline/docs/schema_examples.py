@@ -127,7 +127,7 @@ def provider_snapshot_example_document() -> object:
         (
             '{"schemaVersion":1,'
             '"providers":[{"key":"github-releases","type":"github","displayName":"GitHub Releases","baseUrl":"https://github.com/apache/spark","fetchedAt":"2026-04-03T18:00:00Z"}],'
-            '"records":[{"provider":"github-releases","kind":"released","componentSlug":"spark","artifactKey":"runtime","externalId":"spark-4.0.0","version":"4.0.0","externalUrl":"https://github.com/apache/spark/releases/tag/v4.0.0","publishedAt":"2026-04-03T18:00:00Z","assets":[{"name":"spark-4.0.0-src.tgz","url":"https://downloads.apache.org/spark/spark-4.0.0-src.tgz","checksums":{"sha256":"abc123"}}]}]}'
+            '"records":[{"provider":"github-releases","kind":"released","componentSlug":"spark","artifactKey":"runtime","externalId":"spark-4.0.0","version":"4.0.0","docsSource":{"repository":"https://github.com/apache/spark","root":"docs","ref":"v4.0.0"},"externalUrl":"https://github.com/apache/spark/releases/tag/v4.0.0","publishedAt":"2026-04-03T18:00:00Z","assets":[{"name":"spark-4.0.0-src.tgz","url":"https://downloads.apache.org/spark/spark-4.0.0-src.tgz","checksums":{"sha256":"abc123"}}]}]}'
         ),
         document_format=DocumentFormat.JSON,
         source_name="providers.json",
@@ -301,8 +301,7 @@ def front_matter_namespace_example_document() -> object:
                     "key": "runtime",
                     "path": "docs/getting-started.md",
                     "repository": "https://github.com/apache/spark",
-                    "viewRef": "main",
-                    "editRef": "main",
+                    "viewRef": "v4.0.0",
                 },
             },
         }

@@ -56,7 +56,7 @@ class GettingStartedDocsTests(unittest.TestCase):
 
             stage_root = workspace_root / "site/.stage"
             content_paths = {
-                entry["path"]: entry["source"]["path"]
+                entry["path"]: entry.get("source", {}).get("path")
                 for entry in json.loads((stage_root / "data/content-index.json").read_text(encoding="utf-8"))["items"]
             }
             released_target_ids = {
@@ -92,14 +92,8 @@ class GettingStartedDocsTests(unittest.TestCase):
                 content_paths["/spark/development/reference"],
                 "docs/reference/index.md",
             )
-            self.assertEqual(
-                content_paths["/spark/releases/4.0.0/guide"],
-                "docs/runtime/releases/4.0.0/guide/index.md",
-            )
-            self.assertEqual(
-                content_paths["/spark/releases/4.0.0/reference"],
-                "docs/releases/4.0.0/reference/index.md",
-            )
+            self.assertIsNone(content_paths["/spark/releases/4.0.0/guide"])
+            self.assertIsNone(content_paths["/spark/releases/4.0.0/reference"])
 
     def test_large_page_packet_matches_grouped_large_fixture(self) -> None:
         page_text = Path("site/pages/getting-started/large.md").read_text(encoding="utf-8")

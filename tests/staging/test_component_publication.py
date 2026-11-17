@@ -19,6 +19,7 @@ import json
 import shutil
 import unittest
 import yaml
+import frontmatter
 
 from buildish_site_pipeline.cli import _run
 from tests.commands.test_component_snapshots import configure_snapshot
@@ -70,6 +71,63 @@ def configure_release(
 
 
 class ComponentPublicationTests(unittest.TestCase):
+    def test_exported_docs_use_explicit_original_source_or_omit_links(self):
+        with _workspace(with_content_file=True) as root:
+            path, snapshot = configure_release(root)
+            snapshot = json.loads(json.dumps(snapshot).replace('4.0.0', '0.1.3'))
+            path.write_text(json.dumps(snapshot))
+            physical = root / "components/runtime/docs/releases/0.1.3"
+            (root / "components/runtime/docs/releases/4.0.0").rename(physical)
+            (physical / "index.md").rename(physical / "_index.md")
+            (physical / "guide").mkdir()
+            (physical / "guide/setup.md").write_text("# Setup\n")
+            (root / "components/runtime/docs/intro.md").write_text("# Intro\n")
+
+            code, report, errors = run(root)
+            self.assertEqual(code, 0, (report, errors))
+            stage = root / "site/.stage"
+            released = stage / "content/spark/releases/0.1.3/_index.md"
+            self.assertNotIn("source", frontmatter.load(released)["pipeline"]["page"])
+            before = {
+                name: json.loads((stage / f"data/{name}.json").read_text())
+                for name in ("routes", "artifacts", "releases")
+            }
+
+            snapshot["records"][0]["docsSource"] = {
+                "repository": "https://github.com/example/original",
+                "root": "docs",
+                "ref": "b4542a195705c13c3806ca34fed8e821bedc20c8",
+            }
+            path.write_text(json.dumps(snapshot))
+            shutil.rmtree(stage)
+            code, report, errors = run(root)
+            self.assertEqual(code, 0, (report, errors))
+            expected = {
+                "key": "runtime",
+                "path": "docs/_index.md",
+                "repository": "https://github.com/example/original",
+                "viewRef": "b4542a195705c13c3806ca34fed8e821bedc20c8",
+            }
+            self.assertEqual(frontmatter.load(released)["pipeline"]["page"]["source"], expected)
+            nested = stage / "content/spark/releases/0.1.3/guide/setup.md"
+            self.assertEqual(
+                frontmatter.load(nested)["pipeline"]["page"]["source"],
+                dict(expected, path="docs/guide/setup.md"),
+            )
+            index = json.loads((stage / "data/content-index.json").read_text())["items"]
+            self.assertIn(expected, [entry.get("source") for entry in index])
+            development = stage / "content/spark/development/intro.md"
+            self.assertEqual(
+                frontmatter.load(development)["pipeline"]["page"]["source"],
+                {
+                    "key": "runtime", "path": "docs/intro.md",
+                    "repository": "https://github.com/example/runtime",
+                    "viewRef": "main", "editRef": "main",
+                },
+            )
+            for name, value in before.items():
+                self.assertEqual(json.loads((stage / f"data/{name}.json").read_text()), value)
+
     def test_local_absence_omits_release_but_keeps_development_and_reports(self):
         with _workspace(with_content_file=True) as root:
             configure_release(root, present=False)

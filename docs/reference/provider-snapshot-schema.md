@@ -71,6 +71,39 @@ The emitted component scalar is derived only for a component defining exactly on
 artifact; zero or multiple artifacts omit it. Missing optional inventory means an
 unknown recommendation, with no static metadata or catalog fallback.
 
+## Original source for exported docs
+
+A record may supply `docsSource` when its docs were exported from another revision
+or repository layout:
+
+```yaml
+docsSource:
+  repository: https://github.com/example/runtime
+  root: docs
+  ref: b4542a195705c13c3806ca34fed8e821bedc20c8
+```
+
+All three fields are required together. `root` is the original repository-relative
+docs root; `.` means repository root. The producer asserts that every exported
+file preserves its suffix relative to that root. Record the actual export revision,
+preferably a commit. Tags and named refs are allowed but can move. This explicit
+`ref` is independent of the record's `tag`, `ref` or `commitSha` and is never
+replaced by a binding's default branch. This is declared provenance, not content
+attestation or a remote-file existence check.
+
+The original repository may differ from the checkout mirror or materialization
+binding. Do not use `sourceKey` to infer original identity. Roots must be portable,
+traversal-free paths without Git-local metadata; repository URLs must not contain
+credentials, queries or fragments. Transformed exports with renamed files cannot
+use this tree mapping and should omit it.
+
+Pipeline emits original-source view links for mapped docs and suppresses their
+edit links. Without a mapping, released, candidate, maintenance and named-ref
+materializations omit source provenance. Publication selection, paths and lifecycle
+are unchanged. Existing snapshots remain valid; strict older validators need the
+updated schema before receiving this optional field. Exporter adoption is a
+separate producer change, not an automatic Pipeline rewrite of inventories.
+
 ## Minimal normalized `records[]` schema
 
 Required fields on every record:

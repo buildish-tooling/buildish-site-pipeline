@@ -257,21 +257,9 @@ class StagingPipelineTests(unittest.TestCase):
         self.assertEqual(release_page.metadata["pipeline"]["page"]["kind"], "release-page")
         self.assertEqual(release_page.metadata["pipeline"]["page"]["provider"]["key"], "github")
         self.assertEqual(release_page.metadata["pipeline"]["page"]["version"]["kind"], "released")
-        self.assertEqual(
-            release_page.metadata["pipeline"]["page"]["source"],
-            {
-                "key": "runtime",
-                "path": "docs/releases/4.0.0/index.md",
-                "repository": "https://github.com/example/runtime",
-                "viewRef": "main",
-                "editRef": "main",
-            },
-        )
+        self.assertNotIn("source", release_page.metadata["pipeline"]["page"])
         self.assertEqual(release_entry["path"], "/spark/releases/4.0.0")
-        self.assertEqual(
-            release_entry["source"]["path"],
-            "docs/releases/4.0.0/index.md",
-        )
+        self.assertNotIn("source", release_entry)
         self.assertEqual(release_entry["provider"], "github")
         self.assertEqual(release_entry["versionKind"], "released")
 
@@ -381,6 +369,16 @@ class StagingPipelineTests(unittest.TestCase):
 
     def test_build_stages_two_artifact_component_through_shared_component_routes(self) -> None:
         with _workspace(with_content_file=True, topology="two_artifacts") as workspace_root:
+            snapshot_path = workspace_root / "site/provider-snapshot.json"
+            snapshot = json.loads(snapshot_path.read_text())
+            for record in snapshot["records"]:
+                if record["kind"] == "released":
+                    record["docsSource"] = {
+                        "repository": "https://github.com/example/original-" + record["artifactKey"],
+                        "root": "original/" + record["artifactKey"],
+                        "ref": "v4.0.0",
+                    }
+            snapshot_path.write_text(json.dumps(snapshot))
             stdout = io.StringIO()
             stderr = io.StringIO()
             with _cwd(workspace_root):
@@ -436,11 +434,11 @@ class StagingPipelineTests(unittest.TestCase):
         )
         self.assertEqual(
             content_paths["/spark/releases/4.0.0/guide"],
-            "docs/runtime/releases/4.0.0/guide/index.md",
+            "original/runtime/guide/index.md",
         )
         self.assertEqual(
             content_paths["/spark/releases/4.0.0/reference"],
-            "docs/releases/4.0.0/reference/index.md",
+            "original/api/reference/index.md",
         )
         self.assertTrue(staged_development_guide_exists)
         self.assertTrue(staged_development_reference_exists)

@@ -31,9 +31,61 @@ from buildish_site_pipeline.planning import evaluate_planning
 from buildish_site_pipeline.models.enums import PlanningTarget
 from tests.staging.test_component_publication import configure_release
 from tests.support.workspace import _workspace, _cwd
+from tests.watch.test_incremental import _run_clean_build_snapshot, _stage_snapshot_without_manifest
 
 
 class ComponentSnapshotWatchTests(unittest.TestCase):
+    def test_original_source_mapping_updates_removal_and_validation_recovery(self):
+        with _workspace(with_content_file=True) as root:
+            path, snapshot = configure_release(root)
+            with _cwd(root):
+                invocation = parse_invocation(["watch"])
+
+            def cycle(number, prior=None):
+                return _run_watch_cycle(
+                    invocation=invocation, cycle_number=number,
+                    trusted_stage=prior.trusted_stage if prior else None,
+                    prior_watch_roots=prior.watch_roots if prior else (),
+                    dirty_paths=(path,) if prior else (),
+                )
+
+            prior = cycle(1)
+            self.assertTrue(prior.report.summary.succeeded, prior.report)
+            for number, mapping in enumerate((
+                {"repository": "https://github.com/example/original", "root": "manual", "ref": "v4.0.0"},
+                {"repository": "https://github.com/example/original", "root": "manual", "ref": "releases/4.0"},
+                {"repository": "https://github.com/example/original", "root": ".", "ref": "releases/4.0"},
+                {"repository": "https://github.com/example/replacement", "root": ".", "ref": "releases/4.0"},
+                None,
+            ), 2):
+                with self.subTest(mapping=mapping):
+                    record = snapshot["records"][0]
+                    record.pop("docsSource", None)
+                    if mapping is not None:
+                        record["docsSource"] = mapping
+                    path.write_text(json.dumps(snapshot))
+                    prior = cycle(number, prior)
+                    self.assertTrue(prior.report.summary.succeeded, prior.report)
+                    watch_output = _stage_snapshot_without_manifest(root / "site/.stage")
+                    clean_stage = root / "site/.stage-clean"
+                    if clean_stage.exists():
+                        shutil.rmtree(clean_stage)
+                    code, clean = _run_clean_build_snapshot(root)
+                    self.assertEqual(code, 0)
+                    self.assertEqual(watch_output, clean)
+
+            stable = _stage_snapshot_without_manifest(root / "site/.stage")
+            snapshot["records"][0]["docsSource"] = {"root": "docs"}
+            path.write_text(json.dumps(snapshot))
+            failed = cycle(7, prior)
+            self.assertFalse(failed.report.summary.succeeded)
+            self.assertTrue(failed.report.summary.stage_usable)
+            self.assertEqual(_stage_snapshot_without_manifest(root / "site/.stage"), stable)
+            snapshot["records"][0].pop("docsSource")
+            path.write_text(json.dumps(snapshot))
+            recovered = cycle(8, failed)
+            self.assertTrue(recovered.report.summary.succeeded, recovered.report)
+
     def test_watch_creation_removal_invalid_update_and_recovery(self):
         with _workspace(with_content_file=True) as root:
             path, snapshot = configure_release(root, present=False)

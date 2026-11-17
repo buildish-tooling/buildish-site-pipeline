@@ -17,6 +17,8 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from dataclasses import replace
+from urllib.parse import quote
 from pathlib import Path
 import tempfile
 from types import SimpleNamespace
@@ -38,12 +40,14 @@ from buildish_site_pipeline.models.authored.component_metadata import (
 )
 from buildish_site_pipeline.models.enums import (
     IndexBehavior,
+    ContextAction,
     PublicationState,
     RecordKind,
     TrustClass,
 )
 from buildish_site_pipeline.planning.types import (
     IndexedProviderRecord,
+    SelectedVersionContext,
     ResolvedOrigin,
     ResolvedPublicationPolicy,
 )
@@ -84,10 +88,202 @@ from buildish_site_pipeline.staging.worker_protocol import (
     WorkerResultWire,
     write_unit_manifest,
 )
+from buildish_site_pipeline.models.provider.provider_snapshot import DocsSource
+from buildish_site_pipeline.staging.ownership import (
+    OwnedContextInput, build_owned_units, source_root_for_context,
+)
+from buildish_site_pipeline.staging.page_provenance import build_page_source_index
 from tests.support.staging import _work_layout
 
 
 class AggregateHelperTests(unittest.TestCase):
+    def _context_sources(self, build_plan, context):
+        unit = replace(
+            build_owned_units(build_plan)[0],
+            contexts=(OwnedContextInput(
+                context_id="chosen-by-coordinator", context=context,
+                content_stage_root=Path("content/spark"), static_stage_root=Path("static/spark"),
+            ),),
+        )
+        return build_page_source_index(build_plan, (unit,))[unit.unit_id]
+
+    def test_docs_context_provenance_matrix_ignores_worker_version_labels(self):
+        for kind in RecordKind:
+            for original_root in (None, ".", "old/manual"):
+                with self.subTest(kind=kind, original_root=original_root), tempfile.TemporaryDirectory() as tmp:
+                    root = Path(tmp)
+                    plan = self._source_build_plan(root)
+                    mapping = None if original_root is None else DocsSource(
+                        repository="https://forge.example/upstream", root=original_root, ref="release/4.0",
+                    )
+                    context = replace(
+                        plan.selected_versions[0], kind=kind, version="4.0.0",
+                        named_ref_key="preview", release_line="4.0",
+                        provider_record=self._provider_record(kind, docs_source=mapping),
+                    )
+                    physical_root = source_root_for_context(context.docs_root, context)
+                    result = _normalize_page_contribution(
+                        layout=_work_layout(root), build_plan=plan,
+                        sources=self._context_sources(plan, context),
+                        contribution=self._contribution(
+                            source_path=str(physical_root / "guide.md"),
+                            version_kind="wrong", version_context={"tag": "false", "kind": "development"},
+                            source={"key": "poison", "path": "poison.md", "viewRef": "main"},
+                        ),
+                    ).source
+                    if mapping is None:
+                        if kind is RecordKind.DEVELOPMENT:
+                            self.assertEqual(result.path, "docs/guide.md")
+                            self.assertEqual((result.view_ref, result.edit_ref), ("main", "main"))
+                        else:
+                            self.assertIsNone(result)
+                    else:
+                        self.assertEqual(result.model_dump(by_alias=True, exclude_none=True), {
+                            "key": "runtime", "repository": "https://forge.example/upstream",
+                            "path": "guide.md" if original_root == "." else "old/manual/guide.md",
+                            "viewRef": "release/4.0",
+                        })
+
+    def test_direct_development_edit_links_require_a_declared_branch(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            plan = self._source_build_plan(root)
+            for ref, edit in ((None, None), ("refs/heads/topic/docs", "refs/heads/topic/docs"), ("v4.0.0", None), ("arbitrary-bare-ref", None)):
+                with self.subTest(ref=ref):
+                    context = replace(plan.selected_versions[0], ref=ref)
+                    result = _normalize_page_contribution(
+                        layout=_work_layout(root), build_plan=plan,
+                        sources=self._context_sources(plan, context), contribution=self._contribution(),
+                    ).source
+                    self.assertEqual((result.view_ref, result.edit_ref), (ref, edit))
+
+    def test_provenance_rejects_mismatched_owned_file_associations(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            plan = self._source_build_plan(root)
+            sources = self._context_sources(plan, plan.selected_versions[0])
+            for overrides, message in (
+                ({"component_slug": "other"}, "component"),
+                ({"artifact_key": "unknown"}, "artifact"),
+                ({"stage_relative_path": "content/spark/other.md"}, "filename"),
+                ({"stage_relative_path": "content/outside/guide.md"}, "destination"),
+                ({"stage_relative_path": "content/spark/../guide.md"}, "destination"),
+                ({"stage_relative_path": "/outside/stage/guide.md"}, "destination"),
+            ):
+                for retained in (False, True):
+                    with self.subTest(overrides=overrides, retained=retained), self.assertRaisesRegex(StageIntegrityError, message):
+                        contribution = self._contribution(**overrides)
+                        if retained:
+                            _load_unit_contribution_manifests(
+                                layout=_work_layout(root), build_plan=plan, worker_results=(),
+                                retained_unit_manifests=(UnitContributionManifestWire(unit_id="component:spark", pages=(contribution,)),),
+                            )
+                        else:
+                            _normalize_page_contribution(layout=_work_layout(root), build_plan=plan, sources=sources, contribution=contribution)
+            with self.assertRaisesRegex(StageIntegrityError, "Unknown.*unit"):
+                _load_unit_contribution_manifests(
+                    layout=_work_layout(root), build_plan=plan, worker_results=(),
+                    retained_unit_manifests=(UnitContributionManifestWire(unit_id="unknown", pages=()),),
+                )
+
+    def test_provenance_omits_cross_context_sources_and_coordinator_notices(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            plan = self._source_build_plan(root)
+            context = replace(plan.selected_versions[0], kind=RecordKind.RELEASED, version="4.0.0")
+            # A valid development source does not belong to this release destination.
+            result = _normalize_page_contribution(
+                layout=_work_layout(root), build_plan=plan,
+                sources=self._context_sources(plan, context), contribution=self._contribution(),
+            )
+            self.assertIsNone(result.source)
+            context = replace(context, action=ContextAction.NOTICE)
+            result = _normalize_page_contribution(
+                layout=_work_layout(root), build_plan=plan,
+                sources=self._context_sources(plan, context), contribution=self._contribution(
+                    source_path=str(context.docs_root / "releases/4.0.0/guide.md"),
+                ),
+            )
+            self.assertIsNone(result.source)
+
+    def test_provenance_rejects_unresolved_context_ambiguity(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            plan = self._source_build_plan(root)
+            unit = build_owned_units(plan)[0]
+            unit = replace(unit, contexts=unit.contexts * 2)
+            with self.assertRaisesRegex(StageIntegrityError, "Ambiguous"):
+                _normalize_page_contribution(
+                    layout=_work_layout(root), build_plan=plan,
+                    sources=build_page_source_index(plan, (unit,))[unit.unit_id],
+                    contribution=self._contribution(),
+                )
+
+    def test_nested_context_matches_exact_input_before_static_ancestor(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            plan = self._source_build_plan(root)
+            parent = plan.selected_versions[0]
+            child = replace(
+                parent, kind=RecordKind.LINE_HEAD, release_line="4.0",
+                provider_record=self._provider_record(RecordKind.LINE_HEAD, docs_source=DocsSource(
+                    repository="https://github.com/example/original", root="manual", ref="maintenance/4.0",
+                )),
+            )
+            unit = build_owned_units(plan)[0]
+            unit = replace(unit, contexts=(*unit.contexts, OwnedContextInput(
+                context_id="child", context=child, content_stage_root=Path("content/spark/4.0"), static_stage_root=Path("static/spark/4.0"),
+            )))
+            sources = build_page_source_index(plan, (unit,))[unit.unit_id]
+            result = _normalize_page_contribution(
+                layout=_work_layout(root), build_plan=plan, sources=sources,
+                contribution=self._contribution(
+                    source_path=str(child.docs_root / "maintenance/4.0/guide.md"),
+                    stage_relative_path="content/spark/4.0/guide.md",
+                    version_context={"kind": "development"},
+                ),
+            )
+            self.assertEqual(result.source.path, "manual/guide.md")
+            self.assertEqual(result.source.view_ref, "maintenance/4.0")
+            self.assertIsNone(result.source.edit_ref)
+            # An artifactless/static claim cannot attribute that file to the
+            # component pages root, whose suffix would be maintenance/4.0/guide.md.
+            with self.assertRaisesRegex(StageIntegrityError, "filename"):
+                _normalize_page_contribution(
+                    layout=_work_layout(root), build_plan=plan, sources=sources,
+                    contribution=self._contribution(
+                        artifact_key=None,
+                        source_path=str(child.docs_root / "maintenance/4.0/guide.md"),
+                        stage_relative_path="content/spark/4.0/guide.md",
+                    ),
+                )
+
+    def test_custom_physical_root_localized_suffix_and_consumer_url(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            plan = self._source_build_plan(root)
+            context = replace(
+                plan.selected_versions[0], docs_root=root / "components/runtime/exported/manual",
+                kind=RecordKind.RELEASED, version="4.0.0",
+                provider_record=self._provider_record(RecordKind.RELEASED, docs_source=DocsSource(
+                    repository="https://github.com/example/original", root="manual/überblick", ref="releases/4.0",
+                )),
+            )
+            result = _normalize_page_contribution(
+                layout=_work_layout(root), build_plan=plan,
+                sources=self._context_sources(plan, context),
+                contribution=self._contribution(
+                    source_path=str(context.docs_root / "releases/4.0.0/de/_index.md"),
+                    stage_relative_path="content/spark/de/_index.md", locale="de",
+                ),
+            ).source
+            self.assertEqual(result.path, "manual/überblick/de/_index.md")
+            # Consumer recipe assertion only: this does not execute Hugo. Its
+            # source-link partial escapes segments while preserving separators.
+            url = f"{result.repository}/blob/{quote(result.view_ref, safe='/')}/{quote(result.path, safe='/')}"
+            self.assertEqual(url, "https://github.com/example/original/blob/releases/4.0/manual/%C3%BCberblick/de/_index.md")
+            self.assertIsNone(result.edit_ref)
+
     def _contribution(self, **overrides) -> StagedPageContributionWire:
         payload = {
             "stage_relative_path": "content/spark/guide.md",
@@ -114,22 +310,26 @@ class AggregateHelperTests(unittest.TestCase):
             repository="https://github.com/example/runtime",
             default_branch="main",
         )
+        publication = SimpleNamespace(component_path="/spark/", development_path="/spark/", assets_path="/spark/assets/")
+        component = SimpleNamespace(
+            slug="spark", content_source=source_binding,
+            pages_root=source_binding.local_dir / "docs", assets_root=None,
+            publication=publication,
+            artifacts=(SimpleNamespace(key="runtime", source_binding=source_binding),),
+        )
+        retained = SimpleNamespace(**vars(component))
+        retained.slug = "retained"
+        retained.publication = SimpleNamespace(component_path="/retained/", assets_path="/retained/assets/")
         return SimpleNamespace(
             workspace_root=workspace_root,
+            selected_versions=(SelectedVersionContext(
+                component_slug="spark", artifact_key="runtime", kind=RecordKind.DEVELOPMENT,
+                source_binding=source_binding, docs_root=source_binding.local_dir / "docs",
+                assets_root=None, ref="main",
+            ),),
             site=SimpleNamespace(
-                sources={"runtime": source_binding},
-                components=(
-                    SimpleNamespace(
-                        slug="spark",
-                        content_source=source_binding,
-                        artifacts=(
-                            SimpleNamespace(
-                                key="runtime",
-                                source_binding=source_binding,
-                            ),
-                        ),
-                    ),
-                ),
+                sources={"runtime": source_binding}, components=(component, retained),
+                site_pages_root=None, site_assets_root=None, vendor_assets=(),
             ),
         )
 
@@ -629,9 +829,12 @@ class AggregateHelperTests(unittest.TestCase):
                 ),
                 retained_unit_manifests=(
                     UnitContributionManifestWire(
-                        unit_id="retained",
+                        unit_id="component:retained",
                         pages=(
                             self._contribution(
+                                component_slug="retained",
+                                artifact_key=None,
+                                stage_relative_path="content/retained/guide.md",
                                 source_path="/outside/generated/guide.md",
                                 source={
                                     "key": "untrusted",
@@ -644,7 +847,7 @@ class AggregateHelperTests(unittest.TestCase):
                 ),
             )
 
-            self.assertEqual(manifests[0].unit_id, "retained")
+            self.assertEqual(manifests[0].unit_id, "component:retained")
             self.assertIsNone(manifests[0].pages[0].source_path)
             self.assertIsNone(manifests[0].pages[0].source)
             self.assertEqual(
@@ -661,6 +864,7 @@ class AggregateHelperTests(unittest.TestCase):
             normalized = _normalize_page_contribution(
                 layout=layout,
                 build_plan=build_plan,
+                sources=build_page_source_index(build_plan, build_owned_units(build_plan))["component:spark"],
                 contribution=relative,
             )
             self.assertEqual(normalized.source_path, relative.source_path)
@@ -684,6 +888,7 @@ class AggregateHelperTests(unittest.TestCase):
             normalized = _normalize_page_contribution(
                 layout=_work_layout(workspace_root),
                 build_plan=build_plan,
+                sources=build_page_source_index(build_plan, build_owned_units(build_plan))["component:spark"],
                 contribution=self._contribution(
                     source={
                         "key": "stale",
@@ -716,6 +921,7 @@ class AggregateHelperTests(unittest.TestCase):
             normalized = _normalize_page_contribution(
                 layout=_work_layout(workspace_root),
                 build_plan=build_plan,
+                sources=build_page_source_index(build_plan, build_owned_units(build_plan))["component:spark"],
                 contribution=self._contribution(),
             )
 
@@ -736,6 +942,7 @@ class AggregateHelperTests(unittest.TestCase):
             normalized_shorthand = _normalize_page_contribution(
                 layout=_work_layout(workspace_root),
                 build_plan=build_plan,
+                sources=build_page_source_index(build_plan, build_owned_units(build_plan))["component:spark"],
                 contribution=self._contribution(artifact_key=None),
             )
 

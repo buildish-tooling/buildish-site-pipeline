@@ -183,10 +183,10 @@ class StagingExecutionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tempdir:
             workspace_root = Path(tempdir)
             layout = _work_layout(workspace_root)
-            manifest_path = layout.fragments_root / "component_spark.json"
+            manifest_path = layout.fragments_root / "site-pages.json"
             write_unit_manifest(
                 manifest_path,
-                UnitContributionManifestWire(unit_id="component:spark"),
+                UnitContributionManifestWire(unit_id="site-pages"),
             )
 
             with self.assertRaises(StageIntegrityError) as raised:
@@ -195,14 +195,14 @@ class StagingExecutionTests(unittest.TestCase):
                     build_plan=_empty_build_plan(workspace_root),
                     worker_results=(
                         WorkerResultWire(
-                            unit_id="component:spark",
+                            unit_id="site-pages",
                             contribution_files=ContributionFileRefs(
                                 unit_manifest=str(manifest_path)
                             ),
                         ),
                     ),
                     retained_unit_manifests=(
-                        UnitContributionManifestWire(unit_id="component:spark"),
+                        UnitContributionManifestWire(unit_id="site-pages"),
                     ),
                 )
 
@@ -500,7 +500,8 @@ def _publish_workspace_stage(workspace_root: Path):
 def _empty_build_plan(workspace_root: Path) -> SimpleNamespace:
     return SimpleNamespace(
         workspace_root=workspace_root,
-        site=SimpleNamespace(components=()),
+        selected_versions=(),
+        site=SimpleNamespace(components=(), site_pages_root=workspace_root / "site/root-pages", site_assets_root=None, vendor_assets=()),
     )
 
 

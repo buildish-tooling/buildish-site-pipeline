@@ -108,19 +108,29 @@ plan.
 
 When `pipeline.page.source` is present:
 
-- `key` identifies the resolved named source binding
-- `path` is relative to that binding's root, not to the workspace or stage root
-- `repository` is the optional remote repository declared by the binding
-- `viewRef` and `editRef` are optional refs derived from the binding's declared
-  default branch
+- `key` identifies the named binding supplying the physical input
+- `path` is relative to the emitted original `repository`, or to the binding root
+  for a local-only direct page; it is not a workstation or staged-copy path
+- `repository` is the declared target repository, which may differ from the
+  materialization binding's repository
+- `viewRef` is the exact declared view revision; tags and named refs may move
+- `editRef` is present only for supported direct same-file editing targets
 
-Local-only named sources may provide only `key` and `path`. Pages from synthetic
-component shorthand or sources outside the resolved binding omit public source
-provenance. Consumers construct provider-specific view/edit URLs from the
-structured fields and must not infer a GitHub URL shape for every repository.
-When `repository` is configured, the source binding root must correspond to the
-repository root; the contract does not carry a separate path prefix for a
-binding rooted inside a larger repository.
+For exported docs, a selected provider record's explicit `docsSource` supplies the
+original repository, docs root and revision. The producer asserts a tree-preserving
+export. Releases, candidates, maintenance and named-ref materializations without
+this mapping omit source provenance; mapped docs omit edit links. Static and direct
+development pages retain declared branch links. Consumers must not replace missing
+values with `main` or a site repository.
+
+Local-only named direct sources may provide only `key` and `path`. Synthetic
+component shorthand and sources outside the owned input/binding omit provenance.
+The coordinator recomputes provenance for both fresh and retained contributions,
+matching their owning unit, artifact and exact source/destination file association.
+It does not trust worker-supplied source targets or version labels for this choice.
+Consumers construct host-specific URLs and escape paths/refs themselves. A direct
+binding's declared repository must correspond to its repository root; `docsSource`
+explicitly names the original root for a rematerialized docs tree.
 
 ## `manifest.json`
 
@@ -170,7 +180,8 @@ The manifest records which of those files are present for a given stage root.
 
 When a `data/content-index.json` entry includes `source`, it uses the same
 structured source-provenance object as `pipeline.page.source`. Its `path` is
-relative to the named source binding, and repository/ref fields are optional.
+relative to the original target repository (or the binding for a local-only direct
+page), and repository/ref fields are optional.
 Generated, imported, shorthand-local, or out-of-binding staged content that has
 no safe public provenance omits `source` instead of exposing a workspace or
 machine-local path.
@@ -188,10 +199,9 @@ For example:
   "url": "https://docs.example.org/spark/releases/4.0.0/",
   "source": {
     "key": "runtime",
-    "path": "docs/releases/4.0.0/index.md",
+    "path": "docs/index.md",
     "repository": "https://github.com/example/runtime",
-    "viewRef": "main",
-    "editRef": "main"
+    "viewRef": "v4.0.0"
   },
   "versionKind": "released",
   "versionLabel": "4.0.0"

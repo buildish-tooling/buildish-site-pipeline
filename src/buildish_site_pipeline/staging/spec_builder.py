@@ -22,11 +22,10 @@ from typing import assert_never
 from buildish_site_pipeline.models.enums import RecordKind
 from buildish_site_pipeline.planning.types import (
     ResolvedComponentConfig,
-    SelectedVersionContext,
 )
 
 from .front_matter import build_component_front_matter, build_version_context
-from .ownership import OwnedContextInput, OwnedUnit, OwnedUnitKind
+from .ownership import OwnedContextInput, OwnedUnit, OwnedUnitKind, source_root_for_context
 from .publication_paths import public_path_for_context, stage_root_for_public_path
 from .worker_protocol import (
     ComponentContextWire,
@@ -172,8 +171,8 @@ def build_context_wire(
         else None,
     }
     page_kind, section = _page_descriptor_for_kind(context.kind)
-    docs_root = _source_root_for_context(context.docs_root, context) if context.action.value == "docs" else None
-    assets_root = _source_root_for_context(context.assets_root, context) if context.action.value == "docs" else None
+    docs_root = source_root_for_context(context.docs_root, context) if context.action.value == "docs" else None
+    assets_root = source_root_for_context(context.assets_root, context) if context.action.value == "docs" else None
     return ComponentContextWire(
         context_id=owned_context.context_id,
         action=context.action.value,
@@ -220,17 +219,3 @@ def _page_descriptor_for_kind(kind: RecordKind) -> tuple[str, str]:
     if kind is RecordKind.NAMED_REF:
         return "ref-page", "ref"
     assert_never(kind)
-
-
-def _source_root_for_context(root: Path | None, context: SelectedVersionContext) -> Path | None:
-    if root is None:
-        return None
-    if context.kind is RecordKind.RELEASED and context.version is not None:
-        return root / "releases" / context.version
-    if context.kind is RecordKind.CANDIDATE and context.version is not None:
-        return root / "candidates" / context.version
-    if context.kind is RecordKind.LINE_HEAD and context.release_line is not None:
-        return root / "maintenance" / context.release_line
-    if context.kind is RecordKind.NAMED_REF and context.named_ref_key is not None:
-        return root / "refs" / context.named_ref_key
-    return root

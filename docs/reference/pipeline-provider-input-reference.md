@@ -25,11 +25,33 @@ Back to the [reference overview](../pipeline-model-schema-reference/).
 
 ## Type index
 
+- [DocsSource](#docssource) — Producer-declared original source of a tree-preserving docs export.
 - [ProviderAsset](#providerasset) — Downloadable asset attached to one provider release or candidate record.
 - [ProviderDescriptor](#providerdescriptor) — Metadata about one provider that contributed records to the snapshot.
 - [ProviderRecord](#providerrecord) — Normalized provider fact about one release, candidate, or ref context.
 - [ProviderSnapshotDocumentV1](#providersnapshotdocumentv1) — Provider-derived normalized snapshot from ``site/provider-snapshot.json``.
 - [SnapshotArtifact](#snapshotartifact) — Component-scoped release decisions, independent of consumer source bindings.
+
+<a id="docssource"></a>
+### DocsSource
+
+Producer-declared original source of a tree-preserving docs export.
+
+- category: `provider`
+- ownership: `provider-derived`
+- file contract: (inner type)
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| <a id="docssource-repository"></a>`repository` | [UrlString](../pipeline-shared-types-reference/#urlstring) | yes | Public original repository URL, without credentials, query or fragment; independent of the materialization binding. |
+| <a id="docssource-root"></a>`root` | Literal['.'] \| [RepoRelativePath](../pipeline-shared-types-reference/#reporelativepath) | yes | Original repository-relative docs root; '.' means repository root. Every exported filename suffix must be preserved. |
+| <a id="docssource-ref"></a>`ref` | [RefString](../pipeline-shared-types-reference/#refstring) | yes | Exact original-source revision to view, preferably the exported commit. Tags and named refs may move; no other record ref overrides this value. |
+
+#### Selected field examples
+
+- `repository`: Example: `"https://github.com/example/runtime"`
+- `root`: Example: `"docs"`
+- `ref`: Example: `"v4.0.0"`
 
 <a id="providerasset"></a>
 ### ProviderAsset
@@ -108,6 +130,7 @@ Normalized provider fact about one release, candidate, or ref context.
 | <a id="providerrecord-tag"></a>`tag` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | no | Exact provider tag associated with this record when tags are available. |
 | <a id="providerrecord-ref"></a>`ref` | [RefString](../pipeline-shared-types-reference/#refstring) | no | Exact source-control ref associated with this record, especially for development, line-head, or named-ref contexts. |
 | <a id="providerrecord-commitsha"></a>`commitSha` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | no | Resolved commit SHA for the record when the provider exposes it. |
+| <a id="providerrecord-docssource"></a>`docsSource` | [DocsSource](#docssource) | no | Optional explicit original repository/root/revision for this record's tree-preserving docs export. Absence leaves rematerialized source links unknown; it does not affect publication selection. |
 | <a id="providerrecord-namedrefkey"></a>`namedRefKey` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | no | Catalog-authored named-ref key that this provider record enriches when the record represents a named ref. |
 | <a id="providerrecord-releaseline"></a>`releaseLine` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | no | Release-line key that groups this record with related versions such as `4.0`. |
 | <a id="providerrecord-releaselineancestors"></a>`releaseLineAncestors` | list[[NonEmptyString](../pipeline-shared-types-reference/#nonemptystring)] | no | Ancestor release-line keys, ordered from nearest to farthest, used when lineage matters to selection or rendering. |
@@ -182,6 +205,11 @@ Provider-derived normalized snapshot from `site/provider-snapshot.json`.
       "externalId": "spark-4.0.0",
       "externalUrl": "https://github.com/apache/spark/releases/tag/v4.0.0",
       "version": "4.0.0",
+      "docsSource": {
+        "repository": "https://github.com/apache/spark",
+        "root": "docs",
+        "ref": "v4.0.0"
+      },
       "publishedAt": "2026-04-03T18:00:00Z",
       "assets": [
         {

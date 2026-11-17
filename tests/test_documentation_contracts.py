@@ -150,8 +150,10 @@ class DocumentationContractTests(unittest.TestCase):
         self.assertEqual(namespace.page.source.key, "runtime")
         self.assertEqual(
             namespace.page.source.path,
-            "docs/releases/4.0.0/getting-started.md",
+            "docs/getting-started.md",
         )
+        self.assertEqual(namespace.page.source.view_ref, "v4.0.0")
+        self.assertIsNone(namespace.page.source.edit_ref)
 
     def test_content_index_example_matches_emitted_contract(self) -> None:
         example = json.loads(
@@ -168,7 +170,9 @@ class DocumentationContractTests(unittest.TestCase):
         )
 
         self.assertEqual(entry.source.key, "runtime")
-        self.assertEqual(entry.source.path, "docs/releases/4.0.0/index.md")
+        self.assertEqual(entry.source.path, "docs/index.md")
+        self.assertEqual(entry.source.view_ref, "v4.0.0")
+        self.assertIsNone(entry.source.edit_ref)
 
     def test_provenance_docs_use_current_shape_and_label_development_links(self) -> None:
         for path in _STATIC_PROVENANCE_DOCS:

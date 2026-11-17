@@ -21,6 +21,8 @@ import json
 import threading
 import unittest
 import unittest.mock
+import yaml
+import frontmatter
 
 from buildish_site_pipeline.cli import _run
 from buildish_site_pipeline.commands.shared import load_workspace_inputs
@@ -41,6 +43,90 @@ from tests.support.workspace import _cwd, _fake_watch_event_stream_factory, _wor
 
 
 class WatchIncrementalTests(unittest.TestCase):
+    def test_retained_component_source_is_recomputed_after_another_component_edit(self):
+        from buildish_site_pipeline.cli.main import parse_invocation
+        from buildish_site_pipeline.commands.watch import (
+            _load_trusted_stage, _run_watch_cycle, _select_incremental_build,
+        )
+
+        with _workspace(with_content_file=True, topology="grouped_large") as root:
+            (root / "components/operator/docs/alias.md").symlink_to("index.md")
+            with _cwd(root):
+                invocation = parse_invocation(["watch"])
+            first = _run_watch_cycle(invocation=invocation, cycle_number=1, trusted_stage=None, prior_watch_roots=(), dirty_paths=())
+            self.assertTrue(first.report.summary.succeeded, first.report)
+            metadata = root / "site/.stage/data/_pipeline/unit-contributions.json"
+            cached = json.loads(metadata.read_text())
+            retained = next(unit for unit in cached["units"] if unit["unitId"] == "component:spark-operator")
+            alias = next(page for page in retained["pages"] if page["stageRelativePath"].endswith("/alias.md"))
+            self.assertEqual(alias["sourcePath"], "components/operator/docs/alias.md")
+            self.assertEqual(alias["source"]["path"], "docs/alias.md")
+            for page in retained["pages"]:
+                page["source"] = {"key": "stale", "path": "wrong.md", "repository": "https://forge.example/stale", "viewRef": "wrong"}
+            metadata.write_text(json.dumps(cached))
+            trusted = _load_trusted_stage(root / "site/.stage")
+            self.assertIsNotNone(trusted)
+            dirty = root / "components/spark/docs/index.md"
+            dirty.write_text("updated development docs\n")
+            loaded = load_workspace_inputs(root)
+            planning = evaluate_planning(
+                target=PlanningTarget.WATCH, workspace_root=root, catalog=loaded.catalog,
+                provider_snapshot=loaded.provider_snapshot, component_documents=loaded.component_documents,
+            )
+            selection = _select_incremental_build(
+                trusted_stage=trusted, build_plan=planning.build_plan_result.candidate,
+                dirty_paths=(dirty,), workspace_root=root, site_root=root / "site",
+                catalog_path=root / "site/catalog.yaml", provider_snapshot_path=loaded.provider_snapshot_path,
+            )
+            self.assertEqual(selection.included_unit_ids, frozenset({"component:spark"}))
+            self.assertEqual([unit.unit_id for unit in selection.retained_unit_manifests], ["component:spark-operator"])
+            second = _run_watch_cycle(invocation=invocation, cycle_number=2, trusted_stage=trusted, prior_watch_roots=first.watch_roots, dirty_paths=(dirty,))
+            self.assertTrue(second.report.summary.succeeded, second.report)
+            code, clean = _run_clean_build_snapshot(root)
+            self.assertEqual(code, 0)
+            watched = _stage_snapshot_without_manifest(root / "site/.stage")
+            # Existing retained-page finalization adds separator blank lines.
+            # Compare all metadata and parsed body text without those separators.
+            for snapshot in (watched, clean):
+                snapshot["data/_pipeline/unit-contributions.json"]["units"].sort(key=lambda unit: unit["unitId"])
+                snapshot["data/content-index.json"]["items"].sort(key=lambda item: item["id"])
+                for name, value in snapshot.items():
+                    if name.endswith(".md"):
+                        post = frontmatter.loads(value.decode())
+                        snapshot[name] = (post.metadata, post.content.lstrip("\n"))
+            self.assertEqual(watched, clean)
+
+    def test_provenance_configuration_changes_match_clean_build(self):
+        for change in ("defaultBranch", "developmentRef", "authoredRoot", "bindingRoot"):
+            with self.subTest(change=change), _workspace(with_content_file=True) as root:
+                (root / "components/runtime/docs/guide.md").write_text("guide\n")
+
+                def mutate(change=change):
+                    catalog_path = root / "site/catalog.yaml"
+                    metadata_path = root / "components/runtime/site/component.yaml"
+                    catalog = yaml.safe_load(catalog_path.read_text())
+                    metadata = yaml.safe_load(metadata_path.read_text())
+                    if change == "defaultBranch":
+                        catalog["sources"]["runtime"]["defaultBranch"] = "new-default"
+                    elif change == "developmentRef":
+                        metadata["artifacts"][0]["versioning"]["developmentRef"] = "refs/heads/topic/docs"
+                    else:
+                        (root / "components/runtime/docs").rename(root / "components/runtime/manual")
+                        if change == "authoredRoot":
+                            metadata["artifacts"][0]["docsRoot"] = "manual"
+                        else:
+                            catalog["components"][0]["artifacts"][0]["docsRoot"] = "manual"
+                    if change in ("developmentRef", "authoredRoot"):
+                        metadata_path.write_text(yaml.safe_dump(metadata, sort_keys=False))
+                        return (metadata_path,)
+                    catalog_path.write_text(yaml.safe_dump(catalog, sort_keys=False))
+                    return (catalog_path,)
+
+                watched = _run_watch_then_snapshot(workspace_root=root, responses=[(True, mutate), (False, None)])
+                code, clean = _run_clean_build_snapshot(root)
+                self.assertEqual(code, 0)
+                self.assertEqual(watched, clean)
+
     def test_component_edit_matches_fresh_clean_build(self) -> None:
         with _workspace(with_content_file=True) as workspace_root:
             _expand_workspace_for_multiple_owned_units(workspace_root)

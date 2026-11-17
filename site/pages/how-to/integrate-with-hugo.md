@@ -370,35 +370,83 @@ If authors frequently need links such as “Overview”, “Read docs”, or “
 repository”, do not hard-code those URLs into Markdown. Read them from pipeline
 metadata.
 
-The Buildish site wraps this in shortcodes backed by the shared component
-context helper. A small example looks like this:
+Keep overview/source/development operations explicit. Released-doc links should
+use `artifacts.json.releaseDesignations`, rather than `publication.paths.docs` or
+a component/version-only route search. Buildish's current renderer adoption is
+separate; the following recipe replaces its first-artifact guesses and repeated
+recommendation-route joins.
 
+## Choose an artifact before reading a recommendation
+
+Use an explicit shortcode/helper artifact selector first, otherwise
+`pipeline.page.artifactKey`, otherwise `pipeline.component.publication.defaultArtifact`,
+otherwise the sole static artifact. If multiple artifacts remain ambiguous, require
+a selector or render artifact-grouped navigation. An invalid explicit key is an
+error; it must not fall back. The choice is the same for shared and namespaced
+routes and never depends on array order or nonempty release metadata.
+
+For example, save this as `layouts/partials/release-artifact.html`. Call it with
+`component`, `page` and optional `artifact` values. It returns the full selected
+artifact row, so summary/link/navigation consumers can reuse one lookup.
+
+<!-- test:release-artifact-partial -->
 ```go-html-template
-{{- $component := or .Page.Params.sitePipelineComponent (index (index .Page.Params "pipeline") "component") -}}
-{{- $paths := index (index $component "publication") "paths" -}}
-{{- $kind := or (.Get "kind") "docs" -}}
-{{- $label := or (.Get "label") "Read docs" -}}
-{{- $href := index $paths $kind -}}
-{{- with $href -}}
-  <a href="{{ . }}">{{ $label }}</a>
+{{- $component := .component -}}
+{{- $rows := where (index hugo.Data.artifacts "items") "componentSlug" $component.slug -}}
+{{- $key := or .artifact .page.artifactKey $component.publication.defaultArtifact -}}
+{{- if and (not $key) (eq (len $rows) 1) -}}
+  {{- $key = (index $rows 0).key -}}
 {{- end -}}
+{{- $matches := where $rows "key" $key -}}
+{{- if ne (len $matches) 1 -}}
+  {{- errorf "Explicit valid artifact required for %s" $component.slug -}}
+{{- end -}}
+{{- return (index $matches 0) -}}
 ```
 
-This keeps authored Markdown clean and makes route changes flow through the
-renderer automatically when publication paths change.
+## Render release recommendations and links
 
-## Render release summaries from staged metadata
+Read `releaseDesignations.latestStable` for an overall recommendation, or find a
+`releaseDesignations.lines` entry by exact `key` for a line recommendation. There
+may be line recommendations without an overall one. Preserve both line labels
+when parent/child lines share a version; navigation can deduplicate equal version
+and destination pairs without deleting the line metadata.
 
-If your component metadata includes version lines or latest-stable information,
-prefer a small helper or shortcode that reads the staged artifact metadata
-instead of hard-coding release banners into content.
+```go-html-template
+{{ $artifact := partial "release-artifact.html" (dict
+  "component" .Params.pipeline.component
+  "page" .Params.pipeline.page
+  "artifact" "runtime") }}
+{{ with $artifact.releaseDesignations.latestStable }}
+  <span>Recommended release: {{ .version }}</span>
+  {{ if eq .availability.kind "docs" }}
+    <a href="{{ .availability.url }}">Release {{ .version }} docs</a>
+  {{ end }}
+{{ end }}
+```
 
-The Buildish site uses this pattern to render release summaries from
-`pipeline.component.artifacts[*].releaseLines` and `latestStable`, while still
-rendering nothing when a component does not publish release-line metadata yet.
+Summary text uses the explicit target version even if the site pin excludes it.
+A docs CTA requires `availability.kind == docs`; unavailable targets have no URL.
+Notices and redirect instructions may have separately labelled links, but cannot
+satisfy a request for original docs. Optional links may disappear; required links
+should report the consumer's unresolved-target error. Never fall back to development
+or select the first artifact. `snapshotStatus: missing` differs from a known target
+with `selected: false`. `latestRelease` is removed; no inferred maximum replaces it.
 
-That “optional when absent” behavior is important when one renderer template is
-shared by both versioned and non-versioned components.
+For exact-version links or an all-selected-version dropdown, this bounded
+recommendation view is not a full inventory. Match existing content-index rows by
+`componentSlug`, `artifactKey`, exact `versionLabel`, `versionKind: released` and
+`pageKind: release-page`, and require their path to equal that artifact's released
+context route root (compare origin keys and normalize trailing slashes). An absent
+optional content-index provides no matches. Exclude withdrawal-notice rows, non-default locale roots,
+and descendants. Do not parse `targetId` suffixes or match by component/version
+alone. Route presence alone cannot prove docs content. Pinned-out recommendation
+facts must not cause staging of excluded docs just to create a link.
+
+The destination describes an assembled Pipeline input to Hugo. It does not attest
+that Hugo rendered a page or that any URL is deployed/reachable. See the
+[unreleased development staged output contract](../../development/reference/staged-output-contract/)
+for all availability kinds, reasons and current snapshot-input semantics.
 
 ## Deployment hand-off
 

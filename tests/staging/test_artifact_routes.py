@@ -54,6 +54,7 @@ def planning(root):
         provider_snapshot=loaded.provider_snapshot,
         workspace_root=root,
         component_documents=loaded.component_documents,
+        snapshot_inputs=loaded.snapshot_inputs,
     )
 
 

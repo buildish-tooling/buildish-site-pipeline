@@ -25,6 +25,8 @@ from buildish_site_pipeline.models.enums import (
 
 from buildish_site_pipeline.staging.types import EffectiveBuildPlan
 
+from buildish_site_pipeline.models.emitted.execution import ContextDisposition
+
 from .types import (
     EffectiveBuildPlanResult,
     PlanToBuildBridge,
@@ -32,6 +34,7 @@ from .types import (
     ResolvedSiteConfig,
     SelectedVersionSet,
     WatchInputPlan,
+    ResolvedArtifactDesignations,
 )
 
 
@@ -44,6 +47,8 @@ def build_effective_build_plan(
     watch_plan: WatchInputPlan | None,
     desired_versions: tuple = (),
     snapshot_paths: tuple[Path, ...] = (),
+    release_designations: tuple[ResolvedArtifactDesignations, ...] = (),
+    context_dispositions: tuple[ContextDisposition, ...] = (),
 ) -> EffectiveBuildPlanResult:
     """Build the staging handoff document when planning is usable."""
 
@@ -74,5 +79,7 @@ def build_effective_build_plan(
             watch_roots=watch_plan.roots if watch_plan is not None else (),
             desired_versions=desired_versions,
             snapshot_paths=snapshot_paths,
+            release_designations=release_designations,
+            context_dispositions=context_dispositions,
         ),
     )

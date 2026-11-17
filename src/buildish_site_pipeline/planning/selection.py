@@ -30,7 +30,7 @@ from buildish_site_pipeline.models.enums import (
 )
 
 from .errors import PlanningInputFailure
-from .release_facts import line_ancestors
+from .release_facts import resolve_release_fact
 from .types import (
     IndexedProviderRecord,
     ProviderContextIndex,
@@ -289,7 +289,10 @@ def _select_release_contexts(
         provider_record = (
             _choose_best_record(provider_records) if provider_records else None
         )
-        authored_release = authored_releases.get(version)
+        fact = resolve_release_fact(
+            artifact, version, provider_record, match_count=len(provider_records)
+        )
+        authored_release = fact.authored
         selected_contexts.append(
             SelectedVersionContext(
                 component_slug=component_slug,
@@ -299,24 +302,13 @@ def _select_release_contexts(
                 docs_root=artifact.docs_root,
                 assets_root=artifact.assets_root,
                 version=version,
-                release_line=(
-                    authored_release.release_line if authored_release else None
-                )
-                or (provider_record.release_line if provider_record else None),
-                release_line_ancestors=provider_record.release_line_ancestors
-                if provider_record
-                else line_ancestors(
-                    artifact,
-                    authored_release.release_line if authored_release else None,
-                ),
+                release_line=fact.release_line,
+                release_line_ancestors=fact.release_line_ancestors,
                 display_version=provider_record.display_version
                 if provider_record
                 else version,
                 tag=provider_record.tag if provider_record else None,
-                publication_state=(
-                    authored_release.publication_state if authored_release else None
-                )
-                or (provider_record.publication_state if provider_record else None),
+                publication_state=fact.publication_state,
                 withdrawal_reason=authored_release.reason if authored_release else None,
                 withdrawal_behavior=authored_release.withdrawal_behavior
                 if authored_release
@@ -325,7 +317,7 @@ def _select_release_contexts(
                 if authored_release
                 else None,
                 provider_record=provider_record,
-                deterministic=len(provider_records) <= 1,
+                deterministic=fact.deterministic,
             ),
         )
     return selected_contexts

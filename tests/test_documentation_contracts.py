@@ -29,6 +29,7 @@ from buildish_site_pipeline.cli.contract import WatchEventFormat, WatchInvocatio
 from buildish_site_pipeline.docs.schema_export import schema_exports
 from buildish_site_pipeline.models import (
     ContentIndexEntry,
+    ArtifactsDataEntry,
     PipelineFrontMatterNamespace,
 )
 
@@ -64,6 +65,15 @@ def _marked_code_block(path: Path, marker: str, language: str) -> str:
 
 class DocumentationContractTests(unittest.TestCase):
     """Keep hand-authored integration examples aligned with code contracts."""
+
+    def test_documented_designation_example_matches_emitted_contract(self) -> None:
+        path = Path("docs/reference/staged-output-contract.md")
+        example = json.loads(_marked_code_block(path, "release-designation-artifact", "json"))
+        row = ArtifactsDataEntry.model_validate(example, by_alias=True, by_name=False)
+        self.assertEqual(row.release_designations.latest_stable.version, "4.0.1")
+        self.assertFalse(row.release_designations.latest_stable.selected)
+        self.assertEqual(row.release_designations.latest_stable.availability.kind, "unavailable")
+        self.assertNotIn("latestRelease", example)
 
     def test_schema_guide_uses_exporter_owned_filenames(self) -> None:
         guide_text = _SCHEMA_GUIDE.read_text(encoding="utf-8")

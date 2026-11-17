@@ -143,7 +143,7 @@ derived lifecycle state at component level.
 
 Recommended provider-derived additions:
 
-- latest published release per artifact
+- explicit recommendation facts per artifact
 - latest candidate per artifact
 - available provider keys for the component
 
@@ -157,10 +157,16 @@ state.
 Recommended provider-derived fields:
 
 - `providerKeys`
-- `latestRelease`
+- `releaseDesignations` (explicit overall/line targets, site selection/state/action,
+  and stage-backed destination kind)
 - `latestCandidate`
 - `releaseLines[]`
 - `namedRefs[]`
+
+`latestRelease` is removed. Recommendations are not inferred from selected rows.
+See the [staged output contract](../staged-output-contract/) for availability,
+missing snapshot and omission semantics. Resolve destinations once after stage
+reconciliation; front matter retains raw facts without another availability view.
 
 Each `releaseLines[]` entry may include:
 
@@ -267,7 +273,7 @@ Recommended mapping behavior:
   - emit entry in `data/releases.json`
   - resolve authored/provider exact-release state with explicit agreement checks
     and preserve authored withdrawal behavior
-  - enrich `data/artifacts.json` latest release and line summaries
+  - enrich `data/artifacts.json` explicit recommendation and line summaries
   - copy page-local release context into front matter for pages staged from that
     release
 - `candidate`

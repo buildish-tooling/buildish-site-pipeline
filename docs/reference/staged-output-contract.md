@@ -155,6 +155,88 @@ and aggregate payloads. Renderers should normally read staged pages and
 `data/*.json` instead of importing `manifest.json` into templates or normal
 site-data processing.
 
+## Explicit release recommendations and destinations
+
+Each artifact row in `data/artifacts.json` contains required `releaseDesignations`.
+The row's `componentSlug` and `key`, together with a target's exact `version`,
+identify one released artifact. Overall `latestStable` and each `lines[].target`
+come from explicit component/snapshot facts. A deliberately older recommendation
+is valid; selection never replaces it with a maximum or a development version.
+The old inferred `latestRelease` field and `LatestReleaseSummary` type are removed.
+Consumers needing recommendations must read this view; selected release rows
+remain available for descriptive listings. No compatibility alias is emitted.
+
+<!-- test:release-designation-artifact -->
+```json
+{
+  "componentSlug": "spark",
+  "key": "runtime",
+  "latestStable": "4.0.1",
+  "releaseLines": [{"key": "4.0", "latest": "4.0.1"}],
+  "releaseDesignations": {
+    "snapshotStatus": "present",
+    "latestStable": {
+      "version": "4.0.1",
+      "selected": false,
+      "publicationState": "published",
+      "availability": {"kind": "unavailable", "reason": "not-selected"}
+    },
+    "lines": [{
+      "key": "4.0",
+      "target": {
+        "version": "4.0.1",
+        "selected": false,
+        "publicationState": "published",
+        "availability": {"kind": "unavailable", "reason": "not-selected"}
+      }
+    }]
+  }
+}
+```
+
+This example can result from selecting 4.0.0 while recommending 4.0.1. No target
+is staged merely to populate this view. The raw `latestStable`/`releaseLines`
+strings remain compact mirrors, including in front matter; resolved availability
+exists only in the artifact aggregate.
+
+`snapshotStatus` describes the configured component snapshot input: `present`,
+`missing` (successful optional-input stages), or `not-configured`. It does not
+promise complete historical inventory. An absent optional snapshot supplies no
+recommendation facts; an explicit site pin does not invent them. Curated releases
+inside a present normalized snapshot need no provider record. Required inventory
+absence and selected missing docs retain existing input-error behavior.
+
+`latestStable` is omitted when no overall recommendation exists. `lines` is always
+a list, possibly empty; parent/child lines sharing one version retain both pointers.
+`selected` means desired site selection, before visibility filtering. An explicit
+`publicationState` is preserved even when unselected; absent state is not silently
+labelled published. Only selected targets have `action` (`docs`, `omit`, `notice`
+or `redirect`). Conflicting facts and ambiguous provider matches for selected or
+designated targets prevent successful publication, even if a site pin excludes
+the ambiguous recommendation. Unrelated unselected history is not newly ordered.
+
+| `availability.kind` | Fields and meaning |
+| --- | --- |
+| `docs` | `path`, `url`: a reconciled root documentation page owned by this exact artifact/version. |
+| `notice` | `path`, `url`: a reconciled generated withdrawal notice, not original docs. |
+| `redirect` | `path`, `url`, `toUrl`: an emitted withdrawal redirect instruction for the deployment adapter; replacement content is not attested. |
+| `unavailable` | `reason` only; no destination fields. |
+
+Unavailable reasons are `not-selected` for excluded targets; `hidden`, `withdrawn`,
+`tombstoned`, `snapshot-absent` or `omitted` for selected omissions; and
+`no-landing-page` for selected docs without an eligible owned root. Unselected
+state is retained separately from the `not-selected` reason. Descendants, assets,
+a renderer-generated section, or another artifact's shared root cannot establish
+this artifact's landing page. Only an unlocalized or configured-default-locale
+root at the exact context path qualifies; no alternate-locale fallback is chosen.
+
+Destination paths use the resolved P03 artifact routes, including explicit flat
+defaults. Eligibility is checked after current destination/file reconciliation for
+fresh and retained contributions. It describes a successful Pipeline stage, not
+Hugo rendering, remote deployment, reachability or content completeness. Only
+`kind: docs` satisfies a docs link request. Never use route presence alone,
+notices, redirects or development docs as a substitute.
+
 ## Aggregate metadata inventory
 
 The core aggregate inventory is:

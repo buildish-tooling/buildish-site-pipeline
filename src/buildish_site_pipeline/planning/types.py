@@ -40,6 +40,7 @@ from buildish_site_pipeline.models.authored.site_catalog import (
 )
 from buildish_site_pipeline.models.authored.artifacts import (
     ArtifactLifecycleConfig,
+    ExactReleaseConfig,
     ArtifactVersioningConfig,
 )
 from buildish_site_pipeline.models.authored.component_metadata import (
@@ -417,3 +418,29 @@ class PlanningEvaluation:
     snapshot_inputs: tuple[SnapshotInput, ...] = ()
     context_dispositions: tuple[ContextDisposition, ...] = ()
     desired_versions: tuple[SelectedVersionContext, ...] = ()
+    release_facts: tuple[tuple[str, str, ResolvedReleaseFact], ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class ResolvedReleaseFact:
+    """Exact facts shared by selection and designation projection."""
+
+    version: str
+    provider_record: IndexedProviderRecord | None
+    authored: ExactReleaseConfig | None
+    release_line: str | None
+    release_line_ancestors: tuple[str, ...]
+    publication_state: PublicationState | None
+    deterministic: bool
+
+
+@dataclass(frozen=True, slots=True)
+class ResolvedArtifactDesignations:
+    """Bounded explicit targets and loader-owned snapshot status for one artifact."""
+
+    component_slug: str
+    artifact_key: str
+    snapshot_status: Literal["present", "missing", "not-configured"]
+    latest_stable: str | None
+    lines: tuple[tuple[str, str], ...]
+    targets: tuple[ResolvedReleaseFact, ...]

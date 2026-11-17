@@ -53,7 +53,7 @@ Small artifact summary embedded in component front matter.
 | --- | --- | --- | --- |
 | <a id="artifactfrontmattersummary-key"></a>`key` | [ArtifactKey](../pipeline-shared-types-reference/#artifactkey) | yes | Artifact key used to identify the artifact in page links and typed references. |
 | <a id="artifactfrontmattersummary-displayname"></a>`displayName` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | no | Human-readable artifact label shown in page chrome or listings. |
-| <a id="artifactfrontmattersummary-lateststable"></a>`latestStable` | [VersionString](../pipeline-shared-types-reference/#versionstring) | no | Most recent stable version that readers should treat as the default recommendation. |
+| <a id="artifactfrontmattersummary-lateststable"></a>`latestStable` | [VersionString](../pipeline-shared-types-reference/#versionstring) | no | Explicit stable version that readers should treat as the default recommendation. |
 | <a id="artifactfrontmattersummary-releaselines"></a>`releaseLines` | list[[ReleaseLineSummary](#releaselinesummary)] | no | Compact release-line summaries that the page can use for navigation or version selection. |
 
 #### Selected field examples
@@ -100,7 +100,7 @@ Component-level pipeline metadata injected into staged page front matter.
 | --- | --- | --- | --- |
 | <a id="pipelinecomponentfrontmatter-slug"></a>`slug` | [Slug](../pipeline-shared-types-reference/#slug) | yes | Stable component slug for the owning component. |
 | <a id="pipelinecomponentfrontmatter-displayname"></a>`displayName` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | no | Human-readable component name shown in page chrome or navigation. |
-| <a id="pipelinecomponentfrontmatter-lateststable"></a>`latestStable` | [VersionString](../pipeline-shared-types-reference/#versionstring) | no | Most recent stable version recommended for the component as a whole when one shared release line is enough. |
+| <a id="pipelinecomponentfrontmatter-lateststable"></a>`latestStable` | [VersionString](../pipeline-shared-types-reference/#versionstring) | no | Explicit stable version recommended for the component as a whole when one shared release line is enough. |
 | <a id="pipelinecomponentfrontmatter-publication"></a>`publication` | [ResolvedPublication](#resolvedpublication) | yes | Resolved publication roots and URLs for the owning component. |
 | <a id="pipelinecomponentfrontmatter-artifacts"></a>`artifacts` | list[[ArtifactFrontMatterSummary](#artifactfrontmattersummary)] | no | Compact artifact summaries that pages can use for version navigation or page chrome. |
 
@@ -263,7 +263,7 @@ Small release-line summary embedded into page or component front matter.
 | --- | --- | --- | --- |
 | <a id="releaselinesummary-key"></a>`key` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | yes | Release-line key, such as `4.0`, for the summarized line. |
 | <a id="releaselinesummary-parent"></a>`parent` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | no | Optional parent release-line key when lineage should be preserved in front matter. |
-| <a id="releaselinesummary-latest"></a>`latest` | [VersionString](../pipeline-shared-types-reference/#versionstring) | no | Latest released version currently associated with this line. |
+| <a id="releaselinesummary-latest"></a>`latest` | [VersionString](../pipeline-shared-types-reference/#versionstring) | no | Explicit released version recommended for this line. |
 | <a id="releaselinesummary-supportstatus"></a>`supportStatus` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | no | Support-status key or label for the release line. |
 | <a id="releaselinesummary-headref"></a>`headRef` | [RefString](../pipeline-shared-types-reference/#refstring) | no | Maintenance or line-head ref associated with this release line, if known. |
 | <a id="releaselinesummary-aliases"></a>`aliases` | list[[NonEmptyString](../pipeline-shared-types-reference/#nonemptystring)] | no | Alternate labels that should also refer to this release line. |

@@ -16,7 +16,12 @@
 
 from __future__ import annotations
 from collections import defaultdict
-from .types import ResolvedArtifactConfig, ResolvedSiteConfig
+from .types import (
+    IndexedProviderRecord,
+    ResolvedArtifactConfig,
+    ResolvedReleaseFact,
+    ResolvedSiteConfig,
+)
 from .errors import PlanningInputFailure
 from buildish_site_pipeline.models.enums import RecordKind
 from buildish_site_pipeline.models.provider.provider_snapshot import (
@@ -139,3 +144,36 @@ def validate_release_facts(
             for version, membership in memberships.items():
                 canonical[(component.slug, artifact.key, version)] = membership
     return canonical
+
+
+def resolve_release_fact(
+    artifact: ResolvedArtifactConfig,
+    version: str,
+    provider_record: IndexedProviderRecord | None,
+    *,
+    match_count: int,
+) -> ResolvedReleaseFact:
+    """Project exact facts without selecting, staging or inventing a release."""
+    authored = (
+        next(
+            (item for item in artifact.lifecycle.releases or () if item.version == version),
+            None,
+        )
+        if artifact.lifecycle
+        else None
+    )
+    primary = (authored.release_line if authored else None) or (
+        provider_record.release_line if provider_record else None
+    )
+    return ResolvedReleaseFact(
+        version=version,
+        provider_record=provider_record,
+        authored=authored,
+        release_line=primary,
+        release_line_ancestors=provider_record.release_line_ancestors
+        if provider_record
+        else line_ancestors(artifact, primary),
+        publication_state=(authored.publication_state if authored else None)
+        or (provider_record.publication_state if provider_record else None),
+        deterministic=match_count <= 1,
+    )

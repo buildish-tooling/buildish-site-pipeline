@@ -74,7 +74,7 @@ MODEL_SECTION_DEFINITIONS = (
         title="Staged aggregate metadata types",
         description="Public aggregate JSON contracts emitted under `data/`.",
         page_slug="pipeline-staged-aggregate-metadata-reference",
-        module_prefixes=("buildish_site_pipeline.models.emitted.aggregates",),
+        module_prefixes=("buildish_site_pipeline.models.emitted.aggregates", "buildish_site_pipeline.models.emitted.release_designations"),
     ),
     ModelSectionDefinition(
         title="Incremental bookkeeping types",

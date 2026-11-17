@@ -20,6 +20,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from buildish_site_pipeline.models import ProviderSnapshotDocumentV1
+from buildish_site_pipeline.models.emitted.execution import ContextDisposition
 from buildish_site_pipeline.models.enums import PlanningTarget
 from buildish_site_pipeline.models.emitted.planning_stage_contract import (
     PipelineDiagnosticEntry,
@@ -30,6 +31,7 @@ from buildish_site_pipeline.models.emitted.planning_stage_contract import (
 from buildish_site_pipeline.planning.types import (
     ResolvedLocalInput,
     ResolvedSiteConfig,
+    ResolvedArtifactDesignations,
     SelectedVersionContext,
 )
 from buildish_site_pipeline.staging.worker_protocol import (
@@ -49,6 +51,8 @@ class EffectiveBuildPlan:
     watch_roots: tuple[Path, ...]
     desired_versions: tuple[SelectedVersionContext, ...] = ()
     snapshot_paths: tuple[Path, ...] = ()
+    release_designations: tuple[ResolvedArtifactDesignations, ...] = ()
+    context_dispositions: tuple[ContextDisposition, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

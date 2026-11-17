@@ -58,6 +58,7 @@ class StagingPipelineTests(unittest.TestCase):
                 provider_snapshot=loaded_inputs.provider_snapshot,
                 workspace_root=workspace_root,
                 component_documents=loaded_inputs.component_documents,
+                snapshot_inputs=loaded_inputs.snapshot_inputs,
                 stage_root=workspace_root / "site/.stage",
                 work_root=workspace_root / ".buildish/work",
             )
@@ -110,6 +111,7 @@ class StagingPipelineTests(unittest.TestCase):
                 provider_snapshot=loaded_inputs.provider_snapshot,
                 workspace_root=workspace_root,
                 component_documents=loaded_inputs.component_documents,
+                snapshot_inputs=loaded_inputs.snapshot_inputs,
                 stage_root=workspace_root / "site/.stage",
                 work_root=workspace_root / ".buildish/work",
             )
@@ -470,7 +472,8 @@ class StagingPipelineTests(unittest.TestCase):
         self.assertEqual(route_paths["released:spark:runtime:4.0.2"], "/spark/releases/4.0.2/")
         self.assertEqual(route_paths["released:spark:runtime:4.1.0"], "/spark/releases/4.1.0/")
         self.assertEqual([entry["version"] for entry in candidates], ["4.2.0-rc2"])
-        self.assertEqual(artifact_entry["latestRelease"]["version"], "4.1.0")
+        self.assertNotIn("latestRelease", artifact_entry)
+        self.assertEqual(artifact_entry["releaseDesignations"]["lines"][0]["target"]["version"], "4.1.0")
         self.assertEqual(artifact_entry["latestCandidate"]["version"], "4.2.0-rc2")
         self.assertEqual(
             [(entry["key"], entry["latest"]) for entry in artifact_entry["releaseLines"]],
@@ -755,6 +758,7 @@ class StagingPipelineTests(unittest.TestCase):
                 provider_snapshot=loaded_inputs.provider_snapshot,
                 workspace_root=workspace_root,
                 component_documents=loaded_inputs.component_documents,
+                snapshot_inputs=loaded_inputs.snapshot_inputs,
                 stage_root=workspace_root / "site/.stage",
                 work_root=workspace_root / ".buildish/work",
             )

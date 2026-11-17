@@ -24,7 +24,9 @@ from ...docs.documentation import (
     ContractDocumentation,
     PipelineDerivedModel as SitePipelineBaseModel,
     SchemaExportSpecification,
+    SchemaExample,
 )
+from ...docs.schema_examples import release_designations_example_document
 from ..base import SitePipelineRootModel
 from .aggregates import (
     ArtifactsDataEntry,
@@ -74,13 +76,14 @@ class ArtifactsDataFileV1(SitePipelineBaseModel):
     """Public staged aggregate file at ``data/artifacts.json``."""
 
     contract_documentation: ClassVar[ContractDocumentation] = _aggregate_file_documentation(
-        summary="Published artifact inventory with version discovery rules, lifecycle hints, and latest-version summaries.",
+        summary="Static artifacts with version discovery rules, explicit recommendations and stage-backed designation destinations.",
         file_path="data/artifacts.json",
     )
     schema_export: ClassVar[SchemaExportSpecification] = SchemaExportSpecification(
         filename="artifacts-data-v1.schema.json",
         title="Site Pipeline data/artifacts.json v1",
         reference_roots=(ArtifactsDataEntry,),
+        examples=(SchemaExample(summary="An explicit recommendation excluded by site selection.", value_builder=release_designations_example_document),),
     )
 
     items: list[ArtifactsDataEntry] = Field(

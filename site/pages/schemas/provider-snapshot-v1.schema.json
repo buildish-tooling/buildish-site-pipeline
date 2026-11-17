@@ -891,7 +891,7 @@
           "type": "string"
         },
         "latest": {
-          "description": "Latest released version currently considered the head of this release line.",
+          "description": "Explicit released version recommended as the head of this release line.",
           "examples": [
             "4.0.1"
           ],

@@ -200,7 +200,7 @@ class ReleaseLineConfig(SitePipelineBaseModel):
         examples=["3.5"],
     )
     latest: VersionString = Field(
-        description="Latest released version currently considered the head of this release line.",
+        description="Explicit released version recommended as the head of this release line.",
         examples=["4.0.1"],
     )
     support_status: NonEmptyString | None = Field(
@@ -301,7 +301,7 @@ class ArtifactLifecycleConfig(SitePipelineBaseModel):
 
     latest_stable: VersionString | None = Field(
         default=None,
-        description="Most recent stable version that readers should treat as the default recommendation for this artifact.",
+        description="Explicit stable version that readers should treat as the default recommendation for this artifact.",
         examples=["4.0.1"],
     )
     release_lines: list[ReleaseLineConfig] | None = Field(

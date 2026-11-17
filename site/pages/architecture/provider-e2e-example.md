@@ -167,7 +167,18 @@ pipeline:
     "componentSlug": "spark",
     "key": "runtime",
     "providerKeys": ["atr"],
-    "latestRelease": { "version": "4.0.0" },
+    "latestStable": "4.0.0",
+    "releaseDesignations": {
+      "snapshotStatus": "present",
+      "latestStable": {
+        "version": "4.0.0", "selected": true, "action": "docs",
+        "availability": {"kind": "docs", "path": "/spark/releases/4.0.0/", "url": "https://docs.example.org/spark/releases/4.0.0/"}
+      },
+      "lines": [{"key": "4.x", "target": {
+        "version": "4.0.0", "selected": true, "action": "docs",
+        "availability": {"kind": "docs", "path": "/spark/releases/4.0.0/", "url": "https://docs.example.org/spark/releases/4.0.0/"}
+      }}]
+    },
     "latestCandidate": { "displayVersion": "4.1.0-rc2" },
     "releaseLines": [
       { "key": "4.x", "latest": "4.0.0", "supportStatus": "active", "headRef": "releases/4.x" }

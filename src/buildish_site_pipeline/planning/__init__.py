@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 from buildish_site_pipeline.models.emitted.execution import SnapshotInput
 from buildish_site_pipeline.models.enums import ExecutionProfile
@@ -33,6 +34,7 @@ from buildish_site_pipeline.models.provider.provider_snapshot import (
 
 from .build_plan import build_effective_build_plan
 from .dispositions import resolve_dispositions
+from .designations import resolve_designation_facts
 from .effective_config import resolve_site_config
 from .input_inventory import derive_local_inputs
 from .provider_index import build_provider_snapshot_index
@@ -76,6 +78,14 @@ def evaluate_planning(
             if item.component_slug is not None and item.status.value == "missing"
         ),
     )
+    release_designations, release_facts, fact_diagnostics = resolve_designation_facts(
+        site, provider_index, selected_versions, snapshot_inputs
+    )
+    selected_versions = replace(
+        selected_versions,
+        deterministic=selected_versions.deterministic
+        and all(fact.deterministic for _, _, fact in release_facts),
+    )
     selected_versions, desired_versions, context_dispositions, diagnostics = (
         resolve_dispositions(
             site=site,
@@ -100,6 +110,8 @@ def evaluate_planning(
         local_inputs=watched_inputs,
         watch_plan=watch_plan,
         desired_versions=desired_versions,
+        release_designations=release_designations,
+        context_dispositions=context_dispositions,
         snapshot_paths=tuple(
             Path(item.expected_local_path) for item in snapshot_inputs
         ),
@@ -116,7 +128,8 @@ def evaluate_planning(
         local_inputs=watched_inputs,
         watch_plan=watch_plan,
         build_plan_result=build_plan_result,
-        diagnostics=diagnostics,
+        diagnostics=diagnostics + fact_diagnostics,
+        release_facts=release_facts,
     )
 
 

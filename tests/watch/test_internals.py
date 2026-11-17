@@ -1378,6 +1378,7 @@ def _build_plan(workspace_root: Path):
         provider_snapshot=loaded_inputs.provider_snapshot,
         workspace_root=workspace_root,
         component_documents=loaded_inputs.component_documents,
+        snapshot_inputs=loaded_inputs.snapshot_inputs,
         stage_root=workspace_root / "site/.stage",
         work_root=workspace_root / ".buildish/work",
     )

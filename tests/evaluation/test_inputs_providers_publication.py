@@ -127,6 +127,8 @@ class InputProviderAndPublicationTests(unittest.TestCase):
                     )
                 }
             ),
+            release_facts=(),
+            desired_versions=(),
             selected_versions=SimpleNamespace(
                 contexts=(
             self._context(RecordKind.RELEASED, version="4.0.0"),

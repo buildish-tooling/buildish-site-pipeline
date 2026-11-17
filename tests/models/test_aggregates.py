@@ -85,6 +85,7 @@ class AggregateModelTests(unittest.TestCase):
             {
                 "componentSlug": "spark",
                 "key": "runtime",
+                "releaseDesignations": {"snapshotStatus": "not-configured", "lines": [], "latestStable": {"version": "4.0.0", "selected": False, "availability": {"kind": "unavailable", "reason": "not-selected"}}},
                 "displayName": "Runtime",
                 "latestStable": "4.0.0",
                 "supportStatusVocabulary": {

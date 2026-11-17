@@ -393,3 +393,22 @@ def aggregate_dependencies_example_document() -> object:
             ],
         }
     )
+
+
+def release_designations_example_document() -> object:
+    """Return a pinned-out explicit recommendation without a manufactured URL."""
+    from buildish_site_pipeline.models.emitted.aggregate_files import ArtifactsDataFileV1
+
+    target = {
+        "version": "4.0.1", "selected": False,
+        "publicationState": "published",
+        "availability": {"kind": "unavailable", "reason": "not-selected"},
+    }
+    return ArtifactsDataFileV1.model_validate({"items": [{
+        "componentSlug": "spark", "key": "runtime", "latestStable": "4.0.1",
+        "releaseLines": [{"key": "4.0", "latest": "4.0.1"}],
+        "releaseDesignations": {
+            "snapshotStatus": "present", "latestStable": target,
+            "lines": [{"key": "4.0", "target": target}],
+        },
+    }]})

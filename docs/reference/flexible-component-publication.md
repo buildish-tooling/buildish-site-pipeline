@@ -784,11 +784,11 @@ a provider-only state does not relax that authored field-consistency rule.
 
 Apply visibility after release selection; excluding a selected release does not
 implicitly select an older replacement. Keep known desired releases in metadata,
-including withdrawn releases. Keep `latestStable` as authored and `latestRelease`
-as a known-release summary, even when that release has no ordinary staged docs.
-Neither field alone promises a documentation link. Renderers must verify resolved
-release state and a concrete staged landing page using release, route/redirect,
-and content-index data. A withdrawal notice or redirect is not ordinary release
+including withdrawn releases. Keep explicit `latestStable` and line recommendations
+unchanged. `artifacts.json.releaseDesignations` ties those exact targets to selection,
+state/action and stage-backed destinations. The inferred `latestRelease` summary
+is removed. Only a designation with `availability.kind: docs` supplies its original
+docs link; a route row alone does not promise a concrete staged landing page. A withdrawal notice or redirect is not ordinary release
 docs, and development docs are never a fallback for a missing released target.
 
 ## Routing rules

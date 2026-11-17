@@ -51,6 +51,7 @@ from ..validation.extensions import serialize_extensions_object
 from ..authored.component_metadata import SupportStatusDefinition
 from ..authored.artifacts import ArtifactVersioningConfig, SupportWindow
 from ..provider.provider_snapshot import ProviderAsset
+from .release_designations import ReleaseDesignations
 from .staged_front_matter import (
     ArtifactFrontMatterSummary,
     PageSourceProvenance,
@@ -120,7 +121,7 @@ class ComponentsDataEntry(SitePipelineBaseModel):
     )
     latest_stable: VersionString | None = Field(
         default=None,
-        description="Most recent stable version recommended for the component as a whole when one shared release line is enough.",
+        description="Explicit stable version recommended for the component as a whole when one shared release line is enough.",
         examples=["4.0.1"],
     )
     weight: int | None = Field(
@@ -157,32 +158,6 @@ class ComponentsDataEntry(SitePipelineBaseModel):
         if self.provider_keys is not None:
             _ensure_unique_strings(self.provider_keys, type_name="provider key")
         return self
-
-
-class LatestReleaseSummary(SitePipelineBaseModel):
-    """Compact latest-release summary embedded in artifact aggregates."""
-
-    version: VersionString = Field(
-        description="Exact version string of the latest known release.",
-        examples=["4.0.1"],
-    )
-    display_version: NonEmptyString | None = Field(
-        default=None,
-        description="Human-readable label for the latest release when it should differ from the raw version string.",
-    )
-    tag: NonEmptyString | None = Field(
-        default=None,
-        description="Tag associated with the latest release, if known.",
-        examples=["v4.0.1"],
-    )
-    publication_state: PublicationState | None = Field(
-        default=None,
-        description="Publication-state label for the latest release, such as published or withdrawn."
-    )
-    published_at: TimestampString | None = Field(
-        default=None,
-        description="Timestamp when the latest release became publicly available."
-    )
 
 
 class LatestCandidateSummary(SitePipelineBaseModel):
@@ -248,12 +223,11 @@ class ArtifactsDataEntry(SitePipelineBaseModel):
     )
     latest_stable: VersionString | None = Field(
         default=None,
-        description="Most recent stable version recommended for readers.",
+        description="Explicit stable version recommended for readers.",
         examples=["4.0.1"],
     )
-    latest_release: LatestReleaseSummary | None = Field(
-        default=None,
-        description="Compact summary of the latest known release for the artifact."
+    release_designations: ReleaseDesignations = Field(
+        description="Explicit artifact-scoped recommendations with selection, state and stage-backed destinations."
     )
     latest_candidate: LatestCandidateSummary | None = Field(
         default=None,
@@ -280,6 +254,12 @@ class ArtifactsDataEntry(SitePipelineBaseModel):
 
     @model_validator(mode="after")
     def ensure_provider_keys_are_unique(self) -> Self:
+        view = self.release_designations
+        if (view.latest_stable.version if view.latest_stable else None) != self.latest_stable:
+            raise ValueError("Designation latestStable must match the raw recommendation")
+        expected = {line.key: line.latest for line in self.release_lines or () if line.latest is not None}
+        if {line.key: line.target.version for line in view.lines} != expected:
+            raise ValueError("Designation lines must match raw releaseLines recommendations")
         if self.provider_keys is not None:
             _ensure_unique_strings(self.provider_keys, type_name="provider key")
         return self

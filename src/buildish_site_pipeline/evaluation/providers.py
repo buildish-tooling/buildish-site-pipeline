@@ -33,7 +33,14 @@ def validate_providers(
 ) -> None:
     """Validate selected provider contexts remain deterministic."""
 
-    for context in planning.selected_versions.contexts:
+    resolved = {
+        (slug, key, fact.version) for slug, key, fact in planning.release_facts
+    }
+    for context in planning.desired_versions or planning.selected_versions.contexts:
+        if context.kind is RecordKind.RELEASED and (
+            context.component_slug, context.artifact_key, context.version
+        ) in resolved:
+            continue
         matching_records = _matching_records(planning=planning, context=context)
         if len(matching_records) <= 1 and context.deterministic:
             continue

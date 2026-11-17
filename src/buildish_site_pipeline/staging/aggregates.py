@@ -39,6 +39,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from buildish_site_pipeline.cli.errors import StageIntegrityError
+from buildish_site_pipeline.models.emitted.release_designations import ReleaseDesignations
 from buildish_site_pipeline.models.emitted.aggregates import (
     ArtifactsDataEntry,
     CandidateAggregateEntry,
@@ -46,7 +47,6 @@ from buildish_site_pipeline.models.emitted.aggregates import (
     ComponentsDataEntry,
     ContentIndexEntry,
     LatestCandidateSummary,
-    LatestReleaseSummary,
     MountAggregateEntry,
     ProvidersDataEntry,
     RedirectAggregateEntry,
@@ -101,6 +101,7 @@ from .incremental_metadata import (
 )
 from .destination_claims import collect_destination_claims, validate_destination_claims, reconcile_candidate_files
 from .ownership import OwnedUnit, build_owned_units
+from .release_designations import build_release_designations
 from .page_provenance import UnitPageSources, build_page_source_index, page_source_provenance
 from .public_safety import public_source_path, sanitize_public_diagnostics
 from .publication_paths import public_path_for_context, target_id_for_context, publishes_family_path
@@ -140,6 +141,10 @@ def finalize_pages_and_write_aggregates(
     claims = collect_destination_claims(build_plan.site, build_plan.selected_versions, build_plan.snapshot_paths)
     validate_destination_claims(claims)
     reconcile_candidate_files(layout.next_stage_root, claims, page_contributions)
+    redirects = _build_redirect_entries(build_plan)
+    release_designations = build_release_designations(
+        build_plan, unit_contribution_manifests, claims, redirects
+    )
     component_front_matter_by_slug = {
         component.slug: build_component_front_matter(
             component, build_plan.selected_versions
@@ -159,6 +164,8 @@ def finalize_pages_and_write_aggregates(
         page_contributions=page_contributions,
         unit_contribution_manifests=unit_contribution_manifests,
         owned_units=current_units,
+        redirects=redirects,
+        release_designations=release_designations,
     )
     manifest = StageManifestV1(
         schema_version=1,
@@ -238,6 +245,8 @@ def _write_aggregate_files(
     page_contributions: tuple[StagedPageContributionWire, ...],
     unit_contribution_manifests: tuple[UnitContributionManifestWire, ...],
     owned_units: tuple[OwnedUnit, ...],
+    redirects: list[RedirectAggregateEntry],
+    release_designations: Mapping[tuple[str, str], ReleaseDesignations],
 ) -> StageDataFiles:
     """Write renderer-facing aggregates first, then private coordinator indexes."""
 
@@ -248,14 +257,13 @@ def _write_aggregate_files(
         data_root / "components.json", _build_components_entries(build_plan)
     )
     artifacts_path = _write_items_file(
-        data_root / "artifacts.json", _build_artifacts_entries(build_plan)
+        data_root / "artifacts.json",
+        _build_artifacts_entries(build_plan, release_designations),
     )
     routes_path = _write_items_file(
         data_root / "routes.json", _build_route_entries(build_plan)
     )
-    redirects_path = _write_items_file(
-        data_root / "redirects.json", _build_redirect_entries(build_plan)
-    )
+    redirects_path = _write_items_file(data_root / "redirects.json", redirects)
     providers_path = (
         _write_items_file(
             data_root / "providers.json", _build_provider_entries(provider_snapshot)
@@ -403,6 +411,7 @@ def _build_components_entries(
 
 def _build_artifacts_entries(
     build_plan: EffectiveBuildPlan,
+    release_designations: Mapping[tuple[str, str], ReleaseDesignations],
 ) -> list[ArtifactsDataEntry]:
     selected_by_artifact: dict[tuple[str, str], list[SelectedVersionContext]] = (
         defaultdict(list)
@@ -432,9 +441,6 @@ def _build_artifacts_entries(
         }
         for artifact in component.artifacts:
             contexts = selected_by_artifact.get((component.slug, artifact.key), [])
-            released_contexts = [
-                context for context in contexts if context.kind is RecordKind.RELEASED and context.identity_verified
-            ]
             candidate_contexts = [
                 context for context in contexts if context.kind is RecordKind.CANDIDATE
             ]
@@ -444,7 +450,6 @@ def _build_artifacts_entries(
                 if context.kind
                 in {RecordKind.NAMED_REF, RecordKind.LINE_HEAD, RecordKind.DEVELOPMENT}
             ]
-            latest_release = _latest_release_summary(released_contexts)
             latest_candidate = _latest_candidate_summary(candidate_contexts)
             artifact_front_matter = artifact_front_matter_by_key.get(artifact.key)
             entries.append(
@@ -466,7 +471,7 @@ def _build_artifacts_entries(
                     latest_stable=artifact.lifecycle.latest_stable
                     if artifact.lifecycle is not None
                     else None,
-                    latest_release=latest_release,
+                    release_designations=release_designations[(component.slug, artifact.key)],
                     latest_candidate=latest_candidate,
                     release_lines=artifact_front_matter.release_lines
                     if artifact_front_matter is not None
@@ -1061,28 +1066,6 @@ def _mount_entry(
         trust_class=mount.trust_class,
         index_behavior=mount.index_behavior,
         metadata=mount.metadata,
-    )
-
-
-def _latest_release_summary(
-    contexts: list[SelectedVersionContext],
-) -> LatestReleaseSummary | None:
-    if not contexts:
-        return None
-    context = max(
-        contexts,
-        key=lambda item: (
-            (item.provider_record.published_at or "") if item.provider_record else "",
-            item.version or "",
-        ),
-    )
-    record = context.provider_record
-    return LatestReleaseSummary(
-        version=_required_context_version(context),
-        display_version=context.display_version,
-        tag=context.tag,
-        publication_state=context.publication_state,
-        published_at=_parse_timestamp(record.published_at) if record else None,
     )
 
 

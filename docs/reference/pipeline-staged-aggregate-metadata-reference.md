@@ -30,15 +30,21 @@ Back to the [reference overview](../pipeline-model-schema-reference/).
 - [CompatibilityAggregateEntry](#compatibilityaggregateentry) — Entry in ``data/compatibility.json``.
 - [ComponentsDataEntry](#componentsdataentry) — Entry in ``data/components.json``.
 - [ContentIndexEntry](#contentindexentry) — Entry in ``data/content-index.json``.
+- [DocsAvailability](#docsavailability) — An owned root documentation page in the assembled stage, not remote availability.
 - [LatestCandidateSummary](#latestcandidatesummary) — Compact latest-candidate summary embedded in artifact aggregates.
-- [LatestReleaseSummary](#latestreleasesummary) — Compact latest-release summary embedded in artifact aggregates.
 - [MountAggregateEntry](#mountaggregateentry) — Entry in ``data/mounts.json``.
+- [NoticeAvailability](#noticeavailability) — A generated withdrawal notice, not original documentation.
 - [ProvidersDataEntry](#providersdataentry) — Entry in ``data/providers.json``.
 - [RedirectAggregateEntry](#redirectaggregateentry) — Entry in ``data/redirects.json``.
+- [RedirectAvailability](#redirectavailability) — An emitted withdrawal redirect instruction, not attested destination content.
 - [RefAggregateEntry](#refaggregateentry) — Entry in ``data/refs.json``.
 - [ReleaseAggregateEntry](#releaseaggregateentry) — Entry in ``data/releases.json``.
+- [ReleaseDesignationTarget](#releasedesignationtarget) — An exact released recommendation scoped by its containing component/artifact row.
+- [ReleaseDesignations](#releasedesignations) — Explicit recommendations and availability; no inferred latest or full inventory.
+- [ReleaseLineDesignation](#releaselinedesignation) — One explicit line recommendation; multiple lines may share the same target.
 - [RouteAggregateEntry](#routeaggregateentry) — Entry in ``data/routes.json``.
 - [TranslationSetAggregateEntry](#translationsetaggregateentry) — Entry in ``data/translations.json``.
+- [UnavailableDesignation](#unavailabledesignation) — A recommendation without an eligible landing destination in this stage.
 
 <a id="artifactsdataentry"></a>
 ### ArtifactsDataEntry
@@ -58,8 +64,8 @@ Entry in `data/artifacts.json`.
 | <a id="artifactsdataentry-docsroot"></a>`docsRoot` | [RepoRelativePath](../pipeline-shared-types-reference/#reporelativepath) | no | Repository-relative docs root for the artifact when it differs from the component default. |
 | <a id="artifactsdataentry-providerkeys"></a>`providerKeys` | list[[ProviderKey](../pipeline-shared-types-reference/#providerkey)] | no | Provider keys that contributed version metadata for this artifact. |
 | <a id="artifactsdataentry-versioning"></a>`versioning` | [ArtifactVersioningConfig](../pipeline-authored-input-reference/#artifactversioningconfig) | no | Version-discovery rules that explain how development refs, tags, and named refs are derived for the artifact. |
-| <a id="artifactsdataentry-lateststable"></a>`latestStable` | [VersionString](../pipeline-shared-types-reference/#versionstring) | no | Most recent stable version recommended for readers. |
-| <a id="artifactsdataentry-latestrelease"></a>`latestRelease` | [LatestReleaseSummary](#latestreleasesummary) | no | Compact summary of the latest known release for the artifact. |
+| <a id="artifactsdataentry-lateststable"></a>`latestStable` | [VersionString](../pipeline-shared-types-reference/#versionstring) | no | Explicit stable version recommended for readers. |
+| <a id="artifactsdataentry-releasedesignations"></a>`releaseDesignations` | [ReleaseDesignations](#releasedesignations) | yes | Explicit artifact-scoped recommendations with selection, state and stage-backed destinations. |
 | <a id="artifactsdataentry-latestcandidate"></a>`latestCandidate` | [LatestCandidateSummary](#latestcandidatesummary) | no | Compact summary of the latest known release candidate for the artifact. |
 | <a id="artifactsdataentry-releaselines"></a>`releaseLines` | list[[ReleaseLineSummary](../pipeline-staged-front-matter-reference/#releaselinesummary)] | no | Release-line summaries associated with the artifact. |
 | <a id="artifactsdataentry-namedrefs"></a>`namedRefs` | list[[RefAggregateEntry](#refaggregateentry)] | no | Published development, line-head, or named-ref contexts associated with the artifact. |
@@ -75,6 +81,52 @@ Entry in `data/artifacts.json`.
 - `docsRoot`: Example: `"docs/runtime"`
 - `providerKeys`: Example: `["github-releases"]`
 - `latestStable`: Example: `"4.0.1"`
+
+#### Example: An explicit recommendation excluded by site selection.
+
+```json
+{
+  "items": [
+    {
+      "componentSlug": "spark",
+      "key": "runtime",
+      "latestStable": "4.0.1",
+      "releaseDesignations": {
+        "snapshotStatus": "present",
+        "latestStable": {
+          "version": "4.0.1",
+          "selected": false,
+          "publicationState": "published",
+          "availability": {
+            "kind": "unavailable",
+            "reason": "not-selected"
+          }
+        },
+        "lines": [
+          {
+            "key": "4.0",
+            "target": {
+              "version": "4.0.1",
+              "selected": false,
+              "publicationState": "published",
+              "availability": {
+                "kind": "unavailable",
+                "reason": "not-selected"
+              }
+            }
+          }
+        ]
+      },
+      "releaseLines": [
+        {
+          "key": "4.0",
+          "latest": "4.0.1"
+        }
+      ]
+    }
+  ]
+}
+```
 
 <a id="candidateaggregateentry"></a>
 ### CandidateAggregateEntry
@@ -152,7 +204,7 @@ Entry in `data/components.json`.
 | --- | --- | --- | --- |
 | <a id="componentsdataentry-slug"></a>`slug` | [Slug](../pipeline-shared-types-reference/#slug) | yes | Stable component slug used by routes, aggregates, and typed references. |
 | <a id="componentsdataentry-displayname"></a>`displayName` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | no | Human-readable component name shown in navigation, listings, and generated metadata. |
-| <a id="componentsdataentry-lateststable"></a>`latestStable` | [VersionString](../pipeline-shared-types-reference/#versionstring) | no | Most recent stable version recommended for the component as a whole when one shared release line is enough. |
+| <a id="componentsdataentry-lateststable"></a>`latestStable` | [VersionString](../pipeline-shared-types-reference/#versionstring) | no | Explicit stable version recommended for the component as a whole when one shared release line is enough. |
 | <a id="componentsdataentry-weight"></a>`weight` | int | no | Optional ordering hint copied from the authored catalog for consumer-rendered component lists. |
 | <a id="componentsdataentry-group"></a>`group` | [Identifier](../pipeline-shared-types-reference/#identifier) | no | Optional group key copied from the authored catalog to support grouped rendering or filtering. |
 | <a id="componentsdataentry-originkey"></a>`originKey` | [OriginKey](../pipeline-shared-types-reference/#originkey) | yes | Origin key selected for this component's primary published route set. |
@@ -234,6 +286,21 @@ Entry in `data/content-index.json`.
 - `candidateSequence`: Example: `1`
 - `voteStatus`: Example: `"passed"`
 
+<a id="docsavailability"></a>
+### DocsAvailability
+
+An owned root documentation page in the assembled stage, not remote availability.
+
+- category: `emitted`
+- ownership: `pipeline-derived`
+- file contract: (inner type)
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| <a id="docsavailability-kind"></a>`kind` | typing.Literal['docs'] | no | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+| <a id="docsavailability-path"></a>`path` | typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=None, min_length=1, max_length=None, pattern=None, ascii_only=None), AfterValidator(func=<function validate_public_path at 0x78f902c80d50>)] | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+| <a id="docsavailability-url"></a>`url` | typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=None, min_length=1, max_length=None, pattern=None, ascii_only=None), AfterValidator(func=<function validate_url_string at 0x78f902c81590>)] | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+
 <a id="latestcandidatesummary"></a>
 ### LatestCandidateSummary
 
@@ -255,28 +322,6 @@ Compact latest-candidate summary embedded in artifact aggregates.
 - `version`: Example: `"4.1.0-rc1"`
 - `candidateSequence`: Example: `1`
 - `voteStatus`: Example: `"passed"`
-
-<a id="latestreleasesummary"></a>
-### LatestReleaseSummary
-
-Compact latest-release summary embedded in artifact aggregates.
-
-- category: `emitted`
-- ownership: `pipeline-derived`
-- file contract: (inner type)
-
-| Field | Type | Required | Description |
-| --- | --- | --- | --- |
-| <a id="latestreleasesummary-version"></a>`version` | [VersionString](../pipeline-shared-types-reference/#versionstring) | yes | Exact version string of the latest known release. |
-| <a id="latestreleasesummary-displayversion"></a>`displayVersion` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | no | Human-readable label for the latest release when it should differ from the raw version string. |
-| <a id="latestreleasesummary-tag"></a>`tag` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | no | Tag associated with the latest release, if known. |
-| <a id="latestreleasesummary-publicationstate"></a>`publicationState` | [PublicationState](../pipeline-shared-types-reference/#publicationstate) | no | Publication-state label for the latest release, such as published or withdrawn. |
-| <a id="latestreleasesummary-publishedat"></a>`publishedAt` | [TimestampString](../pipeline-shared-types-reference/#timestampstring) | no | Timestamp when the latest release became publicly available. |
-
-#### Selected field examples
-
-- `version`: Example: `"4.0.1"`
-- `tag`: Example: `"v4.0.1"`
 
 <a id="mountaggregateentry"></a>
 ### MountAggregateEntry
@@ -307,6 +352,21 @@ Entry in `data/mounts.json`.
 - `publicPath`: Example: `"/spark/api/"`
 - `sourceRef`: Example: `"generated/api"`
 - `versionContext`: Example: `"release"`
+
+<a id="noticeavailability"></a>
+### NoticeAvailability
+
+A generated withdrawal notice, not original documentation.
+
+- category: `emitted`
+- ownership: `pipeline-derived`
+- file contract: (inner type)
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| <a id="noticeavailability-kind"></a>`kind` | typing.Literal['notice'] | no | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+| <a id="noticeavailability-path"></a>`path` | typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=None, min_length=1, max_length=None, pattern=None, ascii_only=None), AfterValidator(func=<function validate_public_path at 0x78f902c80d50>)] | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+| <a id="noticeavailability-url"></a>`url` | typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=None, min_length=1, max_length=None, pattern=None, ascii_only=None), AfterValidator(func=<function validate_url_string at 0x78f902c81590>)] | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
 
 <a id="providersdataentry"></a>
 ### ProvidersDataEntry
@@ -352,6 +412,22 @@ Entry in `data/redirects.json`.
 
 - `status`: Example: `308`
 - `sourceKind`: Example: `"withdrawnRelease"`
+
+<a id="redirectavailability"></a>
+### RedirectAvailability
+
+An emitted withdrawal redirect instruction, not attested destination content.
+
+- category: `emitted`
+- ownership: `pipeline-derived`
+- file contract: (inner type)
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| <a id="redirectavailability-kind"></a>`kind` | typing.Literal['redirect'] | no | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+| <a id="redirectavailability-path"></a>`path` | typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=None, min_length=1, max_length=None, pattern=None, ascii_only=None), AfterValidator(func=<function validate_public_path at 0x78f902c80d50>)] | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+| <a id="redirectavailability-url"></a>`url` | typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=None, min_length=1, max_length=None, pattern=None, ascii_only=None), AfterValidator(func=<function validate_url_string at 0x78f902c81590>)] | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+| <a id="redirectavailability-tourl"></a>`toUrl` | typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=None, min_length=1, max_length=None, pattern=None, ascii_only=None), AfterValidator(func=<function validate_url_string at 0x78f902c81590>)] | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
 
 <a id="refaggregateentry"></a>
 ### RefAggregateEntry
@@ -431,6 +507,52 @@ Entry in `data/releases.json`.
 - `redirectTarget`: Example: `"route:/spark/releases/4.0.1/"`
 - `maturity`: Example: `"stable"`
 
+<a id="releasedesignationtarget"></a>
+### ReleaseDesignationTarget
+
+An exact released recommendation scoped by its containing component/artifact row.
+
+- category: `emitted`
+- ownership: `pipeline-derived`
+- file contract: (inner type)
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| <a id="releasedesignationtarget-version"></a>`version` | typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=None, min_length=1, max_length=None, pattern=None, ascii_only=None), AfterValidator(func=<function validate_version_string at 0x78f902c801a0>)] | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+| <a id="releasedesignationtarget-selected"></a>`selected` | <class 'bool'> | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+| <a id="releasedesignationtarget-publicationstate"></a>`publicationState` | buildish_site_pipeline.models.enums.[PublicationState](../pipeline-shared-types-reference/#publicationstate) | no | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+| <a id="releasedesignationtarget-action"></a>`action` | buildish_site_pipeline.models.enums.[ContextAction](../pipeline-shared-types-reference/#contextaction) | no | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+| <a id="releasedesignationtarget-availability"></a>`availability` | typing.Annotated[buildish_site_pipeline.models.emitted.release_designations.[DocsAvailability](#docsavailability) \| buildish_site_pipeline.models.emitted.release_designations.[NoticeAvailability](#noticeavailability) \| buildish_site_pipeline.models.emitted.release_designations.[RedirectAvailability](#redirectavailability) \| buildish_site_pipeline.models.emitted.release_designations.[UnavailableDesignation](#unavailabledesignation), FieldInfo(annotation=NoneType, required=True, discriminator='kind')] | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+
+<a id="releasedesignations"></a>
+### ReleaseDesignations
+
+Explicit recommendations and availability; no inferred latest or full inventory.
+
+- category: `emitted`
+- ownership: `pipeline-derived`
+- file contract: (inner type)
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| <a id="releasedesignations-snapshotstatus"></a>`snapshotStatus` | typing.Literal['present', 'missing', 'not-configured'] | yes | Status of the configured component snapshot input, not inventory completeness. |
+| <a id="releasedesignations-lateststable"></a>`latestStable` | buildish_site_pipeline.models.emitted.release_designations.[ReleaseDesignationTarget](#releasedesignationtarget) | no | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+| <a id="releasedesignations-lines"></a>`lines` | list[buildish_site_pipeline.models.emitted.release_designations.[ReleaseLineDesignation](#releaselinedesignation)] | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+
+<a id="releaselinedesignation"></a>
+### ReleaseLineDesignation
+
+One explicit line recommendation; multiple lines may share the same target.
+
+- category: `emitted`
+- ownership: `pipeline-derived`
+- file contract: (inner type)
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| <a id="releaselinedesignation-key"></a>`key` | typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=None, min_length=1, max_length=None, pattern=None, ascii_only=None)] | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+| <a id="releaselinedesignation-target"></a>`target` | <class 'buildish_site_pipeline.models.emitted.release_designations.[ReleaseDesignationTarget](#releasedesignationtarget)'> | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+
 <a id="routeaggregateentry"></a>
 ### RouteAggregateEntry
 
@@ -488,4 +610,18 @@ Entry in `data/translations.json`.
 - `translationKey`: Example: `"spark-overview"`
 - `componentSlug`: Example: `"spark"`
 - `artifactKey`: Example: `"runtime"`
+
+<a id="unavailabledesignation"></a>
+### UnavailableDesignation
+
+A recommendation without an eligible landing destination in this stage.
+
+- category: `emitted`
+- ownership: `pipeline-derived`
+- file contract: (inner type)
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| <a id="unavailabledesignation-kind"></a>`kind` | typing.Literal['unavailable'] | no | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+| <a id="unavailabledesignation-reason"></a>`reason` | typing.Literal['not-selected', 'hidden', 'withdrawn', 'tombstoned', 'snapshot-absent', 'omitted', 'no-landing-page'] | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
 

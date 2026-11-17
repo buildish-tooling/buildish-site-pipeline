@@ -51,6 +51,7 @@ from buildish_site_pipeline.planning.types import (
     ResolvedOrigin,
     ResolvedPublicationPolicy,
 )
+from buildish_site_pipeline.models.emitted.release_designations import ReleaseDesignations
 from buildish_site_pipeline.staging.aggregates import (
     _artifact_docs_root,
     _artifact_for_context,
@@ -65,7 +66,6 @@ from buildish_site_pipeline.staging.aggregates import (
     _build_route_entries,
     _build_translation_entries,
     _latest_candidate_summary,
-    _latest_release_summary,
     _load_unit_contribution_manifests,
     _normalize_page_contribution,
     _parse_timestamp,
@@ -544,7 +544,7 @@ class AggregateHelperTests(unittest.TestCase):
             )
 
             component_entries = _build_components_entries(build_plan)
-            artifact_entries = _build_artifacts_entries(build_plan)
+            artifact_entries = _build_artifacts_entries(build_plan, {("spark", "runtime"): ReleaseDesignations.model_validate({"snapshotStatus": "not-configured", "lines": [], "latestStable": {"version": "4.0.0", "selected": False, "availability": {"kind": "unavailable", "reason": "not-selected"}}})})
 
         self.assertEqual(component_entries[0].display_name, "Apache Spark")
         self.assertEqual(component_entries[0].latest_stable, "4.0.0")
@@ -581,23 +581,12 @@ class AggregateHelperTests(unittest.TestCase):
                 published_at="2024-01-02T00:00:00Z",
             ),
         )
-        released_new = self._context(
-            version="4.1.0",
-            provider_record=self._provider_record(
-                RecordKind.RELEASED,
-                version="4.1.0",
-                display_version="4.1.0",
-                published_at="2024-02-01T00:00:00Z",
-            ),
-        )
 
         entries = _build_candidate_entries(
             SimpleNamespace(selected_versions=(candidate_one, released_old, candidate_two))
         )
 
         self.assertEqual([entry.version for entry in entries], ["4.1.0-rc1", "4.1.0-rc2"])
-        self.assertIsNone(_latest_release_summary([]))
-        self.assertEqual(_latest_release_summary([released_old, released_new]).version, "4.1.0")
         self.assertIsNone(_latest_candidate_summary([]))
         self.assertEqual(_latest_candidate_summary([candidate_one, candidate_two]).version, "4.1.0-rc2")
 

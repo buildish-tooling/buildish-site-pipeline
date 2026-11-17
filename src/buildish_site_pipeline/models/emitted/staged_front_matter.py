@@ -155,7 +155,7 @@ class ReleaseLineSummary(SitePipelineBaseModel):
     )
     latest: VersionString | None = Field(
         default=None,
-        description="Latest released version currently associated with this line.",
+        description="Explicit released version recommended for this line.",
         examples=["4.0.1"],
     )
     support_status: NonEmptyString | None = Field(
@@ -199,7 +199,7 @@ class ArtifactFrontMatterSummary(SitePipelineBaseModel):
     )
     latest_stable: VersionString | None = Field(
         default=None,
-        description="Most recent stable version that readers should treat as the default recommendation.",
+        description="Explicit stable version that readers should treat as the default recommendation.",
         examples=["4.0.1"],
     )
     release_lines: list[ReleaseLineSummary] | None = Field(
@@ -497,7 +497,7 @@ class PipelineComponentFrontMatter(SitePipelineBaseModel):
     )
     latest_stable: VersionString | None = Field(
         default=None,
-        description="Most recent stable version recommended for the component as a whole when one shared release line is enough.",
+        description="Explicit stable version recommended for the component as a whole when one shared release line is enough.",
         examples=["4.0.1"],
     )
     publication: ResolvedPublication = Field(

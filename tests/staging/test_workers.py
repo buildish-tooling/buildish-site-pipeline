@@ -32,7 +32,8 @@ from buildish_site_pipeline.models.enums import DiagnosticSeverity, RecordKind, 
 from buildish_site_pipeline.models.emitted.planning_stage_contract import (
     PipelineDiagnosticEntry,
 )
-from buildish_site_pipeline.staging.aggregates import _build_content_index_entries, _write_aggregate_files
+from buildish_site_pipeline.staging.aggregates import _build_content_index_entries, _write_aggregate_files, _build_redirect_entries
+from buildish_site_pipeline.staging.release_designations import build_release_designations
 from buildish_site_pipeline.staging.coordinator import (
     _run_worker_subprocess,
     _seed_next_stage_root,
@@ -617,6 +618,8 @@ class StagingWorkerTests(unittest.TestCase):
                 page_contributions=(),
                 unit_contribution_manifests=(),
                 owned_units=build_owned_units(request.build_plan),
+                redirects=_build_redirect_entries(request.build_plan),
+                release_designations=build_release_designations(request.build_plan, (), (), _build_redirect_entries(request.build_plan)),
             )
             diagnostics_payload = json.loads((layout.data_root / "diagnostics.json").read_text(encoding="utf-8"))
 

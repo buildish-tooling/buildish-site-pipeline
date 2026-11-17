@@ -113,31 +113,6 @@ def resolve_dispositions(
             if artifact.lifecycle
             else None
         )
-        provider_state = (
-            context.provider_record.publication_state
-            if context.provider_record
-            else None
-        )
-        if (
-            authored
-            and authored.publication_state
-            and provider_state
-            and authored.publication_state != provider_state
-        ):
-            diagnostics.append(
-                PipelineDiagnosticEntry(
-                    severity=DiagnosticSeverity.ERROR,
-                    code="release-publication-state-conflict",
-                    component_slug=context.component_slug,
-                    artifact_key=context.artifact_key,
-                    target_id=context.version,
-                    message=f"Release {context.version} has conflicting authored and provider publication states",
-                    details={
-                        "authoredState": authored.publication_state.value,
-                        "providerState": provider_state.value,
-                    },
-                )
-            )
         action = ContextAction.DOCS
         reason = None
         if context.publication_state is PublicationState.HIDDEN:

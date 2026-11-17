@@ -31,6 +31,28 @@ The model separates:
 That separation matters because a cache branch, snapshot store, or generated
 local tree is a materialization strategy, not a publication concept.
 
+## Compose publication selection
+
+Catalog `publicationSelection` fields inherit from built-ins to the component
+entry and then to each optional artifact binding. A partial artifact policy such
+as `namedRefs: []` clears only named refs and preserves inherited development,
+line-head, release and candidate choices. No catalog defaults/group selection
+level is supported. An artifact without a catalog binding still inherits.
+
+Omitted/null policies, `{}`, and omitted/null fields inherit. Lists replace;
+nested mode objects replace as a whole. Use `development: false`, `namedRefs: []`,
+or `mode: none` for `lineHeads`, `releases` or `candidates` to disable a kind.
+For example, `releases: {mode: none}` disables released versions alone. Null does
+not disable selection; a nested mode object still requires its mode and valid
+mode-specific selectors.
+
+Earlier whole-object replacement could suppress unrelated kinds when a partial
+policy was supplied. Review partial policies and replace accidental suppression
+with explicit choices. Run `plan` and `check` before staging: inheritance may
+include additional contexts requiring local trees or reveal invalid references
+and route conflicts. Built-in values and fully specified non-null choices remain
+the same. The new release `none` value requires an updated Pipeline binary.
+
 ## Request a machine-readable build plan
 
 For automation, request the report schema explicitly:

@@ -84,7 +84,7 @@
             }
           ],
           "default": null,
-          "description": "Optional consumer publication selection for this component-defined artifact."
+          "description": "Optional consumer publication selection for this component-defined artifact. Non-null fields override component policy; omitted/null fields and an empty policy inherit."
         },
         "source": {
           "anyOf": [
@@ -520,7 +520,7 @@
             }
           ],
           "default": null,
-          "description": "Default version-context selection policy inherited by contained artifacts unless they override it."
+          "description": "Version-context selection layered over built-in values and inherited by contained artifacts field by field. Omitted/null fields and an empty policy inherit."
         },
         "slug": {
           "description": "Stable component identifier.",
@@ -1271,7 +1271,7 @@
     },
     "PublicationSelectionPolicy": {
       "additionalProperties": false,
-      "description": "Planning-time rule set for which version contexts are staged and linked.",
+      "description": "Version-context selection inherited field by field from built-ins to component to artifact catalog policy.\n\nOmitted/null fields inherit. Nested mode objects and named-ref lists replace\natomically; an empty policy inherits all fields.",
       "properties": {
         "candidates": {
           "anyOf": [
@@ -1283,7 +1283,7 @@
             }
           ],
           "default": null,
-          "description": "Rule for including release-candidate contexts when they should be visible to readers."
+          "description": "Rule for including release-candidate contexts. Omitted/null inherits; a supplied mode object replaces the inherited rule; mode none disables candidates."
         },
         "development": {
           "anyOf": [
@@ -1295,7 +1295,7 @@
             }
           ],
           "default": null,
-          "description": "Whether to publish the moving development context represented by the artifact's `developmentRef`.",
+          "description": "Whether to publish the moving development context represented by the artifact's `developmentRef`. Omitted/null inherits; false disables only development.",
           "title": "Development"
         },
         "lineHeads": {
@@ -1308,7 +1308,7 @@
             }
           ],
           "default": null,
-          "description": "Rule for including release-line head contexts such as `4.0` or `3.5`."
+          "description": "Rule for including release-line head contexts such as `4.0` or `3.5`. Omitted/null inherits; a supplied mode object replaces the inherited rule; mode none disables line heads."
         },
         "namedRefs": {
           "anyOf": [
@@ -1324,7 +1324,7 @@
             }
           ],
           "default": null,
-          "description": "Named ref keys to include as publishable contexts in addition to development, line-head, or released versions.",
+          "description": "Named ref keys to publish. Omitted/null inherits; a supplied list replaces the inherited list; an empty list disables named refs.",
           "examples": [
             [
               "preview",
@@ -1343,7 +1343,7 @@
             }
           ],
           "default": null,
-          "description": "Rule for including exact released-version contexts such as `4.0.1`."
+          "description": "Rule for including exact released-version contexts such as `4.0.1`. Omitted/null inherits; a supplied mode object replaces the inherited rule; mode none disables releases."
         }
       },
       "title": "PublicationSelectionPolicy",
@@ -1440,6 +1440,7 @@
     "ReleaseSelectionMode": {
       "description": "Strategy used to select a released version.",
       "enum": [
+        "none",
         "latestPerLine",
         "latestN",
         "allKnown",
@@ -1471,7 +1472,7 @@
         },
         "mode": {
           "$ref": "#/$defs/ReleaseSelectionMode",
-          "description": "Selection strategy for released versions, for example the latest `n` releases or one explicit version list."
+          "description": "Selection strategy for released versions: `none` disables releases; other modes select the latest per line, latest `n`, all known, or explicit versions."
         },
         "versions": {
           "anyOf": [
@@ -1824,13 +1825,7 @@
             {
               "key": "runtime",
               "publicationSelection": {
-                "development": true,
-                "lineHeads": {
-                  "mode": "allAuthored"
-                },
-                "releases": {
-                  "mode": "latestPerLine"
-                }
+                "namedRefs": []
               },
               "source": "runtime"
             }
@@ -1840,6 +1835,11 @@
           },
           "publication": {
             "mountPath": "/spark/"
+          },
+          "publicationSelection": {
+            "releases": {
+              "mode": "none"
+            }
           },
           "slug": "spark",
           "weight": 100

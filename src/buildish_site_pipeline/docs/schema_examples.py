@@ -78,15 +78,13 @@ def catalog_example_document() -> object:
             "      source: runtime\n"
             "    publication:\n"
             "      mountPath: /spark/\n"
+            "    publicationSelection:\n"
+            "      releases: {mode: none}\n"
             "    artifacts:\n"
             "      - key: runtime\n"
             "        source: runtime\n"
             "        publicationSelection:\n"
-            "          development: true\n"
-            "          lineHeads:\n"
-            "            mode: allAuthored\n"
-            "          releases:\n"
-            "            mode: latestPerLine\n"
+            "          namedRefs: []\n"
         ),
         document_format=DocumentFormat.YAML,
         source_name="site/catalog.yaml",

@@ -351,17 +351,21 @@ it should be treated as derived convenience metadata rather than authored truth.
 
 Publication visibility should stay separate from lifecycle meaning.
 
-That means an artifact may also carry a `publicationSelection` policy used during
-planning and staging. When both component and artifact policy are present, the
-artifact policy should win.
+The consumer catalog can set `publicationSelection` on a component entry and on
+an optional artifact binding. Static component artifact definitions describe
+identities and facts; they do not own website publication choices.
 
-Effective authored configuration should resolve predictably:
+Publication selection resolves field by field:
 
-- `defaults` < `group` < `component` < `artifact`
-- scalar values use the nearest defined value
-- maps merge by key, with the nearer level winning per key
-- arrays replace rather than concatenate
-- absent values inherit; explicitly empty arrays or maps clear inherited values
+- built-ins < component catalog entry < artifact catalog binding
+- the nearest non-null field wins
+- omitted/null policies, empty policies (`{}`), and omitted/null fields inherit
+- nested mode objects replace as a whole; their mode-specific fields never merge
+- named-ref lists replace rather than concatenate; `[]` clears named refs
+
+Catalog `defaults` and groups do not support `publicationSelection`. Routing's
+`publication` settings have their own defaults/group/component precedence; that
+routing chain does not add selection-policy levels.
 
 To avoid terminology confusion, `artifact` in this document should mean an
 independently versioned release unit or documentation stream, not every
@@ -530,7 +534,7 @@ Publication visibility should be controlled by a separate
 `publicationSelection` policy rather than by `supportStatus` or release-line
 semantics.
 
-Recommended policy dimensions:
+Selection policy dimensions:
 
 - `development`
 - `lineHeads`
@@ -538,16 +542,52 @@ Recommended policy dimensions:
 - `namedRefs`
 - `candidates`
 
-Recommended built-in default:
+Built-in defaults:
 
 - include development docs
 - include all authored line heads
-- include the latest stable release per release line
+- select releases using `latestPerLine` (existing latest-pointer selection)
 - include only explicitly selected authored named refs
 - exclude release candidates unless explicitly requested
 
 This keeps public visibility intentional without making route and lifecycle
 metadata carry planning semantics.
+
+A partial artifact policy preserves unrelated component choices. For example:
+
+```yaml
+publicationSelection:
+  development: true
+  lineHeads: {mode: none}
+  releases: {mode: explicit, versions: ['1.0']}
+artifacts:
+  - key: runtime
+    publicationSelection:
+      namedRefs: []
+```
+
+This selects development and exact release `1.0`, subject to normal inventory,
+readiness and publication-state rules. Earlier whole-object replacement selected
+no contexts for this fragment. A component policy containing only
+`development: false` now preserves built-in line-head/release selection; an empty
+policy inherits everything. Fully specified non-null policies retain their choices.
+
+To disable one kind, use `development: false`, `namedRefs: []`, or `mode: none` for
+`lineHeads`, `releases` or `candidates`. For example, `releases: {mode: none}`
+suppresses inherited released versions while leaving development alone. Release
+`none` rejects `count` and `versions`; explicit mode still requires a nonempty list.
+A nested `{}` remains invalid because mode is required. Switching releases from
+`latestN/count` to `explicit/versions` replaces the entire rule, including removal
+of count. A null field inherits rather than disabling its kind.
+
+When adopting this behavior, replace accidental suppression through omitted/null
+fields with explicit disables and inspect `plan`/`check`: newly inherited contexts
+can require additional local trees or expose route conflicts. Winning inherited
+selectors receive the same reference validation as artifact selectors. Invalid
+release-to-line facts are checked even without an authored artifact policy or when
+releases are disabled; selection does not rewrite latest pointers. Artifactless
+components use only effective development selection. Older Pipeline binaries
+reject the new release `none` enum value; the catalog schema version stays 1.
 
 Example:
 

@@ -136,6 +136,7 @@ class LineHeadSelectionMode(StrEnum):
 class ReleaseSelectionMode(StrEnum):
     """Strategy used to select a released version."""
 
+    NONE = "none"
     LATEST_PER_LINE = "latestPerLine"
     LATEST_N = "latestN"
     ALL_KNOWN = "allKnown"

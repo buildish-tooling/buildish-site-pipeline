@@ -341,8 +341,6 @@ def _validate_selection_references(
     collector: DiagnosticCollector,
 ) -> None:
     selection = artifact.publication_selection
-    if selection is None:
-        return
     artifact_identity = (component_slug, artifact.key)
     known_releases = (
         {release.version for release in artifact.lifecycle.releases or ()}

@@ -62,6 +62,14 @@ class SchemaExportTests(unittest.TestCase):
             diagnostics_schema = json.loads((Path(tempdir) / "diagnostics-data-v1.schema.json").read_text(encoding="utf-8"))
             cli_failure_schema = json.loads((Path(tempdir) / "cli-failure-report-v1.schema.json").read_text(encoding="utf-8"))
 
+        self.assertEqual(
+            catalog_schema["$defs"]["ReleaseSelectionMode"]["enum"],
+            ["none", "latestPerLine", "latestN", "allKnown", "explicit"],
+        )
+        self.assertEqual(
+            catalog_schema["examples"][0]["components"][0]["publicationSelection"],
+            {"releases": {"mode": "none"}},
+        )
         self.assertEqual(catalog_schema["$schema"], "https://json-schema.org/draft/2020-12/schema")
         self.assertEqual(
             catalog_schema["$id"],

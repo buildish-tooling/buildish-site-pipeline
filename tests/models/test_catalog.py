@@ -417,3 +417,12 @@ class CatalogDocumentTests(unittest.TestCase):
                 document_format=DocumentFormat.JSON,
                 source_name="site/components.json",
             )
+    def test_release_none_is_explicit_and_rejects_mode_specific_selectors(self):
+        self.assertIs(ReleaseSelectionPolicy(mode="none").mode, ReleaseSelectionMode.NONE)
+        for invalid in (
+            {"mode": "none", "count": 1}, {"mode": "none", "versions": []},
+            {"mode": "none", "versions": ["1.0"]}, {}, {"mode": None},
+            {"mode": "latestN", "count": 0}, {"mode": "explicit", "versions": []},
+        ):
+            with self.subTest(invalid=invalid), self.assertRaises(ValidationError):
+                ReleaseSelectionPolicy.model_validate(invalid)

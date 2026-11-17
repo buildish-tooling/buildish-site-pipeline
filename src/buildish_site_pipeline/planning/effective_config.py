@@ -33,6 +33,10 @@ from __future__ import annotations
 from pathlib import Path
 
 from buildish_site_pipeline.models.authored.site_catalog import (
+    CandidateSelectionPolicy,
+    LineHeadSelectionPolicy,
+    PublicationSelectionPolicy,
+    ReleaseSelectionPolicy,
     ComponentCatalogEntry,
     SiteCatalogDocumentV1,
 )
@@ -53,6 +57,12 @@ from buildish_site_pipeline.models.provider.provider_snapshot import (
     ProviderSnapshotDocumentV1,
 )
 from buildish_site_pipeline.models.authored.artifacts import ArtifactLifecycleConfig
+
+from buildish_site_pipeline.models.enums import (
+    CandidateSelectionMode,
+    LineHeadSelectionMode,
+    ReleaseSelectionMode,
+)
 
 from .errors import PlanningInputFailure
 from .types import (
@@ -209,6 +219,9 @@ def _resolve_component(
         catalog.defaults.assets_root if catalog.defaults is not None else None,
     )
 
+    publication_selection = _resolve_publication_selection(
+        _default_publication_selection_policy(), component.publication_selection
+    )
     artifacts = []
     definitions = component_document.artifacts or () if component_document else ()
     bindings = {item.key: item for item in component.artifacts or ()}
@@ -299,9 +312,10 @@ def _resolve_component(
                 docs_root=artifact_docs_root,
                 assets_root=artifact_assets_root,
                 versioning=artifact.versioning,
-                publication_selection=binding.publication_selection
-                if binding
-                else None,
+                publication_selection=_resolve_publication_selection(
+                    publication_selection,
+                    binding.publication_selection if binding is not None else None,
+                ),
                 lifecycle=lifecycle,
                 support_status_vocabulary=support_status_vocabulary,
             ),
@@ -319,7 +333,7 @@ def _resolve_component(
         assets_root=assets_root,
         publication=publication,
         localization=localization,
-        publication_selection=component.publication_selection,
+        publication_selection=publication_selection,
         artifacts=tuple(artifacts),
         snapshot_path=_resolve_repo_path(
             sources[component.provider_snapshot.source].local_dir,
@@ -327,6 +341,44 @@ def _resolve_component(
         )
         if component.provider_snapshot
         else None,
+    )
+
+
+def _default_publication_selection_policy() -> PublicationSelectionPolicy:
+    return PublicationSelectionPolicy(
+        development=True,
+        line_heads=LineHeadSelectionPolicy(mode=LineHeadSelectionMode.ALL_AUTHORED),
+        releases=ReleaseSelectionPolicy(mode=ReleaseSelectionMode.LATEST_PER_LINE),
+        named_refs=[],
+        candidates=CandidateSelectionPolicy(mode=CandidateSelectionMode.NONE),
+    )
+
+
+def _resolve_publication_selection(
+    inherited: PublicationSelectionPolicy,
+    override: PublicationSelectionPolicy | None,
+) -> PublicationSelectionPolicy:
+    """Resolve independent fields, replacing nested modes and lists atomically."""
+
+    if override is None:
+        override = PublicationSelectionPolicy()
+    named_refs = (
+        override.named_refs if override.named_refs is not None else inherited.named_refs
+    )
+    return PublicationSelectionPolicy(
+        development=override.development
+        if override.development is not None
+        else inherited.development,
+        line_heads=override.line_heads
+        if override.line_heads is not None
+        else inherited.line_heads,
+        releases=override.releases
+        if override.releases is not None
+        else inherited.releases,
+        named_refs=list(named_refs) if named_refs is not None else None,
+        candidates=override.candidates
+        if override.candidates is not None
+        else inherited.candidates,
     )
 
 

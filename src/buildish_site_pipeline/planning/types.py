@@ -130,7 +130,8 @@ class ResolvedArtifactConfig:
     docs_root: Path
     assets_root: Path | None
     versioning: ArtifactVersioningConfig
-    publication_selection: PublicationSelectionPolicy | None
+    # Effective policy: all five fields are populated by effective_config.
+    publication_selection: PublicationSelectionPolicy
     lifecycle: ArtifactLifecycleConfig | None
     support_status_vocabulary: dict[str, SupportStatusDefinition]
     binding: ArtifactConfig | None = None
@@ -171,7 +172,8 @@ class ResolvedComponentConfig:
     assets_root: Path | None
     publication: ResolvedPublicationPolicy
     localization: ResolvedLocalizationPolicy
-    publication_selection: PublicationSelectionPolicy | None
+    # Effective policy: all five fields are populated by effective_config.
+    publication_selection: PublicationSelectionPolicy
     artifacts: tuple[ResolvedArtifactConfig, ...]
     snapshot_path: Path | None = None
 

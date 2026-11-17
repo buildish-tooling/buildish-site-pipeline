@@ -20,10 +20,7 @@ import re
 from collections.abc import Sequence
 
 from buildish_site_pipeline.models.authored.site_catalog import (
-    CandidateSelectionPolicy,
-    LineHeadSelectionPolicy,
     PublicationSelectionPolicy,
-    ReleaseSelectionPolicy,
 )
 from buildish_site_pipeline.models.enums import (
     CandidateSelectionMode,
@@ -63,11 +60,7 @@ def select_version_contexts(
         if not component.artifacts:
             selected_contexts.extend(_select_component_development_context(component))
         for artifact in component.artifacts:
-            effective_policy = (
-                artifact.publication_selection
-                or component.publication_selection
-                or _default_publication_selection_policy()
-            )
+            effective_policy = artifact.publication_selection
             provider_context = provider_index.contexts_by_artifact.get(
                 (component.slug, artifact.key)
             )
@@ -122,9 +115,7 @@ def _select_component_development_context(
 
     if component.docs_root is None or component.content_source is None:
         return []
-    effective_policy = (
-        component.publication_selection or _default_publication_selection_policy()
-    )
+    effective_policy = component.publication_selection
     if not effective_policy.development:
         return []
     return [
@@ -138,16 +129,6 @@ def _select_component_development_context(
             deterministic=True,
         )
     ]
-
-
-def _default_publication_selection_policy() -> PublicationSelectionPolicy:
-    return PublicationSelectionPolicy(
-        development=True,
-        line_heads=LineHeadSelectionPolicy(mode=LineHeadSelectionMode.ALL_AUTHORED),
-        releases=ReleaseSelectionPolicy(mode=ReleaseSelectionMode.LATEST_PER_LINE),
-        named_refs=[],
-        candidates=CandidateSelectionPolicy(mode=CandidateSelectionMode.NONE),
-    )
 
 
 def _select_development_context(
@@ -264,7 +245,7 @@ def _select_release_contexts(
     policy: PublicationSelectionPolicy,
 ) -> list[SelectedVersionContext]:
     release_policy = policy.releases
-    if release_policy is None:
+    if release_policy is None or release_policy.mode is ReleaseSelectionMode.NONE:
         return []
 
     authored_releases = (

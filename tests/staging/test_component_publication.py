@@ -70,7 +70,88 @@ def configure_release(
     return path, snapshot
 
 
+def configure_inherited_selection(root):
+    path, snapshot = configure_release(root)
+    # Retain the authored 4.0 line while publishing exact release 1.0.
+    snapshot = json.loads(json.dumps(snapshot).replace("4.0.0", "1.0"))
+    path.write_text(json.dumps(snapshot))
+    docs = root / "components/runtime/docs"
+    (docs / "releases/4.0.0").rename(docs / "releases/1.0")
+    (docs / "index.md").write_text("development body\n")
+    (docs / "maintenance/4.0/index.md").write_text("line head body\n")
+    catalog_path = root / "site/catalog.yaml"
+    catalog = yaml.safe_load(catalog_path.read_text())
+    component = catalog["components"][0]
+    component["publicationSelection"] = {
+        "development": True, "lineHeads": {"mode": "allAuthored"},
+        "releases": {"mode": "explicit", "versions": ["1.0"]},
+    }
+    component["artifacts"][0]["publicationSelection"] = {"namedRefs": []}
+    catalog_path.write_text(yaml.safe_dump(catalog, sort_keys=False))
+    return path, snapshot
+
+
 class ComponentPublicationTests(unittest.TestCase):
+    def test_partial_artifact_stages_inherited_contexts_without_changing_latest_facts(self):
+        from buildish_site_pipeline.commands.shared import load_workspace_inputs
+        from buildish_site_pipeline.models.enums import PlanningTarget
+        from buildish_site_pipeline.planning import evaluate_planning
+
+        with _workspace(with_content_file=True) as root:
+            snapshot_path, snapshot = configure_inherited_selection(root)
+            # The handoff case explicitly excludes line heads.
+            catalog_path = root / "site/catalog.yaml"
+            catalog = yaml.safe_load(catalog_path.read_text())
+            catalog["components"][0]["publicationSelection"]["lineHeads"] = {"mode": "none"}
+            catalog_path.write_text(yaml.safe_dump(catalog, sort_keys=False))
+            loaded = load_workspace_inputs(root)
+            result = evaluate_planning(
+                target=PlanningTarget.BUILD, workspace_root=root, catalog=loaded.catalog,
+                provider_snapshot=loaded.provider_snapshot, component_documents=loaded.component_documents,
+                snapshot_inputs=loaded.snapshot_inputs,
+            )
+            expected = [("development", None), ("released", "1.0")]
+            self.assertEqual([(c.kind.value, c.version) for c in result.selected_versions.contexts], expected)
+            self.assertEqual([(c.kind.value, c.version) for c in result.desired_versions], expected)
+            self.assertTrue(result.build_plan_result.bridge.ready)
+            self.assertEqual(
+                {item.expected_local_path.relative_to(root).as_posix() for item in result.local_inputs},
+                {"components/runtime/docs", "components/runtime/docs/releases/1.0"},
+            )
+            code, report, errors = run(root)
+            self.assertEqual(code, 0, (report, errors))
+            stage = root / "site/.stage"
+            self.assertEqual(frontmatter.load(stage / "content/spark/development/index.md").content, "development body")
+            self.assertEqual(frontmatter.load(stage / "content/spark/releases/1.0/index.md").content, "hello")
+            self.assertFalse((stage / "content/spark/development/4.0").exists())
+            self.assertFalse((stage / "content/spark/candidates").exists())
+            self.assertFalse((stage / "content/spark/refs").exists())
+            artifact = result.site.components[0].artifacts[0]
+            self.assertEqual(artifact.lifecycle.latest_stable, "1.0")
+            self.assertEqual(artifact.lifecycle.release_lines[0].latest, "1.0")
+            self.assertEqual(json.loads(snapshot_path.read_text()), snapshot)
+
+    def test_inherited_exact_release_with_missing_inventory_preserves_requirement_rules(self):
+        for requirement, expected_code in (("optional", 0), ("required", 1)):
+            with self.subTest(requirement=requirement), _workspace(with_content_file=True) as root:
+                configure_snapshot(root, requirement)
+                catalog_path = root / "site/catalog.yaml"
+                catalog = yaml.safe_load(catalog_path.read_text())
+                component = catalog["components"][0]
+                component["publicationSelection"] = {
+                    "releases": {"mode": "explicit", "versions": ["1.0"]},
+                    "lineHeads": {"mode": "explicit", "keys": ["missing"]},
+                }
+                component["artifacts"][0]["publicationSelection"] = {"namedRefs": []}
+                catalog_path.write_text(yaml.safe_dump(catalog, sort_keys=False))
+                code, report, errors = run(root, "check")
+                self.assertEqual(code, expected_code, (report, errors))
+                codes = [d["code"] for d in report["diagnostics"]]
+                if requirement == "optional":
+                    self.assertNotIn("reference-configuration-invalid", codes)
+                self.assertIn("provider-snapshot-missing" if requirement == "optional" else "provider-snapshot-required", codes)
+
+
     def test_exported_docs_use_explicit_original_source_or_omit_links(self):
         with _workspace(with_content_file=True) as root:
             path, snapshot = configure_release(root)

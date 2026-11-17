@@ -43,6 +43,41 @@ from tests.support.workspace import _cwd, _fake_watch_event_stream_factory, _wor
 
 
 class WatchIncrementalTests(unittest.TestCase):
+    def test_partial_selection_removal_and_restoration_match_clean_build(self):
+        from tests.staging.test_component_publication import configure_inherited_selection
+
+        for restore in (False, True):
+            with self.subTest(restore=restore), _workspace(with_content_file=True) as root:
+                configure_inherited_selection(root)
+                catalog_path = root / "site/catalog.yaml"
+
+                def suppress(catalog_path=catalog_path):
+                    catalog = yaml.safe_load(catalog_path.read_text())
+                    catalog["components"][0]["artifacts"][0]["publicationSelection"] = {
+                        "development": False, "releases": {"mode": "none"}, "namedRefs": [],
+                    }
+                    catalog_path.write_text(yaml.safe_dump(catalog, sort_keys=False))
+                    return (catalog_path,)
+
+                def inherit(catalog_path=catalog_path):
+                    catalog = yaml.safe_load(catalog_path.read_text())
+                    catalog["components"][0]["artifacts"][0]["publicationSelection"] = None
+                    catalog_path.write_text(yaml.safe_dump(catalog, sort_keys=False))
+                    return (catalog_path,)
+
+                responses = [(True, suppress)]
+                if restore:
+                    responses.extend([(False, ()), (True, inherit)])
+                watched = _run_watch_then_snapshot(workspace_root=root, responses=[*responses, (False, None)])
+                code, clean = _run_clean_build_snapshot(root)
+                self.assertEqual(code, 0)
+                self.assertEqual(watched, clean)
+                stage = root / "site/.stage/content/spark"
+                self.assertEqual((stage / "development/index.md").exists(), restore)
+                self.assertEqual((stage / "releases/1.0/index.md").exists(), restore)
+                self.assertIn("line head body", (stage / "development/4.0/index.md").read_text())
+
+
     def test_retained_component_source_is_recomputed_after_another_component_edit(self):
         from buildish_site_pipeline.cli.main import parse_invocation
         from buildish_site_pipeline.commands.watch import (

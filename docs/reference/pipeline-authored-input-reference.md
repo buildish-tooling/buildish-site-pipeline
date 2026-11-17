@@ -48,7 +48,7 @@ Back to the [reference overview](../pipeline-model-schema-reference/).
 - [NamedRefConfig](#namedrefconfig) — Named source-control ref intentionally exposed as a stable version context.
 - [OriginConfig](#originconfig) — Named public base URL that published routes can resolve against.
 - [PublicationConfig](#publicationconfig) — Resolved-or-authored route layout choices for a component or artifact.
-- [PublicationSelectionPolicy](#publicationselectionpolicy) — Planning-time rule set for which version contexts are staged and linked.
+- [PublicationSelectionPolicy](#publicationselectionpolicy) — Version-context selection inherited field by field from built-ins to component to artifact catalog policy.
 - [RedirectRuleConfig](#redirectruleconfig) — Redirect rule that sends one published path to another internal or external target.
 - [ReleaseLineConfig](#releaselineconfig) — One logical release line, such as `4.0`, together with its lifecycle metadata.
 - [ReleaseSelectionPolicy](#releaseselectionpolicy) — Rule for which exact released versions should become published contexts.
@@ -75,7 +75,7 @@ One independently versioned release unit inside a component.
 | <a id="artifactconfig-source"></a>`source` | [SourceKey](../pipeline-shared-types-reference/#sourcekey) | no | Optional source binding override; otherwise inherit the component content source. |
 | <a id="artifactconfig-docsroot"></a>`docsRoot` | [RepoRelativePath](../pipeline-shared-types-reference/#reporelativepath) | no | Optional source layout binding for artifact docs. |
 | <a id="artifactconfig-assetsroot"></a>`assetsRoot` | [RepoRelativePath](../pipeline-shared-types-reference/#reporelativepath) | no | Optional source layout binding for artifact assets. |
-| <a id="artifactconfig-publicationselection"></a>`publicationSelection` | [PublicationSelectionPolicy](#publicationselectionpolicy) | no | Optional consumer publication selection for this component-defined artifact. |
+| <a id="artifactconfig-publicationselection"></a>`publicationSelection` | [PublicationSelectionPolicy](#publicationselectionpolicy) | no | Optional consumer publication selection for this component-defined artifact. Non-null fields override component policy; omitted/null fields and an empty policy inherit. |
 | <a id="artifactconfig-compatibility"></a>`compatibility` | list[[CompatibilityAssertionConfig](#compatibilityassertionconfig)] | no | Compatibility statements that should be emitted for this artifact in staged metadata. |
 | <a id="artifactconfig-mounts"></a>`mounts` | list[[MountConfig](#mountconfig)] | no | Mounted generated or imported subtrees that belong to this artifact's published surface. |
 
@@ -221,7 +221,7 @@ Component entry in the consumer catalog.
 | <a id="componentcatalogentry-group"></a>`group` | [Identifier](../pipeline-shared-types-reference/#identifier) | no | Optional group key for inherited defaults and renderer grouping. |
 | <a id="componentcatalogentry-content"></a>`content` | [ComponentContentSelection](#componentcontentselection) | no | Shared content-source selection for component pages, docs, and assets. |
 | <a id="componentcatalogentry-publication"></a>`publication` | [PublicationConfig](#publicationconfig) | no | Explicit publication configuration for this component. |
-| <a id="componentcatalogentry-publicationselection"></a>`publicationSelection` | [PublicationSelectionPolicy](#publicationselectionpolicy) | no | Default version-context selection policy inherited by contained artifacts unless they override it. |
+| <a id="componentcatalogentry-publicationselection"></a>`publicationSelection` | [PublicationSelectionPolicy](#publicationselectionpolicy) | no | Version-context selection layered over built-in values and inherited by contained artifacts field by field. Omitted/null fields and an empty policy inherit. |
 | <a id="componentcatalogentry-localization"></a>`localization` | [LocalizationConfig](#localizationconfig) | no | Component-specific localization overrides. |
 | <a id="componentcatalogentry-compatibility"></a>`compatibility` | list[[CompatibilityAssertionConfig](#compatibilityassertionconfig)] | no | Component-level compatibility assertions emitted into staged metadata. |
 | <a id="componentcatalogentry-mounts"></a>`mounts` | list[[MountConfig](#mountconfig)] | no | Component-level generated or imported documentation mounts. |
@@ -535,7 +535,10 @@ Resolved-or-authored route layout choices for a component or artifact.
 <a id="publicationselectionpolicy"></a>
 ### PublicationSelectionPolicy
 
-Planning-time rule set for which version contexts are staged and linked.
+Version-context selection inherited field by field from built-ins to component to artifact catalog policy.
+
+Omitted/null fields inherit. Nested mode objects and named-ref lists replace\
+atomically; an empty policy inherits all fields.
 
 - category: `authored`
 - ownership: `consumer-owned`
@@ -543,11 +546,11 @@ Planning-time rule set for which version contexts are staged and linked.
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| <a id="publicationselectionpolicy-development"></a>`development` | bool | no | Whether to publish the moving development context represented by the artifact's `developmentRef`. |
-| <a id="publicationselectionpolicy-lineheads"></a>`lineHeads` | [LineHeadSelectionPolicy](#lineheadselectionpolicy) | no | Rule for including release-line head contexts such as `4.0` or `3.5`. |
-| <a id="publicationselectionpolicy-releases"></a>`releases` | [ReleaseSelectionPolicy](#releaseselectionpolicy) | no | Rule for including exact released-version contexts such as `4.0.1`. |
-| <a id="publicationselectionpolicy-namedrefs"></a>`namedRefs` | list[[Identifier](../pipeline-shared-types-reference/#identifier)] | no | Named ref keys to include as publishable contexts in addition to development, line-head, or released versions. |
-| <a id="publicationselectionpolicy-candidates"></a>`candidates` | [CandidateSelectionPolicy](#candidateselectionpolicy) | no | Rule for including release-candidate contexts when they should be visible to readers. |
+| <a id="publicationselectionpolicy-development"></a>`development` | bool | no | Whether to publish the moving development context represented by the artifact's `developmentRef`. Omitted/null inherits; false disables only development. |
+| <a id="publicationselectionpolicy-lineheads"></a>`lineHeads` | [LineHeadSelectionPolicy](#lineheadselectionpolicy) | no | Rule for including release-line head contexts such as `4.0` or `3.5`. Omitted/null inherits; a supplied mode object replaces the inherited rule; mode none disables line heads. |
+| <a id="publicationselectionpolicy-releases"></a>`releases` | [ReleaseSelectionPolicy](#releaseselectionpolicy) | no | Rule for including exact released-version contexts such as `4.0.1`. Omitted/null inherits; a supplied mode object replaces the inherited rule; mode none disables releases. |
+| <a id="publicationselectionpolicy-namedrefs"></a>`namedRefs` | list[[Identifier](../pipeline-shared-types-reference/#identifier)] | no | Named ref keys to publish. Omitted/null inherits; a supplied list replaces the inherited list; an empty list disables named refs. |
+| <a id="publicationselectionpolicy-candidates"></a>`candidates` | [CandidateSelectionPolicy](#candidateselectionpolicy) | no | Rule for including release-candidate contexts. Omitted/null inherits; a supplied mode object replaces the inherited rule; mode none disables candidates. |
 
 #### Selected field examples
 
@@ -619,7 +622,7 @@ Rule for which exact released versions should become published contexts.
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| <a id="releaseselectionpolicy-mode"></a>`mode` | [ReleaseSelectionMode](../pipeline-shared-types-reference/#releaseselectionmode) | yes | Selection strategy for released versions, for example the latest `n` releases or one explicit version list. |
+| <a id="releaseselectionpolicy-mode"></a>`mode` | [ReleaseSelectionMode](../pipeline-shared-types-reference/#releaseselectionmode) | yes | Selection strategy for released versions: `none` disables releases; other modes select the latest per line, latest `n`, all known, or explicit versions. |
 | <a id="releaseselectionpolicy-count"></a>`count` | [PositiveInteger](../pipeline-shared-types-reference/#positiveinteger) | no | How many most-recent releases to include when `mode` is `latestN`. |
 | <a id="releaseselectionpolicy-versions"></a>`versions` | list[[VersionString](../pipeline-shared-types-reference/#versionstring)] | no | Exact released versions to include when `mode` is `explicit`. |
 
@@ -695,15 +698,14 @@ components:
     source: runtime
   publication:
     mountPath: /spark/
+  publicationSelection:
+    releases:
+      mode: none
   artifacts:
   - key: runtime
     source: runtime
     publicationSelection:
-      development: true
-      lineHeads:
-        mode: allAuthored
-      releases:
-        mode: latestPerLine
+      namedRefs: []
 ```
 
 <a id="sitecontentconfig"></a>

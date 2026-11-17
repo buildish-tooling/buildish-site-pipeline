@@ -454,7 +454,7 @@ class ReleaseSelectionPolicy(SitePipelineBaseModel):
     """Rule for which exact released versions should become published contexts."""
 
     mode: ReleaseSelectionMode = Field(
-        description="Selection strategy for released versions, for example the latest `n` releases or one explicit version list.",
+        description="Selection strategy for released versions: `none` disables releases; other modes select the latest per line, latest `n`, all known, or explicit versions.",
     )
     count: PositiveInteger | None = Field(
         default=None,
@@ -528,28 +528,32 @@ class CandidateSelectionPolicy(SitePipelineBaseModel):
 
 
 class PublicationSelectionPolicy(SitePipelineBaseModel):
-    """Planning-time rule set for which version contexts are staged and linked."""
+    """Version-context selection inherited field by field from built-ins to component to artifact catalog policy.
+
+    Omitted/null fields inherit. Nested mode objects and named-ref lists replace
+    atomically; an empty policy inherits all fields.
+    """
 
     development: bool | None = Field(
         default=None,
-        description="Whether to publish the moving development context represented by the artifact's `developmentRef`.",
+        description="Whether to publish the moving development context represented by the artifact's `developmentRef`. Omitted/null inherits; false disables only development.",
     )
     line_heads: LineHeadSelectionPolicy | None = Field(
         default=None,
-        description="Rule for including release-line head contexts such as `4.0` or `3.5`.",
+        description="Rule for including release-line head contexts such as `4.0` or `3.5`. Omitted/null inherits; a supplied mode object replaces the inherited rule; mode none disables line heads.",
     )
     releases: ReleaseSelectionPolicy | None = Field(
         default=None,
-        description="Rule for including exact released-version contexts such as `4.0.1`.",
+        description="Rule for including exact released-version contexts such as `4.0.1`. Omitted/null inherits; a supplied mode object replaces the inherited rule; mode none disables releases.",
     )
     named_refs: list[Identifier] | None = Field(
         default=None,
-        description="Named ref keys to include as publishable contexts in addition to development, line-head, or released versions.",
+        description="Named ref keys to publish. Omitted/null inherits; a supplied list replaces the inherited list; an empty list disables named refs.",
         examples=[["preview", "stable"]],
     )
     candidates: CandidateSelectionPolicy | None = Field(
         default=None,
-        description="Rule for including release-candidate contexts when they should be visible to readers.",
+        description="Rule for including release-candidate contexts. Omitted/null inherits; a supplied mode object replaces the inherited rule; mode none disables candidates.",
     )
 
     @model_validator(mode="after")
@@ -662,7 +666,7 @@ class ArtifactConfig(SitePipelineBaseModel):
     )
     publication_selection: PublicationSelectionPolicy | None = Field(
         default=None,
-        description="Optional consumer publication selection for this component-defined artifact.",
+        description="Optional consumer publication selection for this component-defined artifact. Non-null fields override component policy; omitted/null fields and an empty policy inherit.",
     )
     compatibility: list[CompatibilityAssertionConfig] | None = Field(
         default=None,
@@ -714,7 +718,7 @@ class ComponentCatalogEntry(SitePipelineBaseModel):
     )
     publication_selection: PublicationSelectionPolicy | None = Field(
         default=None,
-        description="Default version-context selection policy inherited by contained artifacts unless they override it.",
+        description="Version-context selection layered over built-in values and inherited by contained artifacts field by field. Omitted/null fields and an empty policy inherit.",
     )
     localization: LocalizationConfig | None = Field(
         default=None, description="Component-specific localization overrides."

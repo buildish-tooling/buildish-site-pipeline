@@ -264,6 +264,8 @@ components:
         docsRoot: docs/runtime
         publicationSelection:
           development: true
+          lineHeads:
+            mode: none
           releases:
             mode: latestPerLine
       - key: api
@@ -271,6 +273,8 @@ components:
         docsRoot: docs
         publicationSelection:
           development: true
+          lineHeads:
+            mode: none
           releases:
             mode: latestPerLine
 """.strip()
@@ -661,6 +665,8 @@ components:
         source: spark
         publicationSelection:
           development: true
+          lineHeads:
+            mode: none
           releases:
             mode: latestPerLine
   - slug: spark-operator
@@ -674,6 +680,8 @@ components:
         source: operator
         publicationSelection:
           development: true
+          lineHeads:
+            mode: none
           releases:
             mode: latestPerLine
 """.strip()

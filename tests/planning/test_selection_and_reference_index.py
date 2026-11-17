@@ -90,7 +90,7 @@ class SelectionAndReferenceIndexTests(unittest.TestCase):
                 repository=None,
                 default_branch="main",
             ),
-            publication_selection=None,
+            publication_selection=self._default_policy(),
             artifacts=(),
         )
 
@@ -379,7 +379,7 @@ class SelectionAndReferenceIndexTests(unittest.TestCase):
         self.assertEqual(contexts[0].release_line, "4.0")
         self.assertEqual(contexts[0].ref, "maintenance/4.0")
 
-    def test_select_version_contexts_uses_default_policy_when_no_publication_selection_is_authored(self) -> None:
+    def test_select_version_contexts_consumes_resolved_default_policy(self) -> None:
         artifact = self._artifact(
             lifecycle=ArtifactLifecycleConfig(
                 releases=[ExactReleaseConfig(version="4.0.0", release_line="4.0")],
@@ -397,7 +397,7 @@ class SelectionAndReferenceIndexTests(unittest.TestCase):
                 SimpleNamespace(
                     slug="spark",
                     artifacts=(artifact,),
-                    publication_selection=None,
+                    publication_selection=self._default_policy(),
                 ),
             )
         )
@@ -435,7 +435,7 @@ class SelectionAndReferenceIndexTests(unittest.TestCase):
                 SimpleNamespace(
                     slug="spark",
                     artifacts=(artifact,),
-                    publication_selection=None,
+                    publication_selection=self._default_policy(),
                 ),
             )
         )
@@ -880,12 +880,12 @@ class SelectionAndReferenceIndexTests(unittest.TestCase):
 
         self.assertEqual(collector.build(), ())
 
-    def test_validate_selection_references_returns_early_when_publication_selection_is_missing(self) -> None:
+    def test_validate_selection_references_accepts_resolved_defaults_without_references(self) -> None:
         collector = DiagnosticCollector()
 
         _validate_selection_references(
             component_slug="spark",
-            artifact=self._artifact(publication_selection=None),
+            artifact=self._artifact(),
             planning=SimpleNamespace(
                 provider_index=ProviderSnapshotIndex(
                     providers={},
@@ -946,6 +946,16 @@ class SelectionAndReferenceIndexTests(unittest.TestCase):
         )
 
     @staticmethod
+    def _default_policy():
+        return PublicationSelectionPolicy(
+            development=True,
+            line_heads=LineHeadSelectionPolicy(mode="allAuthored"),
+            releases=ReleaseSelectionPolicy(mode="latestPerLine"),
+            named_refs=[],
+            candidates=CandidateSelectionPolicy(mode="none"),
+        )
+
+    @staticmethod
     def _artifact(
         *,
         publication_selection: PublicationSelectionPolicy | None = None,
@@ -967,7 +977,9 @@ class SelectionAndReferenceIndexTests(unittest.TestCase):
                 tag_pattern="^v.*$",
                 named_refs=[NamedRefConfig(key="main", ref="refs/heads/main")],
             ),
-            publication_selection=publication_selection,
+            publication_selection=publication_selection
+            if publication_selection is not None
+            else SelectionAndReferenceIndexTests._default_policy(),
             lifecycle=lifecycle,
         )
 

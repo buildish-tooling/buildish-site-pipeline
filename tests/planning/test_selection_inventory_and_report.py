@@ -24,13 +24,27 @@ from typing import cast
 
 from buildish_site_pipeline.cli.errors import CommandExecutionError
 from buildish_site_pipeline.models import (
+    ComponentMetadataDocumentV1,
     PlanningTarget,
     ProviderSnapshotDocumentV1,
     SiteCatalogDocumentV1,
 )
-from buildish_site_pipeline.models.enums import MaterializationInputKind, MaterializationStatus
-from buildish_site_pipeline.planning import build_resolved_materialization_report, evaluate_planning
-from buildish_site_pipeline.planning.types import EffectiveBuildPlanResult, InputReadiness, LocalInputIdentity, MaterializationStatusReason, PlanToBuildBridge, ResolvedLocalInput
+from buildish_site_pipeline.models.enums import (
+    MaterializationInputKind,
+    MaterializationStatus,
+)
+from buildish_site_pipeline.planning import (
+    build_resolved_materialization_report,
+    evaluate_planning,
+)
+from buildish_site_pipeline.planning.types import (
+    EffectiveBuildPlanResult,
+    InputReadiness,
+    LocalInputIdentity,
+    MaterializationStatusReason,
+    PlanToBuildBridge,
+    ResolvedLocalInput,
+)
 from buildish_site_pipeline.staging.types import EffectiveBuildPlan
 from buildish_site_pipeline.planning.watch_roots import derive_watch_plan
 
@@ -73,6 +87,7 @@ class PlanningEvaluationTests(unittest.TestCase):
             evaluation = evaluate_planning(
                 target=PlanningTarget.BUILD,
                 catalog=catalog,
+                component_documents=_component_documents(),
                 provider_snapshot=provider_snapshot,
                 workspace_root=workspace_root,
             )
@@ -80,7 +95,12 @@ class PlanningEvaluationTests(unittest.TestCase):
         self.assertTrue(evaluation.selected_versions.deterministic)
         self.assertTrue(evaluation.build_plan_result.bridge.ready)
         self.assertIsNotNone(evaluation.build_plan_result.candidate)
-        self.assertTrue(all(local_input.watch_eligible is not None for local_input in evaluation.local_inputs))
+        self.assertTrue(
+            all(
+                local_input.watch_eligible is not None
+                for local_input in evaluation.local_inputs
+            )
+        )
 
     def test_build_target_reports_site_owned_local_inputs(self) -> None:
         catalog = _sample_catalog()
@@ -97,6 +117,7 @@ class PlanningEvaluationTests(unittest.TestCase):
             evaluation = evaluate_planning(
                 target=PlanningTarget.BUILD,
                 catalog=catalog,
+                component_documents=_component_documents(),
                 provider_snapshot=provider_snapshot,
                 workspace_root=workspace_root,
             )
@@ -110,7 +131,9 @@ class PlanningEvaluationTests(unittest.TestCase):
         self.assertEqual(entries[("siteAssets", "site:assets")], "present")
         self.assertEqual(entries[("vendorAssets", "vendorAssets:0")], "present")
 
-    def test_build_target_reports_component_owned_docs_input_when_component_has_no_artifacts(self) -> None:
+    def test_build_target_reports_component_owned_docs_input_when_component_has_no_artifacts(
+        self,
+    ) -> None:
         catalog = _component_only_catalog()
         provider_snapshot = _empty_provider_snapshot()
         with tempfile.TemporaryDirectory() as tempdir:
@@ -121,6 +144,7 @@ class PlanningEvaluationTests(unittest.TestCase):
             evaluation = evaluate_planning(
                 target=PlanningTarget.BUILD,
                 catalog=catalog,
+                component_documents=_component_documents(),
                 provider_snapshot=provider_snapshot,
                 workspace_root=workspace_root,
             )
@@ -140,7 +164,11 @@ class PlanningEvaluationTests(unittest.TestCase):
         self.assertEqual(development_inputs[0].expected_local_path, docs_root)
 
         entries = {
-            (entry.input_kind.value, entry.source_key, entry.artifact_key): entry.status.value
+            (
+                entry.input_kind.value,
+                entry.source_key,
+                entry.artifact_key,
+            ): entry.status.value
             for entry in report.entries
         }
         self.assertEqual(
@@ -148,7 +176,9 @@ class PlanningEvaluationTests(unittest.TestCase):
             "present",
         )
 
-    def test_watch_target_marks_released_context_not_watch_eligible_and_detects_stale_marker(self) -> None:
+    def test_watch_target_marks_released_context_not_watch_eligible_and_detects_stale_marker(
+        self,
+    ) -> None:
         catalog = _sample_catalog()
         provider_snapshot = _sample_provider_snapshot()
         with tempfile.TemporaryDirectory() as tempdir:
@@ -169,6 +199,7 @@ class PlanningEvaluationTests(unittest.TestCase):
             evaluation = evaluate_planning(
                 target=PlanningTarget.WATCH,
                 catalog=catalog,
+                component_documents=_component_documents(),
                 provider_snapshot=provider_snapshot,
                 workspace_root=workspace_root,
                 stage_root=workspace_root / ".stage",
@@ -177,18 +208,28 @@ class PlanningEvaluationTests(unittest.TestCase):
             )
             report = build_resolved_materialization_report(evaluation)
 
-        released_entries = [entry for entry in report.entries if entry.input_kind.value == "released"]
+        released_entries = [
+            entry for entry in report.entries if entry.input_kind.value == "released"
+        ]
         self.assertEqual(released_entries[0].status, MaterializationStatus.STALE)
         self.assertFalse(released_entries[0].watch_eligible)
-        self.assertTrue(all(entry.watch_eligible is not None for entry in report.entries))
+        self.assertTrue(
+            all(entry.watch_eligible is not None for entry in report.entries)
+        )
 
-    def test_build_target_reports_invalid_markers_and_non_directory_inputs(self) -> None:
+    def test_build_target_reports_invalid_markers_and_non_directory_inputs(
+        self,
+    ) -> None:
         catalog = _sample_catalog()
         provider_snapshot = _sample_provider_snapshot()
         with tempfile.TemporaryDirectory() as tempdir:
             workspace_root = Path(tempdir)
-            (workspace_root / "site/root-pages").parent.mkdir(parents=True, exist_ok=True)
-            (workspace_root / "site/root-pages").write_text("not a directory\n", encoding="utf-8")
+            (workspace_root / "site/root-pages").parent.mkdir(
+                parents=True, exist_ok=True
+            )
+            (workspace_root / "site/root-pages").write_text(
+                "not a directory\n", encoding="utf-8"
+            )
             _mkdir(workspace_root / "site/root-assets")
             _mkdir(workspace_root / "vendor/brand")
             _mkdir(workspace_root / "components/runtime/docs")
@@ -203,13 +244,17 @@ class PlanningEvaluationTests(unittest.TestCase):
             evaluation = evaluate_planning(
                 target=PlanningTarget.BUILD,
                 catalog=catalog,
+                component_documents=_component_documents(),
                 provider_snapshot=provider_snapshot,
                 workspace_root=workspace_root,
             )
             report = build_resolved_materialization_report(evaluation)
 
         entries = {
-            (entry.input_kind.value, entry.source_key): (entry.status.value, entry.reason)
+            (entry.input_kind.value, entry.source_key): (
+                entry.status.value,
+                entry.reason,
+            )
             for entry in report.entries
         }
         self.assertEqual(
@@ -237,16 +282,26 @@ class PlanningEvaluationTests(unittest.TestCase):
             evaluation = evaluate_planning(
                 target=PlanningTarget.WATCH,
                 catalog=catalog,
+                component_documents=_component_documents(),
                 provider_snapshot=provider_snapshot,
                 workspace_root=workspace_root,
                 stage_root=stage_root,
             )
 
         self.assertIsNotNone(evaluation.watch_plan)
-        self.assertEqual(evaluation.watch_plan.roots, (workspace_root / "site/root-assets", workspace_root / "site/root-pages", workspace_root / "vendor/brand"))
+        self.assertEqual(
+            evaluation.watch_plan.roots,
+            (
+                workspace_root / "site/root-assets",
+                workspace_root / "site/root-pages",
+                workspace_root / "vendor/brand",
+            ),
+        )
         self.assertEqual(len(evaluation.watch_plan.diagnostics), 2)
 
-    def test_watch_target_excludes_roots_that_overlap_work_and_report_outputs(self) -> None:
+    def test_watch_target_excludes_roots_that_overlap_work_and_report_outputs(
+        self,
+    ) -> None:
         catalog = _sample_catalog()
         provider_snapshot = _sample_provider_snapshot()
         with tempfile.TemporaryDirectory() as tempdir:
@@ -261,11 +316,13 @@ class PlanningEvaluationTests(unittest.TestCase):
             evaluation = evaluate_planning(
                 target=PlanningTarget.WATCH,
                 catalog=catalog,
+                component_documents=_component_documents(),
                 provider_snapshot=provider_snapshot,
                 workspace_root=workspace_root,
                 stage_root=workspace_root / "site/.stage",
                 work_root=workspace_root / "vendor/brand",
-                report_output=workspace_root / "site/root-pages/materialization-report.json",
+                report_output=workspace_root
+                / "site/root-pages/materialization-report.json",
             )
 
         self.assertIsNotNone(evaluation.watch_plan)
@@ -286,13 +343,21 @@ class PlanningEvaluationTests(unittest.TestCase):
             [{"reason": MaterializationStatusReason.WATCH_ROOT_CONFLICT}] * 2,
         )
         self.assertTrue(
-            any("site/root-pages" in diagnostic.message for diagnostic in evaluation.watch_plan.diagnostics)
+            any(
+                "site/root-pages" in diagnostic.message
+                for diagnostic in evaluation.watch_plan.diagnostics
+            )
         )
         self.assertTrue(
-            any("vendor/brand" in diagnostic.message for diagnostic in evaluation.watch_plan.diagnostics)
+            any(
+                "vendor/brand" in diagnostic.message
+                for diagnostic in evaluation.watch_plan.diagnostics
+            )
         )
 
-    def test_watch_target_without_safe_watch_roots_is_not_ready_for_build_bridge(self) -> None:
+    def test_watch_target_without_safe_watch_roots_is_not_ready_for_build_bridge(
+        self,
+    ) -> None:
         catalog = _sample_catalog()
         provider_snapshot = _sample_provider_snapshot()
         with tempfile.TemporaryDirectory() as tempdir:
@@ -307,6 +372,7 @@ class PlanningEvaluationTests(unittest.TestCase):
             evaluation = evaluate_planning(
                 target=PlanningTarget.WATCH,
                 catalog=catalog,
+                component_documents=_component_documents(),
                 provider_snapshot=provider_snapshot,
                 workspace_root=workspace_root,
                 stage_root=workspace_root,
@@ -317,7 +383,12 @@ class PlanningEvaluationTests(unittest.TestCase):
         self.assertFalse(evaluation.build_plan_result.bridge.watch_ready)
         self.assertFalse(evaluation.build_plan_result.bridge.ready)
         self.assertIsNone(evaluation.build_plan_result.candidate)
-        self.assertTrue(all(diagnostic.code == "watch-root-conflict" for diagnostic in evaluation.watch_plan.diagnostics))
+        self.assertTrue(
+            all(
+                diagnostic.code == "watch-root-conflict"
+                for diagnostic in evaluation.watch_plan.diagnostics
+            )
+        )
 
     def test_watch_target_rejects_more_than_32_watch_roots_with_clear_limit_error(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
@@ -369,7 +440,9 @@ def _sample_catalog() -> SiteCatalogDocumentV1:
             "site": {
                 "pagesRoot": "site/root-pages",
                 "assetsRoot": "site/root-assets",
-                "vendorAssets": [{"source": "vendor/brand", "mountPath": "/assets/vendor/brand/"}],
+                "vendorAssets": [
+                    {"source": "vendor/brand", "mountPath": "/assets/vendor/brand/"}
+                ],
             },
             "origins": {"docs": {"baseUrl": "https://docs.example.org"}},
             "sources": {"runtime": {"localDir": "components/runtime"}},
@@ -382,21 +455,11 @@ def _sample_catalog() -> SiteCatalogDocumentV1:
                         {
                             "key": "runtime",
                             "source": "runtime",
-                            "versioning": {
-                                "developmentRef": "main",
-                                "tagPattern": "^v.*$",
-                            },
                             "publicationSelection": {
                                 "development": True,
                                 "lineHeads": {"mode": "allAuthored"},
                                 "releases": {"mode": "latestPerLine"},
                                 "candidates": {"mode": "none"},
-                            },
-                            "lifecycle": {
-                                "releaseLines": [
-                                    {"key": "4.0", "maintenanceRef": "maintenance/4.0", "latest": "4.0.0"},
-                                ],
-                                "releases": [{"version": "4.0.0"}],
                             },
                         },
                     ],
@@ -437,6 +500,20 @@ def _sample_provider_snapshot() -> ProviderSnapshotDocumentV1:
     return ProviderSnapshotDocumentV1.model_validate(
         {
             "schemaVersion": 1,
+            "artifacts": [
+                {
+                    "componentSlug": "spark",
+                    "artifactKey": "runtime",
+                    "releaseLines": [
+                        {
+                            "key": "4.0",
+                            "latest": "4.0.0",
+                            "maintenanceRef": "maintenance/4.0",
+                        }
+                    ],
+                    "releases": [{"version": "4.0.0", "releaseLine": "4.0"}],
+                }
+            ],
             "providers": [
                 {
                     "key": "github",
@@ -487,3 +564,12 @@ def _empty_provider_snapshot() -> ProviderSnapshotDocumentV1:
 
 def _mkdir(path: Path) -> None:
     path.mkdir(parents=True, exist_ok=True)
+
+def _component_documents():
+    return {
+        "spark": ComponentMetadataDocumentV1(
+            schema_version=1,
+            component={"slug": "spark"},
+            artifacts=[{"key": "runtime"}],
+        )
+    }

@@ -61,6 +61,7 @@ defaults:
   docsRoot: docs
   publication:
     origin: docs
+  metadataFile: site/component.yaml
 origins:
   docs:
     baseUrl: https://docs.example.org
@@ -88,20 +89,10 @@ components:
     artifacts:
       - key: runtime
         source: spark
-        versioning:
-          developmentRef: main
-          tagPattern: ^v.*$
         publicationSelection:
           development: true
           releases:
             mode: latestPerLine
-        lifecycle:
-          releaseLines:
-            - key: "4.0"
-              maintenanceRef: maintenance/4.0
-              latest: "4.0.0"
-          releases:
-            - version: "4.0.0"
   - slug: spark-operator
     group: streaming
     content:
@@ -111,20 +102,36 @@ components:
     artifacts:
       - key: operator
         source: operator
-        versioning:
-          developmentRef: main
-          tagPattern: ^operator-v.*$
         publicationSelection:
           development: true
           releases:
             mode: latestPerLine
-        lifecycle:
-          releaseLines:
-            - key: "1.2"
-              maintenanceRef: maintenance/1.2
-              latest: "1.2.0"
-          releases:
-            - version: "1.2.0"
+```
+
+Component-owned `site/component.yaml` for `spark`:
+
+```yaml
+schemaVersion: 1
+component:
+  slug: spark
+artifacts:
+  - key: runtime
+    versioning:
+      developmentRef: main
+      tagPattern: ^v.*$
+```
+
+Component-owned `site/component.yaml` for `spark-operator`:
+
+```yaml
+schemaVersion: 1
+component:
+  slug: spark-operator
+artifacts:
+  - key: operator
+    versioning:
+      developmentRef: main
+      tagPattern: ^operator-v.*$
 ```
 
 One representative `site/provider-snapshot.json` then enriches release state
@@ -135,7 +142,7 @@ schemaVersion: 1
 providers:
   - key: github
     type: githubReleases
-    fetchedAt: 2026-04-03T00:00:00Z
+    fetchedAt: '2026-04-03T00:00:00Z'
 records:
   - provider: github
     kind: released
@@ -149,6 +156,25 @@ records:
     artifactKey: operator
     version: 1.2.0
     tag: operator-v1.2.0
+artifacts:
+  - componentSlug: spark
+    artifactKey: runtime
+    releaseLines:
+      - key: '4.0'
+        maintenanceRef: maintenance/4.0
+        latest: 4.0.0
+    releases:
+      - version: 4.0.0
+        releaseLine: '4.0'
+  - componentSlug: spark-operator
+    artifactKey: operator
+    releaseLines:
+      - key: '1.2'
+        maintenanceRef: maintenance/1.2
+        latest: 1.2.0
+    releases:
+      - version: 1.2.0
+        releaseLine: '1.2'
 ```
 
 The first commands are usually:

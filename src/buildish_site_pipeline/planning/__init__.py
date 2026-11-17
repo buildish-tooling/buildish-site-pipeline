@@ -62,15 +62,26 @@ def evaluate_planning(
         catalog=catalog,
         workspace_root=workspace_root,
         component_documents=component_documents,
+        provider_snapshot=provider_snapshot,
     )
     provider_index = build_provider_snapshot_index(
         provider_snapshot=provider_snapshot, site=site
     )
     selected_versions = select_version_contexts(
-        site=site, provider_index=provider_index
+        site=site,
+        provider_index=provider_index,
+        missing_snapshot_components=frozenset(
+            item.component_slug
+            for item in snapshot_inputs
+            if item.component_slug is not None and item.status.value == "missing"
+        ),
     )
-    selected_versions, desired_versions, context_dispositions, diagnostics = resolve_dispositions(
-        site=site, selected=selected_versions, snapshot_inputs=snapshot_inputs,
+    selected_versions, desired_versions, context_dispositions, diagnostics = (
+        resolve_dispositions(
+            site=site,
+            selected=selected_versions,
+            snapshot_inputs=snapshot_inputs,
+        )
     )
     local_inputs = derive_local_inputs(site=site, selected_versions=selected_versions)
     ready_inputs = classify_input_readiness(local_inputs)
@@ -89,7 +100,9 @@ def evaluate_planning(
         local_inputs=watched_inputs,
         watch_plan=watch_plan,
         desired_versions=desired_versions,
-        snapshot_paths=tuple(Path(item.expected_local_path) for item in snapshot_inputs),
+        snapshot_paths=tuple(
+            Path(item.expected_local_path) for item in snapshot_inputs
+        ),
     )
     return PlanningEvaluation(
         desired_versions=desired_versions,

@@ -175,6 +175,8 @@ def resolve_component_source_roots(
                 owns_component_content=True,
             )
         for artifact in component.artifacts or ():
+            if artifact.source is None:
+                continue
             _register_source_usage(
                 roots_by_locator,
                 source_binding=_lookup_source_binding(
@@ -186,9 +188,14 @@ def resolve_component_source_roots(
                 artifact_key=artifact.key,
             )
         if component.provider_snapshot is not None:
-            _register_source_usage(roots_by_locator, source_binding=_lookup_source_binding(
-                source_bindings=source_bindings, source_key=component.provider_snapshot.source,
-                component_slug=component.slug))
+            _register_source_usage(
+                roots_by_locator,
+                source_binding=_lookup_source_binding(
+                    source_bindings=source_bindings,
+                    source_key=component.provider_snapshot.source,
+                    component_slug=component.slug,
+                ),
+            )
         resolved_roots.extend(
             ResolvedComponentSourceRoot(
                 component_slug=component.slug,

@@ -16,9 +16,9 @@
 
 from __future__ import annotations
 
-from typing import ClassVar, Literal
+from typing import ClassVar, Literal, Self
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from ...docs.documentation import (
     ComponentOwnedAuthoredModel as SitePipelineBaseModel,
@@ -26,9 +26,21 @@ from ...docs.documentation import (
     SchemaExample,
     SchemaExportSpecification,
 )
-from ...docs.reference_docs import ReferenceDocumentation, ReferenceMarkdown, ReferenceSection
+from ...docs.reference_docs import (
+    ReferenceDocumentation,
+    ReferenceMarkdown,
+    ReferenceSection,
+)
 from ...docs.schema_examples import component_metadata_example_document
-from ..scalars import Identifier, NonEmptyString, RepoRelativePath, Slug, VersionString
+from ..scalars import (
+    ArtifactKey,
+    Identifier,
+    NonEmptyString,
+    RepoRelativePath,
+    Slug,
+    UrlString,
+)
+from .artifacts import ArtifactVersioningConfig, SupportStatusDefinition, SupportWindow
 
 
 class ComponentIdentity(SitePipelineBaseModel):
@@ -60,40 +72,55 @@ class ContentRoots(SitePipelineBaseModel):
     )
 
 
-class SupportStatusDefinition(SitePipelineBaseModel):
-    """One reusable support-status label, description, and default lifecycle behavior."""
-
-    display_name: NonEmptyString = Field(
-        description="Human-readable status label shown to readers, such as `Supported` or `Security fixes only`.",
-        examples=["Supported"],
-    )
-    order: int | None = Field(
-        default=None,
-        description="Optional sort order used when several support statuses should appear in a stable display order.",
-        examples=[10],
-    )
-    description: NonEmptyString | None = Field(
-        default=None,
-        description="Human-readable explanation of what this support status means in practice.",
-        examples=["Receives regular fixes and new patch releases."],
-    )
-    default_maintenance_phase: NonEmptyString | None = Field(
-        default=None,
-        description="Default maintenance-phase label to apply when a release uses this support status and does not provide a more specific phase.",
-        examples=["active"],
-    )
-
-
 class ComponentLifecycleHints(SitePipelineBaseModel):
     """Optional lifecycle defaults shared across all artifacts in a component repository."""
 
-    latest_stable: VersionString | None = Field(
-        default=None,
-        description="Latest stable version for the component when one overall release line is enough.",
-    )
     support_status_vocabulary: dict[Identifier, SupportStatusDefinition] | None = Field(
         default=None,
         description="Optional support-status vocabulary shared by artifacts in this repository.",
+    )
+
+
+class ArtifactSupportPolicy(SitePipelineBaseModel):
+    """Reusable static support defaults owned by an artifact."""
+
+    support_status_vocabulary: dict[Identifier, SupportStatusDefinition] | None = Field(
+        default=None,
+        description="Reusable artifact-specific support-status vocabulary layered over component defaults.",
+    )
+    support_policy_url: UrlString | None = Field(
+        default=None, description="Canonical support policy URL for this artifact."
+    )
+    default_support_window: SupportWindow | None = Field(
+        default=None,
+        description="Fallback support window when a release or line supplies no narrower window.",
+    )
+
+
+class ComponentArtifactDefinition(SitePipelineBaseModel):
+    """Stable artifact identity and repository-relative content layout."""
+
+    key: ArtifactKey = Field(
+        description="Stable artifact identity referenced by inventories and optional catalog bindings."
+    )
+    display_name: NonEmptyString | None = Field(
+        default=None, description="Canonical human-readable artifact label."
+    )
+    docs_root: RepoRelativePath | None = Field(
+        default=None,
+        description="Repository-relative artifact docs root, inheriting component content roots when omitted.",
+    )
+    assets_root: RepoRelativePath | None = Field(
+        default=None,
+        description="Repository-relative artifact asset root, inheriting component content roots when omitted.",
+    )
+    versioning: ArtifactVersioningConfig = Field(
+        default_factory=ArtifactVersioningConfig,
+        description="Static development, maintenance, tag, and named-ref stream definitions; materialized inventories require no tag-discovery pattern.",
+    )
+    lifecycle: ArtifactSupportPolicy | None = Field(
+        default=None,
+        description="Reusable static artifact support defaults; release decisions belong in the snapshot.",
     )
 
 
@@ -145,3 +172,15 @@ class ComponentMetadataDocumentV1(SitePipelineBaseModel):
         default=None,
         description="Optional high-level lifecycle hints shared across the component repository.",
     )
+
+    artifacts: list[ComponentArtifactDefinition] | None = Field(
+        default=None,
+        description="Component-owned artifact identities, streams, content roots, and support defaults.",
+    )
+
+    @model_validator(mode="after")
+    def ensure_artifact_keys_are_unique(self) -> Self:
+        keys = [artifact.key for artifact in self.artifacts or ()]
+        if len(keys) != len(set(keys)):
+            raise ValueError("Duplicate component artifact key")
+        return self

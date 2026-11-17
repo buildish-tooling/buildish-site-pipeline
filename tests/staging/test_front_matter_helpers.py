@@ -23,7 +23,7 @@ from types import SimpleNamespace
 import unittest
 
 from buildish_site_pipeline.cli.errors import StageIntegrityError
-from buildish_site_pipeline.models.authored.site_catalog import (
+from buildish_site_pipeline.models.authored.artifacts import (
     ArtifactLifecycleConfig,
     ExactReleaseConfig,
     ReleaseLineConfig,
@@ -305,7 +305,9 @@ class FrontMatterHelpersTests(unittest.TestCase):
         self.assertEqual(front_matter.display_name, "Spark")
         self.assertIsNone(front_matter.artifacts[0].release_lines[0].head_ref)
 
-    def test_build_component_front_matter_falls_back_to_repository_display_name(self) -> None:
+    def test_build_component_front_matter_falls_back_to_repository_display_name(
+        self,
+    ) -> None:
         component = SimpleNamespace(
             slug="spark",
             authored=SimpleNamespace(display_name=None),
@@ -337,7 +339,7 @@ class FrontMatterHelpersTests(unittest.TestCase):
         )
 
         self.assertEqual(front_matter.display_name, "Apache Spark")
-        self.assertEqual(front_matter.latest_stable, "4.0.0")
+        self.assertIsNone(front_matter.latest_stable)
 
     def test_build_page_front_matter_populates_alternate_urls_and_provider_provenance(self) -> None:
         page = build_page_front_matter(

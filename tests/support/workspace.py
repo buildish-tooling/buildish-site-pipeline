@@ -60,7 +60,9 @@ def _write_workspace_inputs(
     raise AssertionError(f"Unknown test workspace topology: {topology}")
 
 
-def _write_default_workspace_inputs(workspace_root: Path, *, with_content_file: bool) -> None:
+def _write_default_workspace_inputs(
+    workspace_root: Path, *, with_content_file: bool
+) -> None:
     (workspace_root / "site").mkdir(parents=True, exist_ok=True)
     (workspace_root / "site/catalog.yaml").write_text(
         """
@@ -69,6 +71,7 @@ defaults:
   docsRoot: docs
   publication:
     origin: docs
+  metadataFile: site/component.yaml
 site: {}
 origins:
   docs:
@@ -88,22 +91,12 @@ components:
     artifacts:
       - key: runtime
         source: runtime
-        versioning:
-          developmentRef: main
-          tagPattern: ^v.*$
         publicationSelection:
           development: true
           lineHeads:
             mode: allAuthored
           releases:
             mode: latestPerLine
-        lifecycle:
-          releaseLines:
-            - key: '4.0'
-              maintenanceRef: maintenance/4.0
-              latest: '4.0.0'
-          releases:
-            - version: '4.0.0'
 """.strip()
         + "\n",
         encoding="utf-8",
@@ -149,13 +142,47 @@ components:
         + "\n",
         encoding="utf-8",
     )
-    (workspace_root / "components/runtime/docs/maintenance/4.0").mkdir(parents=True, exist_ok=True)
-    (workspace_root / "components/runtime/docs/releases/4.0.0").mkdir(parents=True, exist_ok=True)
+    (workspace_root / "components/runtime/docs/maintenance/4.0").mkdir(
+        parents=True, exist_ok=True
+    )
+    (workspace_root / "components/runtime/docs/releases/4.0.0").mkdir(
+        parents=True, exist_ok=True
+    )
     if with_content_file:
         (workspace_root / "components/runtime/docs/releases/4.0.0/index.md").write_text(
             "hello\n",
             encoding="utf-8",
         )
+
+    metadata_path = workspace_root / "components/runtime/site/component.yaml"
+    metadata_path.parent.mkdir(parents=True, exist_ok=True)
+    metadata_path.write_text(
+        """
+schemaVersion: 1
+component:
+  slug: spark
+artifacts:
+  - versioning:
+      developmentRef: main
+      tagPattern: ^v.*$
+    key: runtime
+""",
+        encoding="utf-8",
+    )
+
+    snapshot_path = workspace_root / "site/provider-snapshot.json"
+    snapshot = json.loads(snapshot_path.read_text())
+    snapshot["artifacts"] = [
+        {
+            "artifactKey": "runtime",
+            "componentSlug": "spark",
+            "releaseLines": [
+                {"key": "4.0", "latest": "4.0.0", "maintenanceRef": "maintenance/4.0"}
+            ],
+            "releases": [{"releaseLine": "4.0", "version": "4.0.0"}],
+        }
+    ]
+    snapshot_path.write_text(json.dumps(snapshot), encoding="utf-8")
 
 
 def _write_component_only_development_workspace_inputs(
@@ -169,6 +196,7 @@ defaults:
   docsRoot: docs
   publication:
     origin: docs
+  metadataFile: site/component.yaml
 site: {}
 origins:
   docs:
@@ -193,7 +221,9 @@ components:
         json.dumps({"schemaVersion": 1, "providers": [], "records": []}) + "\n",
         encoding="utf-8",
     )
-    (workspace_root / "components/site-pipeline/docs").mkdir(parents=True, exist_ok=True)
+    (workspace_root / "components/site-pipeline/docs").mkdir(
+        parents=True, exist_ok=True
+    )
     if with_content_file:
         (workspace_root / "components/site-pipeline/docs/index.md").write_text(
             "component development\n",
@@ -212,6 +242,7 @@ defaults:
   docsRoot: docs
   publication:
     origin: docs
+  metadataFile: site/component.yaml
 site: {}
 origins:
   docs:
@@ -231,37 +262,17 @@ components:
       - key: runtime
         source: runtime
         docsRoot: docs/runtime
-        versioning:
-          developmentRef: main
-          tagPattern: ^v.*$
         publicationSelection:
           development: true
           releases:
             mode: latestPerLine
-        lifecycle:
-          releaseLines:
-            - key: '4.0'
-              maintenanceRef: maintenance/4.0
-              latest: '4.0.0'
-          releases:
-            - version: '4.0.0'
       - key: api
         source: api
         docsRoot: docs
-        versioning:
-          developmentRef: main
-          tagPattern: ^api-v.*$
         publicationSelection:
           development: true
           releases:
             mode: latestPerLine
-        lifecycle:
-          releaseLines:
-            - key: '4.0'
-              maintenanceRef: maintenance/4.0
-              latest: '4.0.0'
-          releases:
-            - version: '4.0.0'
 """.strip()
         + "\n",
         encoding="utf-8",
@@ -335,7 +346,10 @@ components:
             "runtime development guide\n",
             encoding="utf-8",
         )
-        (workspace_root / "components/runtime/docs/runtime/releases/4.0.0/guide/index.md").write_text(
+        (
+            workspace_root
+            / "components/runtime/docs/runtime/releases/4.0.0/guide/index.md"
+        ).write_text(
             "runtime release guide\n",
             encoding="utf-8",
         )
@@ -343,10 +357,54 @@ components:
             "api development reference\n",
             encoding="utf-8",
         )
-        (workspace_root / "components/api/docs/releases/4.0.0/reference/index.md").write_text(
+        (
+            workspace_root / "components/api/docs/releases/4.0.0/reference/index.md"
+        ).write_text(
             "api release reference\n",
             encoding="utf-8",
         )
+
+    metadata_path = workspace_root / "components/runtime/site/component.yaml"
+    metadata_path.parent.mkdir(parents=True, exist_ok=True)
+    metadata_path.write_text(
+        """
+schemaVersion: 1
+component:
+  slug: spark
+artifacts:
+  - versioning:
+      developmentRef: main
+      tagPattern: ^v.*$
+    key: runtime
+  - versioning:
+      developmentRef: main
+      tagPattern: ^api-v.*$
+    key: api
+""",
+        encoding="utf-8",
+    )
+
+    snapshot_path = workspace_root / "site/provider-snapshot.json"
+    snapshot = json.loads(snapshot_path.read_text())
+    snapshot["artifacts"] = [
+        {
+            "artifactKey": "runtime",
+            "componentSlug": "spark",
+            "releaseLines": [
+                {"key": "4.0", "latest": "4.0.0", "maintenanceRef": "maintenance/4.0"}
+            ],
+            "releases": [{"releaseLine": "4.0", "version": "4.0.0"}],
+        },
+        {
+            "artifactKey": "api",
+            "componentSlug": "spark",
+            "releaseLines": [
+                {"key": "4.0", "latest": "4.0.0", "maintenanceRef": "maintenance/4.0"}
+            ],
+            "releases": [{"releaseLine": "4.0", "version": "4.0.0"}],
+        },
+    ]
+    snapshot_path.write_text(json.dumps(snapshot), encoding="utf-8")
 
 
 def _write_rich_lifecycle_workspace_inputs(
@@ -360,6 +418,7 @@ defaults:
   docsRoot: docs
   publication:
     origin: docs
+  metadataFile: site/component.yaml
 site: {}
 origins:
   docs:
@@ -376,9 +435,6 @@ components:
     artifacts:
       - key: runtime
         source: runtime
-        versioning:
-          developmentRef: main
-          tagPattern: ^v.*$
         publicationSelection:
           development: true
           lineHeads:
@@ -387,17 +443,6 @@ components:
             mode: latestPerLine
           candidates:
             mode: latest
-        lifecycle:
-          releaseLines:
-            - key: '4.1'
-              maintenanceRef: maintenance/4.1
-              latest: '4.1.0'
-            - key: '4.0'
-              maintenanceRef: maintenance/4.0
-              latest: '4.0.2'
-          releases:
-            - version: '4.1.0'
-            - version: '4.0.2'
 """.strip()
         + "\n",
         encoding="utf-8",
@@ -506,11 +551,15 @@ components:
             "development docs\n",
             encoding="utf-8",
         )
-        (workspace_root / "components/runtime/docs/maintenance/4.1/index.md").write_text(
+        (
+            workspace_root / "components/runtime/docs/maintenance/4.1/index.md"
+        ).write_text(
             "maintenance 4.1\n",
             encoding="utf-8",
         )
-        (workspace_root / "components/runtime/docs/maintenance/4.0/index.md").write_text(
+        (
+            workspace_root / "components/runtime/docs/maintenance/4.0/index.md"
+        ).write_text(
             "maintenance 4.0\n",
             encoding="utf-8",
         )
@@ -522,14 +571,52 @@ components:
             "release 4.0.2\n",
             encoding="utf-8",
         )
-        (workspace_root / "components/runtime/docs/candidates/4.2.0-rc1/index.md").write_text(
+        (
+            workspace_root / "components/runtime/docs/candidates/4.2.0-rc1/index.md"
+        ).write_text(
             "candidate 4.2.0-rc1\n",
             encoding="utf-8",
         )
-        (workspace_root / "components/runtime/docs/candidates/4.2.0-rc2/index.md").write_text(
+        (
+            workspace_root / "components/runtime/docs/candidates/4.2.0-rc2/index.md"
+        ).write_text(
             "candidate 4.2.0-rc2\n",
             encoding="utf-8",
         )
+
+    metadata_path = workspace_root / "components/runtime/site/component.yaml"
+    metadata_path.parent.mkdir(parents=True, exist_ok=True)
+    metadata_path.write_text(
+        """
+schemaVersion: 1
+component:
+  slug: spark
+artifacts:
+  - versioning:
+      developmentRef: main
+      tagPattern: ^v.*$
+    key: runtime
+""",
+        encoding="utf-8",
+    )
+
+    snapshot_path = workspace_root / "site/provider-snapshot.json"
+    snapshot = json.loads(snapshot_path.read_text())
+    snapshot["artifacts"] = [
+        {
+            "artifactKey": "runtime",
+            "componentSlug": "spark",
+            "releaseLines": [
+                {"key": "4.1", "latest": "4.1.0", "maintenanceRef": "maintenance/4.1"},
+                {"key": "4.0", "latest": "4.0.2", "maintenanceRef": "maintenance/4.0"},
+            ],
+            "releases": [
+                {"releaseLine": "4.1", "version": "4.1.0"},
+                {"releaseLine": "4.0", "version": "4.0.2"},
+            ],
+        }
+    ]
+    snapshot_path.write_text(json.dumps(snapshot), encoding="utf-8")
 
 
 def _write_grouped_large_workspace_inputs(
@@ -543,6 +630,7 @@ defaults:
   docsRoot: docs
   publication:
     origin: docs
+  metadataFile: site/component.yaml
 site: {}
 origins:
   docs:
@@ -571,20 +659,10 @@ components:
     artifacts:
       - key: runtime
         source: spark
-        versioning:
-          developmentRef: main
-          tagPattern: ^v.*$
         publicationSelection:
           development: true
           releases:
             mode: latestPerLine
-        lifecycle:
-          releaseLines:
-            - key: '4.0'
-              maintenanceRef: maintenance/4.0
-              latest: '4.0.0'
-          releases:
-            - version: '4.0.0'
   - slug: spark-operator
     group: streaming
     content:
@@ -594,20 +672,10 @@ components:
     artifacts:
       - key: operator
         source: operator
-        versioning:
-          developmentRef: main
-          tagPattern: ^operator-v.*$
         publicationSelection:
           development: true
           releases:
             mode: latestPerLine
-        lifecycle:
-          releaseLines:
-            - key: '1.2'
-              maintenanceRef: maintenance/1.2
-              latest: '1.2.0'
-          releases:
-            - version: '1.2.0'
 """.strip()
         + "\n",
         encoding="utf-8",
@@ -660,8 +728,12 @@ components:
         + "\n",
         encoding="utf-8",
     )
-    (workspace_root / "components/spark/docs/releases/4.0.0").mkdir(parents=True, exist_ok=True)
-    (workspace_root / "components/operator/docs/releases/1.2.0").mkdir(parents=True, exist_ok=True)
+    (workspace_root / "components/spark/docs/releases/4.0.0").mkdir(
+        parents=True, exist_ok=True
+    )
+    (workspace_root / "components/operator/docs/releases/1.2.0").mkdir(
+        parents=True, exist_ok=True
+    )
     if with_content_file:
         (workspace_root / "components/spark/docs/index.md").write_text(
             "spark development docs\n",
@@ -675,10 +747,66 @@ components:
             "operator development docs\n",
             encoding="utf-8",
         )
-        (workspace_root / "components/operator/docs/releases/1.2.0/index.md").write_text(
+        (
+            workspace_root / "components/operator/docs/releases/1.2.0/index.md"
+        ).write_text(
             "operator 1.2.0 release docs\n",
             encoding="utf-8",
         )
+
+    metadata_path = workspace_root / "components/spark/site/component.yaml"
+    metadata_path.parent.mkdir(parents=True, exist_ok=True)
+    metadata_path.write_text(
+        """
+schemaVersion: 1
+component:
+  slug: spark
+artifacts:
+  - versioning:
+      developmentRef: main
+      tagPattern: ^v.*$
+    key: runtime
+""",
+        encoding="utf-8",
+    )
+
+    metadata_path = workspace_root / "components/operator/site/component.yaml"
+    metadata_path.parent.mkdir(parents=True, exist_ok=True)
+    metadata_path.write_text(
+        """
+schemaVersion: 1
+component:
+  slug: spark-operator
+artifacts:
+  - versioning:
+      developmentRef: main
+      tagPattern: ^operator-v.*$
+    key: operator
+""",
+        encoding="utf-8",
+    )
+
+    snapshot_path = workspace_root / "site/provider-snapshot.json"
+    snapshot = json.loads(snapshot_path.read_text())
+    snapshot["artifacts"] = [
+        {
+            "artifactKey": "runtime",
+            "componentSlug": "spark",
+            "releaseLines": [
+                {"key": "4.0", "latest": "4.0.0", "maintenanceRef": "maintenance/4.0"}
+            ],
+            "releases": [{"releaseLine": "4.0", "version": "4.0.0"}],
+        },
+        {
+            "artifactKey": "operator",
+            "componentSlug": "spark-operator",
+            "releaseLines": [
+                {"key": "1.2", "latest": "1.2.0", "maintenanceRef": "maintenance/1.2"}
+            ],
+            "releases": [{"releaseLine": "1.2", "version": "1.2.0"}],
+        },
+    ]
+    snapshot_path.write_text(json.dumps(snapshot), encoding="utf-8")
 
 
 @contextmanager

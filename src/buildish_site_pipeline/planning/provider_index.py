@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from .release_facts import validate_release_facts, release_ancestors
 
 from buildish_site_pipeline.models.enums import RecordKind
 from buildish_site_pipeline.models.provider.provider_snapshot import (
@@ -79,6 +80,17 @@ def build_provider_snapshot_index(
         for component in site.components
         for artifact in component.artifacts
     }
+    artifacts = {
+        (component.slug, artifact.key): artifact
+        for component in site.components
+        for artifact in component.artifacts
+    }
+    for section in provider_snapshot.artifacts:
+        if (section.component_slug, section.artifact_key) not in known_artifacts:
+            raise PlanningInputFailure(
+                f"Snapshot references unknown artifact {section.component_slug}:{section.artifact_key}"
+            )
+    canonical_releases = validate_release_facts(site, provider_snapshot)
     contexts_by_artifact: dict[tuple[str, str], _MutableProviderContextBucket] = {}
     by_external_id: dict[tuple[str, str], IndexedProviderRecord] = {}
 
@@ -89,6 +101,12 @@ def build_provider_snapshot_index(
                 f"Provider record references unknown artifact {record.component_slug}:{record.artifact_key}",
             )
 
+        artifact = artifacts[artifact_identity]
+        primary, ancestors = release_ancestors(artifact, record)
+        if record.kind is RecordKind.RELEASED and record.version is not None:
+            primary, ancestors = canonical_releases[
+                (record.component_slug, record.artifact_key, record.version)
+            ]
         indexed_record = IndexedProviderRecord(
             provider=record.provider,
             kind=record.kind,
@@ -104,8 +122,8 @@ def build_provider_snapshot_index(
             ref=record.ref,
             commit_sha=record.commit_sha,
             named_ref_key=record.named_ref_key,
-            release_line=record.release_line,
-            release_line_ancestors=tuple(record.release_line_ancestors or ()),
+            release_line=primary,
+            release_line_ancestors=ancestors,
             support_status=record.support_status,
             publication_state=record.publication_state,
             maturity=record.maturity,

@@ -31,7 +31,12 @@ from buildish_site_pipeline.models.enums import PlanningTarget
 from buildish_site_pipeline.planning import evaluate_planning
 from buildish_site_pipeline.staging.aggregates import _build_redirect_entries
 from buildish_site_pipeline.staging.file_writes import write_utf8_text_file
-from buildish_site_pipeline.staging.ownership import OwnedUnit, OwnedUnitKind, _validate_output_ownership, build_owned_units
+from buildish_site_pipeline.staging.ownership import (
+    OwnedUnit,
+    OwnedUnitKind,
+    _validate_output_ownership,
+    build_owned_units,
+)
 from tests.support.staging import _expand_workspace_for_multiple_owned_units
 from tests.support.workspace import _cwd, _workspace
 
@@ -474,7 +479,9 @@ class StagingPipelineTests(unittest.TestCase):
             [("4.1", "4.1.0"), ("4.0", "4.0.2")],
         )
 
-    def test_build_resolves_internal_and_withdrawn_redirects_in_redirect_inventory(self) -> None:
+    def test_build_resolves_internal_and_withdrawn_redirects_in_redirect_inventory(
+        self,
+    ) -> None:
         with _workspace(with_content_file=True) as workspace_root:
             components_path = workspace_root / "site/catalog.yaml"
             provider_snapshot_path = workspace_root / "site/provider-snapshot.json"
@@ -483,12 +490,14 @@ class StagingPipelineTests(unittest.TestCase):
                 "    publication:\n      mountPath: /spark/\n",
                 "    publication:\n      mountPath: /spark/\n      redirects:\n        - fromPath: /spark/development/docs/\n          target: release:spark/runtime@4.0.0\n          reason: Current docs live on the latest release route.\n",
             )
-            _replace_file_text_once(
-                components_path,
-                "          releases:\n            - version: '4.0.0'\n",
-                "          releases:\n            - version: '4.0.0'\n              publicationState: withdrawn\n              withdrawalBehavior: redirect\n              redirectTarget: route:/spark/\n",
+            provider_snapshot = json.loads(
+                provider_snapshot_path.read_text(encoding="utf-8")
             )
-            provider_snapshot = json.loads(provider_snapshot_path.read_text(encoding="utf-8"))
+            provider_snapshot["artifacts"][0]["releases"][0].update(
+                publicationState="withdrawn",
+                withdrawalBehavior="redirect",
+                redirectTarget="component:spark",
+            )
             provider_snapshot["records"][2]["publicationState"] = "withdrawn"
             provider_snapshot_path.write_text(
                 json.dumps(provider_snapshot) + "\n", encoding="utf-8"
@@ -499,29 +508,41 @@ class StagingPipelineTests(unittest.TestCase):
             with _cwd(workspace_root):
                 exit_code = _run(argv=["build"], stdout=stdout, stderr=stderr)
             stage_root = workspace_root / "site/.stage"
-            redirects = json.loads((stage_root / "data/redirects.json").read_text(encoding="utf-8"))["items"]
+            redirects = json.loads(
+                (stage_root / "data/redirects.json").read_text(encoding="utf-8")
+            )["items"]
             redirects_by_source = {entry["fromUrl"]: entry for entry in redirects}
 
         self.assertEqual(exit_code, 0)
         self.assertEqual(stderr.getvalue(), "")
         self.assertEqual(
-            redirects_by_source["https://docs.example.org/spark/development/docs/"]["toUrl"],
+            redirects_by_source["https://docs.example.org/spark/development/docs/"][
+                "toUrl"
+            ],
             "https://docs.example.org/spark/releases/4.0.0/",
         )
         self.assertEqual(
-            redirects_by_source["https://docs.example.org/spark/development/docs/"]["sourceKind"],
+            redirects_by_source["https://docs.example.org/spark/development/docs/"][
+                "sourceKind"
+            ],
             "catalog",
         )
         self.assertEqual(
-            redirects_by_source["https://docs.example.org/spark/development/docs/"]["reason"],
+            redirects_by_source["https://docs.example.org/spark/development/docs/"][
+                "reason"
+            ],
             "Current docs live on the latest release route.",
         )
         self.assertEqual(
-            redirects_by_source["https://docs.example.org/spark/releases/4.0.0/"]["toUrl"],
+            redirects_by_source["https://docs.example.org/spark/releases/4.0.0/"][
+                "toUrl"
+            ],
             "https://docs.example.org/spark/",
         )
         self.assertEqual(
-            redirects_by_source["https://docs.example.org/spark/releases/4.0.0/"]["sourceKind"],
+            redirects_by_source["https://docs.example.org/spark/releases/4.0.0/"][
+                "sourceKind"
+            ],
             "withdrawal",
         )
 

@@ -19,10 +19,9 @@ inputs and the normalized planning view that later phases consume.
 
 - The site catalog owns publication policy, grouping, source bindings, and
   vendor assets.
-- Component repository metadata may refine content roots and support-status
-  vocabulary, but it must not redefine public origin or route policy.
-- Provider snapshots do not participate here at all; they join later against
-  the resolved component and artifact identities emitted from this module.
+- Component metadata defines artifact identities, streams, roots, and support defaults.
+- Snapshot artifact sections supply release lines and lifecycle decisions; provider
+  records join those identities during indexing. Public routes remain catalog-owned.
 
 Keep that split obvious. If a later change wants provider data or staged-output
 details to influence these resolved values, it almost certainly belongs in a
@@ -50,6 +49,11 @@ from buildish_site_pipeline.source_roots import (
     resolve_repo_path as _resolve_repo_path,
 )
 
+from buildish_site_pipeline.models.provider.provider_snapshot import (
+    ProviderSnapshotDocumentV1,
+)
+from buildish_site_pipeline.models.authored.artifacts import ArtifactLifecycleConfig
+
 from .errors import PlanningInputFailure
 from .types import (
     ResolvedArtifactConfig,
@@ -73,12 +77,13 @@ def resolve_site_config(
     catalog: SiteCatalogDocumentV1,
     workspace_root: Path,
     component_documents: dict[str, ComponentMetadataDocumentV1] | None = None,
+    provider_snapshot: ProviderSnapshotDocumentV1 | None = None,
 ) -> ResolvedSiteConfig:
     """Resolve authored inputs into one planning-only read model.
 
     This function normalizes repo-relative paths and merges catalog defaults,
     group policy, and optional component metadata. It does not inspect provider
-    snapshots or staged output.
+    records or staged output.
     """
 
     component_documents = component_documents or {}
@@ -132,6 +137,7 @@ def resolve_site_config(
             component=component,
             component_document=component_documents.get(component.slug),
             origins=origins,
+            provider_snapshot=provider_snapshot,
             sources=sources,
             workspace_root=normalized_workspace_root,
         )
@@ -155,6 +161,7 @@ def _resolve_component(
     catalog: SiteCatalogDocumentV1,
     component: ComponentCatalogEntry,
     component_document: ComponentMetadataDocumentV1 | None,
+    provider_snapshot: ProviderSnapshotDocumentV1 | None,
     origins: dict[str, ResolvedOrigin],
     sources: dict[str, ResolvedSourceBinding],
     workspace_root: Path,
@@ -203,16 +210,69 @@ def _resolve_component(
     )
 
     artifacts = []
-    for artifact in component.artifacts or ():
-        source_binding = sources[artifact.source]
+    definitions = component_document.artifacts or () if component_document else ()
+    bindings = {item.key: item for item in component.artifacts or ()}
+    unknown = set(bindings) - {item.key for item in definitions}
+    if unknown:
+        raise PlanningInputFailure(
+            f"Catalog bindings for {component.slug!r} reference unknown component artifacts: {sorted(unknown)}"
+        )
+    snapshots = (
+        {
+            (item.component_slug, item.artifact_key): item
+            for item in provider_snapshot.artifacts
+        }
+        if provider_snapshot
+        else {}
+    )
+    known = {item.key for item in definitions}
+    for owner, key in snapshots:
+        if owner == component.slug and key not in known:
+            raise PlanningInputFailure(
+                f"Snapshot references unknown artifact {owner}:{key}"
+            )
+    for artifact in definitions:
+        binding = bindings.get(artifact.key)
+        source_binding = (
+            sources[binding.source] if binding and binding.source else content_source
+        )
+        if source_binding is None:
+            raise PlanningInputFailure(
+                f"Artifact {component.slug}:{artifact.key} has no content source"
+            )
+        snapshot = snapshots.get((component.slug, artifact.key))
+        lifecycle = ArtifactLifecycleConfig(
+            **(artifact.lifecycle.model_dump() if artifact.lifecycle else {}),
+            **(
+                snapshot.model_dump(
+                    exclude={
+                        "component_slug",
+                        "artifact_key",
+                        "support_status_vocabulary",
+                        "support_policy_url",
+                        "default_support_window",
+                    }
+                )
+                if snapshot
+                else {}
+            ),
+        )
+        docs_relative = (
+            binding.docs_root if binding and binding.docs_root else artifact.docs_root
+        )
+        assets_relative = (
+            binding.assets_root
+            if binding and binding.assets_root
+            else artifact.assets_root
+        )
         artifact_docs_root = (
-            _resolve_repo_path(source_binding.local_dir, artifact.docs_root)
-            if artifact.docs_root
+            _resolve_repo_path(source_binding.local_dir, docs_relative)
+            if docs_relative
             else docs_root or source_binding.local_dir
         )
         artifact_assets_root = (
-            _resolve_repo_path(source_binding.local_dir, artifact.assets_root)
-            if artifact.assets_root
+            _resolve_repo_path(source_binding.local_dir, assets_relative)
+            if assets_relative
             else assets_root
         )
         component_vocabulary = (
@@ -234,12 +294,15 @@ def _resolve_component(
             ResolvedArtifactConfig(
                 key=artifact.key,
                 authored=artifact,
+                binding=binding,
                 source_binding=source_binding,
                 docs_root=artifact_docs_root,
                 assets_root=artifact_assets_root,
                 versioning=artifact.versioning,
-                publication_selection=artifact.publication_selection,
-                lifecycle=artifact.lifecycle,
+                publication_selection=binding.publication_selection
+                if binding
+                else None,
+                lifecycle=lifecycle,
                 support_status_vocabulary=support_status_vocabulary,
             ),
         )
@@ -258,7 +321,12 @@ def _resolve_component(
         localization=localization,
         publication_selection=component.publication_selection,
         artifacts=tuple(artifacts),
-        snapshot_path=_resolve_repo_path(sources[component.provider_snapshot.source].local_dir, component.provider_snapshot.path) if component.provider_snapshot else None,
+        snapshot_path=_resolve_repo_path(
+            sources[component.provider_snapshot.source].local_dir,
+            component.provider_snapshot.path,
+        )
+        if component.provider_snapshot
+        else None,
     )
 
 

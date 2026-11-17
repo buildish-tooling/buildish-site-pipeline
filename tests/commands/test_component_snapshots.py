@@ -41,12 +41,15 @@ def configure_snapshot(
     catalog_path.write_text(yaml.safe_dump(catalog, sort_keys=False))
     aggregate_path = root / "site/provider-snapshot.json"
     aggregate = json.loads(aggregate_path.read_text())
-    record = aggregate["records"].pop()
+    records = list(reversed(aggregate["records"]))
+    artifacts = aggregate.pop("artifacts", [])
+    aggregate["records"] = []
     aggregate_path.write_text(json.dumps(aggregate))
     return root / "components/runtime" / path, {
         "schemaVersion": 1,
         "providers": aggregate["providers"],
-        "records": [record],
+        "artifacts": artifacts,
+        "records": records,
     }
 
 
@@ -128,11 +131,11 @@ class ComponentSnapshotTests(unittest.TestCase):
             snapshot["records"][0]["externalId"] = "same"
             aggregate_path = root / "site/provider-snapshot.json"
             aggregate = json.loads(aggregate_path.read_text())
-            aggregate["records"][0]["externalId"] = "same"
+            aggregate["records"].append(dict(snapshot["records"][0], externalId="same"))
             aggregate_path.write_text(json.dumps(aggregate))
             path.write_text(json.dumps(snapshot))
             with self.assertRaisesRegex(
-                InputDiagnosticError, "Duplicate provider record"
+                InputDiagnosticError, "must not claim this component"
             ) as caught:
                 load_workspace_inputs(root)
             self.assertIn("site/provider-snapshot.json", str(caught.exception))
@@ -177,7 +180,7 @@ class ComponentSnapshotTests(unittest.TestCase):
             path.write_text(json.dumps(snapshot))
             aggregate = root / "site/provider-snapshot.json"
             raw = aggregate.read_bytes()
-            ceiling = len(raw) + 50
+            ceiling = len(json.dumps(snapshot).encode()) + 50
             aggregate.write_bytes(raw + b" " * (ceiling - len(raw)))
             with mock.patch(
                 "buildish_site_pipeline.commands.shared.DEFAULT_PROVIDER_SNAPSHOT_BYTES",
@@ -315,12 +318,13 @@ class ComponentSnapshotTests(unittest.TestCase):
             catalog_path.write_text(yaml.safe_dump(catalog, sort_keys=False))
             other = copy.deepcopy(snapshot)
             other["providers"][0]["fetchedAt"] = "2026-11-16T00:00:00Z"
-            other["records"][0]["componentSlug"] = "other"
+            for item in (*other["records"], *other["artifacts"]):
+                item["componentSlug"] = "other"
             (root / "components/runtime/other-provider.json").write_text(
                 json.dumps(other)
             )
             loaded = load_workspace_inputs(root)
-            self.assertEqual(len(loaded.provider_snapshot.records), 4)
+            self.assertEqual(len(loaded.provider_snapshot.records), 6)
             self.assertEqual(len(loaded.provider_snapshot.providers), 1)
             self.assertEqual(len(loaded.snapshot_inputs), 3)
             self.assertEqual(

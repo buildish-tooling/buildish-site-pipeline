@@ -44,6 +44,33 @@ Recommended `providers[]` fields:
 - optional public `baseUrl`
 - `fetchedAt`
 
+## Component-owned artifact decisions
+
+`site/component.yaml` defines artifact identities, static streams, relative content
+roots, and reusable support defaults. Snapshot `artifacts[]` entries are scoped by
+`componentSlug` and `artifactKey` and own optional `latestStable`, `releaseLines[]`,
+and curated exact `releases[]` lifecycle facts. They require no provider descriptor
+or synthetic provider record. Records may enrich these decisions with upstream facts.
+
+Each release line has an explicit `latest` released target and optional `parent`.
+The target must have a canonical primary `releaseLine` and belong to the designated
+line or a descendant. Ancestors derive from the parent graph; supplied record
+`releaseLineAncestors` must match that ordered chain. Several lines may designate
+the same release, which is published once. Neither version sorting nor publication
+pins change these component decisions. A candidate with the same version is a
+different context and cannot satisfy a released target.
+
+A configured catalog `providerSnapshot` binding reserves all version facts for that
+component, even when its file is optional and missing or contains no records. An
+aggregate inventory must not claim that component through either an artifact section
+or a record, including unrelated versions or kinds. It may still contain inventory
+for unbound components and shared provider descriptors.
+
+Artifact `latestStable` remains visible independently of publication selection.
+The emitted component scalar is derived only for a component defining exactly one
+artifact; zero or multiple artifacts omit it. Missing optional inventory means an
+unknown recommendation, with no static metadata or catalog fallback.
+
 ## Minimal normalized `records[]` schema
 
 Required fields on every record:
@@ -130,7 +157,7 @@ identities that do not exist in the resolved site config. It should also reject
 snapshots that exceed the planning ceilings of 50,000 normalized records or 16
 MiB of encoded snapshot input.
 
-Intentional publication of named refs remains authored in the catalog or artifact
+Intentional publication of named refs remains selected in the catalog; static ref definitions belong to component metadata. The
 metadata. Provider data may enrich those refs, but it does not define which named
 refs exist as public version contexts.
 

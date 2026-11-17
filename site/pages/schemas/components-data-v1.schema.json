@@ -636,7 +636,7 @@
       "type": "object",
       "x-buildish-contract": {
         "category": "authored",
-        "ownership": "consumer-owned"
+        "ownership": "component-owned"
       }
     }
   },

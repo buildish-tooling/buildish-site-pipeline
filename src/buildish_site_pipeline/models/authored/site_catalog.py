@@ -26,7 +26,11 @@ from ...docs.documentation import (
     SchemaExample,
     SchemaExportSpecification,
 )
-from ...docs.reference_docs import ReferenceDocumentation, ReferenceMarkdown, ReferenceSection
+from ...docs.reference_docs import (
+    ReferenceDocumentation,
+    ReferenceMarkdown,
+    ReferenceSection,
+)
 from ...docs.schema_examples import catalog_example_document
 from ..enums import (
     SnapshotRequirement,
@@ -38,7 +42,6 @@ from ..enums import (
     ReleaseSelectionMode,
     RouteMode,
     TrustClass,
-    WithdrawalBehavior,
 )
 from ..scalars import (
     ArtifactKey,
@@ -51,16 +54,13 @@ from ..scalars import (
     PublicPath,
     ReferenceString,
     RefString,
-    RegexString,
     RepoRelativePath,
     Slug,
     SourceKey,
-    TimestampString,
     UrlString,
     VersionString,
 )
 from ..validation.extensions import serialize_extensions_object
-from .component_metadata import SupportStatusDefinition
 
 _ALLOWED_REDIRECT_STATUS_CODES = frozenset({301, 302, 307, 308})
 _WITHDRAWN_PUBLICATION_STATES = frozenset(
@@ -424,34 +424,6 @@ class PublicationConfig(SitePipelineBaseModel):
     )
 
 
-class NamedRefConfig(SitePipelineBaseModel):
-    """Named source-control ref intentionally exposed as a stable version context."""
-
-    key: Identifier = Field(
-        description="Stable identifier used elsewhere in the catalog to select this named ref.",
-        examples=["preview"],
-    )
-    ref: RefString = Field(
-        description="Exact source-control ref to resolve when this named context is selected.",
-        examples=["refs/heads/preview"],
-    )
-    display_name: NonEmptyString | None = Field(
-        default=None,
-        description="Human-readable label shown in version pickers, breadcrumbs, or other rendered UI.",
-        examples=["Preview"],
-    )
-    maturity: NonEmptyString | None = Field(
-        default=None,
-        description="Short maturity label that explains how stable or experimental this named ref should be treated.",
-        examples=["preview"],
-    )
-    description: NonEmptyString | None = Field(
-        default=None,
-        description="Human-readable explanation of what this named ref contains or who should use it.",
-        examples=["Early access docs for the next planned minor release."],
-    )
-
-
 class LineHeadSelectionPolicy(SitePipelineBaseModel):
     """Rule for which release-line head refs should appear as publishable contexts."""
 
@@ -589,202 +561,6 @@ class PublicationSelectionPolicy(SitePipelineBaseModel):
         return self
 
 
-class ArtifactVersioningConfig(SitePipelineBaseModel):
-    """How the pipeline discovers development, maintenance, tag, and named-ref versions."""
-
-    development_ref: RefString = Field(
-        description="Source-control ref that represents the moving development docs for this artifact.",
-        examples=["main"],
-    )
-    maintenance_ref_pattern: NonEmptyString | None = Field(
-        default=None,
-        description="Pattern used to derive maintenance branch refs from a release-line key, usually with `{line}` as the substitution placeholder.",
-        examples=["release/{line}"],
-    )
-    tag_pattern: RegexString = Field(
-        description="Regular expression used to recognize provider tags that belong to this artifact's version stream.",
-        examples=[r"^v[0-9]+\.[0-9]+\.[0-9]+$"],
-    )
-    named_refs: list[NamedRefConfig] | None = Field(
-        default=None,
-        description="Additional intentionally named version contexts, such as preview or stable branches, that should be selectable by key.",
-    )
-
-    @model_validator(mode="after")
-    def ensure_named_ref_keys_are_unique(self) -> Self:
-        if self.named_refs is None:
-            return self
-
-        _ensure_unique_strings(
-            [named_ref.key for named_ref in self.named_refs], type_name="named ref key"
-        )
-        return self
-
-
-class SupportWindow(SitePipelineBaseModel):
-    """Lifecycle dates and support notes for one release line or exact release."""
-
-    release_date: TimestampString | None = Field(
-        default=None,
-        description="Release date for the line or version that this support window describes.",
-        examples=["2026-04-01T00:00:00Z"],
-    )
-    maintenance_phase: NonEmptyString | None = Field(
-        default=None,
-        description="Short label for the current maintenance phase, such as general availability, maintenance, or security-only support.",
-        examples=["security-fixes"],
-    )
-    end_of_active_support_date: TimestampString | None = Field(
-        default=None,
-        description="Date after which the release no longer receives full active support.",
-    )
-    end_of_support_date: TimestampString | None = Field(
-        default=None,
-        description="Date after which the release is no longer supported in normal maintenance channels.",
-    )
-    end_of_life_date: TimestampString | None = Field(
-        default=None,
-        description="Final retirement date after which the release should be treated as fully end-of-life.",
-    )
-    support_policy_url: UrlString | None = Field(
-        default=None,
-        description="Canonical URL that explains the support policy referenced by this support window.",
-    )
-    notes: NonEmptyString | None = Field(
-        default=None,
-        description="Additional notes that clarify exceptions, migration advice, or support caveats.",
-    )
-
-    @model_validator(mode="after")
-    def ensure_dates_are_in_order(self) -> Self:
-        ordered_dates = [
-            ("releaseDate", self.release_date),
-            ("endOfActiveSupportDate", self.end_of_active_support_date),
-            ("endOfSupportDate", self.end_of_support_date),
-            ("endOfLifeDate", self.end_of_life_date),
-        ]
-        previous_name: str | None = None
-        previous_value = None
-        for current_name, current_value in ordered_dates:
-            if current_value is None:
-                continue
-            if previous_value is not None and current_value < previous_value:
-                raise ValueError(
-                    f"Support-window dates must be ordered: {previous_name} <= {current_name}"
-                )
-            previous_name = current_name
-            previous_value = current_value
-        return self
-
-
-class ReleaseLineConfig(SitePipelineBaseModel):
-    """One logical release line, such as `4.0`, together with its lifecycle metadata."""
-
-    key: NonEmptyString = Field(
-        description="Stable key for the release line, typically matching the family label used in URLs and navigation.",
-        examples=["4.0"],
-    )
-    display_name: NonEmptyString | None = Field(
-        default=None,
-        description="Human-readable label shown to readers when the raw line key is not ideal UI text.",
-        examples=["4.0 line"],
-    )
-    parent: NonEmptyString | None = Field(
-        default=None,
-        description="Optional parent release-line key used to model lineage such as `4.x` inheriting from `3.x` policy or navigation structure.",
-        examples=["3.5"],
-    )
-    latest: VersionString = Field(
-        description="Latest released version currently considered the head of this release line.",
-        examples=["4.0.1"],
-    )
-    support_status: NonEmptyString | None = Field(
-        default=None,
-        description="Support-status key or label that should be shown for the line as a whole.",
-        examples=["supported"],
-    )
-    aliases: list[NonEmptyString] | None = Field(
-        default=None,
-        description="Alternate labels that should also resolve to this release line in generated metadata or UI.",
-        examples=[["stable"]],
-    )
-    maintenance_ref: RefString | None = Field(
-        default=None,
-        description="Explicit maintenance branch ref for the line when it should not be derived from `maintenanceRefPattern`.",
-        examples=["refs/heads/release-4.0"],
-    )
-    support_window: SupportWindow | None = Field(
-        default=None,
-        description="Lifecycle dates and support notes that apply to the release line.",
-    )
-
-
-class ExactReleaseConfig(SitePipelineBaseModel):
-    """Per-version lifecycle metadata and publication overrides for one exact release."""
-
-    version: VersionString = Field(
-        description="Exact released version that this metadata entry applies to.",
-        examples=["4.0.0"],
-    )
-    release_line: NonEmptyString | None = Field(
-        default=None,
-        description="Release-line key that this version belongs to when the provider data alone does not already make that relationship obvious.",
-        examples=["4.0"],
-    )
-    support_status: NonEmptyString | None = Field(
-        default=None,
-        description="Support-status key or label that should override the line-level status for this exact version.",
-        examples=["withdrawn"],
-    )
-    support_window: SupportWindow | None = Field(
-        default=None,
-        description="Lifecycle dates and support notes that apply only to this exact release.",
-    )
-    publication_state: PublicationState | None = Field(
-        default=None,
-        description="Publication-state override for this version, such as published, withdrawn, or tombstoned.",
-    )
-    withdrawal_behavior: WithdrawalBehavior | None = Field(
-        default=None,
-        description="What readers should experience when this release has been withdrawn, for example a redirect or a hard removal.",
-    )
-    redirect_target: ReferenceString | UrlString | None = Field(
-        default=None,
-        description="Replacement route or external URL to send readers to when `withdrawalBehavior` is `redirect`.",
-        examples=["route:/spark/releases/4.0.1/"],
-    )
-    reason: NonEmptyString | None = Field(
-        default=None,
-        description="Human-readable explanation of the withdrawal, redirect, or support-state override for this release.",
-        examples=["Superseded by 4.0.1."],
-    )
-
-    @model_validator(mode="after")
-    def ensure_withdrawal_fields_are_consistent(self) -> Self:
-        if self.withdrawal_behavior is None:
-            if self.redirect_target is not None:
-                raise ValueError("redirectTarget requires withdrawalBehavior: redirect")
-            return self
-
-        if self.publication_state not in _WITHDRAWN_PUBLICATION_STATES:
-            raise ValueError(
-                "withdrawalBehavior is only allowed when publicationState is withdrawn or tombstoned",
-            )
-        if (
-            self.withdrawal_behavior is WithdrawalBehavior.REDIRECT
-            and self.redirect_target is None
-        ):
-            raise ValueError("withdrawalBehavior redirect requires redirectTarget")
-        if (
-            self.withdrawal_behavior is not WithdrawalBehavior.REDIRECT
-            and self.redirect_target is not None
-        ):
-            raise ValueError(
-                "redirectTarget is only allowed when withdrawalBehavior is redirect"
-            )
-        return self
-
-
 class MountConfig(SitePipelineBaseModel):
     """Mounted subtree, such as generated API docs or imported assets, published below one public path."""
 
@@ -867,82 +643,6 @@ class CompatibilityAssertionConfig(SitePipelineBaseModel):
     )
 
 
-class ArtifactLifecycleConfig(SitePipelineBaseModel):
-    """Lifecycle metadata for an artifact's stable versions, release lines, and support policy."""
-
-    latest_stable: VersionString | None = Field(
-        default=None,
-        description="Most recent stable version that readers should treat as the default recommendation for this artifact.",
-        examples=["4.0.1"],
-    )
-    release_lines: list[ReleaseLineConfig] | None = Field(
-        default=None,
-        description="Release-line definitions for this artifact, including latest versions and optional support metadata.",
-    )
-    releases: list[ExactReleaseConfig] | None = Field(
-        default=None,
-        description="Per-version lifecycle metadata and publication overrides for exact released versions.",
-    )
-    support_status_vocabulary: dict[Identifier, SupportStatusDefinition] | None = Field(
-        default=None,
-        description="Reusable support-status definitions that release lines and exact releases can refer to by key.",
-    )
-    support_policy_url: UrlString | None = Field(
-        default=None,
-        description="Canonical URL for the support policy document that readers should consult for this artifact.",
-    )
-    default_support_window: SupportWindow | None = Field(
-        default=None,
-        description="Fallback lifecycle window applied when a line or exact release does not provide a more specific support window.",
-    )
-
-    @model_validator(mode="after")
-    def ensure_release_lines_and_versions_are_unique_and_acyclic(self) -> Self:
-        if self.releases is not None:
-            _ensure_unique_strings(
-                [release.version for release in self.releases],
-                type_name="exact release version",
-            )
-
-        if self.release_lines is None:
-            return self
-
-        release_line_keys = [release_line.key for release_line in self.release_lines]
-        _ensure_unique_strings(release_line_keys, type_name="release-line key")
-        known_release_line_keys = set(release_line_keys)
-
-        for release_line in self.release_lines:
-            if (
-                release_line.parent is not None
-                and release_line.parent not in known_release_line_keys
-            ):
-                raise ValueError(f"Unknown release-line parent {release_line.parent!r}")
-
-        visiting: set[str] = set()
-        visited: set[str] = set()
-        parents_by_key = {
-            release_line.key: release_line.parent for release_line in self.release_lines
-        }
-
-        def visit(release_line_key: str) -> None:
-            if release_line_key in visited:
-                return
-            if release_line_key in visiting:
-                raise ValueError("Release-line parent chains must not contain cycles")
-
-            visiting.add(release_line_key)
-            parent_key = parents_by_key[release_line_key]
-            if parent_key is not None:
-                visit(parent_key)
-            visiting.remove(release_line_key)
-            visited.add(release_line_key)
-
-        for release_line_key in release_line_keys:
-            visit(release_line_key)
-
-        return self
-
-
 class ArtifactConfig(SitePipelineBaseModel):
     """One independently versioned release unit inside a component."""
 
@@ -950,35 +650,19 @@ class ArtifactConfig(SitePipelineBaseModel):
         description="Stable artifact identifier used in typed references, staged metadata, and provider records.",
         examples=["runtime"],
     )
-    display_name: NonEmptyString | None = Field(
+    source: SourceKey | None = Field(
         default=None,
-        description="Human-readable artifact label shown to readers when the raw key is not ideal UI text.",
-        examples=["Runtime"],
-    )
-    source: SourceKey = Field(
-        description="Named source entry that owns the versioned docs and assets for this artifact.",
-        examples=["apache-spark"],
+        description="Optional source binding override; otherwise inherit the component content source.",
     )
     docs_root: RepoRelativePath | None = Field(
-        default=None,
-        description="Artifact-specific docs root that overrides any inherited docs location when versioned docs live in a custom subdirectory.",
-        examples=["docs/runtime"],
+        default=None, description="Optional source layout binding for artifact docs."
     )
     assets_root: RepoRelativePath | None = Field(
-        default=None,
-        description="Artifact-specific asset root that overrides inherited component asset locations for this artifact's versioned output.",
-        examples=["docs/runtime/assets"],
-    )
-    versioning: ArtifactVersioningConfig = Field(
-        description="Rules for discovering development refs, maintenance refs, tags, and named refs for this artifact.",
+        default=None, description="Optional source layout binding for artifact assets."
     )
     publication_selection: PublicationSelectionPolicy | None = Field(
         default=None,
-        description="Artifact-specific override for which version contexts should be staged and published.",
-    )
-    lifecycle: ArtifactLifecycleConfig | None = Field(
-        default=None,
-        description="Lifecycle metadata for stable versions, release lines, and support policy for this artifact.",
+        description="Optional consumer publication selection for this component-defined artifact.",
     )
     compatibility: list[CompatibilityAssertionConfig] | None = Field(
         default=None,
@@ -1177,8 +861,13 @@ class SiteCatalogDocumentV1(SitePipelineBaseModel):
                 )
 
         for component in self.components:
-            if component.provider_snapshot is not None and component.provider_snapshot.source not in source_keys:
-                raise ValueError(f"Unknown snapshot source {component.provider_snapshot.source!r} for component {component.slug!r}")
+            if (
+                component.provider_snapshot is not None
+                and component.provider_snapshot.source not in source_keys
+            ):
+                raise ValueError(
+                    f"Unknown snapshot source {component.provider_snapshot.source!r} for component {component.slug!r}"
+                )
             if component.group is not None and component.group not in group_keys:
                 raise ValueError(
                     f"Unknown group key {component.group!r} referenced by component {component.slug!r}"
@@ -1202,71 +891,9 @@ class SiteCatalogDocumentV1(SitePipelineBaseModel):
                 continue
 
             for artifact in component.artifacts:
-                if artifact.source not in source_keys:
+                if artifact.source is not None and artifact.source not in source_keys:
                     raise ValueError(
                         f"Unknown source key {artifact.source!r} referenced by artifact {artifact.key!r}",
                     )
-                self._validate_publication_selection_references(component, artifact)
 
         return self
-
-    def _validate_publication_selection_references(
-        self,
-        component: ComponentCatalogEntry,
-        artifact: ArtifactConfig,
-    ) -> None:
-        for location, selection in (
-            (
-                f"component {component.slug!r}.publicationSelection",
-                component.publication_selection,
-            ),
-            (
-                f"artifact {component.slug!r}/{artifact.key!r}.publicationSelection",
-                artifact.publication_selection,
-            ),
-        ):
-            if selection is None:
-                continue
-            self._validate_named_ref_selection(selection, artifact, location=location)
-            self._validate_line_head_selection(selection, artifact, location=location)
-
-    def _validate_named_ref_selection(
-        self,
-        selection: PublicationSelectionPolicy,
-        artifact: ArtifactConfig,
-        *,
-        location: str,
-    ) -> None:
-        if selection.named_refs is None:
-            return
-        known_named_ref_keys = {
-            named_ref.key for named_ref in (artifact.versioning.named_refs or [])
-        }
-        for named_ref_key in selection.named_refs:
-            if named_ref_key not in known_named_ref_keys:
-                raise ValueError(
-                    f"Unknown namedRef key {named_ref_key!r} referenced by {location}"
-                )
-
-    def _validate_line_head_selection(
-        self,
-        selection: PublicationSelectionPolicy,
-        artifact: ArtifactConfig,
-        *,
-        location: str,
-    ) -> None:
-        if selection.line_heads is None or selection.line_heads.keys is None:
-            return
-        known_release_line_keys = (
-            {
-                release_line.key
-                for release_line in (artifact.lifecycle.release_lines or [])
-            }
-            if artifact.lifecycle is not None
-            else set()
-        )
-        for release_line_key in selection.line_heads.keys:
-            if release_line_key not in known_release_line_keys:
-                raise ValueError(
-                    f"Unknown release-line key {release_line_key!r} referenced by {location}"
-                )

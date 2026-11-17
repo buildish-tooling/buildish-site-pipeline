@@ -16,10 +16,7 @@
             }
           ],
           "default": null,
-          "description": "Artifact-specific asset root that overrides inherited component asset locations for this artifact's versioned output.",
-          "examples": [
-            "docs/runtime/assets"
-          ],
+          "description": "Optional source layout binding for artifact assets.",
           "title": "Assetsroot"
         },
         "compatibility": {
@@ -38,23 +35,6 @@
           "description": "Compatibility statements that should be emitted for this artifact in staged metadata.",
           "title": "Compatibility"
         },
-        "displayName": {
-          "anyOf": [
-            {
-              "minLength": 1,
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Human-readable artifact label shown to readers when the raw key is not ideal UI text.",
-          "examples": [
-            "Runtime"
-          ],
-          "title": "Displayname"
-        },
         "docsRoot": {
           "anyOf": [
             {
@@ -66,10 +46,7 @@
             }
           ],
           "default": null,
-          "description": "Artifact-specific docs root that overrides any inherited docs location when versioned docs live in a custom subdirectory.",
-          "examples": [
-            "docs/runtime"
-          ],
+          "description": "Optional source layout binding for artifact docs.",
           "title": "Docsroot"
         },
         "key": {
@@ -80,18 +57,6 @@
           "minLength": 1,
           "title": "Key",
           "type": "string"
-        },
-        "lifecycle": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ArtifactLifecycleConfig"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Lifecycle metadata for stable versions, release lines, and support policy for this artifact."
         },
         "mounts": {
           "anyOf": [
@@ -119,201 +84,27 @@
             }
           ],
           "default": null,
-          "description": "Artifact-specific override for which version contexts should be staged and published."
+          "description": "Optional consumer publication selection for this component-defined artifact."
         },
         "source": {
-          "description": "Named source entry that owns the versioned docs and assets for this artifact.",
-          "examples": [
-            "apache-spark"
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
           ],
-          "minLength": 1,
-          "title": "Source",
-          "type": "string"
-        },
-        "versioning": {
-          "$ref": "#/$defs/ArtifactVersioningConfig",
-          "description": "Rules for discovering development refs, maintenance refs, tags, and named refs for this artifact."
+          "default": null,
+          "description": "Optional source binding override; otherwise inherit the component content source.",
+          "title": "Source"
         }
       },
       "required": [
-        "key",
-        "source",
-        "versioning"
+        "key"
       ],
       "title": "ArtifactConfig",
-      "type": "object",
-      "x-buildish-contract": {
-        "category": "authored",
-        "ownership": "consumer-owned"
-      }
-    },
-    "ArtifactLifecycleConfig": {
-      "additionalProperties": false,
-      "description": "Lifecycle metadata for an artifact's stable versions, release lines, and support policy.",
-      "properties": {
-        "defaultSupportWindow": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/SupportWindow"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Fallback lifecycle window applied when a line or exact release does not provide a more specific support window."
-        },
-        "latestStable": {
-          "anyOf": [
-            {
-              "minLength": 1,
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Most recent stable version that readers should treat as the default recommendation for this artifact.",
-          "examples": [
-            "4.0.1"
-          ],
-          "title": "Lateststable"
-        },
-        "releaseLines": {
-          "anyOf": [
-            {
-              "items": {
-                "$ref": "#/$defs/ReleaseLineConfig"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Release-line definitions for this artifact, including latest versions and optional support metadata.",
-          "title": "Releaselines"
-        },
-        "releases": {
-          "anyOf": [
-            {
-              "items": {
-                "$ref": "#/$defs/ExactReleaseConfig"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Per-version lifecycle metadata and publication overrides for exact released versions.",
-          "title": "Releases"
-        },
-        "supportPolicyUrl": {
-          "anyOf": [
-            {
-              "minLength": 1,
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Canonical URL for the support policy document that readers should consult for this artifact.",
-          "title": "Supportpolicyurl"
-        },
-        "supportStatusVocabulary": {
-          "anyOf": [
-            {
-              "additionalProperties": {
-                "$ref": "#/$defs/SupportStatusDefinition"
-              },
-              "propertyNames": {
-                "minLength": 1
-              },
-              "type": "object"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Reusable support-status definitions that release lines and exact releases can refer to by key.",
-          "title": "Supportstatusvocabulary"
-        }
-      },
-      "title": "ArtifactLifecycleConfig",
-      "type": "object",
-      "x-buildish-contract": {
-        "category": "authored",
-        "ownership": "consumer-owned"
-      }
-    },
-    "ArtifactVersioningConfig": {
-      "additionalProperties": false,
-      "description": "How the pipeline discovers development, maintenance, tag, and named-ref versions.",
-      "properties": {
-        "developmentRef": {
-          "description": "Source-control ref that represents the moving development docs for this artifact.",
-          "examples": [
-            "main"
-          ],
-          "minLength": 1,
-          "title": "Developmentref",
-          "type": "string"
-        },
-        "maintenanceRefPattern": {
-          "anyOf": [
-            {
-              "minLength": 1,
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Pattern used to derive maintenance branch refs from a release-line key, usually with `{line}` as the substitution placeholder.",
-          "examples": [
-            "release/{line}"
-          ],
-          "title": "Maintenancerefpattern"
-        },
-        "namedRefs": {
-          "anyOf": [
-            {
-              "items": {
-                "$ref": "#/$defs/NamedRefConfig"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Additional intentionally named version contexts, such as preview or stable branches, that should be selectable by key.",
-          "title": "Namedrefs"
-        },
-        "tagPattern": {
-          "description": "Regular expression used to recognize provider tags that belong to this artifact's version stream.",
-          "examples": [
-            "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
-          ],
-          "minLength": 1,
-          "title": "Tagpattern",
-          "type": "string"
-        }
-      },
-      "required": [
-        "developmentRef",
-        "tagPattern"
-      ],
-      "title": "ArtifactVersioningConfig",
       "type": "object",
       "x-buildish-contract": {
         "category": "authored",
@@ -820,134 +611,6 @@
         "ownership": "consumer-owned"
       }
     },
-    "ExactReleaseConfig": {
-      "additionalProperties": false,
-      "description": "Per-version lifecycle metadata and publication overrides for one exact release.",
-      "properties": {
-        "publicationState": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/PublicationState"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Publication-state override for this version, such as published, withdrawn, or tombstoned."
-        },
-        "reason": {
-          "anyOf": [
-            {
-              "minLength": 1,
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Human-readable explanation of the withdrawal, redirect, or support-state override for this release.",
-          "examples": [
-            "Superseded by 4.0.1."
-          ],
-          "title": "Reason"
-        },
-        "redirectTarget": {
-          "anyOf": [
-            {
-              "minLength": 1,
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Replacement route or external URL to send readers to when `withdrawalBehavior` is `redirect`.",
-          "examples": [
-            "route:/spark/releases/4.0.1/"
-          ],
-          "title": "Redirecttarget"
-        },
-        "releaseLine": {
-          "anyOf": [
-            {
-              "minLength": 1,
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Release-line key that this version belongs to when the provider data alone does not already make that relationship obvious.",
-          "examples": [
-            "4.0"
-          ],
-          "title": "Releaseline"
-        },
-        "supportStatus": {
-          "anyOf": [
-            {
-              "minLength": 1,
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Support-status key or label that should override the line-level status for this exact version.",
-          "examples": [
-            "withdrawn"
-          ],
-          "title": "Supportstatus"
-        },
-        "supportWindow": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/SupportWindow"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Lifecycle dates and support notes that apply only to this exact release."
-        },
-        "version": {
-          "description": "Exact released version that this metadata entry applies to.",
-          "examples": [
-            "4.0.0"
-          ],
-          "minLength": 1,
-          "title": "Version",
-          "type": "string"
-        },
-        "withdrawalBehavior": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/WithdrawalBehavior"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "What readers should experience when this release has been withdrawn, for example a redirect or a hard removal."
-        }
-      },
-      "required": [
-        "version"
-      ],
-      "title": "ExactReleaseConfig",
-      "type": "object",
-      "x-buildish-contract": {
-        "category": "authored",
-        "ownership": "consumer-owned"
-      }
-    },
     "GroupConfig": {
       "additionalProperties": false,
       "description": "Reusable defaults and grouping hints shared by several components.",
@@ -1328,91 +991,6 @@
         "ownership": "consumer-owned"
       }
     },
-    "NamedRefConfig": {
-      "additionalProperties": false,
-      "description": "Named source-control ref intentionally exposed as a stable version context.",
-      "properties": {
-        "description": {
-          "anyOf": [
-            {
-              "minLength": 1,
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Human-readable explanation of what this named ref contains or who should use it.",
-          "examples": [
-            "Early access docs for the next planned minor release."
-          ],
-          "title": "Description"
-        },
-        "displayName": {
-          "anyOf": [
-            {
-              "minLength": 1,
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Human-readable label shown in version pickers, breadcrumbs, or other rendered UI.",
-          "examples": [
-            "Preview"
-          ],
-          "title": "Displayname"
-        },
-        "key": {
-          "description": "Stable identifier used elsewhere in the catalog to select this named ref.",
-          "examples": [
-            "preview"
-          ],
-          "minLength": 1,
-          "title": "Key",
-          "type": "string"
-        },
-        "maturity": {
-          "anyOf": [
-            {
-              "minLength": 1,
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Short maturity label that explains how stable or experimental this named ref should be treated.",
-          "examples": [
-            "preview"
-          ],
-          "title": "Maturity"
-        },
-        "ref": {
-          "description": "Exact source-control ref to resolve when this named context is selected.",
-          "examples": [
-            "refs/heads/preview"
-          ],
-          "minLength": 1,
-          "title": "Ref",
-          "type": "string"
-        }
-      },
-      "required": [
-        "key",
-        "ref"
-      ],
-      "title": "NamedRefConfig",
-      "type": "object",
-      "x-buildish-contract": {
-        "category": "authored",
-        "ownership": "consumer-owned"
-      }
-    },
     "OriginConfig": {
       "additionalProperties": false,
       "description": "Named public base URL that published routes can resolve against.",
@@ -1775,17 +1353,6 @@
         "ownership": "consumer-owned"
       }
     },
-    "PublicationState": {
-      "description": "Observed provider-side publication state.",
-      "enum": [
-        "published",
-        "hidden",
-        "withdrawn",
-        "tombstoned"
-      ],
-      "title": "PublicationState",
-      "type": "string"
-    },
     "RedirectRuleConfig": {
       "additionalProperties": false,
       "description": "Redirect rule that sends one published path to another internal or external target.",
@@ -1864,142 +1431,6 @@
         "target"
       ],
       "title": "RedirectRuleConfig",
-      "type": "object",
-      "x-buildish-contract": {
-        "category": "authored",
-        "ownership": "consumer-owned"
-      }
-    },
-    "ReleaseLineConfig": {
-      "additionalProperties": false,
-      "description": "One logical release line, such as `4.0`, together with its lifecycle metadata.",
-      "properties": {
-        "aliases": {
-          "anyOf": [
-            {
-              "items": {
-                "minLength": 1,
-                "type": "string"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Alternate labels that should also resolve to this release line in generated metadata or UI.",
-          "examples": [
-            [
-              "stable"
-            ]
-          ],
-          "title": "Aliases"
-        },
-        "displayName": {
-          "anyOf": [
-            {
-              "minLength": 1,
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Human-readable label shown to readers when the raw line key is not ideal UI text.",
-          "examples": [
-            "4.0 line"
-          ],
-          "title": "Displayname"
-        },
-        "key": {
-          "description": "Stable key for the release line, typically matching the family label used in URLs and navigation.",
-          "examples": [
-            "4.0"
-          ],
-          "minLength": 1,
-          "title": "Key",
-          "type": "string"
-        },
-        "latest": {
-          "description": "Latest released version currently considered the head of this release line.",
-          "examples": [
-            "4.0.1"
-          ],
-          "minLength": 1,
-          "title": "Latest",
-          "type": "string"
-        },
-        "maintenanceRef": {
-          "anyOf": [
-            {
-              "minLength": 1,
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Explicit maintenance branch ref for the line when it should not be derived from `maintenanceRefPattern`.",
-          "examples": [
-            "refs/heads/release-4.0"
-          ],
-          "title": "Maintenanceref"
-        },
-        "parent": {
-          "anyOf": [
-            {
-              "minLength": 1,
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Optional parent release-line key used to model lineage such as `4.x` inheriting from `3.x` policy or navigation structure.",
-          "examples": [
-            "3.5"
-          ],
-          "title": "Parent"
-        },
-        "supportStatus": {
-          "anyOf": [
-            {
-              "minLength": 1,
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Support-status key or label that should be shown for the line as a whole.",
-          "examples": [
-            "supported"
-          ],
-          "title": "Supportstatus"
-        },
-        "supportWindow": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/SupportWindow"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Lifecycle dates and support notes that apply to the release line."
-        }
-      },
-      "required": [
-        "key",
-        "latest"
-      ],
-      "title": "ReleaseLineConfig",
       "type": "object",
       "x-buildish-contract": {
         "category": "authored",
@@ -2272,196 +1703,6 @@
         "ownership": "consumer-owned"
       }
     },
-    "SupportStatusDefinition": {
-      "additionalProperties": false,
-      "description": "One reusable support-status label, description, and default lifecycle behavior.",
-      "properties": {
-        "defaultMaintenancePhase": {
-          "anyOf": [
-            {
-              "minLength": 1,
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Default maintenance-phase label to apply when a release uses this support status and does not provide a more specific phase.",
-          "examples": [
-            "active"
-          ],
-          "title": "Defaultmaintenancephase"
-        },
-        "description": {
-          "anyOf": [
-            {
-              "minLength": 1,
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Human-readable explanation of what this support status means in practice.",
-          "examples": [
-            "Receives regular fixes and new patch releases."
-          ],
-          "title": "Description"
-        },
-        "displayName": {
-          "description": "Human-readable status label shown to readers, such as `Supported` or `Security fixes only`.",
-          "examples": [
-            "Supported"
-          ],
-          "minLength": 1,
-          "title": "Displayname",
-          "type": "string"
-        },
-        "order": {
-          "anyOf": [
-            {
-              "type": "integer"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Optional sort order used when several support statuses should appear in a stable display order.",
-          "examples": [
-            10
-          ],
-          "title": "Order"
-        }
-      },
-      "required": [
-        "displayName"
-      ],
-      "title": "SupportStatusDefinition",
-      "type": "object",
-      "x-buildish-contract": {
-        "category": "authored",
-        "ownership": "component-owned"
-      }
-    },
-    "SupportWindow": {
-      "additionalProperties": false,
-      "description": "Lifecycle dates and support notes for one release line or exact release.",
-      "properties": {
-        "endOfActiveSupportDate": {
-          "anyOf": [
-            {
-              "format": "date-time",
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Date after which the release no longer receives full active support.",
-          "title": "Endofactivesupportdate"
-        },
-        "endOfLifeDate": {
-          "anyOf": [
-            {
-              "format": "date-time",
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Final retirement date after which the release should be treated as fully end-of-life.",
-          "title": "Endoflifedate"
-        },
-        "endOfSupportDate": {
-          "anyOf": [
-            {
-              "format": "date-time",
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Date after which the release is no longer supported in normal maintenance channels.",
-          "title": "Endofsupportdate"
-        },
-        "maintenancePhase": {
-          "anyOf": [
-            {
-              "minLength": 1,
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Short label for the current maintenance phase, such as general availability, maintenance, or security-only support.",
-          "examples": [
-            "security-fixes"
-          ],
-          "title": "Maintenancephase"
-        },
-        "notes": {
-          "anyOf": [
-            {
-              "minLength": 1,
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Additional notes that clarify exceptions, migration advice, or support caveats.",
-          "title": "Notes"
-        },
-        "releaseDate": {
-          "anyOf": [
-            {
-              "format": "date-time",
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Release date for the line or version that this support window describes.",
-          "examples": [
-            "2026-04-01T00:00:00Z"
-          ],
-          "title": "Releasedate"
-        },
-        "supportPolicyUrl": {
-          "anyOf": [
-            {
-              "minLength": 1,
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Canonical URL that explains the support policy referenced by this support window.",
-          "title": "Supportpolicyurl"
-        }
-      },
-      "title": "SupportWindow",
-      "type": "object",
-      "x-buildish-contract": {
-        "category": "authored",
-        "ownership": "consumer-owned"
-      }
-    },
     "TopLevelAssetConfig": {
       "additionalProperties": false,
       "description": "Imported asset tree mounted into the shared site asset space.",
@@ -2569,16 +1810,6 @@
         "category": "authored",
         "ownership": "consumer-owned"
       }
-    },
-    "WithdrawalBehavior": {
-      "description": "Author-directed behavior for a withdrawn release.",
-      "enum": [
-        "notice",
-        "redirect",
-        "omit"
-      ],
-      "title": "WithdrawalBehavior",
-      "type": "string"
     }
   },
   "$id": "https://buildish.org/components/site-pipeline/schemas/catalog-v1.schema.json",
@@ -2592,20 +1823,6 @@
           "artifacts": [
             {
               "key": "runtime",
-              "lifecycle": {
-                "releaseLines": [
-                  {
-                    "key": "4.0",
-                    "latest": "4.0.0",
-                    "maintenanceRef": "maintenance/4.0"
-                  }
-                ],
-                "releases": [
-                  {
-                    "version": "4.0.0"
-                  }
-                ]
-              },
               "publicationSelection": {
                 "development": true,
                 "lineHeads": {
@@ -2615,11 +1832,7 @@
                   "mode": "latestPerLine"
                 }
               },
-              "source": "runtime",
-              "versioning": {
-                "developmentRef": "main",
-                "tagPattern": "^v.*$"
-              }
+              "source": "runtime"
             }
           ],
           "content": {

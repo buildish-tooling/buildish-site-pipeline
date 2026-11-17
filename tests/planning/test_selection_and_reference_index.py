@@ -39,16 +39,18 @@ from buildish_site_pipeline.evaluation.reference_index import (
 )
 from buildish_site_pipeline.evaluation.types import PublishedTarget
 from buildish_site_pipeline.models.authored.site_catalog import (
-    ArtifactLifecycleConfig,
-    ArtifactVersioningConfig,
     CandidateSelectionPolicy,
     CompatibilityAssertionConfig,
-    ExactReleaseConfig,
     LineHeadSelectionPolicy,
-    NamedRefConfig,
     PublicationSelectionPolicy,
-    ReleaseLineConfig,
     ReleaseSelectionPolicy,
+)
+from buildish_site_pipeline.models.authored.artifacts import (
+    ArtifactLifecycleConfig,
+    ArtifactVersioningConfig,
+    ExactReleaseConfig,
+    NamedRefConfig,
+    ReleaseLineConfig,
 )
 from buildish_site_pipeline.models.enums import (
     CandidateSelectionMode,
@@ -101,7 +103,9 @@ class SelectionAndReferenceIndexTests(unittest.TestCase):
         self.assertEqual(selected[0].docs_root, Path("/workspace/site-pipeline/docs"))
         self.assertEqual(selected[0].source_binding.local_dir, Path("/workspace/site-pipeline"))
 
-    def test_build_context_reference_index_collects_routes_targets_and_provider_releases(self) -> None:
+    def test_build_context_reference_index_collects_routes_targets_and_provider_releases(
+        self,
+    ) -> None:
         artifact = self._artifact(
             lifecycle=ArtifactLifecycleConfig(
                 releases=[ExactReleaseConfig(version="4.0.0", release_line="4.0")],
@@ -171,8 +175,10 @@ class SelectionAndReferenceIndexTests(unittest.TestCase):
             "component:spark",
         )
         self.assertIn("component:spark", reference_index.targets_by_reference)
-        self.assertIn("line:spark/runtime@4.0", reference_index.targets_by_reference)
-        self.assertIn("release:spark/runtime@4.0.0", reference_index.targets_by_reference)
+        self.assertNotIn("line:spark/runtime@4.0", reference_index.targets_by_reference)
+        self.assertIn(
+            "release:spark/runtime@4.0.0", reference_index.targets_by_reference
+        )
         self.assertEqual(reference_index.known_components, frozenset({"spark"}))
         self.assertEqual(
             reference_index.artifacts_by_component,
@@ -653,9 +659,11 @@ class SelectionAndReferenceIndexTests(unittest.TestCase):
             route,
         )
 
-    def test_validate_references_delegates_to_component_artifact_and_compatibility_helpers(self) -> None:
+    def test_validate_references_delegates_to_component_artifact_and_compatibility_helpers(
+        self,
+    ) -> None:
         artifact = self._artifact()
-        artifact.authored = SimpleNamespace(compatibility=("artifact-compat",))
+        artifact.binding = SimpleNamespace(compatibility=("artifact-compat",))
         component = SimpleNamespace(
             slug="spark",
             artifacts=(artifact,),
@@ -674,20 +682,28 @@ class SelectionAndReferenceIndexTests(unittest.TestCase):
             ),
         )
         collector = DiagnosticCollector()
-        reference_index = build_reference_index(routes_by_lookup_key={}, targets_by_reference={})
+        reference_index = build_reference_index(
+            routes_by_lookup_key={}, targets_by_reference={}
+        )
 
-        with mock.patch(
-            "buildish_site_pipeline.evaluation.reference_index._build_context_reference_index",
-            return_value=reference_index,
-        ) as build_index, mock.patch(
-            "buildish_site_pipeline.evaluation.reference_index._validate_component_artifacts"
-        ) as validate_component_artifacts, mock.patch(
-            "buildish_site_pipeline.evaluation.reference_index._validate_compatibility_references"
-        ) as validate_compatibility_references, mock.patch(
-            "buildish_site_pipeline.evaluation.reference_index._validate_release_lines"
-        ) as validate_release_lines, mock.patch(
-            "buildish_site_pipeline.evaluation.reference_index._validate_selection_references"
-        ) as validate_selection_references:
+        with (
+            mock.patch(
+                "buildish_site_pipeline.evaluation.reference_index._build_context_reference_index",
+                return_value=reference_index,
+            ) as build_index,
+            mock.patch(
+                "buildish_site_pipeline.evaluation.reference_index._validate_component_artifacts"
+            ) as validate_component_artifacts,
+            mock.patch(
+                "buildish_site_pipeline.evaluation.reference_index._validate_compatibility_references"
+            ) as validate_compatibility_references,
+            mock.patch(
+                "buildish_site_pipeline.evaluation.reference_index._validate_release_lines"
+            ) as validate_release_lines,
+            mock.patch(
+                "buildish_site_pipeline.evaluation.reference_index._validate_selection_references"
+            ) as validate_selection_references,
+        ):
             validate_references(
                 planning=planning,
                 publication_targets=(

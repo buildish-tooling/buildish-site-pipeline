@@ -110,6 +110,7 @@ def smoke_test() -> None:
         (workspace / "site/catalog.yaml").write_text(
             """schemaVersion: 1
 defaults:
+  metadataFile: site/component.yaml
   docsRoot: docs
   publication:
     origin: docs
@@ -129,13 +130,16 @@ components:
     artifacts:
       - key: runtime
         source: runtime
-        versioning:
-          developmentRef: main
-          tagPattern: ^v.*$
         publicationSelection:
           releases:
             mode: allKnown
 """,
+            encoding="utf-8",
+        )
+        metadata = workspace / "components/runtime/site/component.yaml"
+        metadata.parent.mkdir()
+        metadata.write_text(
+            "schemaVersion: 1\ncomponent:\n  slug: smoke\nartifacts:\n  - key: runtime\n",
             encoding="utf-8",
         )
         (workspace / "site/provider-snapshot.json").write_text(

@@ -58,8 +58,8 @@ from buildish_site_pipeline.models.emitted.aggregates import (
 from buildish_site_pipeline.models.authored.site_catalog import (
     CompatibilityAssertionConfig,
     MountConfig,
-    SupportWindow,
 )
+from buildish_site_pipeline.models.authored.artifacts import SupportWindow
 from buildish_site_pipeline.models.enums import RecordKind
 from buildish_site_pipeline.models.emitted.planning_stage_contract import (
     PipelineDiagnosticEntry,
@@ -671,7 +671,7 @@ def _build_redirect_resolution_index(
             )
         )
 
-    for context in (build_plan.desired_versions or build_plan.selected_versions):
+    for context in build_plan.desired_versions or build_plan.selected_versions:
         publication = component_by_slug[context.component_slug].publication
         resolved_route = (
             publication.origin.key,
@@ -682,11 +682,19 @@ def _build_redirect_resolution_index(
             origin_key=resolved_route[0],
             path_value=resolved_route[1],
         )
-        if context.artifact_key is not None and context.release_line is not None:
+        if (
+            context.kind is RecordKind.LINE_HEAD
+            and context.artifact_key is not None
+            and context.release_line is not None
+        ):
             targets_by_reference[
                 f"line:{context.component_slug}/{context.artifact_key}@{context.release_line}"
             ] = resolved_route
-        if context.artifact_key is not None and context.version is not None:
+        if (
+            context.kind is RecordKind.RELEASED
+            and context.artifact_key is not None
+            and context.version is not None
+        ):
             targets_by_reference[
                 f"release:{context.component_slug}/{context.artifact_key}@{context.version}"
             ] = resolved_route
@@ -797,9 +805,7 @@ def _build_release_entries(
                 published_at=_parse_timestamp(record.published_at) if record else None,
                 support_status=_support_status_for_context(artifact, context),
                 support_window=_support_window_for_context(artifact, context),
-                release_line_ancestors=list(record.release_line_ancestors or ())
-                if record
-                else None,
+                release_line_ancestors=list(context.release_line_ancestors),
                 withdrawal_behavior=context.withdrawal_behavior,
                 redirect_target=context.redirect_target,
                 maturity=record.maturity if record else context.maturity,
@@ -1154,13 +1160,13 @@ def _artifact_docs_root(artifact: ResolvedArtifactConfig, workspace_root: Path) 
 def _artifact_compatibility_entries(
     artifact: ResolvedArtifactConfig,
 ) -> tuple[CompatibilityAssertionConfig, ...]:
-    return tuple(artifact.authored.compatibility or ())
+    return tuple(artifact.binding.compatibility or ()) if artifact.binding else ()
 
 
 def _artifact_mount_entries(
     artifact: ResolvedArtifactConfig,
 ) -> tuple[MountConfig, ...]:
-    return tuple(artifact.authored.mounts or ())
+    return tuple(artifact.binding.mounts or ()) if artifact.binding else ()
 
 
 def _provider_record_for_context(

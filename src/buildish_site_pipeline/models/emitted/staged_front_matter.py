@@ -43,7 +43,7 @@ from ..scalars import (
     VersionString,
 )
 from ..validation.urls import extract_hostname_from_url
-from ..authored.site_catalog import SupportWindow
+from ..authored.artifacts import SupportWindow
 
 
 def _ensure_unique_strings(values: list[str], *, type_name: str) -> None:

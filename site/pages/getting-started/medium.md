@@ -36,9 +36,11 @@ One concrete starter layout is:
 ```text
 site/
   catalog.yaml
-  provider-snapshot.json
 components/
   runtime/
+    site/
+      component.yaml
+      provider-snapshot.json
     docs/
       runtime/
         guide/
@@ -72,6 +74,7 @@ defaults:
   docsRoot: docs
   publication:
     origin: docs
+  metadataFile: site/component.yaml
 origins:
   docs:
     baseUrl: https://docs.example.org
@@ -84,43 +87,43 @@ components:
   - slug: spark
     content:
       source: runtime
+    providerSnapshot:
+      source: runtime
+      path: site/provider-snapshot.json
     publication:
       mountPath: /spark/
     artifacts:
       - key: runtime
         source: runtime
-        docsRoot: docs/runtime
-        versioning:
-          developmentRef: main
-          tagPattern: ^v.*$
         publicationSelection:
           development: true
           releases:
             mode: latestPerLine
-        lifecycle:
-          releaseLines:
-            - key: "4.0"
-              maintenanceRef: maintenance/4.0
-              latest: "4.0.0"
-          releases:
-            - version: "4.0.0"
       - key: api
         source: api
-        docsRoot: docs
-        versioning:
-          developmentRef: main
-          tagPattern: ^api-v.*$
         publicationSelection:
           development: true
           releases:
             mode: latestPerLine
-        lifecycle:
-          releaseLines:
-            - key: "4.0"
-              maintenanceRef: maintenance/4.0
-              latest: "4.0.0"
-          releases:
-            - version: "4.0.0"
+```
+
+Component-owned `components/runtime/site/component.yaml` for `spark`:
+
+```yaml
+schemaVersion: 1
+component:
+  slug: spark
+artifacts:
+  - key: runtime
+    versioning:
+      developmentRef: main
+      tagPattern: ^v.*$
+    docsRoot: docs/runtime
+  - key: api
+    versioning:
+      developmentRef: main
+      tagPattern: ^api-v.*$
+    docsRoot: docs
 ```
 
 That is the smallest useful medium-site packet because it already makes three
@@ -150,6 +153,53 @@ site/.stage/
   content/spark/releases/4.0.0/reference/index.md
   data/content-index.json
   data/routes.json
+```
+
+
+Component-owned `components/runtime/site/provider-snapshot.json` (provider descriptors and records may enrich these curated releases):
+
+```json
+{
+  "schemaVersion": 1,
+  "artifacts": [
+    {
+      "componentSlug": "spark",
+      "artifactKey": "runtime",
+      "releaseLines": [
+        {
+          "key": "4.0",
+          "maintenanceRef": "maintenance/4.0",
+          "latest": "4.0.0"
+        }
+      ],
+      "releases": [
+        {
+          "version": "4.0.0",
+          "releaseLine": "4.0"
+        }
+      ]
+    },
+    {
+      "componentSlug": "spark",
+      "artifactKey": "api",
+      "releaseLines": [
+        {
+          "key": "4.0",
+          "maintenanceRef": "maintenance/4.0",
+          "latest": "4.0.0"
+        }
+      ],
+      "releases": [
+        {
+          "version": "4.0.0",
+          "releaseLine": "4.0"
+        }
+      ]
+    }
+  ],
+  "providers": [],
+  "records": []
+}
 ```
 
 ## Read these first

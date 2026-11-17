@@ -33,6 +33,7 @@ from buildish_site_pipeline.models.enums import (
 )
 
 from .errors import PlanningInputFailure
+from .release_facts import line_ancestors
 from .types import (
     IndexedProviderRecord,
     ProviderContextIndex,
@@ -49,7 +50,10 @@ _SEMVER_PATTERN = re.compile(r"^[0-9]+(?:\.[0-9]+)*(?:[-+][A-Za-z0-9.-]+)?$")
 
 
 def select_version_contexts(
-    *, site: ResolvedSiteConfig, provider_index: ProviderSnapshotIndex
+    *,
+    site: ResolvedSiteConfig,
+    provider_index: ProviderSnapshotIndex,
+    missing_snapshot_components: frozenset[str] = frozenset(),
 ) -> SelectedVersionSet:
     """Select the effective version contexts across all resolved artifacts."""
 
@@ -73,7 +77,11 @@ def select_version_contexts(
                 )
             )
             line_head_contexts = _select_line_head_contexts(
-                component.slug, artifact, provider_context, effective_policy
+                component.slug,
+                artifact,
+                provider_context,
+                effective_policy,
+                inventory_missing=component.slug in missing_snapshot_components,
             )
             selected_contexts.extend(line_head_contexts)
             selected_contexts.extend(
@@ -185,6 +193,8 @@ def _select_line_head_contexts(
     artifact: ResolvedArtifactConfig,
     provider_context: ProviderContextIndex | None,
     policy: PublicationSelectionPolicy,
+    *,
+    inventory_missing: bool = False,
 ) -> list[SelectedVersionContext]:
     line_head_policy = policy.line_heads
     if line_head_policy is None or line_head_policy.mode is LineHeadSelectionMode.NONE:
@@ -202,7 +212,13 @@ def _select_line_head_contexts(
 
     selected_contexts = []
     for line_key in selected_line_keys:
-        authored_line = authored_release_lines[line_key]
+        authored_line = authored_release_lines.get(line_key)
+        if authored_line is None:
+            if inventory_missing:
+                continue
+            raise PlanningInputFailure(
+                f"Unknown selected release-line {line_key!r} for {component_slug}:{artifact.key}"
+            )
         provider_record = None
         deterministic = True
         if provider_context is not None:
@@ -212,6 +228,15 @@ def _select_line_head_contexts(
             if provider_records:
                 provider_record = _choose_best_record(provider_records)
                 deterministic = len(provider_records) == 1
+        maintenance_ref = authored_line.maintenance_ref or (
+            provider_record.ref if provider_record else None
+        )
+        if maintenance_ref is None and artifact.versioning.maintenance_ref_pattern:
+            maintenance_ref = artifact.versioning.maintenance_ref_pattern.replace(
+                "{line}", line_key
+            )
+        if maintenance_ref is None and provider_record is None:
+            continue
         selected_contexts.append(
             SelectedVersionContext(
                 component_slug=component_slug,
@@ -221,8 +246,7 @@ def _select_line_head_contexts(
                 docs_root=artifact.docs_root,
                 assets_root=artifact.assets_root,
                 release_line=line_key,
-                ref=authored_line.maintenance_ref
-                or (provider_record.ref if provider_record else None),
+                ref=maintenance_ref,
                 commit_sha=provider_record.commit_sha if provider_record else None,
                 support_status=authored_line.support_status
                 or (provider_record.support_status if provider_record else None),
@@ -275,7 +299,7 @@ def _select_release_contexts(
         )
 
     selected_contexts = []
-    for version in selected_versions:
+    for version in dict.fromkeys(selected_versions):
         provider_records = (
             list(provider_context.released_by_version.get(version, ()))
             if provider_context is not None
@@ -294,11 +318,23 @@ def _select_release_contexts(
                 docs_root=artifact.docs_root,
                 assets_root=artifact.assets_root,
                 version=version,
+                release_line=(
+                    authored_release.release_line if authored_release else None
+                )
+                or (provider_record.release_line if provider_record else None),
+                release_line_ancestors=provider_record.release_line_ancestors
+                if provider_record
+                else line_ancestors(
+                    artifact,
+                    authored_release.release_line if authored_release else None,
+                ),
                 display_version=provider_record.display_version
                 if provider_record
                 else version,
                 tag=provider_record.tag if provider_record else None,
-                publication_state=(authored_release.publication_state if authored_release else None)
+                publication_state=(
+                    authored_release.publication_state if authored_release else None
+                )
                 or (provider_record.publication_state if provider_record else None),
                 withdrawal_reason=authored_release.reason if authored_release else None,
                 withdrawal_behavior=authored_release.withdrawal_behavior
@@ -326,6 +362,10 @@ def _select_named_ref_contexts(
     }
     selected_contexts = []
     for named_ref_key in selected_keys:
+        if named_ref_key not in authored_named_refs:
+            raise PlanningInputFailure(
+                f"Unknown namedRef key {named_ref_key!r} for {component_slug}:{artifact.key}"
+            )
         authored_named_ref = authored_named_refs[named_ref_key]
         provider_record = None
         deterministic = True
@@ -384,7 +424,7 @@ def _select_candidate_contexts(
         )
 
     selected_contexts = []
-    for version in selected_versions:
+    for version in dict.fromkeys(selected_versions):
         provider_records = list(provider_context.candidates_by_version.get(version, ()))
         if candidate_policy.external_ids:
             provider_records = [
@@ -404,6 +444,7 @@ def _select_candidate_contexts(
                 docs_root=artifact.docs_root,
                 assets_root=artifact.assets_root,
                 version=version,
+                release_line=provider_record.release_line,
                 display_version=provider_record.display_version,
                 tag=provider_record.tag,
                 commit_sha=provider_record.commit_sha,

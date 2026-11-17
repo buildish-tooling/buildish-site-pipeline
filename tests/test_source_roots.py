@@ -107,7 +107,9 @@ class SourceRootResolutionTests(unittest.TestCase):
             Path("components/runtime"),
         )
 
-    def test_resolve_component_source_roots_merges_content_and_artifact_usage(self) -> None:
+    def test_resolve_component_source_roots_merges_content_and_artifact_usage(
+        self,
+    ) -> None:
         catalog = _catalog(
             {
                 "defaults": {
@@ -125,10 +127,6 @@ class SourceRootResolutionTests(unittest.TestCase):
                             {
                                 "key": "runtime",
                                 "source": "runtime",
-                                "versioning": {
-                                    "developmentRef": "main",
-                                    "tagPattern": "^v.*$",
-                                },
                             }
                         ],
                     }
@@ -175,19 +173,11 @@ class SourceRootResolutionTests(unittest.TestCase):
                                 "key": "runtime",
                                 "source": "runtime",
                                 "docsRoot": "docs/runtime",
-                                "versioning": {
-                                    "developmentRef": "main",
-                                    "tagPattern": "^v.*$",
-                                },
                             },
                             {
                                 "key": "api",
                                 "source": "api",
                                 "docsRoot": "docs",
-                                "versioning": {
-                                    "developmentRef": "main",
-                                    "tagPattern": "^api-v.*$",
-                                },
                             },
                         ],
                     }

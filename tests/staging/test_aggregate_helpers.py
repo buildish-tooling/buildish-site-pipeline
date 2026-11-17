@@ -24,10 +24,12 @@ import unittest
 
 from buildish_site_pipeline.cli.errors import StageIntegrityError
 from buildish_site_pipeline.models.authored.site_catalog import (
-    ArtifactLifecycleConfig,
     CompatibilityAssertionConfig,
-    ExactReleaseConfig,
     MountConfig,
+)
+from buildish_site_pipeline.models.authored.artifacts import (
+    ArtifactLifecycleConfig,
+    ExactReleaseConfig,
     ReleaseLineConfig,
     SupportWindow,
 )
@@ -399,7 +401,9 @@ class AggregateHelperTests(unittest.TestCase):
         self.assertIsNone(_latest_candidate_summary([]))
         self.assertEqual(_latest_candidate_summary([candidate_one, candidate_two]).version, "4.1.0-rc2")
 
-    def test_compatibility_and_mount_entries_cover_component_and_artifact_owned_values(self) -> None:
+    def test_compatibility_and_mount_entries_cover_component_and_artifact_owned_values(
+        self,
+    ) -> None:
         component_assertion = CompatibilityAssertionConfig(
             subject_ref="component:spark",
             target_ref="route:/spark/",
@@ -426,13 +430,13 @@ class AggregateHelperTests(unittest.TestCase):
         )
         artifact = SimpleNamespace(
             key="runtime",
-            authored=SimpleNamespace(
+            binding=SimpleNamespace(
                 compatibility=(artifact_assertion,),
                 mounts=(artifact_mount,),
             ),
         )
         build_plan = SimpleNamespace(
-                desired_versions=(),
+            desired_versions=(),
             site=SimpleNamespace(
                 components=(
                     SimpleNamespace(
@@ -444,7 +448,7 @@ class AggregateHelperTests(unittest.TestCase):
                         artifacts=(artifact,),
                     ),
                 )
-            )
+            ),
         )
 
         compatibility_entries = _build_compatibility_entries(build_plan)

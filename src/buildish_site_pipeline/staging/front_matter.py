@@ -27,7 +27,7 @@ from buildish_site_pipeline.authored_page import (
     parse_authored_page,
 )
 from buildish_site_pipeline.cli.errors import StageIntegrityError
-from buildish_site_pipeline.models.authored.site_catalog import (
+from buildish_site_pipeline.models.authored.artifacts import (
     ArtifactLifecycleConfig,
     ExactReleaseConfig,
     ReleaseLineConfig,
@@ -77,7 +77,9 @@ _MARKDOWN_SETEXT_TITLE_PATTERN = re.compile(r"^\s{0,3}=+\s*$")
 _MARKDOWN_ORDERED_LIST_PATTERN = re.compile(r"^\s{0,3}[0-9]+\.\s+")
 _ASCIIDOC_TITLE_PATTERN = re.compile(r"^=\s+(?P<title>.+?)\s*$")
 _ASCIIDOC_ATTRIBUTE_PATTERN = re.compile(r"^:[A-Za-z0-9_-]+:\s*")
-_ASCIIDOC_BLOCK_DELIMITER_PATTERN = re.compile(r"^(?:----|====|____|\+\+\+\+|\.\.\.\.|\*\*\*\*)\s*$")
+_ASCIIDOC_BLOCK_DELIMITER_PATTERN = re.compile(
+    r"^(?:----|====|____|\+\+\+\+|\.\.\.\.|\*\*\*\*)\s*$"
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -186,9 +188,10 @@ def build_version_context(
                 exact_release.support_status if exact_release is not None else None
             )
             or (line_config.support_status if line_config is not None else None),
-            ancestors=list(provider_record.release_line_ancestors)
-            if provider_record is not None
-            else None,
+            ancestors=list(
+                context.release_line_ancestors
+                or (provider_record.release_line_ancestors if provider_record else ())
+            ),
             support_window=line_config.support_window
             if line_config is not None
             else None,
@@ -211,11 +214,15 @@ def build_version_context(
             publication.origin.base_url,
             public_path_for_context(publication=publication, context=context),
         ),
-        docs_path=public_path_for_context(publication=publication, context=context) if context.action.value == "docs" else None,
+        docs_path=public_path_for_context(publication=publication, context=context)
+        if context.action.value == "docs"
+        else None,
         docs_url=_public_url_for_path(
             publication.origin.base_url,
             public_path_for_context(publication=publication, context=context),
-        ) if context.action.value == "docs" else None,
+        )
+        if context.action.value == "docs"
+        else None,
         tag=context.tag
         or (provider_record.tag if provider_record is not None else None),
         ref=context.ref,
@@ -688,10 +695,10 @@ def _component_display_name(component: ResolvedComponentConfig) -> str | None:
 
 
 def _component_latest_stable(component: ResolvedComponentConfig) -> str | None:
-    repository_document = getattr(component, "repository_document", None)
-    repository_lifecycle = getattr(repository_document, "lifecycle", None)
-    latest_stable = getattr(repository_lifecycle, "latest_stable", None)
-    return latest_stable if isinstance(latest_stable, str) else None
+    if len(component.artifacts) != 1:
+        return None
+    lifecycle = component.artifacts[0].lifecycle
+    return lifecycle.latest_stable if lifecycle else None
 
 
 def _artifact_lifecycle(

@@ -184,3 +184,87 @@ class ComponentSnapshotWatchTests(unittest.TestCase):
             self.assertTrue(
                 any(path.is_relative_to(watched) for watched in failed.watch_roots)
             )
+
+    def test_component_definition_and_snapshot_edits_reconcile_outputs(self):
+        from tests.planning.test_version_ownership import component_only
+
+        with _workspace(with_content_file=True) as root:
+            snapshot_path, snapshot = component_only(root)
+            catalog_path = root / "site/catalog.yaml"
+            catalog = yaml.safe_load(catalog_path.read_text())
+            catalog["components"][0]["publicationSelection"] = {
+                "development": True,
+                "lineHeads": {"mode": "none"},
+                "releases": {"mode": "latestPerLine"},
+            }
+            catalog_path.write_text(yaml.safe_dump(catalog))
+            catalog_bytes = catalog_path.read_bytes()
+            metadata_path = root / "components/runtime/site/component.yaml"
+            with _cwd(root):
+                invocation = parse_invocation(["watch"])
+
+            def cycle(number, prior=None, paths=()):
+                result = _run_watch_cycle(
+                    invocation=invocation, cycle_number=number,
+                    trusted_stage=prior.trusted_stage if prior else None,
+                    prior_watch_roots=prior.watch_roots if prior else (),
+                    dirty_paths=paths,
+                )
+                self.assertTrue(result.report.summary.succeeded, result.report)
+                return result
+
+            first = cycle(1)
+            stage = root / "site/.stage/content/spark/releases"
+            self.assertTrue((stage / "4.0.0/index.md").exists())
+            snapshot["artifacts"][0]["releaseLines"][0]["latest"] = "4.0.1"
+            snapshot["artifacts"][0]["releases"].append({"version": "4.0.1", "releaseLine": "4.0"})
+            release = snapshot_path.parent / "4.0.1"
+            release.mkdir()
+            (release / "index.md").write_text("latest release")
+            snapshot_path.write_text(json.dumps(snapshot))
+            second = cycle(2, first, (snapshot_path,))
+            self.assertTrue((stage / "4.0.1/index.md").exists())
+            self.assertFalse((stage / "4.0.0").exists())
+
+            metadata = yaml.safe_load(metadata_path.read_text())
+            metadata["artifacts"].append({"key": "api", "docsRoot": "api-docs"})
+            metadata_path.write_text(yaml.safe_dump(metadata))
+            snapshot["artifacts"].append({"componentSlug": "spark", "artifactKey": "api", "releaseLines": [{"key": "2", "latest": "2.0"}], "releases": [{"version": "2.0", "releaseLine": "2"}]})
+            snapshot_path.write_text(json.dumps(snapshot))
+            api_root = root / "components/runtime/api-docs/releases/2.0"
+            api_root.mkdir(parents=True)
+            (api_root / "index.md").write_text("api release")
+            third = cycle(3, second, (metadata_path, snapshot_path))
+            self.assertTrue((stage / "2.0/index.md").exists())
+            metadata["artifacts"].pop()
+            metadata_path.write_text(yaml.safe_dump(metadata))
+            snapshot["artifacts"].pop()
+            snapshot["artifacts"][0]["releaseLines"] = []
+            for item in snapshot["artifacts"][0]["releases"]:
+                item.pop("releaseLine", None)
+            for item in snapshot["records"]:
+                item.pop("releaseLine", None)
+            snapshot_path.write_text(json.dumps(snapshot))
+            cycle(4, third, (metadata_path, snapshot_path))
+            self.assertFalse((stage / "2.0").exists())
+            self.assertFalse((stage / "4.0.1").exists())
+            self.assertEqual(catalog_path.read_bytes(), catalog_bytes)
+
+    def test_invalid_new_component_definition_retains_source_recovery_watch(self):
+        with _workspace(with_content_file=True) as root:
+            configure_release(root)
+            with _cwd(root):
+                invocation = parse_invocation(["watch"])
+            first = _run_watch_cycle(invocation=invocation, cycle_number=1, trusted_stage=None, prior_watch_roots=(), dirty_paths=())
+            self.assertTrue(first.report.summary.succeeded)
+            catalog_path = root / "site/catalog.yaml"
+            catalog = yaml.safe_load(catalog_path.read_text())
+            catalog["sources"]["runtime"]["localDir"] = "replacement"
+            catalog_path.write_text(yaml.safe_dump(catalog))
+            metadata_path = root / "replacement/site/component.yaml"
+            metadata_path.parent.mkdir(parents=True)
+            metadata_path.write_text("{")
+            failed = _run_watch_cycle(invocation=invocation, cycle_number=2, trusted_stage=first.trusted_stage, prior_watch_roots=first.watch_roots, dirty_paths=(catalog_path,))
+            self.assertFalse(failed.report.summary.succeeded)
+            self.assertTrue(failed.report.summary.stage_usable)
+            self.assertTrue(any(metadata_path.is_relative_to(path) for path in failed.watch_roots))

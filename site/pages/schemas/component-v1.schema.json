@@ -1,6 +1,214 @@
 {
   "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
   "$defs": {
+    "ArtifactSupportPolicy": {
+      "additionalProperties": false,
+      "description": "Reusable static support defaults owned by an artifact.",
+      "properties": {
+        "defaultSupportWindow": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SupportWindow"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Fallback support window when a release or line supplies no narrower window."
+        },
+        "supportPolicyUrl": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Canonical support policy URL for this artifact.",
+          "title": "Supportpolicyurl"
+        },
+        "supportStatusVocabulary": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "$ref": "#/$defs/SupportStatusDefinition"
+              },
+              "propertyNames": {
+                "minLength": 1
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Reusable artifact-specific support-status vocabulary layered over component defaults.",
+          "title": "Supportstatusvocabulary"
+        }
+      },
+      "title": "ArtifactSupportPolicy",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "component-owned"
+      }
+    },
+    "ArtifactVersioningConfig": {
+      "additionalProperties": false,
+      "description": "How the pipeline discovers development, maintenance, tag, and named-ref versions.",
+      "properties": {
+        "developmentRef": {
+          "default": "main",
+          "description": "Source-control ref that represents the moving development docs for this artifact.",
+          "examples": [
+            "main"
+          ],
+          "minLength": 1,
+          "title": "Developmentref",
+          "type": "string"
+        },
+        "maintenanceRefPattern": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Pattern used to derive maintenance branch refs from a release-line key, usually with `{line}` as the substitution placeholder.",
+          "examples": [
+            "release/{line}"
+          ],
+          "title": "Maintenancerefpattern"
+        },
+        "namedRefs": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/NamedRefConfig"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Additional intentionally named version contexts, such as preview or stable branches, that should be selectable by key.",
+          "title": "Namedrefs"
+        },
+        "tagPattern": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Regular expression used to recognize provider tags that belong to this artifact's version stream.",
+          "examples": [
+            "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
+          ],
+          "title": "Tagpattern"
+        }
+      },
+      "title": "ArtifactVersioningConfig",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "component-owned"
+      }
+    },
+    "ComponentArtifactDefinition": {
+      "additionalProperties": false,
+      "description": "Stable artifact identity and repository-relative content layout.",
+      "properties": {
+        "assetsRoot": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Repository-relative artifact asset root, inheriting component content roots when omitted.",
+          "title": "Assetsroot"
+        },
+        "displayName": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Canonical human-readable artifact label.",
+          "title": "Displayname"
+        },
+        "docsRoot": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Repository-relative artifact docs root, inheriting component content roots when omitted.",
+          "title": "Docsroot"
+        },
+        "key": {
+          "description": "Stable artifact identity referenced by inventories and optional catalog bindings.",
+          "minLength": 1,
+          "title": "Key",
+          "type": "string"
+        },
+        "lifecycle": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArtifactSupportPolicy"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Reusable static artifact support defaults; release decisions belong in the snapshot."
+        },
+        "versioning": {
+          "$ref": "#/$defs/ArtifactVersioningConfig",
+          "description": "Static development, maintenance, tag, and named-ref stream definitions; materialized inventories require no tag-discovery pattern."
+        }
+      },
+      "required": [
+        "key"
+      ],
+      "title": "ComponentArtifactDefinition",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "component-owned"
+      }
+    },
     "ComponentIdentity": {
       "additionalProperties": false,
       "description": "Stable identity for a component repository.",
@@ -40,20 +248,6 @@
       "additionalProperties": false,
       "description": "Optional lifecycle defaults shared across all artifacts in a component repository.",
       "properties": {
-        "latestStable": {
-          "anyOf": [
-            {
-              "minLength": 1,
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Latest stable version for the component when one overall release line is enough.",
-          "title": "Lateststable"
-        },
         "supportStatusVocabulary": {
           "anyOf": [
             {
@@ -135,6 +329,91 @@
         "ownership": "component-owned"
       }
     },
+    "NamedRefConfig": {
+      "additionalProperties": false,
+      "description": "Named source-control ref intentionally exposed as a stable version context.",
+      "properties": {
+        "description": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-readable explanation of what this named ref contains or who should use it.",
+          "examples": [
+            "Early access docs for the next planned minor release."
+          ],
+          "title": "Description"
+        },
+        "displayName": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-readable label shown in version pickers, breadcrumbs, or other rendered UI.",
+          "examples": [
+            "Preview"
+          ],
+          "title": "Displayname"
+        },
+        "key": {
+          "description": "Stable identifier used elsewhere in the catalog to select this named ref.",
+          "examples": [
+            "preview"
+          ],
+          "minLength": 1,
+          "title": "Key",
+          "type": "string"
+        },
+        "maturity": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Short maturity label that explains how stable or experimental this named ref should be treated.",
+          "examples": [
+            "preview"
+          ],
+          "title": "Maturity"
+        },
+        "ref": {
+          "description": "Exact source-control ref to resolve when this named context is selected.",
+          "examples": [
+            "refs/heads/preview"
+          ],
+          "minLength": 1,
+          "title": "Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "ref"
+      ],
+      "title": "NamedRefConfig",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "component-owned"
+      }
+    },
     "SupportStatusDefinition": {
       "additionalProperties": false,
       "description": "One reusable support-status label, description, and default lifecycle behavior.",
@@ -208,6 +487,122 @@
         "category": "authored",
         "ownership": "component-owned"
       }
+    },
+    "SupportWindow": {
+      "additionalProperties": false,
+      "description": "Lifecycle dates and support notes for one release line or exact release.",
+      "properties": {
+        "endOfActiveSupportDate": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Date after which the release no longer receives full active support.",
+          "title": "Endofactivesupportdate"
+        },
+        "endOfLifeDate": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Final retirement date after which the release should be treated as fully end-of-life.",
+          "title": "Endoflifedate"
+        },
+        "endOfSupportDate": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Date after which the release is no longer supported in normal maintenance channels.",
+          "title": "Endofsupportdate"
+        },
+        "maintenancePhase": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Short label for the current maintenance phase, such as general availability, maintenance, or security-only support.",
+          "examples": [
+            "security-fixes"
+          ],
+          "title": "Maintenancephase"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Additional notes that clarify exceptions, migration advice, or support caveats.",
+          "title": "Notes"
+        },
+        "releaseDate": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Release date for the line or version that this support window describes.",
+          "examples": [
+            "2026-04-01T00:00:00Z"
+          ],
+          "title": "Releasedate"
+        },
+        "supportPolicyUrl": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Canonical URL that explains the support policy referenced by this support window.",
+          "title": "Supportpolicyurl"
+        }
+      },
+      "title": "SupportWindow",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "component-owned"
+      }
     }
   },
   "$id": "https://buildish.org/components/site-pipeline/schemas/component-v1.schema.json",
@@ -216,6 +611,14 @@
   "description": "Component-owned metadata from ``site/component.yaml``.",
   "examples": [
     {
+      "artifacts": [
+        {
+          "key": "runtime",
+          "versioning": {
+            "developmentRef": "main"
+          }
+        }
+      ],
       "component": {
         "displayName": "Apache Spark",
         "slug": "spark"
@@ -225,7 +628,6 @@
         "pagesRoot": "site/pages"
       },
       "lifecycle": {
-        "latestStable": "4.0.0",
         "supportStatusVocabulary": {
           "active": {
             "displayName": "Active",
@@ -237,6 +639,22 @@
     }
   ],
   "properties": {
+    "artifacts": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/ComponentArtifactDefinition"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Component-owned artifact identities, streams, content roots, and support defaults.",
+      "title": "Artifacts"
+    },
     "component": {
       "$ref": "#/$defs/ComponentIdentity",
       "description": "Stable identity for the component repository."

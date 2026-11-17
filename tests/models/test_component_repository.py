@@ -34,7 +34,7 @@ class ComponentRepositoryDocumentTests(unittest.TestCase):
 
     def test_loads_valid_component_repository_document(self) -> None:
         document = load_component_metadata_document(
-            "schemaVersion: 1\ncomponent:\n  slug: spark\n  displayName: Apache Spark\ncontent:\n  pagesRoot: site/pages\n  docsRoot: docs\nlifecycle:\n  latestStable: 4.0.0\n  supportStatusVocabulary:\n    active:\n      displayName: Active\n      order: 10\n",
+            "schemaVersion: 1\ncomponent:\n  slug: spark\n  displayName: Apache Spark\ncontent:\n  pagesRoot: site/pages\n  docsRoot: docs\nlifecycle:\n  supportStatusVocabulary:\n    active:\n      displayName: Active\n      order: 10\n",
             document_format=DocumentFormat.YAML,
             source_name="site/component.yaml",
         )

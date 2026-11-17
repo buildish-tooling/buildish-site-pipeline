@@ -24,19 +24,21 @@ from pydantic import ValidationError
 
 from buildish_site_pipeline.models.authored.site_catalog import (
     ArtifactConfig,
-    ArtifactLifecycleConfig,
-    ArtifactVersioningConfig,
     CandidateSelectionPolicy,
     ComponentCatalogEntry,
-    ExactReleaseConfig,
     LineHeadSelectionPolicy,
     LocalizationConfig,
     MountConfig,
     PublicationSelectionPolicy,
-    ReleaseLineConfig,
     ReleaseSelectionPolicy,
     SiteCatalogDocumentV1,
     SourceConfig,
+)
+from buildish_site_pipeline.models.authored.artifacts import (
+    ArtifactLifecycleConfig,
+    ArtifactVersioningConfig,
+    ExactReleaseConfig,
+    ReleaseLineConfig,
 )
 from buildish_site_pipeline.models.enums import (
     CandidateSelectionMode,
@@ -108,46 +110,21 @@ def _build_valid_catalog_document() -> dict[str, object]:
                     "origin": "docs",
                     "mountPath": "/spark/",
                     "aliases": [{"path": "/spark/development/"}],
-                    "redirects": [{"fromPath": "/spark/old/", "target": "route:/spark/"}],
+                    "redirects": [
+                        {"fromPath": "/spark/old/", "target": "route:/spark/"}
+                    ],
                 },
                 "artifacts": [
                     {
                         "key": "runtime",
                         "source": "consumer",
                         "docsRoot": "docs/runtime",
-                        "versioning": {
-                            "developmentRef": "main",
-                            "tagPattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$",
-                            "namedRefs": [{"key": "preview", "ref": "preview"}],
-                        },
                         "publicationSelection": {
                             "development": True,
                             "namedRefs": ["preview"],
                             "lineHeads": {"mode": "explicit", "keys": ["4.x"]},
                             "releases": {"mode": "latestN", "count": 2},
                             "candidates": {"mode": "none"},
-                        },
-                        "lifecycle": {
-                            "latestStable": "4.0.0",
-                            "releaseLines": [
-                                {
-                                    "key": "4.x",
-                                    "latest": "4.0.0",
-                                    "maintenanceRef": "releases/4.x",
-                                    "supportWindow": {
-                                        "releaseDate": "2024-01-01T00:00:00Z",
-                                        "endOfSupportDate": "2025-01-01T00:00:00Z",
-                                    },
-                                },
-                            ],
-                            "releases": [
-                                {
-                                    "version": "4.0.0",
-                                    "publicationState": "withdrawn",
-                                    "withdrawalBehavior": "redirect",
-                                    "redirectTarget": "route:/spark/",
-                                },
-                            ],
                         },
                         "mounts": [
                             {
@@ -233,28 +210,10 @@ class CatalogDocumentTests(unittest.TestCase):
                 source_name="site/components.json",
             )
 
-    def test_rejects_duplicate_artifacts_and_unknown_selection_references(self) -> None:
+    def test_rejects_duplicate_artifacts(self) -> None:
         document = _build_valid_catalog_document()
         duplicate_artifact = deepcopy(document["components"][0]["artifacts"][0])
         document["components"][0]["artifacts"].append(duplicate_artifact)
-        with self.assertRaises(DocumentValidationFailure):
-            load_site_catalog_document(
-                json.dumps(document),
-                document_format=DocumentFormat.JSON,
-                source_name="site/components.json",
-            )
-
-        document = _build_valid_catalog_document()
-        document["components"][0]["artifacts"][0]["publicationSelection"]["namedRefs"] = ["missing"]
-        with self.assertRaises(DocumentValidationFailure):
-            load_site_catalog_document(
-                json.dumps(document),
-                document_format=DocumentFormat.JSON,
-                source_name="site/components.json",
-            )
-
-        document = _build_valid_catalog_document()
-        document["components"][0]["artifacts"][0]["publicationSelection"]["lineHeads"]["keys"] = ["5.x"]
         with self.assertRaises(DocumentValidationFailure):
             load_site_catalog_document(
                 json.dumps(document),
@@ -272,48 +231,21 @@ class CatalogDocumentTests(unittest.TestCase):
                 source_name="site/components.json",
             )
 
-        document = _build_valid_catalog_document()
-        document["components"][0]["artifacts"][0]["lifecycle"]["releases"][0].pop("redirectTarget")
-        with self.assertRaises(DocumentValidationFailure):
-            load_site_catalog_document(
-                json.dumps(document),
-                document_format=DocumentFormat.JSON,
-                source_name="site/components.json",
-            )
-
-    def test_rejects_invalid_support_windows_release_line_chains_and_regexes(self) -> None:
-        document = _build_valid_catalog_document()
-        document["components"][0]["artifacts"][0]["lifecycle"]["releaseLines"][0]["supportWindow"] = {
-            "releaseDate": "2025-01-01T00:00:00Z",
-            "endOfSupportDate": "2024-01-01T00:00:00Z",
-        }
-        with self.assertRaises(DocumentValidationFailure):
-            load_site_catalog_document(
-                json.dumps(document),
-                document_format=DocumentFormat.JSON,
-                source_name="site/components.json",
-            )
-
-        document = _build_valid_catalog_document()
-        document["components"][0]["artifacts"][0]["lifecycle"]["releaseLines"] = [
-            {"key": "4.x", "parent": "5.x", "latest": "4.0.0"},
-            {"key": "5.x", "parent": "4.x", "latest": "5.0.0"},
-        ]
-        with self.assertRaises(DocumentValidationFailure):
-            load_site_catalog_document(
-                json.dumps(document),
-                document_format=DocumentFormat.JSON,
-                source_name="site/components.json",
-            )
-
-        document = _build_valid_catalog_document()
-        document["components"][0]["artifacts"][0]["versioning"]["tagPattern"] = "["
-        with self.assertRaises(DocumentValidationFailure):
-            load_site_catalog_document(
-                json.dumps(document),
-                document_format=DocumentFormat.JSON,
-                source_name="site/components.json",
-            )
+    def test_rejects_component_owned_fields_in_catalog(self) -> None:
+        for field, value in (
+            ("versioning", {"developmentRef": "main"}),
+            ("lifecycle", {"latestStable": "4.0.0"}),
+            ("displayName", "Runtime"),
+        ):
+            document = _build_valid_catalog_document()
+            document["components"][0]["artifacts"][0][field] = value
+            with (
+                self.subTest(field=field),
+                self.assertRaises(DocumentValidationFailure),
+            ):
+                load_site_catalog_document(
+                    json.dumps(document), document_format=DocumentFormat.JSON
+                )
 
     def test_rejects_oversized_mount_metadata(self) -> None:
         document = _build_valid_catalog_document()
@@ -444,7 +376,9 @@ class CatalogDocumentTests(unittest.TestCase):
                 release_lines=[ReleaseLineConfig(key="4.x", parent="5.x", latest="4.0.0")]
             )
 
-    def test_catalog_document_allows_optional_publication_and_selection_fields(self) -> None:
+    def test_catalog_document_allows_optional_publication_and_selection_fields(
+        self,
+    ) -> None:
         document = SiteCatalogDocumentV1(
             schema_version=1,
             sources={"consumer": SourceConfig(local_dir="components/spark")},
@@ -456,10 +390,6 @@ class CatalogDocumentTests(unittest.TestCase):
                         ArtifactConfig(
                             key="runtime",
                             source="consumer",
-                            versioning=ArtifactVersioningConfig(
-                                development_ref="main",
-                                tag_pattern="^v[0-9]+\\.[0-9]+\\.[0-9]+$",
-                            ),
                             publication_selection=PublicationSelectionPolicy(
                                 development=True,
                             ),
@@ -469,7 +399,10 @@ class CatalogDocumentTests(unittest.TestCase):
             ],
         )
 
-        self.assertEqual([component.slug for component in document.components], ["spark", "spark-connect"])
+        self.assertEqual(
+            [component.slug for component in document.components],
+            ["spark", "spark-connect"],
+        )
         self.assertTrue(
             document.components[1].artifacts[0].publication_selection.development,
         )

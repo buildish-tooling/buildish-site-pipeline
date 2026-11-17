@@ -25,9 +25,11 @@ limitations under the License.
 ```text
 site/
   catalog.yaml
-  provider-snapshot.json
 components/
   runtime/
+    site/
+      component.yaml
+      provider-snapshot.json
     docs/
       releases/
         4.0.0/
@@ -43,6 +45,7 @@ defaults:
   docsRoot: docs
   publication:
     origin: docs
+  metadataFile: site/component.yaml
 site: {}
 origins:
   docs:
@@ -54,17 +57,30 @@ components:
   - slug: spark
     content:
       source: runtime
+    providerSnapshot:
+      source: runtime
+      path: site/provider-snapshot.json
     publication:
       mountPath: /spark/
     artifacts:
       - key: runtime
         source: runtime
-        versioning:
-          developmentRef: main
-          tagPattern: ^v.*$
 ```
 
-The optional `site/provider-snapshot.json` enriches version metadata without
+Component-owned `components/runtime/site/component.yaml` for `spark`:
+
+```yaml
+schemaVersion: 1
+component:
+  slug: spark
+artifacts:
+  - key: runtime
+    versioning:
+      developmentRef: main
+      tagPattern: ^v.*$
+```
+
+The optional `components/runtime/site/provider-snapshot.json` enriches version metadata without
 making the renderer talk to providers directly.
 
 ## Authored page shape

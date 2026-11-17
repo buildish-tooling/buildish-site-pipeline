@@ -27,16 +27,18 @@ Start with this workspace shape:
 ```text
 site/
   catalog.yaml
-  provider-snapshot.json
 components/
   runtime/
+    site/
+      component.yaml
+      provider-snapshot.json
     docs/
       releases/
         4.0.0/
           index.md
 ```
 
-The provider snapshot is optional. Keep it when you want provider-enriched
+The component provider snapshot is optional. Keep it when you want provider-enriched
 metadata in staged page front matter and aggregate files.
 
 ## Write the catalog
@@ -49,6 +51,7 @@ defaults:
   docsRoot: docs
   publication:
     origin: docs
+  metadataFile: site/component.yaml
 site: {}
 origins:
   docs:
@@ -60,27 +63,84 @@ components:
   - slug: spark
     content:
       source: runtime
+    providerSnapshot:
+      source: runtime
+      path: site/provider-snapshot.json
     publication:
       mountPath: /spark/
     artifacts:
       - key: runtime
         source: runtime
-        versioning:
-          developmentRef: main
-          tagPattern: ^v.*$
+```
+
+Component-owned `components/runtime/site/component.yaml` for `spark`:
+
+```yaml
+schemaVersion: 1
+component:
+  slug: spark
+artifacts:
+  - key: runtime
+    versioning:
+      developmentRef: main
+      tagPattern: ^v.*$
 ```
 
 If you want provider-enriched version metadata in the first build, create
-`site/provider-snapshot.json`:
+`components/runtime/site/provider-snapshot.json`:
 
 ```json
 {
   "schemaVersion": 1,
-  "providers": [{"key": "github", "type": "githubReleases", "fetchedAt": "2026-04-03T00:00:00Z"}],
+  "providers": [
+    {
+      "key": "github",
+      "type": "githubReleases",
+      "fetchedAt": "2026-04-03T00:00:00Z"
+    }
+  ],
   "records": [
-    {"provider": "github", "kind": "development", "componentSlug": "spark", "artifactKey": "runtime", "ref": "main"},
-    {"provider": "github", "kind": "lineHead", "componentSlug": "spark", "artifactKey": "runtime", "releaseLine": "4.0", "ref": "maintenance/4.0"},
-    {"provider": "github", "kind": "released", "componentSlug": "spark", "artifactKey": "runtime", "version": "4.0.0", "tag": "v4.0.0"}
+    {
+      "provider": "github",
+      "kind": "development",
+      "componentSlug": "spark",
+      "artifactKey": "runtime",
+      "ref": "main"
+    },
+    {
+      "provider": "github",
+      "kind": "lineHead",
+      "componentSlug": "spark",
+      "artifactKey": "runtime",
+      "releaseLine": "4.0",
+      "ref": "maintenance/4.0"
+    },
+    {
+      "provider": "github",
+      "kind": "released",
+      "componentSlug": "spark",
+      "artifactKey": "runtime",
+      "version": "4.0.0",
+      "tag": "v4.0.0"
+    }
+  ],
+  "artifacts": [
+    {
+      "componentSlug": "spark",
+      "artifactKey": "runtime",
+      "releaseLines": [
+        {
+          "key": "4.0",
+          "latest": "4.0.0"
+        }
+      ],
+      "releases": [
+        {
+          "version": "4.0.0",
+          "releaseLine": "4.0"
+        }
+      ]
+    }
   ]
 }
 ```

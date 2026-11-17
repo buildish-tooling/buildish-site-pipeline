@@ -29,6 +29,7 @@ Back to the [reference overview](../pipeline-model-schema-reference/).
 - [ProviderDescriptor](#providerdescriptor) — Metadata about one provider that contributed records to the snapshot.
 - [ProviderRecord](#providerrecord) — Normalized provider fact about one release, candidate, or ref context.
 - [ProviderSnapshotDocumentV1](#providersnapshotdocumentv1) — Provider-derived normalized snapshot from ``site/provider-snapshot.json``.
+- [SnapshotArtifact](#snapshotartifact) — Component-scoped release decisions, independent of consumer source bindings.
 
 <a id="providerasset"></a>
 ### ProviderAsset
@@ -153,6 +154,7 @@ Provider-derived normalized snapshot from `site/provider-snapshot.json`.
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
 | <a id="providersnapshotdocumentv1-schemaversion"></a>`schemaVersion` | Literal[1] | yes | Schema version for the provider snapshot document. |
+| <a id="providersnapshotdocumentv1-artifacts"></a>`artifacts` | list[[SnapshotArtifact](#snapshotartifact)] | no | Component-owned release lines, exact release lifecycle facts, and explicit latest designations. |
 | <a id="providersnapshotdocumentv1-providers"></a>`providers` | list[[ProviderDescriptor](#providerdescriptor)] | yes | Provider descriptors for every provider that contributed records to this snapshot. |
 | <a id="providersnapshotdocumentv1-records"></a>`records` | list[[ProviderRecord](#providerrecord)] | yes | Normalized provider records for releases, candidates, tags, refs, and related downloadable assets. |
 
@@ -161,6 +163,7 @@ Provider-derived normalized snapshot from `site/provider-snapshot.json`.
 ```json
 {
   "schemaVersion": 1,
+  "artifacts": [],
   "providers": [
     {
       "key": "github-releases",
@@ -193,4 +196,21 @@ Provider-derived normalized snapshot from `site/provider-snapshot.json`.
   ]
 }
 ```
+
+<a id="snapshotartifact"></a>
+### SnapshotArtifact
+
+Component-scoped release decisions, independent of consumer source bindings.
+
+- category: `provider`
+- ownership: `provider-derived`
+- file contract: (inner type)
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| <a id="snapshotartifact-componentslug"></a>`componentSlug` | [Slug](../pipeline-shared-types-reference/#slug) | yes | Component owner of these artifact release facts. |
+| <a id="snapshotartifact-artifactkey"></a>`artifactKey` | [ArtifactKey](../pipeline-shared-types-reference/#artifactkey) | yes | Component-defined artifact identity. |
+| <a id="snapshotartifact-lateststable"></a>`latestStable` | [VersionString](../pipeline-shared-types-reference/#versionstring) | no | Explicit overall stable recommendation, referencing a released version of this artifact. |
+| <a id="snapshotartifact-releaselines"></a>`releaseLines` | list[[ReleaseLineConfig](../pipeline-authored-input-reference/#releaselineconfig)] | no | Authoritative line graph, support facts, maintenance refs, and explicit latest released targets. |
+| <a id="snapshotartifact-releases"></a>`releases` | list[[ExactReleaseConfig](../pipeline-authored-input-reference/#exactreleaseconfig)] | no | Curated exact releases and their lifecycle or withdrawal decisions, with no provider required. |
 

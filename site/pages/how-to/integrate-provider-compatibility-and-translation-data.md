@@ -148,7 +148,7 @@ and sibling routes must have a consistent shape.
 | Failure | Inspect first |
 | --- | --- |
 | selected context has no matching provider record | authored selection and `provider-snapshot.json` identity fields |
-| provider and catalog disagree on tag, ref, version, or state | provider diagnostics and authored lifecycle entry |
+| provider and component snapshot disagree on tag, ref, version, or state | provider diagnostics and component-owned lifecycle entry |
 | compatibility reference is unknown | typed `subjectRef` and `targetRef` values |
 | duplicate locale in a translation set | authored `translationKey` values within that locale |
 | translation route is inconsistent | locale directories, route mode, and sibling relative paths |

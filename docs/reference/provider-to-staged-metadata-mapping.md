@@ -20,6 +20,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
+Component metadata owns artifact identities, static streams, and reusable support
+defaults. Component snapshot artifact sections own release lines, explicit latest
+pointers, and exact release lifecycle decisions. Catalog artifact entries are optional
+source/publication bindings. A configured component snapshot excludes aggregate
+version facts for the entire component, including when optional inventory is absent.
+
 ## Mapping principles
 
 - authored metadata remains authoritative for identity, routing, content roots,

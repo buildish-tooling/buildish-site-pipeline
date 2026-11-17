@@ -53,22 +53,19 @@ def configure_release(
     path, snapshot = configure_snapshot(root, requirement)
     if state:
         snapshot["records"][0]["publicationState"] = state
-    if present:
-        path.write_text(json.dumps(snapshot))
-    catalog_path = root / "site/catalog.yaml"
-    catalog = yaml.safe_load(catalog_path.read_text())
-    artifact = catalog["components"][0]["artifacts"][0]
-    artifact["lifecycle"]["latestStable"] = "4.0.0"
+    artifact = snapshot["artifacts"][0]
+    artifact["latestStable"] = "4.0.0"
     if behavior:
-        release = artifact["lifecycle"]["releases"][0]
+        release = artifact["releases"][0]
         release.update(
             publicationState=state,
             withdrawalBehavior=behavior,
             reason="Recalled release",
         )
         if behavior == "redirect":
-            release["redirectTarget"] = "route:/spark/"
-    catalog_path.write_text(yaml.safe_dump(catalog, sort_keys=False))
+            release["redirectTarget"] = "component:spark"
+    if present:
+        path.write_text(json.dumps(snapshot))
     return path, snapshot
 
 
@@ -85,7 +82,7 @@ class ComponentPublicationTests(unittest.TestCase):
                         *(["--fail-on", "warning"] if command == "check" else []),
                     )
                     self.assertEqual(code, 0, (report, errors))
-                    self.assertEqual(report["contextDispositions"][0]["action"], "omit")
+                    self.assertEqual(report["contextDispositions"], [])
                     self.assertIn(
                         "provider-snapshot-missing",
                         [item["code"] for item in report["diagnostics"]],
@@ -94,7 +91,7 @@ class ComponentPublicationTests(unittest.TestCase):
             self.assertFalse((stage / "content/spark/releases/4.0.0").exists())
             self.assertTrue((stage / "data/diagnostics.json").is_file())
             artifacts = json.loads((stage / "data/artifacts.json").read_text())["items"]
-            self.assertEqual(artifacts[0]["latestStable"], "4.0.0")
+            self.assertNotIn("latestStable", artifacts[0])
             code, report, errors = run(root, "check", "--profile", "publication")
             self.assertEqual(code, 1, (report, errors))
             self.assertIn(
@@ -196,7 +193,10 @@ class ComponentPublicationTests(unittest.TestCase):
                         [item["code"] for item in report["diagnostics"]],
                     )
         with _workspace(with_content_file=True) as root:
-            configure_release(root, present=False)
+            path, snapshot = configure_release(root)
+            snapshot["records"] = []
+            snapshot["providers"] = []
+            path.write_text(json.dumps(snapshot))
             code, report, errors = run(root)
             self.assertEqual(code, 0, (report, errors))
             self.assertEqual(report["contextDispositions"][0]["action"], "docs")
@@ -276,6 +276,10 @@ class ComponentPublicationTests(unittest.TestCase):
                         shutil.rmtree(root / "components/runtime/docs/releases")
                     catalog_path = root / "site/catalog.yaml"
                     catalog = yaml.safe_load(catalog_path.read_text())
+                    if behavior == "absent":
+                        catalog["components"][0]["artifacts"][0][
+                            "publicationSelection"
+                        ]["releases"] = {"mode": "explicit", "versions": ["4.0.0"]}
                     catalog["validation"] = {
                         "linkChecks": {
                             "enabled": True,
@@ -337,7 +341,7 @@ class ComponentPublicationTests(unittest.TestCase):
             self.assertFalse(list(stage.rglob("provider.json")))
             self.assertFalse(list(stage.rglob("inventory.json")))
 
-    def test_missing_candidate_link_is_not_softened_by_same_version_release_omission(
+    def test_aggregate_candidate_cannot_fill_missing_component_snapshot(
         self,
     ):
         with _workspace(with_content_file=True) as root:
@@ -376,9 +380,5 @@ class ComponentPublicationTests(unittest.TestCase):
             )
             code, report, errors = run(root, "check", "--fail-on", "warning")
             self.assertEqual(code, 1, (report, errors))
-            missing = [
-                item
-                for item in report["diagnostics"]
-                if item["code"] == "page-link-target-missing"
-            ]
-            self.assertEqual([item["severity"] for item in missing], ["warning"])
+            self.assertEqual(report["kind"], "cliFailure")
+            self.assertIn("must not claim this component", report["error"]["message"])

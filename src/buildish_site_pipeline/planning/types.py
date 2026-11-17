@@ -16,23 +16,31 @@
 
 from __future__ import annotations
 
-from buildish_site_pipeline.models.emitted.execution import SnapshotInput, ContextDisposition
+from buildish_site_pipeline.models.emitted.execution import (
+    SnapshotInput,
+    ContextDisposition,
+)
 from buildish_site_pipeline.models.enums import ExecutionProfile, ContextAction
 
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
+from buildish_site_pipeline.models.authored.component_metadata import (
+    ComponentArtifactDefinition,
+)
 from typing import TYPE_CHECKING, Self
 
 from buildish_site_pipeline.models.authored.site_catalog import (
     ArtifactConfig,
-    ArtifactLifecycleConfig,
-    ArtifactVersioningConfig,
     ComponentCatalogEntry,
     PublicationSelectionPolicy,
     RedirectRuleConfig,
     RouteAliasConfig,
     TopLevelAssetConfig,
+)
+from buildish_site_pipeline.models.authored.artifacts import (
+    ArtifactLifecycleConfig,
+    ArtifactVersioningConfig,
 )
 from buildish_site_pipeline.models.authored.component_metadata import (
     ComponentMetadataDocumentV1,
@@ -116,7 +124,7 @@ class ResolvedArtifactConfig:
     """Resolved component artifact runtime view."""
 
     key: str
-    authored: ArtifactConfig
+    authored: ComponentArtifactDefinition
     source_binding: ResolvedSourceBinding
     docs_root: Path
     assets_root: Path | None
@@ -124,6 +132,7 @@ class ResolvedArtifactConfig:
     publication_selection: PublicationSelectionPolicy | None
     lifecycle: ArtifactLifecycleConfig | None
     support_status_vocabulary: dict[str, SupportStatusDefinition]
+    binding: ArtifactConfig | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -246,6 +255,7 @@ class SelectedVersionContext:
     version: str | None = None
     display_version: str | None = None
     release_line: str | None = None
+    release_line_ancestors: tuple[str, ...] = ()
     ref: str | None = None
     tag: str | None = None
     commit_sha: str | None = None

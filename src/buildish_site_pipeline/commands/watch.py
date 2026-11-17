@@ -100,7 +100,11 @@ from ..cli.reporting import (
 )
 from buildish_site_pipeline.models.enums import ExecutionProfile
 from .shared import load_workspace_inputs, load_catalog_input
-from buildish_site_pipeline.source_roots import resolve_catalog_source_bindings, resolve_repo_path
+from buildish_site_pipeline.source_roots import (
+    resolve_catalog_source_bindings,
+    resolve_repo_path,
+    resolve_component_source_roots,
+)
 from .stage_report import build_stage_run_report
 from .watch_events import (
     _WatchEventStream,
@@ -1097,12 +1101,20 @@ def _failed_input_watch_roots(
             for item in loaded.catalog.components
             if item.provider_snapshot is not None
         )
+        source_paths = tuple(
+            item.local_dir
+            for item in resolve_component_source_roots(
+                catalog=loaded.catalog, workspace_root=invocation.layout.workspace_root
+            )
+        )
         return _derive_watch_roots(
             site_root=invocation.layout.site_root,
             catalog_path=loaded.catalog_path,
             provider_snapshot_path=None,
             planning_roots=prior_roots
-            + _snapshot_watch_roots(paths, invocation.layout.workspace_root),
+            + _snapshot_watch_roots(
+                paths + source_paths, invocation.layout.workspace_root
+            ),
         )
     except (SitePipelineCliError, ValueError, OSError):
         return prior_roots

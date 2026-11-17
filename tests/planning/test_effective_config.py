@@ -80,7 +80,9 @@ class EffectiveConfigResolutionTests(unittest.TestCase):
                 "site": {
                     "pagesRoot": "site/root-pages",
                     "assetsRoot": "site/root-assets",
-                    "vendorAssets": [{"source": "vendor/brand", "mountPath": "/assets/vendor/brand/"}],
+                    "vendorAssets": [
+                        {"source": "vendor/brand", "mountPath": "/assets/vendor/brand/"}
+                    ],
                 },
                 "origins": {"docs": {"baseUrl": "https://docs.example.org"}},
                 "sources": {"runtime": {"localDir": "components/runtime"}},
@@ -95,7 +97,6 @@ class EffectiveConfigResolutionTests(unittest.TestCase):
                             {
                                 "key": "runtime",
                                 "source": "runtime",
-                                "versioning": {"developmentRef": "main", "tagPattern": "^v.*$"},
                             },
                         ],
                     },
@@ -108,7 +109,12 @@ class EffectiveConfigResolutionTests(unittest.TestCase):
             {
                 "schemaVersion": 1,
                 "component": {"slug": "spark"},
-                "content": {"pagesRoot": "docs/pages", "docsRoot": "docs/rendered", "assetsRoot": "docs/assets"},
+                "artifacts": [{"key": "runtime"}],
+                "content": {
+                    "pagesRoot": "docs/pages",
+                    "docsRoot": "docs/rendered",
+                    "assetsRoot": "docs/assets",
+                },
             },
             by_alias=True,
             by_name=False,
@@ -124,9 +130,18 @@ class EffectiveConfigResolutionTests(unittest.TestCase):
         component = site.components[0]
         artifact = component.artifacts[0]
         self.assertEqual(component.publication.component_path, "/streaming/spark/")
-        self.assertEqual(component.publication.development_url, "https://docs.example.org/streaming/spark/development/")
-        self.assertEqual(component.publication.docs_url, "https://docs.example.org/streaming/spark/development/")
-        self.assertEqual(component.publication.assets_url, "https://docs.example.org/streaming/spark/assets/")
+        self.assertEqual(
+            component.publication.development_url,
+            "https://docs.example.org/streaming/spark/development/",
+        )
+        self.assertEqual(
+            component.publication.docs_url,
+            "https://docs.example.org/streaming/spark/development/",
+        )
+        self.assertEqual(
+            component.publication.assets_url,
+            "https://docs.example.org/streaming/spark/assets/",
+        )
         self.assertEqual(component.pages_root.name, "pages")
         self.assertEqual(component.docs_root.name, "rendered")
         self.assertEqual(artifact.docs_root.name, "rendered")

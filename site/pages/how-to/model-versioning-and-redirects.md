@@ -34,35 +34,69 @@ not be inferred accidentally from repository names or source layout.
 
 ## Select version contexts explicitly
 
-An artifact combines source-control discovery rules, authored lifecycle data,
-and publication selection. This example publishes development docs, every
+Component metadata defines artifact streams; the component snapshot defines
+release lines, exact releases, and latest designations. The catalog selects
+publication contexts. This example publishes development docs, every
 authored maintenance-line head, and the latest release in each line:
 
 ```yaml
 artifacts:
   - key: runtime
     source: runtime
-    versioning:
-      developmentRef: main
-      tagPattern: ^v.*$
     publicationSelection:
       development: true
       lineHeads:
         mode: allAuthored
       releases:
         mode: latestPerLine
-    lifecycle:
-      releaseLines:
-        - key: "4.0"
-          maintenanceRef: maintenance/4.0
-          latest: "4.0.0"
-      releases:
-        - version: "4.0.0"
 ```
 
-The matching provider snapshot records supply the resolved `main`,
-`maintenance/4.0`, and `v4.0.0` contexts. The authored catalog still owns which
+Component-owned `site/component.yaml` for `spark`:
+
+```yaml
+schemaVersion: 1
+component:
+  slug: spark
+artifacts:
+  - key: runtime
+    versioning:
+      developmentRef: main
+      tagPattern: ^v.*$
+```
+
+Matching provider records may supply resolved `main`, `maintenance/4.0`,
+and `v4.0.0` identities in the component snapshot. The authored catalog still owns which
 of those contexts are published and where they appear.
+
+
+Component-owned `site/provider-snapshot.json` (provider descriptors and records may enrich these curated releases):
+
+```json
+{
+  "schemaVersion": 1,
+  "artifacts": [
+    {
+      "componentSlug": "spark",
+      "artifactKey": "runtime",
+      "releaseLines": [
+        {
+          "key": "4.0",
+          "maintenanceRef": "maintenance/4.0",
+          "latest": "4.0.0"
+        }
+      ],
+      "releases": [
+        {
+          "version": "4.0.0",
+          "releaseLine": "4.0"
+        }
+      ]
+    }
+  ],
+  "providers": [],
+  "records": []
+}
+```
 
 ## Distinguish routes, aliases, and redirects
 

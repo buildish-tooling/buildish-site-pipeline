@@ -1,6 +1,134 @@
 {
   "$comment": "Generated from the Site Pipeline Pydantic models. Do not edit by hand; regenerate with `make schemas`.",
   "$defs": {
+    "ExactReleaseConfig": {
+      "additionalProperties": false,
+      "description": "Per-version lifecycle metadata and publication overrides for one exact release.",
+      "properties": {
+        "publicationState": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PublicationState"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Publication-state override for this version, such as published, withdrawn, or tombstoned."
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-readable explanation of the withdrawal, redirect, or support-state override for this release.",
+          "examples": [
+            "Superseded by 4.0.1."
+          ],
+          "title": "Reason"
+        },
+        "redirectTarget": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Replacement logical reference or external URL to send readers to when `withdrawalBehavior` is `redirect`.",
+          "examples": [
+            "release:spark/runtime@4.0.1"
+          ],
+          "title": "Redirecttarget"
+        },
+        "releaseLine": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Release-line key that this version belongs to when the provider data alone does not already make that relationship obvious.",
+          "examples": [
+            "4.0"
+          ],
+          "title": "Releaseline"
+        },
+        "supportStatus": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Support-status key or label that should override the line-level status for this exact version.",
+          "examples": [
+            "withdrawn"
+          ],
+          "title": "Supportstatus"
+        },
+        "supportWindow": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SupportWindow"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Lifecycle dates and support notes that apply only to this exact release."
+        },
+        "version": {
+          "description": "Exact released version that this metadata entry applies to.",
+          "examples": [
+            "4.0.0"
+          ],
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "withdrawalBehavior": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/WithdrawalBehavior"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "What readers should experience when this release has been withdrawn, for example a redirect or a hard removal."
+        }
+      },
+      "required": [
+        "version"
+      ],
+      "title": "ExactReleaseConfig",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "component-owned"
+      }
+    },
     "ProviderAsset": {
       "additionalProperties": false,
       "description": "Downloadable asset attached to one provider release or candidate record.",
@@ -645,6 +773,342 @@
       ],
       "title": "RecordKind",
       "type": "string"
+    },
+    "ReleaseLineConfig": {
+      "additionalProperties": false,
+      "description": "One logical release line, such as `4.0`, together with its lifecycle metadata.",
+      "properties": {
+        "aliases": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Alternate labels that should also resolve to this release line in generated metadata or UI.",
+          "examples": [
+            [
+              "stable"
+            ]
+          ],
+          "title": "Aliases"
+        },
+        "displayName": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-readable label shown to readers when the raw line key is not ideal UI text.",
+          "examples": [
+            "4.0 line"
+          ],
+          "title": "Displayname"
+        },
+        "key": {
+          "description": "Stable key for the release line, typically matching the family label used in URLs and navigation.",
+          "examples": [
+            "4.0"
+          ],
+          "minLength": 1,
+          "title": "Key",
+          "type": "string"
+        },
+        "latest": {
+          "description": "Latest released version currently considered the head of this release line.",
+          "examples": [
+            "4.0.1"
+          ],
+          "minLength": 1,
+          "title": "Latest",
+          "type": "string"
+        },
+        "maintenanceRef": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Explicit maintenance branch ref for the line when it should not be derived from `maintenanceRefPattern`.",
+          "examples": [
+            "refs/heads/release-4.0"
+          ],
+          "title": "Maintenanceref"
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional parent release-line key used to model lineage such as `4.x` inheriting from `3.x` policy or navigation structure.",
+          "examples": [
+            "3.5"
+          ],
+          "title": "Parent"
+        },
+        "supportStatus": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Support-status key or label that should be shown for the line as a whole.",
+          "examples": [
+            "supported"
+          ],
+          "title": "Supportstatus"
+        },
+        "supportWindow": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SupportWindow"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Lifecycle dates and support notes that apply to the release line."
+        }
+      },
+      "required": [
+        "key",
+        "latest"
+      ],
+      "title": "ReleaseLineConfig",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "component-owned"
+      }
+    },
+    "SnapshotArtifact": {
+      "additionalProperties": false,
+      "description": "Component-scoped release decisions, independent of consumer source bindings.",
+      "properties": {
+        "artifactKey": {
+          "description": "Component-defined artifact identity.",
+          "minLength": 1,
+          "title": "Artifactkey",
+          "type": "string"
+        },
+        "componentSlug": {
+          "description": "Component owner of these artifact release facts.",
+          "minLength": 1,
+          "title": "Componentslug",
+          "type": "string"
+        },
+        "latestStable": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Explicit overall stable recommendation, referencing a released version of this artifact.",
+          "title": "Lateststable"
+        },
+        "releaseLines": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ReleaseLineConfig"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Authoritative line graph, support facts, maintenance refs, and explicit latest released targets.",
+          "title": "Releaselines"
+        },
+        "releases": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ExactReleaseConfig"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Curated exact releases and their lifecycle or withdrawal decisions, with no provider required.",
+          "title": "Releases"
+        }
+      },
+      "required": [
+        "componentSlug",
+        "artifactKey"
+      ],
+      "title": "SnapshotArtifact",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "provider",
+        "ownership": "provider-derived"
+      }
+    },
+    "SupportWindow": {
+      "additionalProperties": false,
+      "description": "Lifecycle dates and support notes for one release line or exact release.",
+      "properties": {
+        "endOfActiveSupportDate": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Date after which the release no longer receives full active support.",
+          "title": "Endofactivesupportdate"
+        },
+        "endOfLifeDate": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Final retirement date after which the release should be treated as fully end-of-life.",
+          "title": "Endoflifedate"
+        },
+        "endOfSupportDate": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Date after which the release is no longer supported in normal maintenance channels.",
+          "title": "Endofsupportdate"
+        },
+        "maintenancePhase": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Short label for the current maintenance phase, such as general availability, maintenance, or security-only support.",
+          "examples": [
+            "security-fixes"
+          ],
+          "title": "Maintenancephase"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Additional notes that clarify exceptions, migration advice, or support caveats.",
+          "title": "Notes"
+        },
+        "releaseDate": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Release date for the line or version that this support window describes.",
+          "examples": [
+            "2026-04-01T00:00:00Z"
+          ],
+          "title": "Releasedate"
+        },
+        "supportPolicyUrl": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Canonical URL that explains the support policy referenced by this support window.",
+          "title": "Supportpolicyurl"
+        }
+      },
+      "title": "SupportWindow",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "component-owned"
+      }
+    },
+    "WithdrawalBehavior": {
+      "description": "Author-directed behavior for a withdrawn release.",
+      "enum": [
+        "notice",
+        "redirect",
+        "omit"
+      ],
+      "title": "WithdrawalBehavior",
+      "type": "string"
     }
   },
   "$id": "https://buildish.org/components/site-pipeline/schemas/provider-snapshot-v1.schema.json",
@@ -653,6 +1117,7 @@
   "description": "Provider-derived normalized snapshot from ``site/provider-snapshot.json``.",
   "examples": [
     {
+      "artifacts": [],
       "providers": [
         {
           "baseUrl": "https://github.com/apache/spark",
@@ -687,6 +1152,14 @@
     }
   ],
   "properties": {
+    "artifacts": {
+      "description": "Component-owned release lines, exact release lifecycle facts, and explicit latest designations.",
+      "items": {
+        "$ref": "#/$defs/SnapshotArtifact"
+      },
+      "title": "Artifacts",
+      "type": "array"
+    },
     "providers": {
       "description": "Provider descriptors for every provider that contributed records to this snapshot.",
       "items": {

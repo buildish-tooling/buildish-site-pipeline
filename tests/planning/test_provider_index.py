@@ -107,7 +107,7 @@ def _site_with_runtime_artifact() -> object:
         components=(
             SimpleNamespace(
                 slug="spark",
-                artifacts=(SimpleNamespace(key="runtime"),),
+                artifacts=(SimpleNamespace(key="runtime", lifecycle=None),),
             ),
         ),
     )

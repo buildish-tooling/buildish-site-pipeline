@@ -22,8 +22,14 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from buildish_site_pipeline.evaluation import EvaluationMode, EvaluationRequest, build_check_report, run_evaluation
+from buildish_site_pipeline.evaluation import (
+    EvaluationMode,
+    EvaluationRequest,
+    build_check_report,
+    run_evaluation,
+)
 from buildish_site_pipeline.models import (
+    ComponentMetadataDocumentV1,
     PlanningTarget,
     ProviderSnapshotDocumentV1,
     SiteCatalogDocumentV1,
@@ -73,6 +79,7 @@ class EvaluationExecutionTests(unittest.TestCase):
                 catalog=catalog,
                 provider_snapshot=provider_snapshot,
                 workspace_root=workspace_root,
+                component_documents=_component_documents(),
             )
             result = run_evaluation(
                 request=EvaluationRequest(mode=EvaluationMode.BUILD),
@@ -80,7 +87,12 @@ class EvaluationExecutionTests(unittest.TestCase):
             )
 
         self.assertFalse(result.stage_gate.allowed)
-        self.assertTrue(any(diagnostic.code == "publication-route-collision" for diagnostic in result.diagnostics))
+        self.assertTrue(
+            any(
+                diagnostic.code == "publication-route-collision"
+                for diagnostic in result.diagnostics
+            )
+        )
 
     def test_alias_collision_blocks_stage(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
@@ -234,7 +246,9 @@ class EvaluationExecutionTests(unittest.TestCase):
         self.assertFalse(result.stage_gate.allowed)
         self.assertTrue(any(diagnostic.code == "redirect-target-unknown" for diagnostic in result.diagnostics))
 
-    def test_release_redirect_target_does_not_fall_back_to_candidate_context(self) -> None:
+    def test_release_redirect_target_does_not_fall_back_to_candidate_context(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             workspace_root = Path(tempdir)
             _prepare_workspace(workspace_root)
@@ -277,6 +291,7 @@ class EvaluationExecutionTests(unittest.TestCase):
                     ],
                 ),
                 workspace_root=workspace_root,
+                component_documents=_component_documents(),
             )
             result = run_evaluation(
                 request=EvaluationRequest(mode=EvaluationMode.BUILD),
@@ -284,13 +299,20 @@ class EvaluationExecutionTests(unittest.TestCase):
             )
 
         self.assertFalse(result.stage_gate.allowed)
-        self.assertTrue(any(diagnostic.code == "redirect-target-unknown" for diagnostic in result.diagnostics))
+        self.assertTrue(
+            any(
+                diagnostic.code == "redirect-target-unknown"
+                for diagnostic in result.diagnostics
+            )
+        )
 
     def test_malformed_front_matter_blocks_stage(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             workspace_root = Path(tempdir)
             _prepare_workspace(workspace_root)
-            (workspace_root / "components/runtime/docs/releases/4.0.0/bad.md").write_text(
+            (
+                workspace_root / "components/runtime/docs/releases/4.0.0/bad.md"
+            ).write_text(
                 "---\ntitle: broken\n",
                 encoding="utf-8",
             )
@@ -299,6 +321,7 @@ class EvaluationExecutionTests(unittest.TestCase):
                 catalog=_catalog(shared_mount_path=False),
                 provider_snapshot=_provider_snapshot(),
                 workspace_root=workspace_root,
+                component_documents=_component_documents(),
             )
             result = run_evaluation(
                 request=EvaluationRequest(mode=EvaluationMode.BUILD),
@@ -306,20 +329,26 @@ class EvaluationExecutionTests(unittest.TestCase):
             )
 
         self.assertFalse(result.stage_gate.allowed)
-        self.assertTrue(any(diagnostic.code == "page-front-matter-invalid" for diagnostic in result.diagnostics))
+        self.assertTrue(
+            any(
+                diagnostic.code == "page-front-matter-invalid"
+                for diagnostic in result.diagnostics
+            )
+        )
 
     def test_unreadable_page_file_blocks_stage(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             workspace_root = Path(tempdir)
             _prepare_workspace(workspace_root)
-            (workspace_root / "components/runtime/docs/releases/4.0.0/bad.md").write_bytes(
-                b"\xff\xfe\xfa"
-            )
+            (
+                workspace_root / "components/runtime/docs/releases/4.0.0/bad.md"
+            ).write_bytes(b"\xff\xfe\xfa")
             planning = evaluate_planning(
                 target=PlanningTarget.BUILD,
                 catalog=_catalog(shared_mount_path=False),
                 provider_snapshot=_provider_snapshot(),
                 workspace_root=workspace_root,
+                component_documents=_component_documents(),
             )
             result = run_evaluation(
                 request=EvaluationRequest(mode=EvaluationMode.BUILD),
@@ -327,13 +356,20 @@ class EvaluationExecutionTests(unittest.TestCase):
             )
 
         self.assertFalse(result.stage_gate.allowed)
-        self.assertTrue(any(diagnostic.code == "page-read-failed" for diagnostic in result.diagnostics))
+        self.assertTrue(
+            any(
+                diagnostic.code == "page-read-failed"
+                for diagnostic in result.diagnostics
+            )
+        )
 
     def test_reserved_pipeline_namespace_blocks_stage(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             workspace_root = Path(tempdir)
             _prepare_workspace(workspace_root)
-            (workspace_root / "components/runtime/docs/releases/4.0.0/bad.md").write_text(
+            (
+                workspace_root / "components/runtime/docs/releases/4.0.0/bad.md"
+            ).write_text(
                 "---\npipeline:\n  page:\n    title: nope\n---\nbody\n",
                 encoding="utf-8",
             )
@@ -342,6 +378,7 @@ class EvaluationExecutionTests(unittest.TestCase):
                 catalog=_catalog(shared_mount_path=False),
                 provider_snapshot=_provider_snapshot(),
                 workspace_root=workspace_root,
+                component_documents=_component_documents(),
             )
             result = run_evaluation(
                 request=EvaluationRequest(mode=EvaluationMode.BUILD),
@@ -349,7 +386,12 @@ class EvaluationExecutionTests(unittest.TestCase):
             )
 
         self.assertFalse(result.stage_gate.allowed)
-        self.assertTrue(any(diagnostic.code == "page-reserved-namespace" for diagnostic in result.diagnostics))
+        self.assertTrue(
+            any(
+                diagnostic.code == "page-reserved-namespace"
+                for diagnostic in result.diagnostics
+            )
+        )
 
     def test_symlink_escape_path_diagnostic_omits_absolute_path(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
@@ -358,19 +400,26 @@ class EvaluationExecutionTests(unittest.TestCase):
             external_root = workspace_root / "external"
             _mkdir(external_root)
             (external_root / "escape.md").write_text("body\n", encoding="utf-8")
-            (workspace_root / "components/runtime/docs/releases/4.0.0/outside").symlink_to(external_root, target_is_directory=True)
+            (
+                workspace_root / "components/runtime/docs/releases/4.0.0/outside"
+            ).symlink_to(external_root, target_is_directory=True)
             planning = evaluate_planning(
                 target=PlanningTarget.BUILD,
                 catalog=_catalog(shared_mount_path=False),
                 provider_snapshot=_provider_snapshot(),
                 workspace_root=workspace_root,
+                component_documents=_component_documents(),
             )
             result = run_evaluation(
                 request=EvaluationRequest(mode=EvaluationMode.BUILD),
                 planning=planning,
             )
 
-        path_diagnostic = next(diagnostic for diagnostic in result.diagnostics if diagnostic.code == "page-path-outside-root")
+        path_diagnostic = next(
+            diagnostic
+            for diagnostic in result.diagnostics
+            if diagnostic.code == "page-path-outside-root"
+        )
         self.assertFalse(result.stage_gate.allowed)
         self.assertNotIn(tempdir, path_diagnostic.message)
         self.assertNotIn(tempdir, json.dumps(path_diagnostic.details))
@@ -382,8 +431,12 @@ class EvaluationExecutionTests(unittest.TestCase):
             release_root = workspace_root / "components/runtime/docs/releases/4.0.0"
             _mkdir(release_root / "en")
             _mkdir(release_root / "de")
-            (release_root / "en/guide.md").write_text("---\ntranslationKey: guide\n---\nbody\n", encoding="utf-8")
-            (release_root / "en/guide-copy.md").write_text("---\ntranslationKey: guide\n---\nbody\n", encoding="utf-8")
+            (release_root / "en/guide.md").write_text(
+                "---\ntranslationKey: guide\n---\nbody\n", encoding="utf-8"
+            )
+            (release_root / "en/guide-copy.md").write_text(
+                "---\ntranslationKey: guide\n---\nbody\n", encoding="utf-8"
+            )
             planning = evaluate_planning(
                 target=PlanningTarget.BUILD,
                 catalog=_catalog(
@@ -396,6 +449,7 @@ class EvaluationExecutionTests(unittest.TestCase):
                 ),
                 provider_snapshot=_provider_snapshot(),
                 workspace_root=workspace_root,
+                component_documents=_component_documents(),
             )
             result = run_evaluation(
                 request=EvaluationRequest(mode=EvaluationMode.BUILD),
@@ -403,7 +457,12 @@ class EvaluationExecutionTests(unittest.TestCase):
             )
 
         self.assertFalse(result.stage_gate.allowed)
-        self.assertTrue(any(diagnostic.code == "translation-locale-duplicate" for diagnostic in result.diagnostics))
+        self.assertTrue(
+            any(
+                diagnostic.code == "translation-locale-duplicate"
+                for diagnostic in result.diagnostics
+            )
+        )
 
     def test_translation_linkage_conflict_blocks_stage(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
@@ -412,8 +471,12 @@ class EvaluationExecutionTests(unittest.TestCase):
             release_root = workspace_root / "components/runtime/docs/releases/4.0.0"
             _mkdir(release_root / "en")
             _mkdir(release_root / "de")
-            (release_root / "en/guide.md").write_text("---\ntranslationKey: guide\n---\nbody\n", encoding="utf-8")
-            (release_root / "de/guide.md").write_text("---\ntranslationKey: handbuch\n---\nbody\n", encoding="utf-8")
+            (release_root / "en/guide.md").write_text(
+                "---\ntranslationKey: guide\n---\nbody\n", encoding="utf-8"
+            )
+            (release_root / "de/guide.md").write_text(
+                "---\ntranslationKey: handbuch\n---\nbody\n", encoding="utf-8"
+            )
             planning = evaluate_planning(
                 target=PlanningTarget.BUILD,
                 catalog=_catalog(
@@ -426,6 +489,7 @@ class EvaluationExecutionTests(unittest.TestCase):
                 ),
                 provider_snapshot=_provider_snapshot(),
                 workspace_root=workspace_root,
+                component_documents=_component_documents(),
             )
             result = run_evaluation(
                 request=EvaluationRequest(mode=EvaluationMode.BUILD),
@@ -433,7 +497,12 @@ class EvaluationExecutionTests(unittest.TestCase):
             )
 
         self.assertFalse(result.stage_gate.allowed)
-        self.assertTrue(any(diagnostic.code == "translation-linkage-conflict" for diagnostic in result.diagnostics))
+        self.assertTrue(
+            any(
+                diagnostic.code == "translation-linkage-conflict"
+                for diagnostic in result.diagnostics
+            )
+        )
 
     def test_translation_route_inconsistency_blocks_stage(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
@@ -442,8 +511,12 @@ class EvaluationExecutionTests(unittest.TestCase):
             release_root = workspace_root / "components/runtime/docs/releases/4.0.0"
             _mkdir(release_root / "en")
             _mkdir(release_root / "de")
-            (release_root / "en/guide.md").write_text("---\ntranslationKey: guide\n---\nbody\n", encoding="utf-8")
-            (release_root / "de/uebersicht.md").write_text("---\ntranslationKey: guide\n---\nbody\n", encoding="utf-8")
+            (release_root / "en/guide.md").write_text(
+                "---\ntranslationKey: guide\n---\nbody\n", encoding="utf-8"
+            )
+            (release_root / "de/uebersicht.md").write_text(
+                "---\ntranslationKey: guide\n---\nbody\n", encoding="utf-8"
+            )
             planning = evaluate_planning(
                 target=PlanningTarget.BUILD,
                 catalog=_catalog(
@@ -456,6 +529,7 @@ class EvaluationExecutionTests(unittest.TestCase):
                 ),
                 provider_snapshot=_provider_snapshot(),
                 workspace_root=workspace_root,
+                component_documents=_component_documents(),
             )
             result = run_evaluation(
                 request=EvaluationRequest(mode=EvaluationMode.BUILD),
@@ -463,7 +537,12 @@ class EvaluationExecutionTests(unittest.TestCase):
             )
 
         self.assertFalse(result.stage_gate.allowed)
-        self.assertTrue(any(diagnostic.code == "translation-route-inconsistent" for diagnostic in result.diagnostics))
+        self.assertTrue(
+            any(
+                diagnostic.code == "translation-route-inconsistent"
+                for diagnostic in result.diagnostics
+            )
+        )
 
     def test_translation_without_supported_locale_prefix_blocks_stage(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
@@ -486,6 +565,7 @@ class EvaluationExecutionTests(unittest.TestCase):
                 ),
                 provider_snapshot=_provider_snapshot(),
                 workspace_root=workspace_root,
+                component_documents=_component_documents(),
             )
             result = run_evaluation(
                 request=EvaluationRequest(mode=EvaluationMode.BUILD),
@@ -516,6 +596,7 @@ class EvaluationExecutionTests(unittest.TestCase):
                 ),
                 provider_snapshot=_provider_snapshot(),
                 workspace_root=workspace_root,
+                component_documents=_component_documents(),
             )
             result = run_evaluation(
                 request=EvaluationRequest(mode=EvaluationMode.BUILD),
@@ -528,7 +609,9 @@ class EvaluationExecutionTests(unittest.TestCase):
             if diagnostic.code == "localization-policy-invalid"
         )
         self.assertFalse(result.stage_gate.allowed)
-        self.assertIn("defaultLocale", json.dumps(policy_diagnostic.details, sort_keys=True))
+        self.assertIn(
+            "defaultLocale", json.dumps(policy_diagnostic.details, sort_keys=True)
+        )
         self.assertIn("requires defaultLocale", policy_diagnostic.message)
 
     def test_unknown_exact_release_reference_blocks_stage(self) -> None:
@@ -648,11 +731,6 @@ class EvaluationExecutionTests(unittest.TestCase):
                 catalog=_catalog(
                     shared_mount_path=False,
                     spark_artifact={
-                        "versioning": {
-                            "developmentRef": "main",
-                            "tagPattern": "^v.*$",
-                            "namedRefs": [{"key": "stable", "ref": "refs/heads/stable", "maturity": "stable"}],
-                        },
                         "publicationSelection": {
                             "namedRefs": ["stable"],
                         },
@@ -687,7 +765,12 @@ class EvaluationExecutionTests(unittest.TestCase):
             )
 
         self.assertFalse(result.stage_gate.allowed)
-        self.assertTrue(any(diagnostic.code == "provider-context-ambiguous" for diagnostic in result.diagnostics))
+        self.assertTrue(
+            any(
+                diagnostic.code == "provider-context-ambiguous"
+                for diagnostic in result.diagnostics
+            )
+        )
 
     def test_route_inventory_limit_blocks_stage(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir, patch("buildish_site_pipeline.evaluation.limits._ROUTE_INVENTORY_LIMIT", 1):
@@ -732,23 +815,37 @@ class EvaluationExecutionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tempdir:
             workspace_root = Path(tempdir)
             _prepare_workspace(workspace_root)
-            (workspace_root / "components/runtime/docs/releases/4.0.0/one.md").write_text("body\n", encoding="utf-8")
-            (workspace_root / "components/runtime/docs/releases/4.0.0/two.md").write_text("body\n", encoding="utf-8")
-            with patch("buildish_site_pipeline.evaluation.limits._WATCH_FILESYSTEM_ENTRY_LIMIT", 1):
+            (
+                workspace_root / "components/runtime/docs/releases/4.0.0/one.md"
+            ).write_text("body\n", encoding="utf-8")
+            (
+                workspace_root / "components/runtime/docs/releases/4.0.0/two.md"
+            ).write_text("body\n", encoding="utf-8")
+            with patch(
+                "buildish_site_pipeline.evaluation.limits._WATCH_FILESYSTEM_ENTRY_LIMIT",
+                1,
+            ):
                 planning = evaluate_planning(
                     target=PlanningTarget.WATCH,
                     catalog=_catalog(shared_mount_path=False),
                     provider_snapshot=_provider_snapshot(),
                     workspace_root=workspace_root,
+                    component_documents=_component_documents(),
                 )
                 result = run_evaluation(
                     request=EvaluationRequest(mode=EvaluationMode.WATCH),
                     planning=planning,
                 )
 
-        limit_diagnostic = next(diagnostic for diagnostic in result.diagnostics if diagnostic.code == "operational-limit-exceeded")
+        limit_diagnostic = next(
+            diagnostic
+            for diagnostic in result.diagnostics
+            if diagnostic.code == "operational-limit-exceeded"
+        )
         self.assertFalse(result.stage_gate.allowed)
-        self.assertEqual(limit_diagnostic.details["metric"], "watchFilesystemEntryCount")
+        self.assertEqual(
+            limit_diagnostic.details["metric"], "watchFilesystemEntryCount"
+        )
 
 
 def _planning_eval(
@@ -759,16 +856,22 @@ def _planning_eval(
     provider_snapshot: ProviderSnapshotDocumentV1 | None = None,
 ):
     catalog = _catalog(shared_mount_path=False) if catalog is None else catalog
-    provider_snapshot = _provider_snapshot() if provider_snapshot is None else provider_snapshot
+    provider_snapshot = (
+        _provider_snapshot() if provider_snapshot is None else provider_snapshot
+    )
     _prepare_workspace(workspace_root)
     if stale_release:
-        marker_path = workspace_root / "components/runtime/docs/releases/4.0.0/.site-pipeline-materialization.json"
+        marker_path = (
+            workspace_root
+            / "components/runtime/docs/releases/4.0.0/.site-pipeline-materialization.json"
+        )
         marker_path.write_text(json.dumps({"version": "3.9.0"}), encoding="utf-8")
     return evaluate_planning(
         target=PlanningTarget.BUILD,
         catalog=catalog,
         provider_snapshot=provider_snapshot,
         workspace_root=workspace_root,
+        component_documents=_component_documents(),
     )
 
 
@@ -803,21 +906,23 @@ def _catalog(
                 {
                     "slug": "spark",
                     "content": {"source": "runtime"},
-                    "publication": {"mountPath": "/spark/", **(spark_publication or {})},
-                    **({"localization": spark_localization} if spark_localization is not None else {}),
+                    "publication": {
+                        "mountPath": "/spark/",
+                        **(spark_publication or {}),
+                    },
+                    **(
+                        {"localization": spark_localization}
+                        if spark_localization is not None
+                        else {}
+                    ),
                     "artifacts": [
                         {
                             "key": "runtime",
                             "source": "runtime",
-                            "versioning": {"developmentRef": "main", "tagPattern": "^v.*$"},
                             "publicationSelection": {
                                 "development": True,
                                 "lineHeads": {"mode": "allAuthored"},
                                 "releases": {"mode": "latestPerLine"},
-                            },
-                            "lifecycle": {
-                                "releaseLines": [{"key": "4.0", "maintenanceRef": "maintenance/4.0", "latest": "4.0.0"}],
-                                "releases": [{"version": "4.0.0"}],
                             },
                             **(spark_artifact or {}),
                         },
@@ -826,12 +931,14 @@ def _catalog(
                 {
                     "slug": "flink",
                     "content": {"source": "runtime-two"},
-                    "publication": {"mountPath": runtime_two_mount_path, **(flink_publication or {})},
+                    "publication": {
+                        "mountPath": runtime_two_mount_path,
+                        **(flink_publication or {}),
+                    },
                     "artifacts": [
                         {
                             "key": "runtime",
                             "source": "runtime-two",
-                            "versioning": {"developmentRef": "main", "tagPattern": "^v.*$"},
                             **(flink_artifact or {}),
                         },
                     ],
@@ -849,12 +956,58 @@ def _provider_snapshot(
     return ProviderSnapshotDocumentV1.model_validate(
         {
             "schemaVersion": 1,
-            "providers": [{"key": "github", "type": "githubReleases", "fetchedAt": "2026-04-03T00:00:00Z"}],
+            "artifacts": [
+                {
+                    "componentSlug": "spark",
+                    "artifactKey": "runtime",
+                    "releaseLines": [
+                        {
+                            "key": "4.0",
+                            "latest": "4.0.0",
+                            "maintenanceRef": "maintenance/4.0",
+                        }
+                    ],
+                    "releases": [{"version": "4.0.0", "releaseLine": "4.0"}],
+                }
+            ],
+            "providers": [
+                {
+                    "key": "github",
+                    "type": "githubReleases",
+                    "fetchedAt": "2026-04-03T00:00:00Z",
+                }
+            ],
             "records": [
-                {"provider": "github", "kind": "development", "componentSlug": "spark", "artifactKey": "runtime", "ref": "main"},
-                {"provider": "github", "kind": "lineHead", "componentSlug": "spark", "artifactKey": "runtime", "releaseLine": "4.0", "ref": "maintenance/4.0"},
-                {"provider": "github", "kind": "released", "componentSlug": "spark", "artifactKey": "runtime", "version": "4.0.0", "tag": "v4.0.0"},
-                {"provider": "github", "kind": "development", "componentSlug": "flink", "artifactKey": "runtime", "ref": "main"},
+                {
+                    "provider": "github",
+                    "kind": "development",
+                    "componentSlug": "spark",
+                    "artifactKey": "runtime",
+                    "ref": "main",
+                },
+                {
+                    "provider": "github",
+                    "kind": "lineHead",
+                    "componentSlug": "spark",
+                    "artifactKey": "runtime",
+                    "releaseLine": "4.0",
+                    "ref": "maintenance/4.0",
+                },
+                {
+                    "provider": "github",
+                    "kind": "released",
+                    "componentSlug": "spark",
+                    "artifactKey": "runtime",
+                    "version": "4.0.0",
+                    "tag": "v4.0.0",
+                },
+                {
+                    "provider": "github",
+                    "kind": "development",
+                    "componentSlug": "flink",
+                    "artifactKey": "runtime",
+                    "ref": "main",
+                },
                 *(extra_records or []),
             ],
         },
@@ -872,3 +1025,27 @@ def _prepare_workspace(workspace_root: Path) -> None:
 
 def _mkdir(path: Path) -> None:
     path.mkdir(parents=True, exist_ok=True)
+
+
+def _component_documents():
+    return {
+        slug: ComponentMetadataDocumentV1(
+            schema_version=1,
+            component={"slug": slug},
+            artifacts=[
+                {
+                    "key": "runtime",
+                    "versioning": {
+                        "namedRefs": [
+                            {
+                                "key": "stable",
+                                "ref": "refs/heads/stable",
+                                "maturity": "stable",
+                            }
+                        ]
+                    },
+                }
+            ],
+        )
+        for slug in ("spark", "flink")
+    }

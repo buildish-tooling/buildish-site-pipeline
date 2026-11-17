@@ -18,14 +18,24 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import stat
+from itertools import chain
 from pathlib import Path
 
 from buildish_site_pipeline.models import ProviderSnapshotDocumentV1
+from buildish_site_pipeline.models.provider.provider_snapshot import (
+    SnapshotArtifact,
+    ProviderRecord,
+)
 from buildish_site_pipeline.models.authored.site_catalog import SiteCatalogDocumentV1
 from buildish_site_pipeline.models.authored.component_metadata import (
     ComponentMetadataDocumentV1,
 )
-from buildish_site_pipeline.models.enums import DocumentFormat, ExecutionProfile, SnapshotRequirement, MaterializationStatus
+from buildish_site_pipeline.models.enums import (
+    DocumentFormat,
+    ExecutionProfile,
+    SnapshotRequirement,
+    MaterializationStatus,
+)
 from buildish_site_pipeline.models.emitted.execution import SnapshotInput
 from buildish_site_pipeline.models.loading import (
     DocumentDecodingError,
@@ -113,7 +123,10 @@ def load_catalog_input(
 
 
 def load_workspace_inputs(
-    workspace_root: Path, catalog_path: Path | None = None, *, profile: ExecutionProfile = ExecutionProfile.LOCAL
+    workspace_root: Path,
+    catalog_path: Path | None = None,
+    *,
+    profile: ExecutionProfile = ExecutionProfile.LOCAL,
 ) -> LoadedWorkspaceInputs:
     """Load default catalog, provider snapshot, and component metadata inputs."""
 
@@ -125,15 +138,20 @@ def load_workspace_inputs(
     site_root = loaded_catalog.catalog_path.parent
 
     try:
-        provider_snapshot, provider_snapshot_path, aggregate_bytes = _load_provider_snapshot(
-            site_root, resolved_workspace_root
+        provider_snapshot, provider_snapshot_path, aggregate_bytes = (
+            _load_provider_snapshot(site_root, resolved_workspace_root)
         )
         component_documents = _load_component_documents(
             resolved_workspace_root, loaded_catalog.catalog
         )
         provider_snapshot, snapshot_inputs, snapshot_paths = _load_component_snapshots(
-            catalog=loaded_catalog.catalog, workspace_root=resolved_workspace_root,
-            aggregate=provider_snapshot, aggregate_path=provider_snapshot_path, aggregate_bytes=aggregate_bytes, profile=profile,
+            catalog=loaded_catalog.catalog,
+            workspace_root=resolved_workspace_root,
+            aggregate=provider_snapshot,
+            aggregate_path=provider_snapshot_path,
+            aggregate_bytes=aggregate_bytes,
+            profile=profile,
+            component_documents=component_documents,
         )
     except LoadingError as exc:
         raise _input_error_from_loading(exc) from exc
@@ -399,6 +417,7 @@ def _load_component_snapshots(
     aggregate_path: Path | None,
     profile: ExecutionProfile,
     aggregate_bytes: int,
+    component_documents: dict[str, ComponentMetadataDocumentV1],
 ) -> tuple[ProviderSnapshotDocumentV1, tuple[SnapshotInput, ...], tuple[Path, ...]]:
     """Compose validated component inventory files with aggregate inventory."""
     sources = resolve_catalog_source_bindings(
@@ -406,6 +425,7 @@ def _load_component_snapshots(
     )
     providers = {item.key: item for item in aggregate.providers}
     records = list(aggregate.records)
+    snapshot_artifacts = list(aggregate.artifacts)
     aggregate_name = str(aggregate_path) if aggregate_path else "aggregate inventory"
     origins = {
         (item.provider, item.external_id): aggregate_name
@@ -421,6 +441,19 @@ def _load_component_snapshots(
         if binding is None:
             continue
         path = resolve_repo_path(sources[binding.source].local_dir, binding.path)
+        claims = [
+            item
+            for item in chain[SnapshotArtifact | ProviderRecord](
+                aggregate.artifacts, aggregate.records
+            )
+            if item.component_slug == component.slug
+        ]
+        if claims:
+            raise InputDiagnosticError(
+                f"Component {component.slug!r} version facts are owned by {path}; aggregate input {aggregate_name} must not claim this component",
+                code="input-configuration-invalid",
+                source=aggregate_name,
+            )
         paths.append(path)
         required = binding.requirement is SnapshotRequirement.REQUIRED or (
             binding.requirement is SnapshotRequirement.PUBLICATION
@@ -466,8 +499,22 @@ def _load_component_snapshots(
         document = load_provider_snapshot_document(
             raw, document_format=_infer_document_format(path), source_name=source_name
         )
-        artifacts = {item.key: item for item in component.artifacts or ()}
-        for record in document.records:
+        metadata = component_documents.get(component.slug)
+        artifacts = (
+            {item.key: item for item in metadata.artifacts or ()} if metadata else {}
+        )
+        bindings = {item.key: item for item in component.artifacts or ()}
+        content = resolve_component_content_source_binding(
+            component=component,
+            source_bindings=sources,
+            workspace_root=workspace_root,
+            default_metadata_file=catalog.defaults.metadata_file
+            if catalog.defaults
+            else None,
+        )
+        for record in chain[SnapshotArtifact | ProviderRecord](
+            document.artifacts, document.records
+        ):
             if (
                 record.component_slug != component.slug
                 or record.artifact_key not in artifacts
@@ -477,10 +524,16 @@ def _load_component_snapshots(
                     code="input-configuration-invalid",
                     source=source_name,
                 )
-            if (
-                record.source_key is not None
-                and record.source_key != artifacts[record.artifact_key].source
-            ):
+        for record in document.records:
+            artifact_binding = bindings.get(record.artifact_key)
+            expected_source = (
+                artifact_binding.source
+                if artifact_binding and artifact_binding.source
+                else content.key
+                if content
+                else None
+            )
+            if record.source_key is not None and record.source_key != expected_source:
                 raise InputDiagnosticError(
                     f"Record sourceKey {record.source_key!r} does not match artifact source",
                     code="input-configuration-invalid",
@@ -511,6 +564,7 @@ def _load_component_snapshots(
             providers[descriptor.key] = descriptor
             descriptor_origins[descriptor.key] = source_name
         records.extend(document.records)
+        snapshot_artifacts.extend(document.artifacts)
         if len(records) > 50_000:
             raise InputDiagnosticError(
                 "Combined provider inputs exceed the 50,000 record ceiling",
@@ -540,7 +594,10 @@ def _load_component_snapshots(
         )
     return (
         ProviderSnapshotDocumentV1(
-            schema_version=1, providers=list(providers.values()), records=records
+            schema_version=1,
+            providers=list(providers.values()),
+            records=records,
+            artifacts=snapshot_artifacts,
         ),
         tuple(inputs),
         tuple(paths),

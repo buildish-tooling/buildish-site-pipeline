@@ -49,7 +49,7 @@ from ..scalars import (
 )
 from ..validation.extensions import serialize_extensions_object
 from ..authored.component_metadata import SupportStatusDefinition
-from ..authored.site_catalog import ArtifactVersioningConfig, SupportWindow
+from ..authored.artifacts import ArtifactVersioningConfig, SupportWindow
 from ..provider.provider_snapshot import ProviderAsset
 from .staged_front_matter import (
     ArtifactFrontMatterSummary,

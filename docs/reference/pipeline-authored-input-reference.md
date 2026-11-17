@@ -26,11 +26,12 @@ Back to the [reference overview](../pipeline-model-schema-reference/).
 ## Type index
 
 - [ArtifactConfig](#artifactconfig) — One independently versioned release unit inside a component.
-- [ArtifactLifecycleConfig](#artifactlifecycleconfig) — Lifecycle metadata for an artifact's stable versions, release lines, and support policy.
+- [ArtifactSupportPolicy](#artifactsupportpolicy) — Reusable static support defaults owned by an artifact.
 - [ArtifactVersioningConfig](#artifactversioningconfig) — How the pipeline discovers development, maintenance, tag, and named-ref versions.
 - [CandidateSelectionPolicy](#candidateselectionpolicy) — Rule for which release candidates should become published contexts.
 - [CatalogDefaults](#catalogdefaults) — Shared defaults applied before per-component overrides.
 - [CompatibilityAssertionConfig](#compatibilityassertionconfig) — Compatibility statement between two published identities, such as an artifact and a supported platform.
+- [ComponentArtifactDefinition](#componentartifactdefinition) — Stable artifact identity and repository-relative content layout.
 - [ComponentCatalogEntry](#componentcatalogentry) — Component entry in the consumer catalog.
 - [ComponentContentSelection](#componentcontentselection) — Source selection for a component's shared pages, docs, and assets.
 - [ComponentIdentity](#componentidentity) — Stable identity for a component repository.
@@ -71,45 +72,31 @@ One independently versioned release unit inside a component.
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
 | <a id="artifactconfig-key"></a>`key` | [ArtifactKey](../pipeline-shared-types-reference/#artifactkey) | yes | Stable artifact identifier used in typed references, staged metadata, and provider records. |
-| <a id="artifactconfig-displayname"></a>`displayName` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | no | Human-readable artifact label shown to readers when the raw key is not ideal UI text. |
-| <a id="artifactconfig-source"></a>`source` | [SourceKey](../pipeline-shared-types-reference/#sourcekey) | yes | Named source entry that owns the versioned docs and assets for this artifact. |
-| <a id="artifactconfig-docsroot"></a>`docsRoot` | [RepoRelativePath](../pipeline-shared-types-reference/#reporelativepath) | no | Artifact-specific docs root that overrides any inherited docs location when versioned docs live in a custom subdirectory. |
-| <a id="artifactconfig-assetsroot"></a>`assetsRoot` | [RepoRelativePath](../pipeline-shared-types-reference/#reporelativepath) | no | Artifact-specific asset root that overrides inherited component asset locations for this artifact's versioned output. |
-| <a id="artifactconfig-versioning"></a>`versioning` | [ArtifactVersioningConfig](#artifactversioningconfig) | yes | Rules for discovering development refs, maintenance refs, tags, and named refs for this artifact. |
-| <a id="artifactconfig-publicationselection"></a>`publicationSelection` | [PublicationSelectionPolicy](#publicationselectionpolicy) | no | Artifact-specific override for which version contexts should be staged and published. |
-| <a id="artifactconfig-lifecycle"></a>`lifecycle` | [ArtifactLifecycleConfig](#artifactlifecycleconfig) | no | Lifecycle metadata for stable versions, release lines, and support policy for this artifact. |
+| <a id="artifactconfig-source"></a>`source` | [SourceKey](../pipeline-shared-types-reference/#sourcekey) | no | Optional source binding override; otherwise inherit the component content source. |
+| <a id="artifactconfig-docsroot"></a>`docsRoot` | [RepoRelativePath](../pipeline-shared-types-reference/#reporelativepath) | no | Optional source layout binding for artifact docs. |
+| <a id="artifactconfig-assetsroot"></a>`assetsRoot` | [RepoRelativePath](../pipeline-shared-types-reference/#reporelativepath) | no | Optional source layout binding for artifact assets. |
+| <a id="artifactconfig-publicationselection"></a>`publicationSelection` | [PublicationSelectionPolicy](#publicationselectionpolicy) | no | Optional consumer publication selection for this component-defined artifact. |
 | <a id="artifactconfig-compatibility"></a>`compatibility` | list[[CompatibilityAssertionConfig](#compatibilityassertionconfig)] | no | Compatibility statements that should be emitted for this artifact in staged metadata. |
 | <a id="artifactconfig-mounts"></a>`mounts` | list[[MountConfig](#mountconfig)] | no | Mounted generated or imported subtrees that belong to this artifact's published surface. |
 
 #### Selected field examples
 
 - `key`: Example: `"runtime"`
-- `displayName`: Example: `"Runtime"`
-- `source`: Example: `"apache-spark"`
-- `docsRoot`: Example: `"docs/runtime"`
-- `assetsRoot`: Example: `"docs/runtime/assets"`
 
-<a id="artifactlifecycleconfig"></a>
-### ArtifactLifecycleConfig
+<a id="artifactsupportpolicy"></a>
+### ArtifactSupportPolicy
 
-Lifecycle metadata for an artifact's stable versions, release lines, and support policy.
+Reusable static support defaults owned by an artifact.
 
 - category: `authored`
-- ownership: `consumer-owned`
+- ownership: `component-owned`
 - file contract: (inner type)
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| <a id="artifactlifecycleconfig-lateststable"></a>`latestStable` | [VersionString](../pipeline-shared-types-reference/#versionstring) | no | Most recent stable version that readers should treat as the default recommendation for this artifact. |
-| <a id="artifactlifecycleconfig-releaselines"></a>`releaseLines` | list[[ReleaseLineConfig](#releaselineconfig)] | no | Release-line definitions for this artifact, including latest versions and optional support metadata. |
-| <a id="artifactlifecycleconfig-releases"></a>`releases` | list[[ExactReleaseConfig](#exactreleaseconfig)] | no | Per-version lifecycle metadata and publication overrides for exact released versions. |
-| <a id="artifactlifecycleconfig-supportstatusvocabulary"></a>`supportStatusVocabulary` | dict[[Identifier](../pipeline-shared-types-reference/#identifier), [SupportStatusDefinition](#supportstatusdefinition)] | no | Reusable support-status definitions that release lines and exact releases can refer to by key. |
-| <a id="artifactlifecycleconfig-supportpolicyurl"></a>`supportPolicyUrl` | [UrlString](../pipeline-shared-types-reference/#urlstring) | no | Canonical URL for the support policy document that readers should consult for this artifact. |
-| <a id="artifactlifecycleconfig-defaultsupportwindow"></a>`defaultSupportWindow` | [SupportWindow](#supportwindow) | no | Fallback lifecycle window applied when a line or exact release does not provide a more specific support window. |
-
-#### Selected field examples
-
-- `latestStable`: Example: `"4.0.1"`
+| <a id="artifactsupportpolicy-supportstatusvocabulary"></a>`supportStatusVocabulary` | dict[[Identifier](../pipeline-shared-types-reference/#identifier), [SupportStatusDefinition](#supportstatusdefinition)] | no | Reusable artifact-specific support-status vocabulary layered over component defaults. |
+| <a id="artifactsupportpolicy-supportpolicyurl"></a>`supportPolicyUrl` | [UrlString](../pipeline-shared-types-reference/#urlstring) | no | Canonical support policy URL for this artifact. |
+| <a id="artifactsupportpolicy-defaultsupportwindow"></a>`defaultSupportWindow` | [SupportWindow](#supportwindow) | no | Fallback support window when a release or line supplies no narrower window. |
 
 <a id="artifactversioningconfig"></a>
 ### ArtifactVersioningConfig
@@ -117,14 +104,14 @@ Lifecycle metadata for an artifact's stable versions, release lines, and support
 How the pipeline discovers development, maintenance, tag, and named-ref versions.
 
 - category: `authored`
-- ownership: `consumer-owned`
+- ownership: `component-owned`
 - file contract: (inner type)
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| <a id="artifactversioningconfig-developmentref"></a>`developmentRef` | [RefString](../pipeline-shared-types-reference/#refstring) | yes | Source-control ref that represents the moving development docs for this artifact. |
+| <a id="artifactversioningconfig-developmentref"></a>`developmentRef` | [RefString](../pipeline-shared-types-reference/#refstring) | no | Source-control ref that represents the moving development docs for this artifact. |
 | <a id="artifactversioningconfig-maintenancerefpattern"></a>`maintenanceRefPattern` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | no | Pattern used to derive maintenance branch refs from a release-line key, usually with `{line}` as the substitution placeholder. |
-| <a id="artifactversioningconfig-tagpattern"></a>`tagPattern` | [RegexString](../pipeline-shared-types-reference/#regexstring) | yes | Regular expression used to recognize provider tags that belong to this artifact's version stream. |
+| <a id="artifactversioningconfig-tagpattern"></a>`tagPattern` | [RegexString](../pipeline-shared-types-reference/#regexstring) | no | Regular expression used to recognize provider tags that belong to this artifact's version stream. |
 | <a id="artifactversioningconfig-namedrefs"></a>`namedRefs` | list[[NamedRefConfig](#namedrefconfig)] | no | Additional intentionally named version contexts, such as preview or stable branches, that should be selectable by key. |
 
 #### Selected field examples
@@ -197,6 +184,24 @@ Compatibility statement between two published identities, such as an artifact an
 - `scope`: Example: `"kubernetes"`
 - `confidence`: Example: `"verified"`
 
+<a id="componentartifactdefinition"></a>
+### ComponentArtifactDefinition
+
+Stable artifact identity and repository-relative content layout.
+
+- category: `authored`
+- ownership: `component-owned`
+- file contract: (inner type)
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| <a id="componentartifactdefinition-key"></a>`key` | [ArtifactKey](../pipeline-shared-types-reference/#artifactkey) | yes | Stable artifact identity referenced by inventories and optional catalog bindings. |
+| <a id="componentartifactdefinition-displayname"></a>`displayName` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | no | Canonical human-readable artifact label. |
+| <a id="componentartifactdefinition-docsroot"></a>`docsRoot` | [RepoRelativePath](../pipeline-shared-types-reference/#reporelativepath) | no | Repository-relative artifact docs root, inheriting component content roots when omitted. |
+| <a id="componentartifactdefinition-assetsroot"></a>`assetsRoot` | [RepoRelativePath](../pipeline-shared-types-reference/#reporelativepath) | no | Repository-relative artifact asset root, inheriting component content roots when omitted. |
+| <a id="componentartifactdefinition-versioning"></a>`versioning` | [ArtifactVersioningConfig](#artifactversioningconfig) | no | Static development, maintenance, tag, and named-ref stream definitions; materialized inventories require no tag-discovery pattern. |
+| <a id="componentartifactdefinition-lifecycle"></a>`lifecycle` | [ArtifactSupportPolicy](#artifactsupportpolicy) | no | Reusable static artifact support defaults; release decisions belong in the snapshot. |
+
 <a id="componentcatalogentry"></a>
 ### ComponentCatalogEntry
 
@@ -260,7 +265,6 @@ Optional lifecycle defaults shared across all artifacts in a component repositor
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| <a id="componentlifecyclehints-lateststable"></a>`latestStable` | [VersionString](../pipeline-shared-types-reference/#versionstring) | no | Latest stable version for the component when one overall release line is enough. |
 | <a id="componentlifecyclehints-supportstatusvocabulary"></a>`supportStatusVocabulary` | dict[[Identifier](../pipeline-shared-types-reference/#identifier), [SupportStatusDefinition](#supportstatusdefinition)] | no | Optional support-status vocabulary shared by artifacts in this repository. |
 
 <a id="componentmetadatadocumentv1"></a>
@@ -278,6 +282,7 @@ Canonical component metadata that defines stable identity, repository content ro
 | <a id="componentmetadatadocumentv1-component"></a>`component` | [ComponentIdentity](#componentidentity) | yes | Stable identity for the component repository. |
 | <a id="componentmetadatadocumentv1-content"></a>`content` | [ContentRoots](#contentroots) | no | Repository-relative authored content roots owned by this component. |
 | <a id="componentmetadatadocumentv1-lifecycle"></a>`lifecycle` | [ComponentLifecycleHints](#componentlifecyclehints) | no | Optional high-level lifecycle hints shared across the component repository. |
+| <a id="componentmetadatadocumentv1-artifacts"></a>`artifacts` | list[[ComponentArtifactDefinition](#componentartifactdefinition)] | no | Component-owned artifact identities, streams, content roots, and support defaults. |
 
 #### Content roots
 
@@ -294,11 +299,14 @@ content:
   pagesRoot: site/pages
   docsRoot: docs
 lifecycle:
-  latestStable: 4.0.0
   supportStatusVocabulary:
     active:
       displayName: Active
       order: 10
+artifacts:
+- key: runtime
+  versioning:
+    developmentRef: main
 ```
 
 <a id="componentprovidersnapshot"></a>
@@ -337,7 +345,7 @@ Repository-relative locations of authored component content.
 Per-version lifecycle metadata and publication overrides for one exact release.
 
 - category: `authored`
-- ownership: `consumer-owned`
+- ownership: `component-owned`
 - file contract: (inner type)
 
 | Field | Type | Required | Description |
@@ -348,7 +356,7 @@ Per-version lifecycle metadata and publication overrides for one exact release.
 | <a id="exactreleaseconfig-supportwindow"></a>`supportWindow` | [SupportWindow](#supportwindow) | no | Lifecycle dates and support notes that apply only to this exact release. |
 | <a id="exactreleaseconfig-publicationstate"></a>`publicationState` | [PublicationState](../pipeline-shared-types-reference/#publicationstate) | no | Publication-state override for this version, such as published, withdrawn, or tombstoned. |
 | <a id="exactreleaseconfig-withdrawalbehavior"></a>`withdrawalBehavior` | [WithdrawalBehavior](../pipeline-shared-types-reference/#withdrawalbehavior) | no | What readers should experience when this release has been withdrawn, for example a redirect or a hard removal. |
-| <a id="exactreleaseconfig-redirecttarget"></a>`redirectTarget` | [ReferenceString](../pipeline-shared-types-reference/#referencestring) \| [UrlString](../pipeline-shared-types-reference/#urlstring) | no | Replacement route or external URL to send readers to when `withdrawalBehavior` is `redirect`. |
+| <a id="exactreleaseconfig-redirecttarget"></a>`redirectTarget` | [ReferenceString](../pipeline-shared-types-reference/#referencestring) \| [UrlString](../pipeline-shared-types-reference/#urlstring) | no | Replacement logical reference or external URL to send readers to when `withdrawalBehavior` is `redirect`. |
 | <a id="exactreleaseconfig-reason"></a>`reason` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | no | Human-readable explanation of the withdrawal, redirect, or support-state override for this release. |
 
 #### Selected field examples
@@ -356,7 +364,7 @@ Per-version lifecycle metadata and publication overrides for one exact release.
 - `version`: Example: `"4.0.0"`
 - `releaseLine`: Example: `"4.0"`
 - `supportStatus`: Example: `"withdrawn"`
-- `redirectTarget`: Example: `"route:/spark/releases/4.0.1/"`
+- `redirectTarget`: Example: `"release:spark/runtime@4.0.1"`
 - `reason`: Example: `"Superseded by 4.0.1."`
 
 <a id="groupconfig"></a>
@@ -464,7 +472,7 @@ Mounted subtree, such as generated API docs or imported assets, published below 
 Named source-control ref intentionally exposed as a stable version context.
 
 - category: `authored`
-- ownership: `consumer-owned`
+- ownership: `component-owned`
 - file contract: (inner type)
 
 | Field | Type | Required | Description |
@@ -576,7 +584,7 @@ Redirect rule that sends one published path to another internal or external targ
 One logical release line, such as `4.0`, together with its lifecycle metadata.
 
 - category: `authored`
-- ownership: `consumer-owned`
+- ownership: `component-owned`
 - file contract: (inner type)
 
 | Field | Type | Required | Description |
@@ -690,22 +698,12 @@ components:
   artifacts:
   - key: runtime
     source: runtime
-    versioning:
-      developmentRef: main
-      tagPattern: ^v.*$
     publicationSelection:
       development: true
       lineHeads:
         mode: allAuthored
       releases:
         mode: latestPerLine
-    lifecycle:
-      releaseLines:
-      - key: '4.0'
-        latest: 4.0.0
-        maintenanceRef: maintenance/4.0
-      releases:
-      - version: 4.0.0
 ```
 
 <a id="sitecontentconfig"></a>
@@ -768,7 +766,7 @@ One reusable support-status label, description, and default lifecycle behavior.
 Lifecycle dates and support notes for one release line or exact release.
 
 - category: `authored`
-- ownership: `consumer-owned`
+- ownership: `component-owned`
 - file contract: (inner type)
 
 | Field | Type | Required | Description |

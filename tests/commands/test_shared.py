@@ -28,8 +28,8 @@ def _set_default_metadata_file(workspace_root, metadata_file: str) -> None:
     catalog_path = workspace_root / "site/catalog.yaml"
     catalog = catalog_path.read_text(encoding="utf-8")
     catalog = catalog.replace(
-        "defaults:\n",
-        f"defaults:\n  metadataFile: {metadata_file}\n",
+        "  metadataFile: site/component.yaml\n",
+        f"  metadataFile: {metadata_file}\n",
         1,
     )
     catalog_path.write_text(catalog, encoding="utf-8")

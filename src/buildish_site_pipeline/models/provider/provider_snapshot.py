@@ -27,6 +27,11 @@ from ...docs.documentation import (
     SchemaExportSpecification,
 )
 from ...docs.schema_examples import provider_snapshot_example_document
+from ..authored.artifacts import (
+    ArtifactLifecycleConfig,
+    ReleaseLineConfig,
+    ExactReleaseConfig,
+)
 from ..enums import PublicationState, RecordKind
 from ..scalars import (
     ArtifactKey,
@@ -244,6 +249,38 @@ class ProviderRecord(SitePipelineBaseModel):
         return self
 
 
+class SnapshotArtifact(SitePipelineBaseModel):
+    """Component-scoped release decisions, independent of consumer source bindings."""
+
+    component_slug: Slug = Field(
+        description="Component owner of these artifact release facts."
+    )
+    artifact_key: ArtifactKey = Field(
+        description="Component-defined artifact identity."
+    )
+    latest_stable: VersionString | None = Field(
+        default=None,
+        description="Explicit overall stable recommendation, referencing a released version of this artifact.",
+    )
+    release_lines: list[ReleaseLineConfig] | None = Field(
+        default=None,
+        description="Authoritative line graph, support facts, maintenance refs, and explicit latest released targets.",
+    )
+    releases: list[ExactReleaseConfig] | None = Field(
+        default=None,
+        description="Curated exact releases and their lifecycle or withdrawal decisions, with no provider required.",
+    )
+
+    @model_validator(mode="after")
+    def validate_lifecycle_graph(self) -> Self:
+        ArtifactLifecycleConfig(
+            latest_stable=self.latest_stable,
+            release_lines=self.release_lines,
+            releases=self.releases,
+        )
+        return self
+
+
 class ProviderSnapshotDocumentV1(SitePipelineBaseModel):
     """Provider-derived normalized snapshot from ``site/provider-snapshot.json``."""
 
@@ -267,6 +304,10 @@ class ProviderSnapshotDocumentV1(SitePipelineBaseModel):
     schema_version: Literal[1] = Field(
         description="Schema version for the provider snapshot document."
     )
+    artifacts: list[SnapshotArtifact] = Field(
+        default_factory=list,
+        description="Component-owned release lines, exact release lifecycle facts, and explicit latest designations.",
+    )
     providers: list[ProviderDescriptor] = Field(
         description="Provider descriptors for every provider that contributed records to this snapshot."
     )
@@ -276,6 +317,11 @@ class ProviderSnapshotDocumentV1(SitePipelineBaseModel):
 
     @model_validator(mode="after")
     def ensure_provider_cross_references_and_uniqueness(self) -> Self:
+        identities = [
+            (item.component_slug, item.artifact_key) for item in self.artifacts
+        ]
+        if len(identities) != len(set(identities)):
+            raise ValueError("Duplicate snapshot artifact identity")
         provider_keys: set[str] = set()
         for provider in self.providers:
             if provider.key in provider_keys:

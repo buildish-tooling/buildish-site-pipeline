@@ -61,8 +61,9 @@ then publication should be modeled explicitly rather than inferred from `slug`.
 
 ### Component repository contract
 
-Component-owned metadata should describe only component identity, content roots,
-and lifecycle hints.
+Component metadata defines identity, content roots, artifact streams, and reusable
+support defaults. Component snapshots own release lines, exact release lifecycle
+facts, and explicit latest designations. Catalogs bind sources and publication policy.
 
 Preferred structure for `site/component.yaml`:
 
@@ -75,8 +76,8 @@ content:
   pagesRoot: site/pages
   docsRoot: site/docs
   assetsRoot: site/assets
-lifecycle:
-  latestStable: v4.0.0
+artifacts:
+  - key: runtime
 ```
 
 The component repository should not own its final public site path.
@@ -86,7 +87,7 @@ practice that means a component with `content.docsRoot` can publish a moving
 development docs surface even before any consumer models explicit artifacts. If
 the consumer resolves that component to `/components/site-pipeline/development/`, the
 component-owned `docsRoot` should populate that `/development/` tree without first
-inventing an artifact in `site/catalog.yaml`.
+requiring an artifact declaration in the aggregate catalog.
 
 ### Why the contract is split across two files
 
@@ -95,11 +96,12 @@ intentionally does not work that way.
 
 `site/component.yaml` answers "what is true about this repository no matter who
 consumes it?" It owns stable component identity, repository-local content roots,
-and optional lifecycle hints that remain meaningful across consuming sites.
+artifact identities and streams, and reusable support defaults. Its snapshot owns
+release lines, latest designations, and exact release lifecycle facts.
 
 `site/catalog.yaml` answers "what does this specific site want to publish from
 the available repositories and sources?" It owns workspace source bindings,
-publication layout, release or ref selection, artifact decomposition, and other
+publication layout, release or ref selection, optional artifact bindings, and other
 policy that can legitimately differ from one consumer site to another.
 
 That split matters because one repository can be published in more than one way.
@@ -114,23 +116,15 @@ overlay, or a consumer-specific source alias is not repository truth. Those are
 properties of the current build workspace, so they belong in the consumer
 catalog rather than in component-owned metadata.
 
-Artifacts also stay in the consumer catalog on purpose. A component can begin
-with only repository-owned `docsRoot` content, which lets one consumer publish a
-single development surface immediately. Later, if a consumer needs independent
-version selection, release visibility, or publication routing for multiple docs
-surfaces, that consumer can model artifacts in `site/catalog.yaml` without
-forcing every other consumer of the repository to adopt the same artifact split.
+Components define their independently versioned artifacts. A development-only
+component needs no artifacts; released inventory references known component artifact
+keys. Optional catalog artifact declarations select publication or override physical
+source/layout bindings without becoming a second identity or version registry.
 
 ### Consumer catalog contract
 
-The consumer catalog should define both inventory and publication.
-
-This is also where artifact decomposition belongs. That is initially surprising,
-but it follows the boundary above: artifacts affect source bindings, publication
-selection, release visibility, and final routing, so they are not just
-repository facts. They are part of what a specific consumer site chooses to
-publish from a repository without letting the repository silently redefine
-consumer-owned policy.
+The consumer catalog owns source bindings, routes, selection, and presentation.
+Component definitions cannot silently redefine those publication choices.
 
 Recommended top-level fields in `site/catalog.yaml`:
 
@@ -293,21 +287,11 @@ In this model, a component may:
 - have several `tagPattern` values, one per artifact, and
 - mix monorepo and multi-repo release inputs.
 
-Recommended artifact shape:
-
-- `key`
-- `displayName`
-- `source`
-- optional `docsRoot`
-- optional `assetsRoot`
-- `versioning.developmentRef`
-- `versioning.tagPattern`
-- optional `versioning.namedRefs[]`
-- optional `publicationSelection`
-- optional `lifecycle.latestStable`
-- optional `lifecycle.releaseLines`
-- optional `lifecycle.releases[]`
-- optional `lifecycle.supportStatusVocabulary`
+Component `site/component.yaml` artifacts define `key`, canonical `displayName`,
+relative `docsRoot`/`assetsRoot`, static `versioning`, and reusable support defaults.
+The snapshot's scoped `artifacts[]` sections define `latestStable`, `releaseLines`,
+and curated exact `releases[]`. A consumer may optionally bind component-defined
+artifact keys to sources/layout and publication selection in its catalog.
 
 Example:
 
@@ -321,30 +305,44 @@ components:
   - slug: spark
     content:
       source: spark-repo
-	artifacts:
-		- key: runtime
-		  displayName: Spark Runtime
-		  source: spark-repo
-		  docsRoot: docs/runtime
-		  versioning:
-			developmentRef: main
-			tagPattern: ^v[0-9]+\.[0-9]+\.[0-9]+$
-			namedRefs:
-				- key: preview
-				  ref: preview/docs
-				  displayName: Preview
-				  maturity: preview
-		  publicationSelection:
-			namedRefs: [preview]
-			releases:
-				mode: latestPerLine
-		- key: kubernetes-operator
-		  displayName: Spark Kubernetes Operator
-		  source: operator-repo
-		  docsRoot: docs
-		  versioning:
-			developmentRef: main
-			tagPattern: ^operator-v[0-9]+\.[0-9]+\.[0-9]+$
+    artifacts:
+      - key: runtime
+        source: spark-repo
+        publicationSelection:
+          namedRefs:
+            - preview
+          releases:
+            mode: latestPerLine
+      - key: kubernetes-operator
+        source: operator-repo
+defaults:
+  metadataFile: site/component.yaml
+```
+
+Component-owned `site/component.yaml` for `spark`:
+
+```yaml
+schemaVersion: 1
+component:
+  slug: spark
+artifacts:
+  - key: runtime
+    versioning:
+      developmentRef: main
+      tagPattern: ^v[0-9]+\.[0-9]+\.[0-9]+$
+      namedRefs:
+        - key: preview
+          ref: preview/docs
+          displayName: Preview
+          maturity: preview
+    displayName: Spark Runtime
+    docsRoot: docs/runtime
+  - key: kubernetes-operator
+    displayName: Spark Kubernetes Operator
+    versioning:
+      developmentRef: main
+      tagPattern: ^operator-v[0-9]+\.[0-9]+\.[0-9]+$
+    docsRoot: docs
 ```
 
 With this structure, lifecycle metadata belongs primarily to artifacts. A
@@ -439,9 +437,26 @@ Example:
 ```yaml
 artifacts:
   - key: runtime
-    displayName: Spark Runtime
+```
+
+Component-owned `site/component.yaml` for `spark`:
+
+```yaml
+schemaVersion: 1
+component:
+  slug: spark
+artifacts:
+  - key: runtime
     versioning:
+      developmentRef: main
       tagPattern: ^v[0-9]+\.[0-9]+\.[0-9]+$
+      namedRefs:
+        - key: preview
+          ref: preview/docs
+          displayName: Preview
+          maturity: preview
+    displayName: Spark Runtime
+    docsRoot: docs/runtime
     lifecycle:
       supportStatusVocabulary:
         active:
@@ -459,16 +474,12 @@ artifacts:
         eol:
           displayName: End of life
           order: 90
-      releaseLines:
-        - key: 1.x
-          displayName: 1.x
-          latest: 1.4.3
-          supportStatus: security-fix-only
-        - key: 1.1.x
-          displayName: 1.1.x
-          parent: 1.x
-          latest: 1.1.9
-          supportStatus: eol
+  - key: kubernetes-operator
+    displayName: Spark Kubernetes Operator
+    versioning:
+      developmentRef: main
+      tagPattern: ^operator-v[0-9]+\.[0-9]+\.[0-9]+$
+    docsRoot: docs
 ```
 
 ### On naming: `status` versus something more specific
@@ -541,25 +552,61 @@ metadata carry planning semantics.
 Example:
 
 ```yaml
-	artifacts:
-		- key: runtime
-		  versioning:
-			developmentRef: main
-			tagPattern: ^v[0-9]+\.[0-9]+\.[0-9]+$
-			namedRefs:
-				- key: preview
-				  ref: preview/docs
-				  displayName: Preview
-				  maturity: preview
-		  publicationSelection:
-			development: true
-			lineHeads:
-				mode: allAuthored
-			releases:
-				mode: latestPerLine
-			namedRefs: [preview]
-			candidates:
-				mode: none
+artifacts:
+  - key: runtime
+    publicationSelection:
+      development: true
+      lineHeads:
+        mode: allAuthored
+      releases:
+        mode: latestPerLine
+      namedRefs:
+        - preview
+      candidates:
+        mode: none
+```
+
+Component-owned `site/component.yaml` for `spark`:
+
+```yaml
+schemaVersion: 1
+component:
+  slug: spark
+artifacts:
+  - key: runtime
+    versioning:
+      developmentRef: main
+      tagPattern: ^v[0-9]+\.[0-9]+\.[0-9]+$
+      namedRefs:
+        - key: preview
+          ref: preview/docs
+          displayName: Preview
+          maturity: preview
+    displayName: Spark Runtime
+    docsRoot: docs/runtime
+    lifecycle:
+      supportStatusVocabulary:
+        active:
+          displayName: Active
+          order: 10
+        stable:
+          displayName: Stable
+          order: 20
+        bugfix-only:
+          displayName: Bugfix only
+          order: 30
+        security-fix-only:
+          displayName: Security fix only
+          order: 40
+        eol:
+          displayName: End of life
+          order: 90
+  - key: kubernetes-operator
+    displayName: Spark Kubernetes Operator
+    versioning:
+      developmentRef: main
+      tagPattern: ^operator-v[0-9]+\.[0-9]+\.[0-9]+$
+    docsRoot: docs
 ```
 
 ### Support windows should be structured, but optional
@@ -627,18 +674,51 @@ For withdrawn or tombstoned releases, the model should support both:
 Example:
 
 ```yaml
-	artifacts:
-		- key: runtime
-		  lifecycle:
-			releases:
-				- version: 4.1.0
-				  publicationState: withdrawn
-				  withdrawalBehavior: notice
-				  reason: Recalled pending security fix.
-				- version: 3.2.0
-				  publicationState: tombstoned
-				  withdrawalBehavior: redirect
-				  redirectTarget: /security/runtime/3.2.0/
+artifacts:
+  - key: runtime
+```
+
+Component-owned `site/component.yaml` for `spark`:
+
+```yaml
+schemaVersion: 1
+component:
+  slug: spark
+artifacts:
+  - key: runtime
+    versioning:
+      developmentRef: main
+      tagPattern: ^v[0-9]+\.[0-9]+\.[0-9]+$
+      namedRefs:
+        - key: preview
+          ref: preview/docs
+          displayName: Preview
+          maturity: preview
+    displayName: Spark Runtime
+    docsRoot: docs/runtime
+    lifecycle:
+      supportStatusVocabulary:
+        active:
+          displayName: Active
+          order: 10
+        stable:
+          displayName: Stable
+          order: 20
+        bugfix-only:
+          displayName: Bugfix only
+          order: 30
+        security-fix-only:
+          displayName: Security fix only
+          order: 40
+        eol:
+          displayName: End of life
+          order: 90
+  - key: kubernetes-operator
+    displayName: Spark Kubernetes Operator
+    versioning:
+      developmentRef: main
+      tagPattern: ^operator-v[0-9]+\.[0-9]+\.[0-9]+$
+    docsRoot: docs
 ```
 
 ### Resolved release publication behavior
@@ -944,7 +1024,7 @@ providers:
     type: atr
     displayName: Apache Trusted Releases
     baseUrl: https://release-test.apache.org
-    fetchedAt: 2026-04-02T12:00:00Z
+    fetchedAt: '2026-04-02T12:00:00Z'
 records:
   - provider: atr
     kind: candidate
@@ -965,6 +1045,36 @@ records:
     ref: feature/docs-reorg
     displayVersion: docs-reorg preview
     maturity: preview
+artifacts:
+  - componentSlug: spark
+    artifactKey: runtime
+    releaseLines:
+      - key: 1.x
+        displayName: 1.x
+        latest: 1.4.3
+        supportStatus: security-fix-only
+      - key: 1.1.x
+        displayName: 1.1.x
+        parent: 1.x
+        latest: 1.1.9
+        supportStatus: eol
+      - key: 4.x
+        latest: 4.0.0
+    releases:
+      - version: 4.1.0
+        publicationState: withdrawn
+        withdrawalBehavior: notice
+        reason: Recalled pending security fix.
+      - version: 3.2.0
+        publicationState: tombstoned
+        withdrawalBehavior: redirect
+        redirectTarget: https://security.example.org/runtime/3.2.0/
+      - version: 1.4.3
+        releaseLine: 1.x
+      - version: 1.1.9
+        releaseLine: 1.1.x
+      - version: 4.0.0
+        releaseLine: 4.x
 ```
 
 ### Merge rules
@@ -993,16 +1103,15 @@ Consumer-authored metadata should remain authoritative for:
 
 - which named refs are intentionally publishable,
 - publication-selection policy,
-- exact-release publication behavior such as notice vs redirect, and
+- concrete website redirects and final publication selection, and
 - final public route ownership.
 
 The pipeline should not let provider data silently redefine consumer-owned URL
 layout or component identity. Conversely, authored metadata should not need to
 copy volatile provider state such as candidate numbers or vote windows.
 
-When projects need to correct or enrich provider data locally, that should happen
-through an explicit override layer rather than by mutating the normalized
-provider snapshot in place.
+The component snapshot contains the effective release decisions and may be curated
+without provider records. This contract does not introduce a separate override system.
 
 ## How much release-file detail to model
 

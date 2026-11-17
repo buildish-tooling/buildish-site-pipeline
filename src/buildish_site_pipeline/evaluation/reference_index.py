@@ -15,13 +15,14 @@
 """Contextual internal-reference indexing for shared evaluation."""
 
 from __future__ import annotations
+from buildish_site_pipeline.models.enums import RecordKind
 
 from dataclasses import dataclass
 
 from buildish_site_pipeline.models.authored.site_catalog import (
     CompatibilityAssertionConfig,
-    ReleaseLineConfig,
 )
+from buildish_site_pipeline.models.authored.artifacts import ReleaseLineConfig
 from buildish_site_pipeline.models.enums import (
     DiagnosticSeverity,
     ReleaseSelectionMode,
@@ -184,7 +185,9 @@ def validate_references(
             _validate_compatibility_references(
                 component_slug=component.slug,
                 artifact_key=artifact.key,
-                compatibility=tuple(artifact.authored.compatibility or ()),
+                compatibility=tuple(artifact.binding.compatibility or ())
+                if artifact.binding
+                else (),
                 reference_index=reference_index,
                 collector=collector,
             )
@@ -218,11 +221,19 @@ def _build_context_reference_index(
             component_slug=context.component_slug,
             route_kind=context.kind.value,
         )
-        if context.artifact_key is not None and context.release_line is not None:
+        if (
+            context.kind is RecordKind.LINE_HEAD
+            and context.artifact_key is not None
+            and context.release_line is not None
+        ):
             targets_by_reference[
                 f"line:{context.component_slug}/{context.artifact_key}@{context.release_line}"
             ] = route
-        if context.artifact_key is not None and context.version is not None:
+        if (
+            context.kind is RecordKind.RELEASED
+            and context.artifact_key is not None
+            and context.version is not None
+        ):
             targets_by_reference[
                 f"release:{context.component_slug}/{context.artifact_key}@{context.version}"
             ] = route

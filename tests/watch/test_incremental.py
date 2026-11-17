@@ -24,12 +24,19 @@ import unittest.mock
 
 from buildish_site_pipeline.cli import _run
 from buildish_site_pipeline.commands.shared import load_workspace_inputs
-from buildish_site_pipeline.evaluation import EvaluationMode, EvaluationRequest, run_evaluation
+from buildish_site_pipeline.evaluation import (
+    EvaluationMode,
+    EvaluationRequest,
+    run_evaluation,
+)
 from buildish_site_pipeline.models.enums import RecordKind
 from buildish_site_pipeline.models.enums import PlanningTarget
 from buildish_site_pipeline.planning import evaluate_planning
 from buildish_site_pipeline.staging.coordinator import materialize_stage_tree
-from tests.support.staging import _expand_workspace_for_multiple_owned_units, _stage_snapshot
+from tests.support.staging import (
+    _expand_workspace_for_multiple_owned_units,
+    _stage_snapshot,
+)
 from tests.support.workspace import _cwd, _fake_watch_event_stream_factory, _workspace
 
 
@@ -221,7 +228,9 @@ class WatchIncrementalTests(unittest.TestCase):
     def test_latest_candidate_selection_stays_consistent_across_planning_build_and_watch(
         self,
     ) -> None:
-        with _workspace(with_content_file=True, topology="rich_lifecycle") as workspace_root:
+        with _workspace(
+            with_content_file=True, topology="rich_lifecycle"
+        ) as workspace_root:
             loaded_inputs = load_workspace_inputs(workspace_root)
             planning = evaluate_planning(
                 target=PlanningTarget.BUILD,
@@ -239,8 +248,8 @@ class WatchIncrementalTests(unittest.TestCase):
                     (RecordKind.DEVELOPMENT, None, None),
                     (RecordKind.LINE_HEAD, None, "4.0"),
                     (RecordKind.LINE_HEAD, None, "4.1"),
-                    (RecordKind.RELEASED, "4.0.2", None),
-                    (RecordKind.RELEASED, "4.1.0", None),
+                    (RecordKind.RELEASED, "4.0.2", "4.0"),
+                    (RecordKind.RELEASED, "4.1.0", "4.1"),
                     (RecordKind.CANDIDATE, "4.2.0-rc2", None),
                 },
             )
@@ -344,7 +353,6 @@ class WatchIncrementalTests(unittest.TestCase):
             "Current docs live on the latest release route.",
         )
         self.assertEqual(watch_snapshot, clean_snapshot)
-
 
     def test_noisy_watch_event_burst_matches_fresh_clean_build(self) -> None:
         with _workspace(with_content_file=True) as workspace_root:
@@ -557,15 +565,18 @@ def _rewrite_catalog(catalog_path, *, replacements: tuple[tuple[str, str], ...])
 
 
 def _install_artifact_mount(catalog_path) -> None:
-    _rewrite_catalog(
-        catalog_path,
-        replacements=(
-            (
-                "          releases:\n            - version: '4.0.0'\n",
-                "          releases:\n            - version: '4.0.0'\n        mounts:\n          - source: generated/api\n            mountPath: /spark/api/\n            kind: generatedApi\n            trustClass: passive\n",
-            ),
-        ),
-    )
+    import yaml
+
+    catalog = yaml.safe_load(catalog_path.read_text())
+    catalog["components"][0]["artifacts"][0]["mounts"] = [
+        {
+            "source": "generated/api",
+            "mountPath": "/spark/api/",
+            "kind": "generatedApi",
+            "trustClass": "passive",
+        }
+    ]
+    catalog_path.write_text(yaml.safe_dump(catalog, sort_keys=False))
 
 
 def _selected_context_summary(selected_versions) -> set[tuple[RecordKind, str | None, str | None]]:

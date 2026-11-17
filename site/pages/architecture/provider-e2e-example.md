@@ -49,15 +49,28 @@ components:
     artifacts:
       - key: runtime
         source: spark-repo
-        versioning:
-          developmentRef: main
-          maintenanceRefPattern: releases/{line}
-          tagPattern: ^v[0-9]+\.[0-9]+\.[0-9]+$
       - key: kubernetes-operator
         source: operator-repo
-        versioning:
-          developmentRef: main
-          tagPattern: ^operator-v[0-9]+\.[0-9]+\.[0-9]+$
+defaults:
+  metadataFile: site/component.yaml
+```
+
+Component-owned `site/component.yaml` for `spark`:
+
+```yaml
+schemaVersion: 1
+component:
+  slug: spark
+artifacts:
+  - key: runtime
+    versioning:
+      developmentRef: main
+      maintenanceRefPattern: releases/{line}
+      tagPattern: ^v[0-9]+\.[0-9]+\.[0-9]+$
+  - key: kubernetes-operator
+    versioning:
+      developmentRef: main
+      tagPattern: ^operator-v[0-9]+\.[0-9]+\.[0-9]+$
 ```
 
 ## Example provider snapshot input
@@ -67,7 +80,7 @@ schemaVersion: 1
 providers:
   - key: atr
     type: atr
-    fetchedAt: 2026-04-02T12:00:00Z
+    fetchedAt: '2026-04-02T12:00:00Z'
 records:
   - provider: atr
     kind: released
@@ -100,6 +113,15 @@ records:
     componentSlug: spark
     artifactKey: runtime
     ref: main
+artifacts:
+  - componentSlug: spark
+    artifactKey: runtime
+    releaseLines:
+      - key: 4.x
+        latest: 4.0.0
+    releases:
+      - version: 4.0.0
+        releaseLine: 4.x
 ```
 
 ## Example staged page front matter

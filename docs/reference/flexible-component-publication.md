@@ -833,6 +833,72 @@ origin `baseUrl`.
 This keeps the common case simple while also allowing a fully explicit routing
 map when needed.
 
+### Artifact route policy
+
+Artifact routes use shared component bases unless the consumer explicitly chooses
+namespaces. This is independent of artifact count, selection and provider inventory:
+
+```yaml
+publication:
+  mountPath: /spark/
+  artifactRouting: namespaced
+  defaultArtifact: runtime
+```
+
+Only component publication accepts `artifactRouting` and `defaultArtifact`; they
+are not group defaults, component metadata or artifact source bindings. Omitted or
+null routing means `shared`. A default requires `namespaced` and must name a known
+component-defined artifact, even when the catalog has no artifact entries. Selection
+suppression or an absent optional snapshot never promotes a different artifact.
+
+With the example above, runtime publishes development at `/spark/development/`
+and release 4.0.0 at `/spark/releases/4.0.0/`. API publishes development at
+`/spark/artifacts/api/development/` and release 4.0.0 at
+`/spark/artifacts/api/releases/4.0.0/`. Without `defaultArtifact`, runtime also uses
+its `artifacts/runtime/` namespace. There is one primary tree per artifact/context;
+no extra namespaced copy or automatic flat redirect is emitted for a default.
+Changing the mode or default deliberately moves URLs; configure any required
+legacy redirects explicitly. Adding an artifact or changing a version pin does
+not change other artifact paths.
+
+Resolve component paths first. For each non-default artifact, insert
+`artifacts/<key>/` immediately below componentPath when a base lies at or below
+that component path. For an explicit developmentPath or docsPath outside that
+subtree, append `artifacts/<key>/` to that base instead. For example, with
+componentPath `/spark/`, developmentPath `/nightly/` and docsPath `/manual/`, API
+uses `/nightly/artifacts/api/` for development and
+`/manual/artifacts/api/releases/4.0.0/` for a release. A grouped component follows
+the same rule after resolving its group prefix. Source docsRoot/assetsRoot bindings
+and physical release directories do not change.
+
+Development uses the artifact development base; line heads, named refs and
+candidates append `<line>/`, `refs/<key>/` and `candidates/<version>/` to its docs
+base. Releases append `releases/<version>/` to the artifact component base when
+component docsPath equals developmentPath, or to the artifact docs base otherwise.
+Component pages, component links, assetsPath, aliases and canonicalPath retain
+their component meanings; internal artifact bases do not create landing pages.
+Artifactless component development remains flat in either mode.
+
+Shared mode intentionally permits disjoint artifact trees, such as runtime
+`guide/` and API `reference/` under the same release root. Only corresponding
+context kinds and version/line/ref identities of distinct artifacts may share a
+root; development and release contexts cannot be conflated. Conflicting actual page,
+asset or copied-file claims fail, including equal bytes, case-insensitive names,
+page/index equivalents and content/static output collisions. A redirect context
+cannot share its source root with another context. Declared mounts reserve literal
+public subtrees on the component origin regardless of selection; namespacing does
+not rewrite or replicate them. Mounts remain metadata and are not fetched or copied.
+
+### Publication bases and selected targets
+
+Component publication paths/URLs describe layout bases. In namespaced mode a flat
+development/docs base is registered only when a selected default context occupies
+that exact path. A release below a docs base does not establish a page at the base.
+Existing desired-context aggregate rows can describe omitted contexts; they do not
+make an omitted redirect destination usable. Use concrete selected routes for
+navigation and redirect resolution, and preserve the existing typed artifact
+release/line reference identities.
+
 ### Canonical routes, aliases, and redirects
 
 The route model should distinguish between:

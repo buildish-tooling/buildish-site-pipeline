@@ -24,6 +24,7 @@ from buildish_site_pipeline.models.enums import (
 
 from . import diagnostic_codes
 from .collector import DiagnosticCollector
+from buildish_site_pipeline.staging.publication_paths import can_share_context_route
 from .publication import public_path_for_context, target_id_for_context
 from .reference_index import (
     KnownRoute,
@@ -59,8 +60,21 @@ def validate_routes(
         route = route_from_published_target(target)
         routes_by_lookup_key[_route_lookup_key(route.origin_key, route.path)] = route
 
+    context_routes: dict[tuple[str, str], list[SelectedVersionContext]] = {}
     for context in planning.selected_versions.contexts:
         component = component_by_slug[context.component_slug]
+        path = public_path_for_context(component.publication, context)
+        previous = context_routes.setdefault(_route_lookup_key(component.publication.origin.key, path), [])
+        for other in previous:
+            if not can_share_context_route(component.publication.artifact_routing, other, context):
+                collector.add(
+                    severity=DiagnosticSeverity.ERROR,
+                    code=diagnostic_codes.PUBLICATION_ROUTE_COLLISION,
+                    message=f"Context {target_id_for_context(context)} collides with {target_id_for_context(other)} at {path}",
+                    component_slug=context.component_slug,
+                    target_id=target_id_for_context(context),
+                )
+        previous.append(context)
         route = KnownRoute(
             route_id=target_id_for_context(context),
             origin_key=component.publication.origin.key,
@@ -73,6 +87,7 @@ def validate_routes(
             collector=collector,
             routes_by_lookup_key=routes_by_lookup_key,
             target_id=route.route_id,
+            allow_shared_context=component.publication.artifact_routing == "shared",
         )
         reference = _reference_string_for_context(context)
         if reference is not None:
@@ -249,13 +264,17 @@ def _register_route(
     collector: DiagnosticCollector,
     routes_by_lookup_key: dict[tuple[str, str], KnownRoute],
     target_id: str | None = None,
+    allow_shared_context: bool = True,
 ) -> None:
     lookup_key = _route_lookup_key(route.origin_key, route.path)
     other_route = routes_by_lookup_key.get(lookup_key)
     if other_route is None:
         routes_by_lookup_key[lookup_key] = route
         return
-    if _allows_shared_context_route(existing=other_route, candidate=route):
+    if _allows_shared_context_route(existing=other_route, candidate=route) and (
+        allow_shared_context
+        or other_route.route_id in {f"development:{route.component_slug}", f"docs:{route.component_slug}"}
+    ):
         return
     collector.add(
         severity=DiagnosticSeverity.ERROR,

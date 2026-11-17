@@ -28,6 +28,13 @@ limitations under the License.
 
 ## Smallest working shape
 
+The catalog below preserves the default shared route layout. Artifact catalog
+entries can be omitted when no source/layout or selection override is needed.
+For independent artifact URLs, explicitly set component publication
+`artifactRouting: namespaced`; adding another artifact then preserves each existing
+namespace. An optional `defaultArtifact` names the one artifact using flat primary
+routes and is never inferred from artifact count or selected versions.
+
 Keep one component and one independently versioned artifact in focus, but make
 the development, maintenance-line, and released contexts explicit. A small
 versioned workspace can look like this:

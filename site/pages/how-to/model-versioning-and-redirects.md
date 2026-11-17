@@ -32,6 +32,27 @@ Decide which public route families the site should preserve, for example:
 The important rule is that public routing is consumer-owned policy. It should
 not be inferred accidentally from repository names or source layout.
 
+For independent artifacts, choose namespaces explicitly in component publication:
+
+```yaml
+publication:
+  mountPath: /spark/
+  artifactRouting: namespaced
+  defaultArtifact: runtime
+```
+
+Runtime then owns flat routes such as `/spark/releases/4.0.0/`; API uses
+`/spark/artifacts/api/releases/4.0.0/`. Omit `defaultArtifact` to namespace every
+artifact. The default must name a component-defined artifact and is never chosen
+from the selected subset. Changing this policy moves primary URLs and does not
+emit duplicate trees or automatic redirects. Component aliases/canonicalPath keep
+their existing meaning.
+
+Omitting `artifactRouting` retains deliberate shared composition. Disjoint guide
+and reference trees can share a release root; conflicting page or asset destinations
+fail even when the source bytes match. Catalog artifact entries remain optional
+when component roots and selection already suffice.
+
 ## Select version contexts explicitly
 
 Component metadata defines artifact streams; the component snapshot defines

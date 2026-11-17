@@ -17,6 +17,7 @@
 INPUT_MISSING = "input-missing"
 INPUT_STALE = "input-stale"
 INPUT_UNRESOLVED = "input-unresolved"
+PUBLICATION_OUTPUT_COLLISION = "publication-output-collision"
 PUBLICATION_ROUTE_COLLISION = "publication-route-collision"
 PUBLICATION_CANONICAL_COLLISION = "publication-canonical-collision"
 PUBLICATION_CANONICAL_INVALID = "publication-canonical-invalid"

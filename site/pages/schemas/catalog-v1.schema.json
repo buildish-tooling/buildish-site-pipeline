@@ -501,7 +501,7 @@
         "publication": {
           "anyOf": [
             {
-              "$ref": "#/$defs/PublicationConfig"
+              "$ref": "#/$defs/ComponentPublicationConfig"
             },
             {
               "type": "null"
@@ -605,6 +605,196 @@
         "path"
       ],
       "title": "ComponentProviderSnapshot",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "authored",
+        "ownership": "consumer-owned"
+      }
+    },
+    "ComponentPublicationConfig": {
+      "additionalProperties": false,
+      "description": "Component route policy with deliberate artifact composition or separation.",
+      "properties": {
+        "aliases": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/RouteAliasConfig"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Additional public aliases that should resolve to the same published target.",
+          "title": "Aliases"
+        },
+        "artifactRouting": {
+          "anyOf": [
+            {
+              "enum": [
+                "shared",
+                "namespaced"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Artifact route layout. Omitted/null means shared composition; namespaced separates artifacts independently of count or selection.",
+          "title": "Artifactrouting"
+        },
+        "assetsPath": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Explicit public path for static assets below the component root.",
+          "title": "Assetspath"
+        },
+        "canonicalPath": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional canonical public path used when aliases or multiple origins are present.",
+          "title": "Canonicalpath"
+        },
+        "componentPath": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Explicit public path for the component landing page or overview root.",
+          "title": "Componentpath"
+        },
+        "defaultArtifact": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional component-defined artifact using flat primary routes in namespaced mode. Other artifacts retain namespaces; unavailable defaults are never replaced.",
+          "title": "Defaultartifact"
+        },
+        "developmentPath": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Explicit public path for the moving development docs surface.",
+          "title": "Developmentpath"
+        },
+        "docsPath": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Explicit public docs landing path exposed to downstream consumers; defaults to the development path unless an additional docs segment or override is configured.",
+          "title": "Docspath"
+        },
+        "mountPath": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Explicit public root path for the component's published content.",
+          "examples": [
+            "/spark/"
+          ],
+          "title": "Mountpath"
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Publication origin key to use for this component or group.",
+          "title": "Origin"
+        },
+        "pathSegment": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Path segment appended below an inherited path prefix or mount root.",
+          "title": "Pathsegment"
+        },
+        "redirects": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/RedirectRuleConfig"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Redirect rules to emit for legacy or moved routes.",
+          "title": "Redirects"
+        }
+      },
+      "title": "ComponentPublicationConfig",
       "type": "object",
       "x-buildish-contract": {
         "category": "authored",
@@ -1044,7 +1234,7 @@
     },
     "PublicationConfig": {
       "additionalProperties": false,
-      "description": "Resolved-or-authored route layout choices for a component or artifact.",
+      "description": "Catalog route layout choices for components and groups.",
       "properties": {
         "aliases": {
           "anyOf": [
@@ -1160,7 +1350,7 @@
             }
           ],
           "default": null,
-          "description": "Publication origin key to use for this component or artifact.",
+          "description": "Publication origin key to use for this component or group.",
           "title": "Origin"
         },
         "pathSegment": {

@@ -294,12 +294,20 @@ class StagingWorkerTests(unittest.TestCase):
         with _workspace(with_content_file=True) as workspace_root:
             request = _build_request(workspace_root, pool_size=1)
             seed_stage_root = workspace_root / "seed-stage"
-            seed_stage_root.mkdir(parents=True, exist_ok=True)
+            first = run_build(request)
+            shutil.copytree(first.layout.next_stage_root, seed_stage_root)
+            from buildish_site_pipeline.staging.incremental_metadata import PersistedUnitContributionsV1
+            retained = PersistedUnitContributionsV1.model_validate_json(
+                (seed_stage_root / "data/_pipeline/unit-contributions.json").read_text()
+            ).units
+            cleanup_after_publication(first)
+            shutil.rmtree(first.layout.next_stage_root)
             (seed_stage_root / "keep.txt").write_text("keep\n", encoding="utf-8")
             (seed_stage_root / "remove.txt").write_text("remove\n", encoding="utf-8")
             seeded_request = replace(
                 request,
                 seed_stage_root=seed_stage_root,
+                retained_unit_manifests=retained,
                 seed_stage_removals=("remove.txt",),
                 included_unit_ids=frozenset(),
             )

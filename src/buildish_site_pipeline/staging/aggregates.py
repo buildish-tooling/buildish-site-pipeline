@@ -99,10 +99,11 @@ from .incremental_metadata import (
     build_aggregate_dependency_map,
     build_output_ownership_map,
 )
+from .destination_claims import collect_destination_claims, validate_destination_claims, reconcile_candidate_files
 from .ownership import OwnedUnit, build_owned_units
 from .page_provenance import UnitPageSources, build_page_source_index, page_source_provenance
 from .public_safety import public_source_path, sanitize_public_diagnostics
-from .publication_paths import public_path_for_context, target_id_for_context
+from .publication_paths import public_path_for_context, target_id_for_context, publishes_family_path
 from .types import EffectiveBuildPlan, WorkRootLayout
 from .worker_protocol import (
     StagedPageContributionWire,
@@ -136,6 +137,9 @@ def finalize_pages_and_write_aggregates(
     page_contributions = tuple(
         page for manifest in unit_contribution_manifests for page in manifest.pages
     )
+    claims = collect_destination_claims(build_plan.site, build_plan.selected_versions, build_plan.snapshot_paths)
+    validate_destination_claims(claims)
+    reconcile_candidate_files(layout.next_stage_root, claims, page_contributions)
     component_front_matter_by_slug = {
         component.slug: build_component_front_matter(
             component, build_plan.selected_versions
@@ -553,6 +557,14 @@ def _build_route_entries(build_plan: EffectiveBuildPlan) -> list[RouteAggregateE
                     route_kind="alias",
                 ),
             )
+    entries = [entry for entry in entries if (
+        not (entry.target_id or "").startswith(("development:", "docs:"))
+        or publishes_family_path(
+            component_by_slug[entry.component_slug].publication,
+            (ctx for ctx in build_plan.selected_versions if ctx.component_slug == entry.component_slug),
+            entry.path,
+        )
+    )]
     for context in (build_plan.desired_versions or build_plan.selected_versions):
         publication = component_by_slug[context.component_slug].publication
         entries.append(
@@ -644,17 +656,19 @@ def _build_redirect_resolution_index(
             origin_key=publication.origin.key,
             path_value=publication.component_path,
         )
-        _index_redirect_route(
-            routes_by_lookup_key,
-            origin_key=publication.origin.key,
-            path_value=publication.development_path,
-        )
+        selected = tuple(ctx for ctx in build_plan.selected_versions if ctx.component_slug == component.slug)
+        if publishes_family_path(publication, selected, publication.development_path):
+            _index_redirect_route(
+                routes_by_lookup_key,
+                origin_key=publication.origin.key,
+                path_value=publication.development_path,
+            )
         _index_redirect_route(
             routes_by_lookup_key,
             origin_key=publication.origin.key,
             path_value=publication.assets_path,
         )
-        if publication.docs_path != publication.development_path:
+        if publication.docs_path != publication.development_path and publishes_family_path(publication, selected, publication.docs_path):
             _index_redirect_route(
                 routes_by_lookup_key,
                 origin_key=publication.origin.key,
@@ -673,7 +687,7 @@ def _build_redirect_resolution_index(
             )
         )
 
-    for context in build_plan.desired_versions or build_plan.selected_versions:
+    for context in build_plan.selected_versions:
         publication = component_by_slug[context.component_slug].publication
         resolved_route = (
             publication.origin.key,

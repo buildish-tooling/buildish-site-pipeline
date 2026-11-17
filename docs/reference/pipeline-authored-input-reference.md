@@ -38,6 +38,7 @@ Back to the [reference overview](../pipeline-model-schema-reference/).
 - [ComponentLifecycleHints](#componentlifecyclehints) — Optional lifecycle defaults shared across all artifacts in a component repository.
 - [ComponentMetadataDocumentV1](#componentmetadatadocumentv1) — Canonical component metadata that defines stable identity, repository content roots, and optional lifecycle defaults shared across a component repository.
 - [ComponentProviderSnapshot](#componentprovidersnapshot) — Source-relative component provider inventory binding.
+- [ComponentPublicationConfig](#componentpublicationconfig) — Component route policy with deliberate artifact composition or separation.
 - [ContentRoots](#contentroots) — Repository-relative locations of authored component content.
 - [ExactReleaseConfig](#exactreleaseconfig) — Per-version lifecycle metadata and publication overrides for one exact release.
 - [GroupConfig](#groupconfig) — Reusable defaults and grouping hints shared by several components.
@@ -47,7 +48,6 @@ Back to the [reference overview](../pipeline-model-schema-reference/).
 - [MountConfig](#mountconfig) — Mounted subtree, such as generated API docs or imported assets, published below one public path.
 - [NamedRefConfig](#namedrefconfig) — Named source-control ref intentionally exposed as a stable version context.
 - [OriginConfig](#originconfig) — Named public base URL that published routes can resolve against.
-- [PublicationConfig](#publicationconfig) — Resolved-or-authored route layout choices for a component or artifact.
 - [PublicationSelectionPolicy](#publicationselectionpolicy) — Version-context selection inherited field by field from built-ins to component to artifact catalog policy.
 - [RedirectRuleConfig](#redirectruleconfig) — Redirect rule that sends one published path to another internal or external target.
 - [ReleaseLineConfig](#releaselineconfig) — One logical release line, such as `4.0`, together with its lifecycle metadata.
@@ -220,7 +220,7 @@ Component entry in the consumer catalog.
 | <a id="componentcatalogentry-weight"></a>`weight` | int | no | Optional ordering hint for component listings, menus, and other consumer-rendered component collections. |
 | <a id="componentcatalogentry-group"></a>`group` | [Identifier](../pipeline-shared-types-reference/#identifier) | no | Optional group key for inherited defaults and renderer grouping. |
 | <a id="componentcatalogentry-content"></a>`content` | [ComponentContentSelection](#componentcontentselection) | no | Shared content-source selection for component pages, docs, and assets. |
-| <a id="componentcatalogentry-publication"></a>`publication` | [PublicationConfig](#publicationconfig) | no | Explicit publication configuration for this component. |
+| <a id="componentcatalogentry-publication"></a>`publication` | [ComponentPublicationConfig](#componentpublicationconfig) | no | Explicit publication configuration for this component. |
 | <a id="componentcatalogentry-publicationselection"></a>`publicationSelection` | [PublicationSelectionPolicy](#publicationselectionpolicy) | no | Version-context selection layered over built-in values and inherited by contained artifacts field by field. Omitted/null fields and an empty policy inherit. |
 | <a id="componentcatalogentry-localization"></a>`localization` | [LocalizationConfig](#localizationconfig) | no | Component-specific localization overrides. |
 | <a id="componentcatalogentry-compatibility"></a>`compatibility` | list[[CompatibilityAssertionConfig](#compatibilityassertionconfig)] | no | Component-level compatibility assertions emitted into staged metadata. |
@@ -324,6 +324,34 @@ Source-relative component provider inventory binding.
 | <a id="componentprovidersnapshot-path"></a>`path` | [RepoRelativePath](../pipeline-shared-types-reference/#reporelativepath) | yes | Snapshot file path relative to the named source root. |
 | <a id="componentprovidersnapshot-requirement"></a>`requirement` | [SnapshotRequirement](../pipeline-shared-types-reference/#snapshotrequirement) | no | Required for publication by default, always required, or always optional. |
 
+<a id="componentpublicationconfig"></a>
+### ComponentPublicationConfig
+
+Component route policy with deliberate artifact composition or separation.
+
+- category: `authored`
+- ownership: `consumer-owned`
+- file contract: (inner type)
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| <a id="componentpublicationconfig-origin"></a>`origin` | object | no | Publication origin key to use for this component or group. |
+| <a id="componentpublicationconfig-pathsegment"></a>`pathSegment` | object | no | Path segment appended below an inherited path prefix or mount root. |
+| <a id="componentpublicationconfig-mountpath"></a>`mountPath` | object | no | Explicit public root path for the component's published content. |
+| <a id="componentpublicationconfig-componentpath"></a>`componentPath` | object | no | Explicit public path for the component landing page or overview root. |
+| <a id="componentpublicationconfig-developmentpath"></a>`developmentPath` | object | no | Explicit public path for the moving development docs surface. |
+| <a id="componentpublicationconfig-docspath"></a>`docsPath` | object | no | Explicit public docs landing path exposed to downstream consumers; defaults to the development path unless an additional docs segment or override is configured. |
+| <a id="componentpublicationconfig-assetspath"></a>`assetsPath` | object | no | Explicit public path for static assets below the component root. |
+| <a id="componentpublicationconfig-canonicalpath"></a>`canonicalPath` | object | no | Optional canonical public path used when aliases or multiple origins are present. |
+| <a id="componentpublicationconfig-aliases"></a>`aliases` | object | no | Additional public aliases that should resolve to the same published target. |
+| <a id="componentpublicationconfig-redirects"></a>`redirects` | object | no | Redirect rules to emit for legacy or moved routes. |
+| <a id="componentpublicationconfig-artifactrouting"></a>`artifactRouting` | Literal['shared', 'namespaced'] | no | Artifact route layout. Omitted/null means shared composition; namespaced separates artifacts independently of count or selection. |
+| <a id="componentpublicationconfig-defaultartifact"></a>`defaultArtifact` | [ArtifactKey](../pipeline-shared-types-reference/#artifactkey) | no | Optional component-defined artifact using flat primary routes in namespaced mode. Other artifacts retain namespaces; unavailable defaults are never replaced. |
+
+#### Selected field examples
+
+- `mountPath`: Example: `"/spark/"`
+
 <a id="contentroots"></a>
 ### ContentRoots
 
@@ -382,7 +410,7 @@ Reusable defaults and grouping hints shared by several components.
 | <a id="groupconfig-pathprefix"></a>`pathPrefix` | [PublicPath](../pipeline-shared-types-reference/#publicpath) | no | Shared public path prefix applied to grouped component publication roots. |
 | <a id="groupconfig-navigationsection"></a>`navigationSection` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | no | Optional renderer-facing grouping label for navigation or listings. |
 | <a id="groupconfig-weight"></a>`weight` | int | no | Optional ordering hint shared by components in this group. |
-| <a id="groupconfig-publication"></a>`publication` | [PublicationConfig](#publicationconfig) | no | Publication defaults inherited by grouped components unless they override them. |
+| <a id="groupconfig-publication"></a>`publication` | PublicationConfig | no | Publication defaults inherited by grouped components unless they override them. |
 
 <a id="lineheadselectionpolicy"></a>
 ### LineHeadSelectionPolicy
@@ -505,32 +533,6 @@ Named public base URL that published routes can resolve against.
 | <a id="originconfig-baseurl"></a>`baseUrl` | [UrlString](../pipeline-shared-types-reference/#urlstring) | yes | Base public URL for this publication origin. |
 | <a id="originconfig-canonical"></a>`canonical` | bool | no | Whether this origin should be treated as canonical when multiple origins publish the same target. |
 | <a id="originconfig-labels"></a>`labels` | list[[NonEmptyString](../pipeline-shared-types-reference/#nonemptystring)] | no | Optional human-readable labels for renderer or deployment tooling. |
-
-<a id="publicationconfig"></a>
-### PublicationConfig
-
-Resolved-or-authored route layout choices for a component or artifact.
-
-- category: `authored`
-- ownership: `consumer-owned`
-- file contract: (inner type)
-
-| Field | Type | Required | Description |
-| --- | --- | --- | --- |
-| <a id="publicationconfig-origin"></a>`origin` | [OriginKey](../pipeline-shared-types-reference/#originkey) | no | Publication origin key to use for this component or artifact. |
-| <a id="publicationconfig-pathsegment"></a>`pathSegment` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | no | Path segment appended below an inherited path prefix or mount root. |
-| <a id="publicationconfig-mountpath"></a>`mountPath` | [PublicPath](../pipeline-shared-types-reference/#publicpath) | no | Explicit public root path for the component's published content. |
-| <a id="publicationconfig-componentpath"></a>`componentPath` | [PublicPath](../pipeline-shared-types-reference/#publicpath) | no | Explicit public path for the component landing page or overview root. |
-| <a id="publicationconfig-developmentpath"></a>`developmentPath` | [PublicPath](../pipeline-shared-types-reference/#publicpath) | no | Explicit public path for the moving development docs surface. |
-| <a id="publicationconfig-docspath"></a>`docsPath` | [PublicPath](../pipeline-shared-types-reference/#publicpath) | no | Explicit public docs landing path exposed to downstream consumers; defaults to the development path unless an additional docs segment or override is configured. |
-| <a id="publicationconfig-assetspath"></a>`assetsPath` | [PublicPath](../pipeline-shared-types-reference/#publicpath) | no | Explicit public path for static assets below the component root. |
-| <a id="publicationconfig-canonicalpath"></a>`canonicalPath` | [PublicPath](../pipeline-shared-types-reference/#publicpath) | no | Optional canonical public path used when aliases or multiple origins are present. |
-| <a id="publicationconfig-aliases"></a>`aliases` | list[[RouteAliasConfig](#routealiasconfig)] | no | Additional public aliases that should resolve to the same published target. |
-| <a id="publicationconfig-redirects"></a>`redirects` | list[[RedirectRuleConfig](#redirectruleconfig)] | no | Redirect rules to emit for legacy or moved routes. |
-
-#### Selected field examples
-
-- `mountPath`: Example: `"/spark/"`
 
 <a id="publicationselectionpolicy"></a>
 ### PublicationSelectionPolicy

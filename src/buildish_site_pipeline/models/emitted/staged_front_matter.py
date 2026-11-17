@@ -16,7 +16,7 @@
 
 from __future__ import annotations
 
-from typing import ClassVar, Self
+from typing import Literal, ClassVar, Self
 
 from pydantic import Field, model_validator
 
@@ -124,6 +124,12 @@ class ResolvedUrlSet(SitePipelineBaseModel):
 class ResolvedPublication(SitePipelineBaseModel):
     """Resolved origin, path roots, and absolute URLs for a component."""
 
+    artifact_routing: Literal["shared", "namespaced"] = Field(
+        default="shared", description="Effective artifact route layout; paths are layout bases, not proof of selected docs."
+    )
+    default_artifact: ArtifactKey | None = Field(
+        default=None, description="Explicit artifact using flat primary routes in namespaced mode; never inferred from selection."
+    )
     origin: ResolvedOrigin = Field(
         description="Origin details used to resolve paths into absolute URLs."
     )

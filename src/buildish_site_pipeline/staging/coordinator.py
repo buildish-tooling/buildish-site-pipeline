@@ -52,6 +52,7 @@ from .types import (
     StageDestination,
     WorkRootLayout,
 )
+from .destination_claims import collect_destination_claims, validate_destination_claims
 from .worker_entrypoint import execute_worker_spec
 from .worker_protocol import (
     WorkerResultWire,
@@ -71,6 +72,10 @@ _WORKER_PROCESS_TIMEOUT_SECONDS = 120.0
 def run_build(request: BuildRequest) -> BuildRunOutcome:
     """Materialize one private next-stage tree from one effective build plan."""
 
+    claims = collect_destination_claims(
+        request.build_plan.site, request.build_plan.selected_versions, request.build_plan.snapshot_paths
+    )
+    validate_destination_claims(claims)
     stage_root = prepare_next_stage_root(request.destination.stage_root)
     layout = create_work_root_layout(next_stage_root=stage_root)
     try:

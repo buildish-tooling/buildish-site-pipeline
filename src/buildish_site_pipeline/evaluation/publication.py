@@ -16,8 +16,13 @@
 
 from __future__ import annotations
 
-from buildish_site_pipeline.models.enums import RecordKind
 from buildish_site_pipeline.models.enums import DiagnosticSeverity
+
+from buildish_site_pipeline.staging.publication_paths import (
+    public_path_for_context as public_path_for_context,
+    target_id_for_context as target_id_for_context,
+    publishes_family_path,
+)
 
 from . import diagnostic_codes
 from .collector import DiagnosticCollector
@@ -25,51 +30,7 @@ from .types import PublicationIndex, PublishedTarget
 
 from buildish_site_pipeline.planning.types import (
     PlanningEvaluation,
-    ResolvedPublicationPolicy,
-    SelectedVersionContext,
 )
-
-
-def _context_owner_key(context: SelectedVersionContext) -> str:
-    """Return the stable owner key segment for one selected version context."""
-
-    return context.artifact_key or "component"
-
-
-def target_id_for_context(context: SelectedVersionContext) -> str:
-    """Return the stable route target identifier for one selected version context."""
-
-    owner_key = _context_owner_key(context)
-    if context.kind is RecordKind.DEVELOPMENT:
-        return f"development:{context.component_slug}:{owner_key}"
-    if context.kind is RecordKind.NAMED_REF:
-        return f"named-ref:{context.component_slug}:{owner_key}:{context.named_ref_key}"
-    if context.kind is RecordKind.LINE_HEAD:
-        return f"line-head:{context.component_slug}:{owner_key}:{context.release_line}"
-    if context.kind is RecordKind.CANDIDATE:
-        return f"candidate:{context.component_slug}:{owner_key}:{context.version}"
-    return f"released:{context.component_slug}:{owner_key}:{context.version}"
-
-
-def public_path_for_context(
-    publication: ResolvedPublicationPolicy, context: SelectedVersionContext
-) -> str:
-    """Return the stable public route path for one selected version context."""
-
-    if context.kind is RecordKind.DEVELOPMENT:
-        return publication.development_path
-    if context.kind is RecordKind.NAMED_REF:
-        return f"{publication.docs_path}refs/{context.named_ref_key}/"
-    if context.kind is RecordKind.LINE_HEAD:
-        return f"{publication.docs_path}{context.release_line}/"
-    if context.kind is RecordKind.CANDIDATE:
-        return f"{publication.docs_path}candidates/{context.version}/"
-    release_base_path = (
-        publication.component_path
-        if publication.docs_path == publication.development_path
-        else publication.docs_path
-    )
-    return f"{release_base_path}releases/{context.version}/"
 
 
 def build_publication_index(planning: PlanningEvaluation) -> PublicationIndex:
@@ -109,7 +70,17 @@ def build_publication_index(planning: PlanningEvaluation) -> PublicationIndex:
                     publication.docs_path,
                 )
             )
-    return PublicationIndex(targets=tuple(targets))
+    components = {item.slug: item for item in planning.site.components}
+    return PublicationIndex(targets=tuple(
+        target for target in targets
+        if not target.target_id.startswith(("development:", "docs:"))
+        or components[target.component_slug].publication.artifact_routing == "shared"
+        or publishes_family_path(
+            components[target.component_slug].publication,
+            (ctx for ctx in planning.selected_versions.contexts if ctx.component_slug == target.component_slug),
+            target.path,
+        )
+    ))
 
 
 def validate_publication(

@@ -132,6 +132,7 @@ component:
   displayName: Apache Spark
   latestStable: 4.0.0
   publication:
+    artifactRouting: shared
     origin:
       key: archive
       baseUrl: https://archive.apache.org/dist/spark
@@ -332,6 +333,8 @@ Resolved origin, path roots, and absolute URLs for a component.
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
+| <a id="resolvedpublication-artifactrouting"></a>`artifactRouting` | Literal['shared', 'namespaced'] | no | Effective artifact route layout; paths are layout bases, not proof of selected docs. |
+| <a id="resolvedpublication-defaultartifact"></a>`defaultArtifact` | [ArtifactKey](../pipeline-shared-types-reference/#artifactkey) | no | Explicit artifact using flat primary routes in namespaced mode; never inferred from selection. |
 | <a id="resolvedpublication-origin"></a>`origin` | [ResolvedOrigin](#resolvedorigin) | yes | Origin details used to resolve paths into absolute URLs. |
 | <a id="resolvedpublication-paths"></a>`paths` | [ResolvedPathSet](#resolvedpathset) | yes | Resolved public path roots for the component. |
 | <a id="resolvedpublication-urls"></a>`urls` | [ResolvedUrlSet](#resolvedurlset) | yes | Resolved absolute URLs for the same publication roots. |

@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from pathlib import Path
 
 from buildish_site_pipeline.models.enums import RecordKind
@@ -58,17 +59,92 @@ def public_path_for_context(
 ) -> str:
     """Return the stable public route path for one selected version context."""
 
-    if context.kind is RecordKind.DEVELOPMENT:
-        return publication.development_path
-    if context.kind is RecordKind.NAMED_REF:
-        return f"{publication.docs_path}refs/{context.named_ref_key}/"
-    if context.kind is RecordKind.LINE_HEAD:
-        return f"{publication.docs_path}{context.release_line}/"
-    if context.kind is RecordKind.CANDIDATE:
-        return f"{publication.docs_path}candidates/{context.version}/"
-    release_base_path = (
+    if context.artifact_key is not None:
+        artifact_paths = next(
+            (
+                item
+                for item in publication.artifact_publications
+                if item.key == context.artifact_key
+            ),
+            None,
+        )
+        if artifact_paths is not None:
+            return _context_path(
+                artifact_paths.development_path,
+                artifact_paths.docs_path,
+                artifact_paths.release_base_path,
+                context,
+            )
+        if (
+            publication.artifact_publications
+            or publication.artifact_routing == "namespaced"
+        ):
+            raise ValueError(
+                f"Unknown artifact route: {context.component_slug}/{context.artifact_key}"
+            )
+    return _context_path(
+        publication.development_path,
+        publication.docs_path,
         publication.component_path
         if publication.docs_path == publication.development_path
-        else publication.docs_path
+        else publication.docs_path,
+        context,
     )
-    return f"{release_base_path}releases/{context.version}/"
+
+
+def _context_path(
+    development: str, docs: str, releases: str, context: SelectedVersionContext
+) -> str:
+    if context.kind is RecordKind.DEVELOPMENT:
+        return development
+    if context.kind is RecordKind.NAMED_REF:
+        return f"{docs}refs/{context.named_ref_key}/"
+    if context.kind is RecordKind.LINE_HEAD:
+        return f"{docs}{context.release_line}/"
+    if context.kind is RecordKind.CANDIDATE:
+        return f"{docs}candidates/{context.version}/"
+    return f"{releases}releases/{context.version}/"
+
+
+def publishes_family_path(
+    publication: ResolvedPublicationPolicy,
+    contexts: Iterable[SelectedVersionContext],
+    path: str,
+) -> bool:
+    """Do not turn a layout base into a phantom namespaced publication target."""
+    if (
+        publication.artifact_routing == "shared"
+        or not publication.artifact_publications
+    ):
+        return True
+    return publication.default_artifact is not None and any(
+        context.artifact_key == publication.default_artifact
+        and public_path_for_context(publication, context) == path
+        for context in contexts
+    )
+
+
+def can_share_context_route(
+    artifact_routing: str,
+    first: SelectedVersionContext,
+    second: SelectedVersionContext,
+) -> bool:
+    """Shared composition joins corresponding contexts of distinct artifacts only."""
+    if (
+        artifact_routing != "shared"
+        or first.component_slug != second.component_slug
+        or first.artifact_key == second.artifact_key
+        or first.artifact_key is None
+        or second.artifact_key is None
+        or first.kind is not second.kind
+        or first.action.value == "redirect"
+        or second.action.value == "redirect"
+    ):
+        return False
+    if first.kind is RecordKind.NAMED_REF:
+        return first.named_ref_key == second.named_ref_key
+    if first.kind is RecordKind.LINE_HEAD:
+        return first.release_line == second.release_line
+    if first.kind in {RecordKind.RELEASED, RecordKind.CANDIDATE}:
+        return first.version == second.version
+    return True

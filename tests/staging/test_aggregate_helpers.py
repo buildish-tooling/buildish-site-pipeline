@@ -310,7 +310,7 @@ class AggregateHelperTests(unittest.TestCase):
             repository="https://github.com/example/runtime",
             default_branch="main",
         )
-        publication = SimpleNamespace(component_path="/spark/", development_path="/spark/", assets_path="/spark/assets/")
+        publication = SimpleNamespace(artifact_routing="shared", default_artifact=None, artifact_publications=(), component_path="/spark/", development_path="/spark/", docs_path="/spark/", assets_path="/spark/assets/")
         component = SimpleNamespace(
             slug="spark", content_source=source_binding,
             pages_root=source_binding.local_dir / "docs", assets_root=None,
@@ -319,7 +319,7 @@ class AggregateHelperTests(unittest.TestCase):
         )
         retained = SimpleNamespace(**vars(component))
         retained.slug = "retained"
-        retained.publication = SimpleNamespace(component_path="/retained/", assets_path="/retained/assets/")
+        retained.publication = SimpleNamespace(artifact_routing="shared", default_artifact=None, artifact_publications=(), component_path="/retained/", assets_path="/retained/assets/")
         return SimpleNamespace(
             workspace_root=workspace_root,
             selected_versions=(SelectedVersionContext(
@@ -492,7 +492,7 @@ class AggregateHelperTests(unittest.TestCase):
         self.assertEqual(entries, [])
 
     def test_component_and_artifact_entries_preserve_repository_metadata(self) -> None:
-        publication = SimpleNamespace(
+        publication = SimpleNamespace(artifact_routing="shared", default_artifact=None, artifact_publications=(),
             origin=SimpleNamespace(
                 key="docs",
                 base_url="https://docs.example.org",

@@ -48,6 +48,7 @@ from buildish_site_pipeline.models.emitted.planning_stage_contract import (
     StageManifestV1,
     StageRunReportV1,
 )
+from buildish_site_pipeline.planning.errors import PlanningInputFailure
 from buildish_site_pipeline.planning import evaluate_planning
 from buildish_site_pipeline.staging.coordinator import (
     cleanup_after_publication,
@@ -561,7 +562,7 @@ def _run_watch_cycle(
             ),
             planning=planning,
         )
-    except (InvocationError, SitePipelineCliError) as exc:
+    except (InvocationError, SitePipelineCliError, PlanningInputFailure) as exc:
         return _failed_cycle_outcome(
             profile=invocation.profile,
             cycle_number=cycle_number,

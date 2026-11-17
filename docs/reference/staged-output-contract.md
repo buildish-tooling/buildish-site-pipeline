@@ -291,6 +291,36 @@ The stage contract follows these rules:
   exit; they should not knowingly continue with a stage root whose integrity is
   uncertain
 
+## Artifact routes and destination ownership
+
+`pipeline.component.publication` and the component aggregate expose
+`artifactRouting` (`shared` or `namespaced`) and optional `defaultArtifact`.
+Their component paths/URLs remain layout bases. Concrete artifact/context paths
+are carried by page version metadata, routes and refs; there is no synthesized
+artifact landing page. Page-local componentPath/componentUrl keep pointing at the
+component itself. A default artifact's flat destination is primary, with no second
+docs tree. Notices and redirects retain source routes without usable docsPath or
+docsUrl or copies of excluded original files.
+
+Pages, docs-tree non-pages and contextual assets use the same effective context
+route: content files stay under `content/`, while contextual assets use `static/`.
+Component assets retain the independent component assetsPath. Original-source
+links derive from the owned physical source/file/context association, independently
+of the public namespace.
+
+Before copying and before publication, the pipeline rejects conflicting producer
+claims for stage files and rendered destinations, including duplicates within one
+component worker. Disjoint shared trees remain supported. Complete candidate
+content/static inventories are reconciled against current claims, including retained
+files: directory ownership alone cannot authorize an unexpected descendant.
+A failed candidate preserves the last trustworthy visible stage. Rebuilding the
+affected unit removes stale retained files through the existing watch mechanism.
+
+Renderers adopting namespaced routes must use the declared mode/default and concrete
+artifact routes for navigation. Component paths.docs may be an absent layout base;
+it is not a fallback documentation target. Richer designation availability is a
+separate contract concern.
+
 ## Schema reference
 
 The typed definitions for this contract live in:

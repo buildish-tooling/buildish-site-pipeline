@@ -380,11 +380,11 @@ class RedirectRuleConfig(SitePipelineBaseModel):
 
 
 class PublicationConfig(SitePipelineBaseModel):
-    """Resolved-or-authored route layout choices for a component or artifact."""
+    """Catalog route layout choices for components and groups."""
 
     origin: OriginKey | None = Field(
         default=None,
-        description="Publication origin key to use for this component or artifact.",
+        description="Publication origin key to use for this component or group.",
     )
     path_segment: NonEmptyString | None = Field(
         default=None,
@@ -422,6 +422,25 @@ class PublicationConfig(SitePipelineBaseModel):
     redirects: list[RedirectRuleConfig] | None = Field(
         default=None, description="Redirect rules to emit for legacy or moved routes."
     )
+
+
+class ComponentPublicationConfig(PublicationConfig):
+    """Component route policy with deliberate artifact composition or separation."""
+
+    artifact_routing: Literal["shared", "namespaced"] | None = Field(
+        default=None,
+        description="Artifact route layout. Omitted/null means shared composition; namespaced separates artifacts independently of count or selection.",
+    )
+    default_artifact: ArtifactKey | None = Field(
+        default=None,
+        description="Optional component-defined artifact using flat primary routes in namespaced mode. Other artifacts retain namespaces; unavailable defaults are never replaced.",
+    )
+
+    @model_validator(mode="after")
+    def ensure_default_requires_namespaces(self) -> Self:
+        if self.default_artifact is not None and self.artifact_routing != "namespaced":
+            raise ValueError("defaultArtifact requires artifactRouting: namespaced")
+        return self
 
 
 class LineHeadSelectionPolicy(SitePipelineBaseModel):
@@ -712,7 +731,7 @@ class ComponentCatalogEntry(SitePipelineBaseModel):
         default=None,
         description="Shared content-source selection for component pages, docs, and assets.",
     )
-    publication: PublicationConfig | None = Field(
+    publication: ComponentPublicationConfig | None = Field(
         default=None,
         description="Explicit publication configuration for this component.",
     )

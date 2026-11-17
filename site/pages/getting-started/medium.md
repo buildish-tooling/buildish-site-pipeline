@@ -92,6 +92,8 @@ components:
       path: site/provider-snapshot.json
     publication:
       mountPath: /spark/
+      artifactRouting: namespaced
+      defaultArtifact: runtime
     artifacts:
       - key: runtime
         source: runtime
@@ -106,6 +108,12 @@ components:
           releases:
             mode: latestPerLine
 ```
+
+This catalog chooses runtime as the flat default: release 4.0.0 uses
+`/spark/releases/4.0.0/`, while API uses
+`/spark/artifacts/api/releases/4.0.0/`. Without a declared default, both artifacts
+use namespaces. For deliberate disjoint shared trees, omit artifactRouting or set
+it to `shared`; duplicate page or asset destinations still fail.
 
 Component-owned `components/runtime/site/component.yaml` for `spark`:
 

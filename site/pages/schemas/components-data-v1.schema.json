@@ -444,6 +444,30 @@
       "additionalProperties": false,
       "description": "Resolved origin, path roots, and absolute URLs for a component.",
       "properties": {
+        "artifactRouting": {
+          "default": "shared",
+          "description": "Effective artifact route layout; paths are layout bases, not proof of selected docs.",
+          "enum": [
+            "shared",
+            "namespaced"
+          ],
+          "title": "Artifactrouting",
+          "type": "string"
+        },
+        "defaultArtifact": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Explicit artifact using flat primary routes in namespaced mode; never inferred from selection.",
+          "title": "Defaultartifact"
+        },
         "origin": {
           "$ref": "#/$defs/ResolvedOrigin",
           "description": "Origin details used to resolve paths into absolute URLs."

@@ -30,6 +30,7 @@ different layer.
 
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 
 from buildish_site_pipeline.models.authored.site_catalog import (
@@ -67,6 +68,7 @@ from buildish_site_pipeline.models.enums import (
 from .errors import PlanningInputFailure
 from .types import (
     ResolvedArtifactConfig,
+    ResolvedArtifactPublication,
     ResolvedComponentConfig,
     ResolvedLinkCheckPolicy,
     ResolvedLocalizationPolicy,
@@ -239,6 +241,10 @@ def _resolve_component(
         else {}
     )
     known = {item.key for item in definitions}
+    if publication.default_artifact is not None and publication.default_artifact not in known:
+        raise PlanningInputFailure(
+            f"Component {component.slug!r} publication.defaultArtifact references unknown static artifact {publication.default_artifact!r}"
+        )
     for owner, key in snapshots:
         if owner == component.slug and key not in known:
             raise PlanningInputFailure(
@@ -306,6 +312,7 @@ def _resolve_component(
         artifacts.append(
             ResolvedArtifactConfig(
                 key=artifact.key,
+                publication=_resolve_artifact_publication(publication, artifact.key),
                 authored=artifact,
                 binding=binding,
                 source_binding=source_binding,
@@ -321,6 +328,12 @@ def _resolve_component(
             ),
         )
 
+    publication = replace(
+        publication,
+        artifact_publications=tuple(
+            artifact.publication for artifact in artifacts
+        ),
+    )
     return ResolvedComponentConfig(
         slug=component.slug,
         authored=component,
@@ -341,6 +354,31 @@ def _resolve_component(
         )
         if component.provider_snapshot
         else None,
+    )
+
+
+def _resolve_artifact_publication(
+    publication: ResolvedPublicationPolicy, key: str
+) -> ResolvedArtifactPublication:
+    def namespace(path: str) -> str:
+        if publication.artifact_routing != "namespaced" or publication.default_artifact == key:
+            return path
+        root = publication.component_path
+        if path.startswith(root):
+            return f"{root}artifacts/{key}/{path[len(root):]}"
+        return f"{path}artifacts/{key}/"
+
+    return ResolvedArtifactPublication(
+        key=key,
+        origin=publication.origin,
+        component_path=namespace(publication.component_path),
+        development_path=namespace(publication.development_path),
+        docs_path=namespace(publication.docs_path),
+        release_base_path=namespace(
+            publication.component_path
+            if publication.docs_path == publication.development_path
+            else publication.docs_path
+        ),
     )
 
 
@@ -493,6 +531,8 @@ def _resolve_publication(
         development_url=_join_public_url(origin.base_url, development_path),
         docs_url=_join_public_url(origin.base_url, docs_path),
         assets_url=_join_public_url(origin.base_url, assets_path),
+        artifact_routing=publication.artifact_routing or "shared" if publication else "shared",
+        default_artifact=publication.default_artifact if publication else None,
         canonical_path=str(publication.canonical_path)
         if publication and publication.canonical_path is not None
         else None,

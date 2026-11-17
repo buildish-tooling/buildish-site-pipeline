@@ -16,8 +16,14 @@
 
 from __future__ import annotations
 
-from buildish_site_pipeline.planning.types import PlanningEvaluation
+from pathlib import Path
 
+from buildish_site_pipeline.planning.types import PlanningEvaluation
+from buildish_site_pipeline.cli.errors import StageIntegrityError
+from buildish_site_pipeline.models.enums import DiagnosticSeverity
+from buildish_site_pipeline.staging.destination_claims import collect_destination_claims, validate_destination_claims
+
+from . import diagnostic_codes
 from .collector import DiagnosticCollector
 from .inputs import validate_inputs
 from .limits import validate_limits
@@ -41,6 +47,14 @@ def collect_evaluation_artifacts(
     phases that contribute diagnostics and reusable inventories.
     """
 
+    try:
+        claims = collect_destination_claims(
+            planning.site, planning.selected_versions.contexts,
+            tuple(Path(item.expected_local_path) for item in planning.snapshot_inputs),
+        )
+        validate_destination_claims(claims)
+    except StageIntegrityError as exc:
+        collector.add(severity=DiagnosticSeverity.ERROR, code=diagnostic_codes.PUBLICATION_OUTPUT_COLLISION, message=str(exc))
     publication_index = validate_publication(planning, collector)
     validate_references(
         planning=planning,

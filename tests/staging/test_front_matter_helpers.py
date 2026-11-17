@@ -277,7 +277,7 @@ class FrontMatterHelpersTests(unittest.TestCase):
                     lifecycle=lifecycle,
                 ),
             ),
-            publication=SimpleNamespace(
+            publication=SimpleNamespace(artifact_routing="shared", default_artifact=None, artifact_publications=(),
                 origin=SimpleNamespace(
                     key="docs",
                     base_url="https://docs.example.org",
@@ -316,7 +316,7 @@ class FrontMatterHelpersTests(unittest.TestCase):
                 lifecycle=SimpleNamespace(latest_stable="4.0.0"),
             ),
             artifacts=(),
-            publication=SimpleNamespace(
+            publication=SimpleNamespace(artifact_routing="shared", default_artifact=None, artifact_publications=(),
                 origin=SimpleNamespace(
                     key="docs",
                     base_url="https://docs.example.org",

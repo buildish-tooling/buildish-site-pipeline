@@ -26,6 +26,7 @@ from buildish_site_pipeline.models.emitted.staged_front_matter import (
     PipelineFrontMatterNamespace,
 )
 
+from ..destination_claims import validate_component_worker_claims
 from ..front_matter import (
     authored_link_title,
     detect_locale,
@@ -54,6 +55,7 @@ from ..worker_protocol import (
 def run_component_unit(spec: WorkerSpecWire) -> WorkerResultWire:
     """Stage one component subtree and emit page contribution fragments."""
 
+    validate_component_worker_claims(spec)
     files_written = 0
     page_files_written = 0
     asset_files_written = 0

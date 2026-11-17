@@ -141,6 +141,8 @@ def build_component_front_matter(
         display_name=_component_display_name(component),
         latest_stable=_component_latest_stable(component),
         publication=ResolvedPublication(
+            artifact_routing=publication.artifact_routing,
+            default_artifact=publication.default_artifact,
             origin=ResolvedOrigin(
                 key=publication.origin.key,
                 base_url=publication.origin.base_url,

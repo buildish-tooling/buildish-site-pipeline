@@ -28,7 +28,7 @@ from pathlib import Path
 from buildish_site_pipeline.models.authored.component_metadata import (
     ComponentArtifactDefinition,
 )
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Literal, Self
 
 from buildish_site_pipeline.models.authored.site_catalog import (
     ArtifactConfig,
@@ -94,6 +94,18 @@ class ResolvedOrigin:
 
 
 @dataclass(frozen=True, slots=True)
+class ResolvedArtifactPublication:
+    """Artifact context bases, without component aliases or a promised landing page."""
+
+    key: str
+    origin: ResolvedOrigin
+    component_path: str
+    development_path: str
+    docs_path: str
+    release_base_path: str
+
+
+@dataclass(frozen=True, slots=True)
 class ResolvedPublicationPolicy:
     """Resolved per-component publication facts derived from authored config."""
 
@@ -109,6 +121,9 @@ class ResolvedPublicationPolicy:
     canonical_path: str | None
     aliases: tuple[RouteAliasConfig, ...]
     redirects: tuple[RedirectRuleConfig, ...]
+    artifact_routing: Literal["shared", "namespaced"] = "shared"
+    default_artifact: str | None = None
+    artifact_publications: tuple[ResolvedArtifactPublication, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -125,6 +140,7 @@ class ResolvedArtifactConfig:
     """Resolved component artifact runtime view."""
 
     key: str
+    publication: ResolvedArtifactPublication
     authored: ComponentArtifactDefinition
     source_binding: ResolvedSourceBinding
     docs_root: Path

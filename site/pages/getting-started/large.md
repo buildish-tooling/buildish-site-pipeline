@@ -55,6 +55,13 @@ components/
 
 One representative `site/catalog.yaml` looks like this:
 
+Artifact routing remains a component-level consumer choice even in grouped sites.
+Omitted artifactRouting preserves disjoint shared composition. Use
+`artifactRouting: namespaced` for independent streams; their namespace is inserted
+after the resolved component root, including its group prefix. Optionally name a
+`defaultArtifact` for flat primary routes. Group publication does not select this
+policy, and source layout/version selection never chooses a default.
+
 ```yaml
 schemaVersion: 1
 defaults:

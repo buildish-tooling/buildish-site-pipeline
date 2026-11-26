@@ -265,6 +265,19 @@ class ArtifactsDataEntry(SitePipelineBaseModel):
         return self
 
 
+class ReleaseNotesAvailability(SitePipelineBaseModel):
+    """Staged release-notes page for one released version."""
+
+    path: PublicPath = Field(
+        description="Public path of the staged release-notes page.",
+        examples=["/spark/releases/4.0.0/release-notes/"],
+    )
+    url: UrlString = Field(
+        description="Absolute URL of the staged release-notes page on its publication origin.",
+        examples=["https://spark.example.org/spark/releases/4.0.0/release-notes/"],
+    )
+
+
 class ReleaseAggregateEntry(SitePipelineBaseModel):
     """Entry in ``data/releases.json``."""
 
@@ -351,6 +364,10 @@ class ReleaseAggregateEntry(SitePipelineBaseModel):
     urls: dict[NonEmptyString, UrlString] | None = Field(
         default=None,
         description="Additional named URLs related to the release, such as notes, downloads, or verification material."
+    )
+    release_notes: ReleaseNotesAvailability | None = Field(
+        default=None,
+        description="Staged release-notes page for this release; present only when the page was staged in this output.",
     )
 
     @model_validator(mode="after")

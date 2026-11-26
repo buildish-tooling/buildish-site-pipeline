@@ -122,6 +122,9 @@ def build_provider_snapshot_index(
             ref=record.ref,
             commit_sha=record.commit_sha,
             docs_source=record.docs_source,
+            release_notes_path=record.release_notes.path
+            if record.release_notes is not None
+            else None,
             named_ref_key=record.named_ref_key,
             release_line=primary,
             release_line_ancestors=ancestors,

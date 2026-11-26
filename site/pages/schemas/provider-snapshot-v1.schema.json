@@ -682,6 +682,18 @@
           ],
           "title": "Releaselineancestors"
         },
+        "releaseNotes": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ProviderReleaseNotes"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Release-notes file to publish as a generated page at this released version's docs context. Valid only for released records; absent means no release-notes page."
+        },
         "sourceKey": {
           "anyOf": [
             {
@@ -809,6 +821,30 @@
         "artifactKey"
       ],
       "title": "ProviderRecord",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "provider",
+        "ownership": "provider-derived"
+      }
+    },
+    "ProviderReleaseNotes": {
+      "additionalProperties": false,
+      "description": "Producer-declared release-notes file published as a generated page for one released version.",
+      "properties": {
+        "path": {
+          "description": "Markdown file path relative to the artifact's `<docsRoot>/releases/` directory, outside every version directory. The file is published unchanged below generated front matter.",
+          "examples": [
+            "release-notes/4.0.0.md"
+          ],
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "title": "ProviderReleaseNotes",
       "type": "object",
       "x-buildish-contract": {
         "category": "provider",
@@ -1214,6 +1250,9 @@
           "kind": "released",
           "provider": "github-releases",
           "publishedAt": "2026-04-03T18:00:00Z",
+          "releaseNotes": {
+            "path": "release-notes/4.0.0.md"
+          },
           "version": "4.0.0"
         }
       ],

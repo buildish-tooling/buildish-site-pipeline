@@ -39,6 +39,7 @@ from .effective_config import resolve_site_config
 from .input_inventory import derive_local_inputs
 from .provider_index import build_provider_snapshot_index
 from .readiness import classify_input_readiness
+from .release_notes import attach_release_notes_targets
 from .report_builder import build_resolved_materialization_report
 from .selection import select_version_contexts
 from .types import PlanningEvaluation
@@ -93,6 +94,11 @@ def evaluate_planning(
             snapshot_inputs=snapshot_inputs,
         )
     )
+    selected_versions, desired_versions, release_notes_conflicts = (
+        attach_release_notes_targets(
+            site=site, selected=selected_versions, desired=desired_versions
+        )
+    )
     local_inputs = derive_local_inputs(site=site, selected_versions=selected_versions)
     ready_inputs = classify_input_readiness(local_inputs)
     watched_inputs, watch_plan = derive_watch_plan(
@@ -130,6 +136,7 @@ def evaluate_planning(
         build_plan_result=build_plan_result,
         diagnostics=diagnostics + fact_diagnostics,
         release_facts=release_facts,
+        release_notes_conflicts=release_notes_conflicts,
     )
 
 

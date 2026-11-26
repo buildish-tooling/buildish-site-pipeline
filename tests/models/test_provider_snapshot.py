@@ -27,6 +27,8 @@ from buildish_site_pipeline.models.loading import (
 )
 from buildish_site_pipeline.models.provider.provider_snapshot import (
     DocsSource,
+    ProviderRecord,
+    ProviderReleaseNotes,
     ProviderSnapshotDocumentV1,
 )
 
@@ -64,6 +66,23 @@ class ProviderSnapshotTests(unittest.TestCase):
         loaded = load_provider_snapshot_document(json.dumps(document), document_format=DocumentFormat.JSON, source_name="test")
         self.assertEqual(loaded.records[0].docs_source.ref, "exported/commit")
         self.assertEqual(loaded.model_dump(by_alias=True, exclude_none=True)["records"][0]["docsSource"], document["records"][0]["docsSource"])
+
+    def test_release_notes_are_valid_only_on_released_records(self) -> None:
+        base = {"provider": "git", "componentSlug": "spark", "artifactKey": "runtime", "version": "4.0.0"}
+        notes = {"path": "release-notes/4.0.0.md"}
+        record = ProviderRecord.model_validate(dict(base, kind="released", releaseNotes=notes))
+        self.assertEqual(record.release_notes, ProviderReleaseNotes(path="release-notes/4.0.0.md"))
+        self.assertEqual(record.model_dump(by_alias=True, exclude_none=True)["releaseNotes"], notes)
+        for kind in ("development", "candidate", "lineHead", "namedRef"):
+            with self.subTest(kind=kind), self.assertRaisesRegex(ValidationError, "only for released records"):
+                ProviderRecord.model_validate(dict(base, kind=kind, ref="refs/heads/main", releaseNotes=notes))
+
+    def test_release_notes_path_must_be_relative_markdown(self) -> None:
+        self.assertEqual(ProviderReleaseNotes.model_validate({"path": "4.0.0.md"}).path, "4.0.0.md")
+        for path in ("release-notes/4.0.0.MD", "release-notes/4.0.0.txt", "release-notes/4.0.0", "/abs/4.0.0.md",
+                     "../4.0.0.md", "release-notes\\4.0.0.md", "release-notes//4.0.0.md", ""):
+            with self.subTest(path=path), self.assertRaises(ValidationError):
+                ProviderReleaseNotes.model_validate({"path": path})
 
     def test_loads_valid_provider_snapshot(self) -> None:
         snapshot = load_provider_snapshot_document(

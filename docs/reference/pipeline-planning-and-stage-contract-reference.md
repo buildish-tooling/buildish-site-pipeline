@@ -209,12 +209,12 @@ Publication action for one desired exact release in this invocation.
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| <a id="contextdisposition-componentslug"></a>`componentSlug` | typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=None, min_length=1, max_length=None, pattern=None, ascii_only=None)] | yes | Owning component. |
-| <a id="contextdisposition-artifactkey"></a>`artifactKey` | typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=None, min_length=1, max_length=None, pattern=None, ascii_only=None)] | yes | Owning artifact. |
-| <a id="contextdisposition-version"></a>`version` | typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=None, min_length=1, max_length=None, pattern=None, ascii_only=None)] | yes | Desired release version. |
-| <a id="contextdisposition-action"></a>`action` | <enum '[ContextAction](../pipeline-shared-types-reference/#contextaction)'> | yes | Effective action for original docs or a withdrawal route. |
-| <a id="contextdisposition-publicationstate"></a>`publicationState` | buildish_site_pipeline.models.enums.[PublicationState](../pipeline-shared-types-reference/#publicationstate) | no | Resolved authored/provider publication state. |
-| <a id="contextdisposition-reason"></a>`reason` | typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=None, min_length=1, max_length=None, pattern=None, ascii_only=None)] | no | Why original docs are not staged. |
+| <a id="contextdisposition-componentslug"></a>`componentSlug` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | yes | Owning component. |
+| <a id="contextdisposition-artifactkey"></a>`artifactKey` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | yes | Owning artifact. |
+| <a id="contextdisposition-version"></a>`version` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | yes | Desired release version. |
+| <a id="contextdisposition-action"></a>`action` | [ContextAction](../pipeline-shared-types-reference/#contextaction) | yes | Effective action for original docs or a withdrawal route. |
+| <a id="contextdisposition-publicationstate"></a>`publicationState` | [PublicationState](../pipeline-shared-types-reference/#publicationstate) | no | Resolved authored/provider publication state. |
+| <a id="contextdisposition-reason"></a>`reason` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | no | Why original docs are not staged. |
 
 <a id="pipelinediagnosticentry"></a>
 ### PipelineDiagnosticEntry
@@ -363,13 +363,13 @@ One configured component-owned provider file and its observed availability.
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| <a id="snapshotinput-componentslug"></a>`componentSlug` | typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=None, min_length=1, max_length=None, pattern=None, ascii_only=None)] | no | Owning component, or absent for aggregate inventory. |
-| <a id="snapshotinput-sourcekey"></a>`sourceKey` | typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=None, min_length=1, max_length=None, pattern=None, ascii_only=None)] | no | Catalog source, or absent for the aggregate file beside the catalog. |
-| <a id="snapshotinput-expectedlocalpath"></a>`expectedLocalPath` | typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=None, min_length=1, max_length=None, pattern=None, ascii_only=None), AfterValidator(func=<function validate_local_path_string at 0x78f902c80930>)] | yes | Expected local snapshot file location. |
-| <a id="snapshotinput-requirement"></a>`requirement` | <enum '[SnapshotRequirement](../pipeline-shared-types-reference/#snapshotrequirement)'> | yes | Authored availability requirement. |
-| <a id="snapshotinput-required"></a>`required` | <class 'bool'> | yes | Whether the active execution profile requires this file. |
-| <a id="snapshotinput-status"></a>`status` | <enum '[MaterializationStatus](../pipeline-shared-types-reference/#materializationstatus)'> | yes | Observed file availability. |
-| <a id="snapshotinput-fetchedat"></a>`fetchedAt` | dict[str, pydantic.types.AwareDatetime] | no | Actual per-provider refresh times in this file. |
+| <a id="snapshotinput-componentslug"></a>`componentSlug` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | no | Owning component, or absent for aggregate inventory. |
+| <a id="snapshotinput-sourcekey"></a>`sourceKey` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | no | Catalog source, or absent for the aggregate file beside the catalog. |
+| <a id="snapshotinput-expectedlocalpath"></a>`expectedLocalPath` | [LocalPathString](../pipeline-shared-types-reference/#localpathstring) | yes | Expected local snapshot file location. |
+| <a id="snapshotinput-requirement"></a>`requirement` | [SnapshotRequirement](../pipeline-shared-types-reference/#snapshotrequirement) | yes | Authored availability requirement. |
+| <a id="snapshotinput-required"></a>`required` | bool | yes | Whether the active execution profile requires this file. |
+| <a id="snapshotinput-status"></a>`status` | [MaterializationStatus](../pipeline-shared-types-reference/#materializationstatus) | yes | Observed file availability. |
+| <a id="snapshotinput-fetchedat"></a>`fetchedAt` | dict[str, [TimestampString](../pipeline-shared-types-reference/#timestampstring)] | no | Actual per-provider refresh times in this file. |
 
 <a id="stagedatafiles"></a>
 ### StageDataFiles

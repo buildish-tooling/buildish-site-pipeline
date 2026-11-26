@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -53,6 +54,8 @@ class EffectiveBuildPlan:
     snapshot_paths: tuple[Path, ...] = ()
     release_designations: tuple[ResolvedArtifactDesignations, ...] = ()
     context_dispositions: tuple[ContextDisposition, ...] = ()
+    # Plan-time validated release-notes text by source path; workers never re-read the files.
+    release_notes_texts: Mapping[Path, str] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)

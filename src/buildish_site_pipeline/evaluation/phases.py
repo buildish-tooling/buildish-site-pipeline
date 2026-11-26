@@ -32,6 +32,7 @@ from .page_scan import validate_page_scan
 from .providers import validate_providers
 from .publication import validate_publication
 from .reference_index import validate_references
+from .release_notes import validate_release_notes
 from .routes import validate_routes
 from .staged_links import validate_staged_links
 from .types import EvaluationArtifacts
@@ -62,7 +63,8 @@ def collect_evaluation_artifacts(
         collector=collector,
     )
     route_inventory = validate_routes(planning, publication_index, collector)
-    page_inventory = validate_page_scan(planning, collector)
+    release_notes = validate_release_notes(planning, collector)
+    page_inventory = validate_page_scan(planning, collector, release_notes=release_notes)
     if page_inventory.complete:
         validate_localization(
             planning=planning,
@@ -86,4 +88,5 @@ def collect_evaluation_artifacts(
         publication_index=publication_index,
         route_inventory=route_inventory,
         page_inventory=page_inventory,
+        release_notes=release_notes,
     )

@@ -55,6 +55,7 @@ from buildish_site_pipeline.models.enums import (
     PlanningTarget,
     PublicationState,
     RecordKind,
+    ReleaseNotesTitleMode,
     RouteMode,
     WithdrawalBehavior,
 )
@@ -125,6 +126,8 @@ class ResolvedPublicationPolicy:
     artifact_routing: Literal["shared", "namespaced"] = "shared"
     default_artifact: str | None = None
     artifact_publications: tuple[ResolvedArtifactPublication, ...] = ()
+    release_notes_segment: str = "release-notes"
+    release_notes_title: ReleaseNotesTitleMode = ReleaseNotesTitleMode.RELEASE_NOTES
 
 
 @dataclass(frozen=True, slots=True)
@@ -238,6 +241,7 @@ class IndexedProviderRecord:
     urls: dict[str, str]
     assets: tuple[ProviderAsset, ...]
     docs_source: DocsSource | None = None
+    release_notes_path: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -261,6 +265,29 @@ class ProviderSnapshotIndex:
     by_external_id: dict[tuple[str, str], IndexedProviderRecord]
     snapshot_bytes: int
     record_count: int
+
+
+@dataclass(frozen=True, slots=True)
+class ReleaseNotesTarget:
+    """Resolved release-notes page for one staged released docs context."""
+
+    releases_root: Path
+    relative_path: str
+    segment: str
+    title: str
+
+    @property
+    def source_path(self) -> Path:
+        return self.releases_root / self.relative_path
+
+
+@dataclass(frozen=True, slots=True)
+class ReleaseNotesConflict:
+    """Several shared-route artifacts declaring notes for one released version."""
+
+    component_slug: str
+    version: str
+    artifact_keys: tuple[str, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -292,6 +319,7 @@ class SelectedVersionContext:
     withdrawal_reason: str | None = None
     identity_verified: bool = True
     source_exclusions: tuple[str, ...] = ()
+    release_notes: ReleaseNotesTarget | None = None
 
     @property
     def input_kind(self) -> MaterializationInputKind:
@@ -419,6 +447,7 @@ class PlanningEvaluation:
     context_dispositions: tuple[ContextDisposition, ...] = ()
     desired_versions: tuple[SelectedVersionContext, ...] = ()
     release_facts: tuple[tuple[str, str, ResolvedReleaseFact], ...] = ()
+    release_notes_conflicts: tuple[ReleaseNotesConflict, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

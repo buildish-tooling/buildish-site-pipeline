@@ -149,6 +149,21 @@ class DocsSource(SitePipelineBaseModel):
         return self
 
 
+class ProviderReleaseNotes(SitePipelineBaseModel):
+    """Producer-declared release-notes file published as a generated page for one released version."""
+
+    path: RepoRelativePath = Field(
+        description="Markdown file path relative to the artifact's `<docsRoot>/releases/` directory, outside every version directory. The file is published unchanged below generated front matter.",
+        examples=["release-notes/4.0.0.md"],
+    )
+
+    @model_validator(mode="after")
+    def validate_markdown_suffix(self) -> Self:
+        if not self.path.endswith(".md"):
+            raise ValueError("Release-notes path must end with '.md'")
+        return self
+
+
 class ProviderRecord(SitePipelineBaseModel):
     """Normalized provider fact about one release, candidate, or ref context."""
 
@@ -269,6 +284,16 @@ class ProviderRecord(SitePipelineBaseModel):
         default=None,
         description="Downloadable assets attached to the record, including checksums and related provenance links when available.",
     )
+    release_notes: ProviderReleaseNotes | None = Field(
+        default=None,
+        description="Release-notes file to publish as a generated page at this released version's docs context. Valid only for released records; absent means no release-notes page.",
+    )
+
+    @model_validator(mode="after")
+    def ensure_release_notes_only_on_released_records(self) -> Self:
+        if self.release_notes is not None and self.kind is not RecordKind.RELEASED:
+            raise ValueError("releaseNotes is valid only for released records")
+        return self
 
     @model_validator(mode="after")
     def ensure_stable_locator_exists(self) -> Self:

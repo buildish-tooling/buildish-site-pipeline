@@ -14,6 +14,8 @@
 
 """Execution profiles and component snapshot availability contracts."""
 
+from __future__ import annotations
+
 from pydantic import Field
 from ...docs.documentation import PipelineDerivedModel
 from ..enums import (

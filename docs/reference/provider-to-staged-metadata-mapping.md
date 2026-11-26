@@ -203,6 +203,9 @@ Recommended fields:
 - optional `publishedAt`
 - optional `assets`
 - optional `urls`
+- optional `releaseNotes` (`path`, `url`), present only when the record's
+  `releaseNotes` file was staged as a generated page; producer `urls` stay
+  unchanged and independent
 
 ### `data/candidates.json`
 
@@ -276,6 +279,9 @@ Recommended mapping behavior:
   - enrich `data/artifacts.json` explicit recommendation and line summaries
   - copy page-local release context into front matter for pages staged from that
     release
+  - when the record declares `releaseNotes` and its context stages original docs,
+    stage one generated `release-notes` page below the context route (see the
+    [staged output contract](../staged-output-contract/#generated-release-notes-pages))
 - `candidate`
   - emit entry in `data/candidates.json`
   - enrich `data/artifacts.json` latest candidate summary

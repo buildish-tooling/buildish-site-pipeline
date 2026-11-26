@@ -158,6 +158,14 @@ class TrustClass(StrEnum):
     ACTIVE = "active"
 
 
+class ReleaseNotesTitleMode(StrEnum):
+    """Title style for generated release-notes pages."""
+
+    RELEASE_NOTES = "release-notes"
+    VERSION_ONLY = "version-only"
+    COMPONENT_NAME = "component-name"
+
+
 class RouteMode(StrEnum):
     """Locale routing strategy for a published route set."""
 

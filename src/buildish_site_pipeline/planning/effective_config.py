@@ -62,6 +62,7 @@ from buildish_site_pipeline.models.authored.artifacts import ArtifactLifecycleCo
 from buildish_site_pipeline.models.enums import (
     CandidateSelectionMode,
     LineHeadSelectionMode,
+    ReleaseNotesTitleMode,
     ReleaseSelectionMode,
 )
 
@@ -80,6 +81,7 @@ from .types import (
 )
 
 _DEFAULT_DEVELOPMENT_SEGMENT = "development"
+_DEFAULT_RELEASE_NOTES_SEGMENT = "release-notes"
 _DEFAULT_DOCS_SEGMENT: str | None = None
 _DEFAULT_ASSETS_SEGMENT = "assets"
 
@@ -538,6 +540,16 @@ def _resolve_publication(
         else None,
         aliases=tuple(publication.aliases or ()) if publication else (),
         redirects=tuple(publication.redirects or ()) if publication else (),
+        release_notes_segment=(
+            publication.release_notes_segment
+            if publication and publication.release_notes_segment
+            else _DEFAULT_RELEASE_NOTES_SEGMENT
+        ),
+        release_notes_title=(
+            publication.release_notes_title
+            if publication and publication.release_notes_title
+            else ReleaseNotesTitleMode.RELEASE_NOTES
+        ),
     )
 
 

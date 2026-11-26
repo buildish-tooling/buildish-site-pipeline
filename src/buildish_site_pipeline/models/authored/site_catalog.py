@@ -39,6 +39,7 @@ from ..enums import (
     LinkCheckMode,
     LineHeadSelectionMode,
     PublicationState,
+    ReleaseNotesTitleMode,
     ReleaseSelectionMode,
     RouteMode,
     TrustClass,
@@ -434,6 +435,16 @@ class ComponentPublicationConfig(PublicationConfig):
     default_artifact: ArtifactKey | None = Field(
         default=None,
         description="Optional component-defined artifact using flat primary routes in namespaced mode. Other artifacts retain namespaces; unavailable defaults are never replaced.",
+    )
+    release_notes_segment: Slug | None = Field(
+        default=None,
+        description="Route segment for generated release-notes pages below each released version context. Defaults to `release-notes`. Keep it unchanged once notes are published: changing it moves every published notes route without aliases or redirects.",
+        examples=["release-notes"],
+    )
+    release_notes_title: ReleaseNotesTitleMode | None = Field(
+        default=None,
+        description="Title style for generated release-notes pages. Defaults to `release-notes` (`Release Notes for <version>`).",
+        examples=["component-name"],
     )
 
     @model_validator(mode="after")

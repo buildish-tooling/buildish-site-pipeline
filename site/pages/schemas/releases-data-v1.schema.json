@@ -359,6 +359,18 @@
           ],
           "title": "Releaselineancestors"
         },
+        "releaseNotes": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReleaseNotesAvailability"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Staged release-notes page for this release; present only when the page was staged in this output."
+        },
         "supportStatus": {
           "anyOf": [
             {
@@ -453,6 +465,40 @@
         "version"
       ],
       "title": "ReleaseAggregateEntry",
+      "type": "object",
+      "x-buildish-contract": {
+        "category": "emitted",
+        "ownership": "pipeline-derived"
+      }
+    },
+    "ReleaseNotesAvailability": {
+      "additionalProperties": false,
+      "description": "Staged release-notes page for one released version.",
+      "properties": {
+        "path": {
+          "description": "Public path of the staged release-notes page.",
+          "examples": [
+            "/spark/releases/4.0.0/release-notes/"
+          ],
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "url": {
+          "description": "Absolute URL of the staged release-notes page on its publication origin.",
+          "examples": [
+            "https://spark.example.org/spark/releases/4.0.0/release-notes/"
+          ],
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "url"
+      ],
+      "title": "ReleaseNotesAvailability",
       "type": "object",
       "x-buildish-contract": {
         "category": "emitted",

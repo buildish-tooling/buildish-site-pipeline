@@ -792,6 +792,38 @@
           "default": null,
           "description": "Redirect rules to emit for legacy or moved routes.",
           "title": "Redirects"
+        },
+        "releaseNotesSegment": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Route segment for generated release-notes pages below each released version context. Defaults to `release-notes`. Keep it unchanged once notes are published: changing it moves every published notes route without aliases or redirects.",
+          "examples": [
+            "release-notes"
+          ],
+          "title": "Releasenotessegment"
+        },
+        "releaseNotesTitle": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReleaseNotesTitleMode"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Title style for generated release-notes pages. Defaults to `release-notes` (`Release Notes for <version>`).",
+          "examples": [
+            "component-name"
+          ]
         }
       },
       "title": "ComponentPublicationConfig",
@@ -1627,6 +1659,16 @@
         "ownership": "consumer-owned"
       }
     },
+    "ReleaseNotesTitleMode": {
+      "description": "Title style for generated release-notes pages.",
+      "enum": [
+        "release-notes",
+        "version-only",
+        "component-name"
+      ],
+      "title": "ReleaseNotesTitleMode",
+      "type": "string"
+    },
     "ReleaseSelectionMode": {
       "description": "Strategy used to select a released version.",
       "enum": [
@@ -2024,7 +2066,8 @@
             "source": "runtime"
           },
           "publication": {
-            "mountPath": "/spark/"
+            "mountPath": "/spark/",
+            "releaseNotesTitle": "component-name"
           },
           "publicationSelection": {
             "releases": {

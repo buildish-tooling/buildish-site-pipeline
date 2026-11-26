@@ -52,6 +52,7 @@ from buildish_site_pipeline.models.emitted.aggregates import (
     RedirectAggregateEntry,
     RefAggregateEntry,
     ReleaseAggregateEntry,
+    ReleaseNotesAvailability,
     RouteAggregateEntry,
     TranslationSetAggregateEntry,
 )
@@ -60,7 +61,7 @@ from buildish_site_pipeline.models.authored.site_catalog import (
     MountConfig,
 )
 from buildish_site_pipeline.models.authored.artifacts import SupportWindow
-from buildish_site_pipeline.models.enums import RecordKind
+from buildish_site_pipeline.models.enums import ContextAction, RecordKind
 from buildish_site_pipeline.models.emitted.planning_stage_contract import (
     PipelineDiagnosticEntry,
     StageDataFiles,
@@ -93,6 +94,8 @@ from .front_matter import (
     build_page_front_matter,
     build_translation_link,
     finalize_staged_page,
+    public_page_path,
+    public_page_url,
 )
 from .incremental_metadata import (
     PersistedUnitContributionsV1,
@@ -272,7 +275,7 @@ def _write_aggregate_files(
         else None
     )
 
-    releases = _build_release_entries(build_plan)
+    releases = _build_release_entries(build_plan, page_contributions)
     candidates = _build_candidate_entries(build_plan)
     refs = _build_ref_entries(build_plan)
     translations = _build_translation_entries(page_contributions)
@@ -799,9 +802,14 @@ def _build_provider_entries(
 
 def _build_release_entries(
     build_plan: EffectiveBuildPlan,
+    page_contributions: tuple[StagedPageContributionWire, ...] = (),
 ) -> list[ReleaseAggregateEntry]:
     component_by_slug = {
         component.slug: component for component in build_plan.site.components
+    }
+    staged_pages = {
+        (item.component_slug, item.artifact_key, item.public_path)
+        for item in page_contributions
     }
     entries = []
     for context in build_plan.desired_versions or build_plan.selected_versions:
@@ -832,9 +840,35 @@ def _build_release_entries(
                 maturity=record.maturity if record else context.maturity,
                 assets=list(record.assets) if record else None,
                 urls=record.urls if record else None,
+                release_notes=_release_notes_availability(
+                    component_by_slug[context.component_slug], context, staged_pages
+                ),
             )
         )
     return entries
+
+
+def _release_notes_availability(
+    component: ResolvedComponentConfig,
+    context: SelectedVersionContext,
+    staged_pages: set[tuple[str, str | None, str]],
+) -> ReleaseNotesAvailability | None:
+    """Only a reconciled page at the planned notes route counts as available."""
+
+    notes = context.release_notes
+    if notes is None or context.action is not ContextAction.DOCS:
+        return None
+    publication = component.publication
+    context_path = public_path_for_context(publication, context)
+    path = public_page_path(context_path, Path(notes.segment) / "index.md")
+    if (context.component_slug, context.artifact_key, path) not in staged_pages:
+        return None
+    url = public_page_url(
+        f"{publication.origin.base_url.rstrip('/')}{context_path}",
+        path,
+        route_base_path=context_path,
+    )
+    return ReleaseNotesAvailability(path=path, url=url) if url is not None else None
 
 
 def _build_candidate_entries(

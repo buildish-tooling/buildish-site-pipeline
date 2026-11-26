@@ -71,6 +71,7 @@ Back to the [reference overview](../pipeline-model-schema-reference/).
 | <a id="planningtarget"></a>`PlanningTarget` | `build`, `watch` | Planning intent for later staging behavior. |
 | <a id="publicationstate"></a>`PublicationState` | `published`, `hidden`, `withdrawn`, `tombstoned` | Observed provider-side publication state. |
 | <a id="recordkind"></a>`RecordKind` | `development`, `released`, `candidate`, `namedRef`, `lineHead` | Normalized provider record lifecycle kind. |
+| <a id="releasenotestitlemode"></a>`ReleaseNotesTitleMode` | `release-notes`, `version-only`, `component-name` | Title style for generated release-notes pages. |
 | <a id="releaseselectionmode"></a>`ReleaseSelectionMode` | `none`, `latestPerLine`, `latestN`, `allKnown`, `explicit` | Strategy used to select a released version. |
 | <a id="routemode"></a>`RouteMode` | `none`, `prefixAll` | Locale routing strategy for a published route set. |
 | <a id="runstatus"></a>`RunStatus` | `clean`, `warnings`, `errors` | Overall diagnostic class for a run or cycle. |

@@ -51,7 +51,13 @@ from . import diagnostic_codes
 from .collector import DiagnosticCollector
 from .limits import content_index_limit
 from .link_references import extract_link_references
-from .types import ExtractedLinkReference, InventoryPage, PageInventory
+from .types import (
+    ExtractedLinkReference,
+    InventoryPage,
+    PageInventory,
+    ReleaseNotesInventory,
+    ValidatedReleaseNotes,
+)
 
 _PAGE_INPUT_KINDS = {
     MaterializationInputKind.SITE_PAGES,
@@ -76,7 +82,10 @@ class _PageRootContext:
 
 
 def validate_page_scan(
-    planning: PlanningEvaluation, collector: DiagnosticCollector
+    planning: PlanningEvaluation,
+    collector: DiagnosticCollector,
+    *,
+    release_notes: ReleaseNotesInventory | None = None,
 ) -> PageInventory:
     """Build the shared page inventory and emit basic authored-page diagnostics."""
 
@@ -92,7 +101,36 @@ def validate_page_scan(
         )
         if len(pages) >= stop_after:
             return PageInventory(pages=tuple(pages), complete=False)
+    for item in release_notes.items if release_notes is not None else ():
+        pages.append(_release_notes_page(planning, item))
+        if len(pages) >= stop_after:
+            return PageInventory(pages=tuple(pages), complete=False)
     return PageInventory(pages=tuple(pages))
+
+
+def _release_notes_page(
+    planning: PlanningEvaluation, item: ValidatedReleaseNotes
+) -> InventoryPage:
+    """Generated notes page: link extraction and routing only, no authored-page checks."""
+
+    context, target = item.context, item.target
+    component = next(
+        component
+        for component in planning.site.components
+        if component.slug == context.component_slug
+    )
+    relative_path = f"{target.segment}/index.md"
+    return InventoryPage(
+        input_id=f"releaseNotes:{context.component_slug}:{context.artifact_key}:{context.version}",
+        component_slug=context.component_slug,
+        artifact_key=context.artifact_key,
+        relative_path=relative_path,
+        routed_relative_path=relative_path,
+        source_path=target.source_path,
+        base_public_path=public_path_for_context(component.publication, context),
+        translation_key=None,
+        extracted_links=extract_link_references(source_path=target.source_path, text=item.text),
+    )
 
 
 def _page_root_contexts(planning: PlanningEvaluation) -> tuple[_PageRootContext, ...]:

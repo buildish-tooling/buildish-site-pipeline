@@ -55,6 +55,7 @@ from buildish_site_pipeline.models.emitted.staged_front_matter import (
     TranslationLinkSummary,
     VersionContext,
 )
+from buildish_site_pipeline.planning.component_names import component_display_name
 from buildish_site_pipeline.planning.types import (
     ResolvedArtifactConfig,
     ResolvedComponentConfig,
@@ -138,7 +139,7 @@ def build_component_front_matter(
     publication = component.publication
     return PipelineComponentFrontMatter(
         slug=component.slug,
-        display_name=_component_display_name(component),
+        display_name=component_display_name(component),
         latest_stable=_component_latest_stable(component),
         publication=ResolvedPublication(
             artifact_routing=publication.artifact_routing,
@@ -683,17 +684,6 @@ def _frontmatter_post_with_metadata(
 
 def _artifact_display_name(artifact: ResolvedArtifactConfig) -> str | None:
     return artifact.authored.display_name
-
-
-def _component_display_name(component: ResolvedComponentConfig) -> str | None:
-    display_name = getattr(component.authored, "display_name", None)
-    if isinstance(display_name, str):
-        return display_name
-
-    repository_document = getattr(component, "repository_document", None)
-    repository_component = getattr(repository_document, "component", None)
-    repository_display_name = getattr(repository_component, "display_name", None)
-    return repository_display_name if isinstance(repository_display_name, str) else None
 
 
 def _component_latest_stable(component: ResolvedComponentConfig) -> str | None:

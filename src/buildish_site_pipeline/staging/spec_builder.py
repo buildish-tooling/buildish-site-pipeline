@@ -16,8 +16,11 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from pathlib import Path
 from typing import assert_never
+
+from buildish_site_pipeline.cli.errors import StageIntegrityError
 
 from buildish_site_pipeline.models.enums import RecordKind
 from buildish_site_pipeline.planning.types import (
@@ -44,6 +47,7 @@ def build_worker_spec_for_unit(
     workspace_root: Path,
     site_components: tuple[ResolvedComponentConfig, ...],
     run_workspace: RunWorkspace,
+    release_notes_texts: Mapping[Path, str] | None = None,
 ) -> WorkerSpecWire:
     """Translate one owned unit into the exact worker wire payload it needs."""
 
@@ -137,6 +141,7 @@ def build_worker_spec_for_unit(
                 component=component,
                 owned_context=context,
                 layout=run_workspace.layout,
+                release_notes_texts=release_notes_texts or {},
             )
             for context in unit.contexts
         ),
@@ -149,6 +154,7 @@ def build_context_wire(
     component: ResolvedComponentConfig,
     owned_context: OwnedContextInput,
     layout: WorkRootLayout,
+    release_notes_texts: Mapping[Path, str] | None = None,
 ) -> ComponentContextWire:
     """Translate one version context into the worker-facing publication wire."""
 
@@ -173,6 +179,12 @@ def build_context_wire(
     page_kind, section = _page_descriptor_for_kind(context.kind)
     docs_root = source_root_for_context(context.docs_root, context) if context.action.value == "docs" else None
     assets_root = source_root_for_context(context.assets_root, context) if context.action.value == "docs" else None
+    notes = context.release_notes if context.action.value == "docs" else None
+    notes_text = None
+    if notes is not None:
+        notes_text = (release_notes_texts or {}).get(notes.source_path)
+        if notes_text is None:
+            raise StageIntegrityError(f"Release notes were not validated at plan time: {notes.source_path}")
     return ComponentContextWire(
         context_id=owned_context.context_id,
         action=context.action.value,
@@ -196,6 +208,9 @@ def build_context_wire(
         record_kind=context.kind.value,
         version_ref=context.ref,
         version=context.version,
+        release_notes_text=notes_text,
+        release_notes_segment=notes.segment if notes is not None else None,
+        release_notes_title=notes.title if notes is not None else None,
     )
 
 

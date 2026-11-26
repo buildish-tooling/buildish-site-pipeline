@@ -256,7 +256,7 @@ Per-parameter trust table:
 | `--report-output` | Report path or stdout | No, trusted operator | Do not point reports at sensitive or shared locations unintentionally. *(inferred)* |
 | `--unstable-events-output` | Watch event path or stdout | No, trusted operator | Keep machine-readable events separate from report output. *(documented)* |
 | `site/catalog.yaml` | Catalog document fields | Yes, if repository content is attacker-influenced | Review source roots, publication paths, and redirects before CI use. *(documented)* |
-| `provider-snapshot.{yaml,yml,json}` | Provider records and metadata | Yes | Treat as external data; enforce documented size and schema limits. *(documented)* |
+| `provider-snapshot.{yaml,yml,json}` | Provider records and metadata, including `releaseNotes` paths that select published page-body content | Yes | Treat as external data; enforce documented size and schema limits. Release-notes paths are confined to the artifact's `<docsRoot>/releases/` outside version directories, symlinks below it are rejected, and the selected file is published like any page body. *(documented)* |
 | Component `site/component.yaml` | Component identity/content roots | Yes, if component repo is attacker-influenced | Accept only component repos intended to participate in the site. *(documented)* |
 | Page front matter | Titles, descriptions, translation keys, metadata | Yes | Renderer must escape by default; raw HTML requires explicit policy. *(documented)* |
 | Page body and static assets | Markdown, AsciiDoc, HTML, JS, CSS, images, archives | Yes | Treat active content as trusted code or isolate it at deployment. *(documented)* |

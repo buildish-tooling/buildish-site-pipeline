@@ -29,6 +29,7 @@ Back to the [reference overview](../pipeline-model-schema-reference/).
 - [ProviderAsset](#providerasset) — Downloadable asset attached to one provider release or candidate record.
 - [ProviderDescriptor](#providerdescriptor) — Metadata about one provider that contributed records to the snapshot.
 - [ProviderRecord](#providerrecord) — Normalized provider fact about one release, candidate, or ref context.
+- [ProviderReleaseNotes](#providerreleasenotes) — Producer-declared release-notes file published as a generated page for one released version.
 - [ProviderSnapshotDocumentV1](#providersnapshotdocumentv1) — Provider-derived normalized snapshot from ``site/provider-snapshot.json``.
 - [SnapshotArtifact](#snapshotartifact) — Component-scoped release decisions, independent of consumer source bindings.
 
@@ -144,6 +145,7 @@ Normalized provider fact about one release, candidate, or ref context.
 | <a id="providerrecord-updatedat"></a>`updatedAt` | [TimestampString](../pipeline-shared-types-reference/#timestampstring) | no | Timestamp of the most recent upstream update observed for this record. |
 | <a id="providerrecord-urls"></a>`urls` | dict[[NonEmptyString](../pipeline-shared-types-reference/#nonemptystring), [UrlString](../pipeline-shared-types-reference/#urlstring)] | no | Additional named URLs related to the record, such as notes, signatures, vote threads, or changelogs. |
 | <a id="providerrecord-assets"></a>`assets` | list[[ProviderAsset](#providerasset)] | no | Downloadable assets attached to the record, including checksums and related provenance links when available. |
+| <a id="providerrecord-releasenotes"></a>`releaseNotes` | [ProviderReleaseNotes](#providerreleasenotes) | no | Release-notes file to publish as a generated page at this released version's docs context. Valid only for released records; absent means no release-notes page. |
 
 #### Selected field examples
 
@@ -164,6 +166,23 @@ Normalized provider fact about one release, candidate, or ref context.
 - `maturity`: Example: `"stable"`
 - `candidateSequence`: Example: `1`
 - `voteStatus`: Example: `"passed"`
+
+<a id="providerreleasenotes"></a>
+### ProviderReleaseNotes
+
+Producer-declared release-notes file published as a generated page for one released version.
+
+- category: `provider`
+- ownership: `provider-derived`
+- file contract: (inner type)
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| <a id="providerreleasenotes-path"></a>`path` | [RepoRelativePath](../pipeline-shared-types-reference/#reporelativepath) | yes | Markdown file path relative to the artifact's `<docsRoot>/releases/` directory, outside every version directory. The file is published unchanged below generated front matter. |
+
+#### Selected field examples
+
+- `path`: Example: `"release-notes/4.0.0.md"`
 
 <a id="providersnapshotdocumentv1"></a>
 ### ProviderSnapshotDocumentV1
@@ -219,7 +238,10 @@ Provider-derived normalized snapshot from `site/provider-snapshot.json`.
             "sha256": "abc123"
           }
         }
-      ]
+      ],
+      "releaseNotes": {
+        "path": "release-notes/4.0.0.md"
+      }
     }
   ]
 }

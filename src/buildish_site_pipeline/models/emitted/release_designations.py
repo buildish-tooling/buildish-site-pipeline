@@ -14,6 +14,8 @@
 
 """Artifact-scoped recommendation targets and stage-backed landing destinations."""
 
+from __future__ import annotations
+
 from typing import Annotated, Literal, Self
 
 from pydantic import Field, model_validator

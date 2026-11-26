@@ -200,6 +200,7 @@ def _run_owned_units(
             workspace_root=request.build_plan.workspace_root,
             site_components=request.build_plan.site.components,
             run_workspace=run_workspace,
+            release_notes_texts=request.build_plan.release_notes_texts,
         )
         for unit in units
     )

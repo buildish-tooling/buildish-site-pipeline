@@ -59,9 +59,28 @@ In practice, that means validating at least:
 - reserved front matter namespace rules such as authored `pipeline` collisions
 - local input readiness that is necessary to say whether the current workspace is
   buildable
+- release-notes files declared by released provider records whose contexts stage
+  original docs (see [Release-notes diagnostics](#release-notes-diagnostics))
 
 Where practical, `check` should aggregate independent failures into one report
 instead of stopping at the first validation error.
+
+### Release-notes diagnostics
+
+All of these are errors and block staging in every profile:
+
+| Code | Meaning |
+| --- | --- |
+| `release-notes-path-invalid` | The notes path starts with a version directory, passes through a symlink below `releases/`, resolves outside it, or is not a regular file. |
+| `release-notes-content-invalid` | The notes file is not UTF-8, contains NUL characters, is empty or whitespace only, or starts with a `---` line. |
+| `release-notes-shared-conflict` | Several artifacts sharing one route declare notes for the same version; none of them gets a notes page. |
+| `release-notes-segment-invalid` | The component's `releaseNotesSegment` equals one of its supported locales. |
+| `input-missing` | A declared notes file is missing for a context that stages original docs. |
+
+A missing notes file does not appear in the plan's blocking inputs: `plan` can
+report a usable build plan while `check` and `build` fail with `input-missing`.
+Docs pages or assets at or beneath the notes route report
+`publication-output-collision`.
 
 ## What `check` must not do
 

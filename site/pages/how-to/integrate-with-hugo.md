@@ -443,6 +443,21 @@ and descendants. Do not parse `targetId` suffixes or match by component/version
 alone. Route presence alone cannot prove docs content. Pinned-out recommendation
 facts must not cause staging of excluded docs just to create a link.
 
+Release-notes pages, where a producer declares them, are released-version
+descendants with `pageKind: release-notes`, so the exact-version match above already
+excludes them. Link to them from the matching `data/releases.json` row instead of
+building the route yourself:
+
+```go-html-template
+{{ range where (index hugo.Data.releases "items") "componentSlug" $component.slug }}
+  {{ with .releaseNotes }}<a href="{{ .url }}">Release notes</a>{{ end }}
+{{ end }}
+```
+
+A row without `releaseNotes` has no notes page in this stage. For a recommended
+release, join the designation target with the `releases.json` row by
+`componentSlug`, `artifactKey` and `version`.
+
 The destination describes an assembled Pipeline input to Hugo. It does not attest
 that Hugo rendered a page or that any URL is deployed/reachable. See the
 [unreleased development staged output contract](../../development/reference/staged-output-contract/)

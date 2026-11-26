@@ -134,6 +134,29 @@ def run_component_unit(spec: WorkerSpecWire) -> WorkerResultWire:
             page_contributions.extend(contributions)
             files_written += written[0]
             page_files_written += written[1]
+        if context.action == "docs" and context.release_notes_text is not None:
+            generated = Path(spec.fragment_path).parent / "release-notes" / str(index)
+            page = generated / str(context.release_notes_segment) / "index.md"
+            page.parent.mkdir(parents=True, exist_ok=True)
+            page.write_text(frontmatter.dumps(frontmatter.Post(context.release_notes_text, title=context.release_notes_title)) + "\n", encoding="utf-8")
+            contributions, written = _stage_pages_tree(
+                source_root=generated,
+                destination_root=Path(context.content_stage_root),
+                base_publication=context.publication,
+                component_slug=spec.component_slug or "",
+                artifact_key=context.artifact_key,
+                section=context.section,
+                page_kind="release-notes",
+                version_context=context.version_context,
+                record_kind=context.record_kind,
+                version_ref=context.version_ref,
+                version=context.version,
+                localization=spec.localization,
+                component_namespace=component_namespace,
+            )
+            page_contributions.extend(item.model_copy(update={"source_path": None}) for item in contributions)
+            files_written += written[0]
+            page_files_written += written[1]
         if context.source_assets_root is not None:
             written_assets = _copy_tree(
                 Path(context.source_assets_root), Path(context.static_stage_root), exclusions=context.source_exclusions or context_exclusions(context.record_kind), snapshot_paths=spec.snapshot_paths
@@ -238,6 +261,7 @@ def _stage_pages_tree(
         files_written += 1
         page_files_written += 1
     return contributions, (files_written, page_files_written)
+
 
 
 def _copy_tree(source_root: Path, target_root: Path, *, exclusions: tuple[str, ...] = (".git",), snapshot_paths: tuple[str, ...] = ()) -> int:

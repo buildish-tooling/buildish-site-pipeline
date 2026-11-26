@@ -53,6 +53,9 @@ The pipeline must:
 - require candidate stage roots to be real directories that are absent or empty,
   never symlinks and never pre-populated with leftover content
 - avoid publishing symlink escapes into the staged tree
+- confine release-notes files selected by provider records to the artifact's
+  `<docsRoot>/releases/` directory outside every version directory, rejecting
+  symlinks below `releases/` and non-regular files
 
 This protects against accidental workspace leakage and straightforward path
 traversal mistakes.

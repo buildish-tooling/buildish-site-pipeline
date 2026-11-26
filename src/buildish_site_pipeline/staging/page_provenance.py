@@ -134,6 +134,15 @@ def page_source_provenance(
         for item in candidates
     ):
         return None
+    # Generated release notes are keyed by their planned destination, not by the
+    # fragment's page kind or source path.
+    if contribution.page_kind == "release-notes" or any(
+        item.context is not None
+        and item.context.release_notes is not None
+        and destination == item.stage_root / item.context.release_notes.segment / "index.md"
+        for item in candidates
+    ):
+        return None
     if contribution.source_path is None:
         return None
     raw_source = Path(contribution.source_path)

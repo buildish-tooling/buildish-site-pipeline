@@ -16,6 +16,8 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 from buildish_site_pipeline.models.enums import DiagnosticSeverity
 
 from . import diagnostic_codes
@@ -54,7 +56,14 @@ def run_evaluation(
     run_status = build_run_status(counts)
     stage_readiness = StageReadinessResult.from_diagnostics(
         diagnostics=diagnostics,
-        build_plan_candidate=build_plan_result.candidate,
+        build_plan_candidate=(
+            replace(
+                build_plan_result.candidate,
+                release_notes_texts={item.target.source_path: item.text for item in artifacts.release_notes.items},
+            )
+            if build_plan_result.candidate is not None
+            else None
+        ),
     )
     return EvaluationResult(
         request=request,

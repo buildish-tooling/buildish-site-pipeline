@@ -129,6 +129,9 @@ class ComponentContextWire(SitePipelineBaseModel):
     record_kind: str = Field(description="Version-record kind associated with this context, such as release or named ref.", examples=["release"])
     version_ref: str | None = Field(default=None, description="Source-control ref associated with the context, if present.", examples=["refs/tags/v4.0.0"])
     version: str | None = Field(default=None, description="Exact version string associated with the context, if present.", examples=["4.0.0"])
+    release_notes_text: str | None = Field(default=None, description="Release-notes Markdown exactly as validated and link-checked at plan time, published as a generated page for this released docs context.")
+    release_notes_segment: str | None = Field(default=None, description="Route segment below the context root for the generated release-notes page.", examples=["release-notes"])
+    release_notes_title: str | None = Field(default=None, description="Title written into the generated release-notes page front matter.", examples=["Release Notes for 4.0.0"])
 
 
 class WorkerSpecWire(SitePipelineBaseModel):

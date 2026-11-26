@@ -347,10 +347,14 @@ Component route policy with deliberate artifact composition or separation.
 | <a id="componentpublicationconfig-redirects"></a>`redirects` | object | no | Redirect rules to emit for legacy or moved routes. |
 | <a id="componentpublicationconfig-artifactrouting"></a>`artifactRouting` | Literal['shared', 'namespaced'] | no | Artifact route layout. Omitted/null means shared composition; namespaced separates artifacts independently of count or selection. |
 | <a id="componentpublicationconfig-defaultartifact"></a>`defaultArtifact` | [ArtifactKey](../pipeline-shared-types-reference/#artifactkey) | no | Optional component-defined artifact using flat primary routes in namespaced mode. Other artifacts retain namespaces; unavailable defaults are never replaced. |
+| <a id="componentpublicationconfig-releasenotessegment"></a>`releaseNotesSegment` | [Slug](../pipeline-shared-types-reference/#slug) | no | Route segment for generated release-notes pages below each released version context. Defaults to `release-notes`. Keep it unchanged once notes are published: changing it moves every published notes route without aliases or redirects. |
+| <a id="componentpublicationconfig-releasenotestitle"></a>`releaseNotesTitle` | [ReleaseNotesTitleMode](../pipeline-shared-types-reference/#releasenotestitlemode) | no | Title style for generated release-notes pages. Defaults to `release-notes` (`Release Notes for <version>`). |
 
 #### Selected field examples
 
 - `mountPath`: Example: `"/spark/"`
+- `releaseNotesSegment`: Example: `"release-notes"`
+- `releaseNotesTitle`: Example: `"component-name"`
 
 <a id="contentroots"></a>
 ### ContentRoots
@@ -700,6 +704,7 @@ components:
     source: runtime
   publication:
     mountPath: /spark/
+    releaseNotesTitle: component-name
   publicationSelection:
     releases:
       mode: none

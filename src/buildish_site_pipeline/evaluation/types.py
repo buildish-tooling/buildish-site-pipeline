@@ -31,7 +31,11 @@ from buildish_site_pipeline.models.emitted.planning_stage_contract import (
     PipelineDiagnosticEntry,
 )
 
-from buildish_site_pipeline.planning.types import PlanningEvaluation
+from buildish_site_pipeline.planning.types import (
+    PlanningEvaluation,
+    ReleaseNotesTarget,
+    SelectedVersionContext,
+)
 from buildish_site_pipeline.staging.types import EffectiveBuildPlan
 
 
@@ -135,12 +139,29 @@ PageScanResult = PageInventory
 
 
 @dataclass(frozen=True, slots=True)
+class ValidatedReleaseNotes:
+    """One accepted release-notes file read once at plan time."""
+
+    context: SelectedVersionContext
+    target: ReleaseNotesTarget
+    text: str
+
+
+@dataclass(frozen=True, slots=True)
+class ReleaseNotesInventory:
+    """Release-notes files that passed plan-time validation."""
+
+    items: tuple[ValidatedReleaseNotes, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
 class EvaluationArtifacts:
     """Derived contextual indexes that later phases may reuse."""
 
     publication_index: PublicationIndex
     route_inventory: RouteInventory
     page_inventory: PageInventory
+    release_notes: ReleaseNotesInventory = ReleaseNotesInventory()
 
 
 @dataclass(frozen=True, slots=True)

@@ -157,10 +157,15 @@ class SchemaExportTests(unittest.TestCase):
                 sorted(self._generated_reference_file_names()),
                 sorted(path.name for path in generated_reference_dir.glob("*.md")),
             )
-            self.assertEqual(
-                (checked_in_reference_dir / "pipeline-model-schema-reference.md").read_text(encoding="utf-8"),
-                generated_reference_text,
-            )
+            for generated_path in sorted(generated_reference_dir.glob("*.md")):
+                generated_text = generated_path.read_text(encoding="utf-8")
+                # Runtime reprs such as validator function addresses differ between runs.
+                self.assertNotIn(" at 0x", generated_text, generated_path.name)
+                self.assertEqual(
+                    (checked_in_reference_dir / generated_path.name).read_text(encoding="utf-8"),
+                    generated_text,
+                    generated_path.name,
+                )
             self.assertIn(
                 "This reference describes the current public contracts exposed by the Site Pipeline model layer.",
                 generated_reference_text,

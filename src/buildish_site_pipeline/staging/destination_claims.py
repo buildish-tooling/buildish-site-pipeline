@@ -269,6 +269,20 @@ def collect_destination_claims(
                 )
             )
         elif context.action is ContextAction.DOCS:
+            if context.release_notes is not None:
+                add(
+                    (
+                        _release_notes_claim(
+                            producer,
+                            public,
+                            content_root,
+                            context.release_notes.segment,
+                            origin=origin,
+                            artifact_key=context.artifact_key,
+                            unit_id=unit_id,
+                        ),
+                    )
+                )
             add(
                 _tree_claims(
                     source_root_for_context(context.docs_root, context),
@@ -296,6 +310,29 @@ def collect_destination_claims(
                 )
             )
     return tuple(claims)
+
+
+def _release_notes_claim(
+    producer: str,
+    public: str,
+    content_root: Path,
+    segment: str,
+    *,
+    origin: str | None = None,
+    artifact_key: str | None = None,
+    unit_id: str | None = None,
+) -> DestinationClaim:
+    return DestinationClaim(
+        producer,
+        "generated release notes",
+        public_page_path(public, Path(segment) / "index.md"),
+        origin,
+        content_root / segment / "index.md",
+        page=True,
+        kind="release-notes",
+        artifact_key=artifact_key,
+        unit_id=unit_id,
+    )
 
 
 def _conflict(
@@ -361,6 +398,20 @@ def validate_destination_claims(claims: Iterable[DestinationClaim]) -> None:
                 ):
                     continue
                 raise _conflict(other, claim, path)
+    # Generated notes render as a leaf page; nothing else may live at or beneath it.
+    # Index the notes routes once so each claim only walks its own parent paths.
+    notes_routes: dict[str, list[DestinationClaim]] = {}
+    for notes in files:
+        if notes.kind == "release-notes":
+            root = normalize_public_path(notes.public_path, trailing_slash=False).casefold()
+            notes_routes.setdefault(root, []).append(notes)
+    if notes_routes:
+        for other in (*files, *routes):
+            path = normalize_public_path(other.public_path, trailing_slash=False).casefold()
+            for candidate in (path, *map(str, PurePosixPath(path).parents)):
+                for notes in notes_routes.get(candidate, ()):
+                    if notes is not other and _same_origin(notes, other):
+                        raise _conflict(notes, other, path)
     reservations = [claim for claim in claims if claim.kind == "mount"]
     for index, mount in enumerate(reservations):
         root = normalize_public_path(mount.public_path, trailing_slash=False).casefold()
@@ -497,6 +548,15 @@ def validate_component_worker_claims(spec: WorkerSpecWire) -> None:
                 )
             )
         elif context.action == "docs":
+            if context.release_notes_segment is not None:
+                claims.append(
+                    _release_notes_claim(
+                        context.context_id,
+                        context.publication.path,
+                        content,
+                        context.release_notes_segment,
+                    )
+                )
             claims.extend(
                 _tree_claims(
                     Path(context.source_docs_root)

@@ -104,6 +104,44 @@ are unchanged. Existing snapshots remain valid; strict older validators need the
 updated schema before receiving this optional field. Exporter adoption is a
 separate producer change, not an automatic Pipeline rewrite of inventories.
 
+## Release notes for released records
+
+A `released` record may reference a release-notes file that the pipeline publishes
+as a generated page at that version's context:
+
+```yaml
+releaseNotes:
+  path: release-notes/4.0.0.md
+```
+
+`path` is relative to the artifact's `<docsRoot>/releases/` directory in the
+artifact's docs source, whichever snapshot file declares the record. Copy the notes
+file unchanged from the release tag, for example to
+`docs/releases/release-notes/4.0.0.md`, next to the version trees and never inside
+one. Absence means no notes page; nothing is inferred from filenames.
+
+The pipeline checks at plan time, and fails the build when:
+
+- the field is set on a non-released record, or the path is not a lower-case `.md`
+  file
+- the path leaves `releases/`, starts with a version directory, passes through a
+  symlink below `releases/`, or is not a regular file
+- the file is not UTF-8, contains NUL characters, is empty, or starts with a `---`
+  line (front matter is pipeline-owned; this also rejects a leading thematic
+  break)
+- the file is missing (`input-missing`) for a context that stages original docs
+
+Files of hidden, withdrawn, tombstoned, omitted or site-excluded releases are not
+read. Write fully qualified URLs in notes: relative links resolve against the
+generated route, not the source repository, and only page-like relative links are
+checked when catalog link checks are enabled.
+
+In `watch`, missing or invalid notes are reported every cycle. For a component-owned
+snapshot, a notes file is treated like released docs: content edits are restaged
+only after the snapshot changes or watch restarts. Notes declared in the site-level
+snapshot restage on edit. Producers should rewrite the snapshot together with any
+notes change.
+
 ## Minimal normalized `records[]` schema
 
 Required fields on every record:
@@ -154,7 +192,8 @@ Kind-specific expectations:
 - `namedRef`: should carry `ref`
 - `lineHead`: should carry `releaseLine` and usually `ref`
 - `candidate`: should normally carry `version`; `candidateSequence` is recommended
-- `released`: should normally carry `version` and usually `tag`
+- `released`: should normally carry `version` and usually `tag`; may carry
+  `releaseNotes` (see [Release notes for released records](#release-notes-for-released-records))
 
 The pipeline should treat `kind` as the primary normalized lifecycle category.
 Fields such as `maturity`, `supportStatus`, and `voteStatus` add detail but do

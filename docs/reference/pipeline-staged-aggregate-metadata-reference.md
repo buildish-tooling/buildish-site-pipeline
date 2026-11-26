@@ -42,6 +42,7 @@ Back to the [reference overview](../pipeline-model-schema-reference/).
 - [ReleaseDesignationTarget](#releasedesignationtarget) — An exact released recommendation scoped by its containing component/artifact row.
 - [ReleaseDesignations](#releasedesignations) — Explicit recommendations and availability; no inferred latest or full inventory.
 - [ReleaseLineDesignation](#releaselinedesignation) — One explicit line recommendation; multiple lines may share the same target.
+- [ReleaseNotesAvailability](#releasenotesavailability) — Staged release-notes page for one released version.
 - [RouteAggregateEntry](#routeaggregateentry) — Entry in ``data/routes.json``.
 - [TranslationSetAggregateEntry](#translationsetaggregateentry) — Entry in ``data/translations.json``.
 - [UnavailableDesignation](#unavailabledesignation) — A recommendation without an eligible landing destination in this stage.
@@ -297,9 +298,9 @@ An owned root documentation page in the assembled stage, not remote availability
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| <a id="docsavailability-kind"></a>`kind` | typing.Literal['docs'] | no | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
-| <a id="docsavailability-path"></a>`path` | typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=None, min_length=1, max_length=None, pattern=None, ascii_only=None), AfterValidator(func=<function validate_public_path at 0x78f902c80d50>)] | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
-| <a id="docsavailability-url"></a>`url` | typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=None, min_length=1, max_length=None, pattern=None, ascii_only=None), AfterValidator(func=<function validate_url_string at 0x78f902c81590>)] | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+| <a id="docsavailability-kind"></a>`kind` | Literal['docs'] | no | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+| <a id="docsavailability-path"></a>`path` | [PublicPath](../pipeline-shared-types-reference/#publicpath) | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+| <a id="docsavailability-url"></a>`url` | [UrlString](../pipeline-shared-types-reference/#urlstring) | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
 
 <a id="latestcandidatesummary"></a>
 ### LatestCandidateSummary
@@ -364,9 +365,9 @@ A generated withdrawal notice, not original documentation.
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| <a id="noticeavailability-kind"></a>`kind` | typing.Literal['notice'] | no | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
-| <a id="noticeavailability-path"></a>`path` | typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=None, min_length=1, max_length=None, pattern=None, ascii_only=None), AfterValidator(func=<function validate_public_path at 0x78f902c80d50>)] | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
-| <a id="noticeavailability-url"></a>`url` | typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=None, min_length=1, max_length=None, pattern=None, ascii_only=None), AfterValidator(func=<function validate_url_string at 0x78f902c81590>)] | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+| <a id="noticeavailability-kind"></a>`kind` | Literal['notice'] | no | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+| <a id="noticeavailability-path"></a>`path` | [PublicPath](../pipeline-shared-types-reference/#publicpath) | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+| <a id="noticeavailability-url"></a>`url` | [UrlString](../pipeline-shared-types-reference/#urlstring) | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
 
 <a id="providersdataentry"></a>
 ### ProvidersDataEntry
@@ -424,10 +425,10 @@ An emitted withdrawal redirect instruction, not attested destination content.
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| <a id="redirectavailability-kind"></a>`kind` | typing.Literal['redirect'] | no | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
-| <a id="redirectavailability-path"></a>`path` | typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=None, min_length=1, max_length=None, pattern=None, ascii_only=None), AfterValidator(func=<function validate_public_path at 0x78f902c80d50>)] | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
-| <a id="redirectavailability-url"></a>`url` | typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=None, min_length=1, max_length=None, pattern=None, ascii_only=None), AfterValidator(func=<function validate_url_string at 0x78f902c81590>)] | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
-| <a id="redirectavailability-tourl"></a>`toUrl` | typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=None, min_length=1, max_length=None, pattern=None, ascii_only=None), AfterValidator(func=<function validate_url_string at 0x78f902c81590>)] | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+| <a id="redirectavailability-kind"></a>`kind` | Literal['redirect'] | no | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+| <a id="redirectavailability-path"></a>`path` | [PublicPath](../pipeline-shared-types-reference/#publicpath) | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+| <a id="redirectavailability-url"></a>`url` | [UrlString](../pipeline-shared-types-reference/#urlstring) | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+| <a id="redirectavailability-tourl"></a>`toUrl` | [UrlString](../pipeline-shared-types-reference/#urlstring) | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
 
 <a id="refaggregateentry"></a>
 ### RefAggregateEntry
@@ -492,6 +493,7 @@ Entry in `data/releases.json`.
 | <a id="releaseaggregateentry-publishedat"></a>`publishedAt` | [TimestampString](../pipeline-shared-types-reference/#timestampstring) | no | Timestamp when the release became publicly available. |
 | <a id="releaseaggregateentry-assets"></a>`assets` | list[[ProviderAsset](../pipeline-provider-input-reference/#providerasset)] | no | Downloadable assets attached to the release. |
 | <a id="releaseaggregateentry-urls"></a>`urls` | dict[[NonEmptyString](../pipeline-shared-types-reference/#nonemptystring), [UrlString](../pipeline-shared-types-reference/#urlstring)] | no | Additional named URLs related to the release, such as notes, downloads, or verification material. |
+| <a id="releaseaggregateentry-releasenotes"></a>`releaseNotes` | [ReleaseNotesAvailability](#releasenotesavailability) | no | Staged release-notes page for this release; present only when the page was staged in this output. |
 
 #### Selected field examples
 
@@ -518,11 +520,11 @@ An exact released recommendation scoped by its containing component/artifact row
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| <a id="releasedesignationtarget-version"></a>`version` | typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=None, min_length=1, max_length=None, pattern=None, ascii_only=None), AfterValidator(func=<function validate_version_string at 0x78f902c801a0>)] | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
-| <a id="releasedesignationtarget-selected"></a>`selected` | <class 'bool'> | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
-| <a id="releasedesignationtarget-publicationstate"></a>`publicationState` | buildish_site_pipeline.models.enums.[PublicationState](../pipeline-shared-types-reference/#publicationstate) | no | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
-| <a id="releasedesignationtarget-action"></a>`action` | buildish_site_pipeline.models.enums.[ContextAction](../pipeline-shared-types-reference/#contextaction) | no | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
-| <a id="releasedesignationtarget-availability"></a>`availability` | typing.Annotated[buildish_site_pipeline.models.emitted.release_designations.[DocsAvailability](#docsavailability) \| buildish_site_pipeline.models.emitted.release_designations.[NoticeAvailability](#noticeavailability) \| buildish_site_pipeline.models.emitted.release_designations.[RedirectAvailability](#redirectavailability) \| buildish_site_pipeline.models.emitted.release_designations.[UnavailableDesignation](#unavailabledesignation), FieldInfo(annotation=NoneType, required=True, discriminator='kind')] | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+| <a id="releasedesignationtarget-version"></a>`version` | [VersionString](../pipeline-shared-types-reference/#versionstring) | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+| <a id="releasedesignationtarget-selected"></a>`selected` | bool | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+| <a id="releasedesignationtarget-publicationstate"></a>`publicationState` | [PublicationState](../pipeline-shared-types-reference/#publicationstate) | no | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+| <a id="releasedesignationtarget-action"></a>`action` | [ContextAction](../pipeline-shared-types-reference/#contextaction) | no | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+| <a id="releasedesignationtarget-availability"></a>`availability` | DesignationAvailability | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
 
 <a id="releasedesignations"></a>
 ### ReleaseDesignations
@@ -535,9 +537,9 @@ Explicit recommendations and availability; no inferred latest or full inventory.
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| <a id="releasedesignations-snapshotstatus"></a>`snapshotStatus` | typing.Literal['present', 'missing', 'not-configured'] | yes | Status of the configured component snapshot input, not inventory completeness. |
-| <a id="releasedesignations-lateststable"></a>`latestStable` | buildish_site_pipeline.models.emitted.release_designations.[ReleaseDesignationTarget](#releasedesignationtarget) | no | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
-| <a id="releasedesignations-lines"></a>`lines` | list[buildish_site_pipeline.models.emitted.release_designations.[ReleaseLineDesignation](#releaselinedesignation)] | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+| <a id="releasedesignations-snapshotstatus"></a>`snapshotStatus` | Literal['present', 'missing', 'not-configured'] | yes | Status of the configured component snapshot input, not inventory completeness. |
+| <a id="releasedesignations-lateststable"></a>`latestStable` | [ReleaseDesignationTarget](#releasedesignationtarget) | no | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+| <a id="releasedesignations-lines"></a>`lines` | list[[ReleaseLineDesignation](#releaselinedesignation)] | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
 
 <a id="releaselinedesignation"></a>
 ### ReleaseLineDesignation
@@ -550,8 +552,27 @@ One explicit line recommendation; multiple lines may share the same target.
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| <a id="releaselinedesignation-key"></a>`key` | typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=None, min_length=1, max_length=None, pattern=None, ascii_only=None)] | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
-| <a id="releaselinedesignation-target"></a>`target` | <class 'buildish_site_pipeline.models.emitted.release_designations.[ReleaseDesignationTarget](#releasedesignationtarget)'> | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+| <a id="releaselinedesignation-key"></a>`key` | [NonEmptyString](../pipeline-shared-types-reference/#nonemptystring) | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+| <a id="releaselinedesignation-target"></a>`target` | [ReleaseDesignationTarget](#releasedesignationtarget) | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+
+<a id="releasenotesavailability"></a>
+### ReleaseNotesAvailability
+
+Staged release-notes page for one released version.
+
+- category: `emitted`
+- ownership: `pipeline-derived`
+- file contract: (inner type)
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| <a id="releasenotesavailability-path"></a>`path` | [PublicPath](../pipeline-shared-types-reference/#publicpath) | yes | Public path of the staged release-notes page. |
+| <a id="releasenotesavailability-url"></a>`url` | [UrlString](../pipeline-shared-types-reference/#urlstring) | yes | Absolute URL of the staged release-notes page on its publication origin. |
+
+#### Selected field examples
+
+- `path`: Example: `"/spark/releases/4.0.0/release-notes/"`
+- `url`: Example: `"https://spark.example.org/spark/releases/4.0.0/release-notes/"`
 
 <a id="routeaggregateentry"></a>
 ### RouteAggregateEntry
@@ -622,6 +643,6 @@ A recommendation without an eligible landing destination in this stage.
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| <a id="unavailabledesignation-kind"></a>`kind` | typing.Literal['unavailable'] | no | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
-| <a id="unavailabledesignation-reason"></a>`reason` | typing.Literal['not-selected', 'hidden', 'withdrawn', 'tombstoned', 'snapshot-absent', 'omitted', 'no-landing-page'] | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+| <a id="unavailabledesignation-kind"></a>`kind` | Literal['unavailable'] | no | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
+| <a id="unavailabledesignation-reason"></a>`reason` | Literal['not-selected', 'hidden', 'withdrawn', 'tombstoned', 'snapshot-absent', 'omitted', 'no-landing-page'] | yes | **UX warning:** field description missing; this violates the project's UX requirements. (not documented) |
 

@@ -403,6 +403,31 @@ artifact routes for navigation. Component paths.docs may be an absent layout bas
 it is not a fallback documentation target. Richer designation availability is a
 separate contract concern.
 
+## Generated release-notes pages
+
+A released provider record may declare `releaseNotes.path`. When that release's
+context stages original docs, the pipeline generates one page below the context
+route, for example `/spark/releases/4.0.0/release-notes`:
+
+- the segment defaults to `release-notes`; a component's catalog `publication`
+  may set `releaseNotesSegment` and `releaseNotesTitle`
+- front matter has a pipeline-generated `title` only; the notes file is the body,
+  unchanged
+- `pipeline.page.kind` and the content-index `pageKind` are `release-notes`, and
+  `section` is the context's section (`release`)
+- the page carries no `source` provenance; provider provenance is kept
+- `data/releases.json` rows gain `releaseNotes` (`path`, `url`) only when the page
+  was staged in this output
+
+Development, candidate, notice, redirect, omitted and site-excluded contexts never
+get a notes page. In `shared` artifact routing, at most one artifact may declare
+notes for one shared version context; only its `releases.json` row carries
+`releaseNotes`. Docs pages and assets at or beneath the notes route conflict with
+the generated page. Renderers link to notes from `releaseNotes.path` or `url` and
+must not derive the route from the segment. Keep the segment unchanged once notes
+are published: changing it moves every published notes route without aliases or
+redirects.
+
 ## Schema reference
 
 The typed definitions for this contract live in:

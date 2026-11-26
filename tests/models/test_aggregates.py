@@ -301,6 +301,34 @@ class AggregateModelTests(unittest.TestCase):
 
         self.assertEqual(mount.metadata, {"summary": "small"})
 
+    def test_release_entry_carries_release_notes_availability(self) -> None:
+        entry = ReleaseAggregateEntry.model_validate(
+            {
+                "componentSlug": "spark",
+                "artifactKey": "runtime",
+                "version": "4.0.0",
+                "releaseNotes": {
+                    "path": "/spark/releases/4.0.0/release-notes/",
+                    "url": "https://docs.example.org/spark/releases/4.0.0/release-notes/",
+                },
+            },
+            by_alias=True,
+            by_name=False,
+        )
+        self.assertIsNotNone(entry.release_notes)
+        self.assertEqual(entry.release_notes.path, "/spark/releases/4.0.0/release-notes/")
+        for notes in (
+            {"path": "spark/releases/4.0.0/release-notes/", "url": "https://docs.example.org/x/"},
+            {"path": "/spark/releases/4.0.0/release-notes/", "url": "not-a-url"},
+            {"path": "/spark/releases/4.0.0/release-notes/"},
+        ):
+            with self.subTest(notes=notes), self.assertRaises(ValidationError):
+                ReleaseAggregateEntry.model_validate(
+                    {"componentSlug": "spark", "artifactKey": "runtime", "version": "4.0.0", "releaseNotes": notes},
+                    by_alias=True,
+                    by_name=False,
+                )
+
     def test_rejects_duplicate_content_index_ancestors(self) -> None:
         with self.assertRaises(ValidationError):
             ContentIndexEntry.model_validate(

@@ -47,6 +47,7 @@ from buildish_site_pipeline.models.enums import (
     LinkCheckMode,
     LineHeadSelectionMode,
     PublicationState,
+    ReleaseNotesTitleMode,
     ReleaseSelectionMode,
     RouteMode,
     TrustClass,
@@ -209,6 +210,48 @@ class CatalogDocumentTests(unittest.TestCase):
                 document_format=DocumentFormat.JSON,
                 source_name="site/components.json",
             )
+
+    def test_component_publication_accepts_release_notes_settings(self) -> None:
+        document = _build_valid_catalog_document()
+        document["components"][0]["publication"].update(
+            releaseNotesSegment="notes", releaseNotesTitle="component-name"
+        )
+        catalog = load_site_catalog_document(
+            json.dumps(document),
+            document_format=DocumentFormat.JSON,
+            source_name="site/components.json",
+        )
+        publication = catalog.components[0].publication
+        self.assertEqual(publication.release_notes_segment, "notes")
+        self.assertIs(publication.release_notes_title, ReleaseNotesTitleMode.COMPONENT_NAME)
+        self.assertEqual(
+            [mode.value for mode in ReleaseNotesTitleMode],
+            ["release-notes", "version-only", "component-name"],
+        )
+
+    def test_release_notes_settings_are_validated_and_component_only(self) -> None:
+        invalid = [
+            ("component", {"releaseNotesSegment": "Release Notes"}),
+            ("component", {"releaseNotesSegment": "release/notes"}),
+            ("component", {"releaseNotesSegment": ""}),
+            ("component", {"releaseNotesTitle": "title-case"}),
+            ("group", {"releaseNotesSegment": "notes"}),
+            ("group", {"releaseNotesTitle": "version-only"}),
+        ]
+        for owner, settings in invalid:
+            document = _build_valid_catalog_document()
+            target = (
+                document["components"][0]["publication"]
+                if owner == "component"
+                else document["groups"]["streaming"]["publication"]
+            )
+            target.update(settings)
+            with self.subTest(owner=owner, settings=settings), self.assertRaises(DocumentValidationFailure):
+                load_site_catalog_document(
+                    json.dumps(document),
+                    document_format=DocumentFormat.JSON,
+                    source_name="site/components.json",
+                )
 
     def test_rejects_duplicate_artifacts(self) -> None:
         document = _build_valid_catalog_document()
